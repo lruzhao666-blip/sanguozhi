@@ -1059,7 +1059,7 @@
       }
       // 新布局：资源名固定左，chips一行，兵种明细块独占次行，合计固定右
       return '<div class="cd-bd-row">'
-        + '<span class="cd-bd-cat">' + (RES_ICON[cat]||'') + cat + '</span>'
+        + '<span class="cd-bd-cat"><span class="cd-bd-cat-icon">' + (RES_ICON[cat]||'') + '</span><span class="cd-bd-cat-name">' + cat + '</span></span>'
         + '<span class="cd-bd-items">'
           + '<span class="cd-bd-chips-wrap">' + chips + '</span>'
           + troopHtml
