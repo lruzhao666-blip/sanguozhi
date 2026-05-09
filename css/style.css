@@ -246,18 +246,18 @@ header, nav, main, footer { position: relative; z-index: 1; }
    3px 彩色左边框 + 极浅玩家色渐变底 + 单侧圆角 */
 .digest-raw .action-player-group,
 .digest-raw .result-player-group {
-  margin: 0 0 24px;
-  padding: 10px 14px 24px 14px;
+  margin: 0 0 0;
+  padding: 16px 14px 16px 14px;
   border-left: none;
-  border-radius: var(--r);
+  border-radius: 0;
   background: none;
-  border-bottom: 1px solid rgba(180,140,60,.18);
 }
-.digest-raw .action-player-group:last-of-type,
-.digest-raw .result-player-group:last-of-type {
-  margin-bottom: 0;
-  border-bottom: none;
-  padding-bottom: 10px;
+/* 玩家分组之间的分隔线（JS 插入 hr） */
+.digest-raw .player-group-divider {
+  border: none;
+  border-top: 1px solid rgba(180,140,60,.25);
+  margin: 0;
+  padding: 0;
 }
 
 /* ══ 玩家名标签 ══

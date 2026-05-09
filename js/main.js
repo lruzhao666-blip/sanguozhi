@@ -847,6 +847,8 @@
         const m = line.trim().match(SUB_PLAYER_RE);
         if (m) {
           flushGroup();
+          // 不是第一组时插入分隔线
+          if (result.length > 0) result.push('<hr class="player-group-divider">');
           grp = { name: m[1], slot: getSlot(m[1]), titleText: m[2].trim(), bodyLines: [], extraHtml: [] };
         } else {
           if (grp) grp.bodyLines.push(line.trim());
