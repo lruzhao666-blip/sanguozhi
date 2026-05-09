@@ -629,13 +629,13 @@ header, nav, main, footer { position: relative; z-index: 1; }
    ⏳ 启幕段尾句压暗（喃喃低语质感）
 ══════════════════════════════════════════ */
 .digest-raw .story-outro {
-  color: rgba(230, 210, 170, 0.42);
+  color: rgba(230, 210, 170, 0.22);
   font-style: italic;
   font-size: 14px;
   line-height: 1.7;
   margin: 18px 0 8px;
   padding-left: 14px;
-  border-left: 2px solid rgba(230, 210, 170, 0.15);
+  border-left: 2px solid rgba(230, 210, 170, 0.08);
 }
 
 /* 手机端数据面板 */
