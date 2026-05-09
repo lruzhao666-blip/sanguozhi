@@ -301,6 +301,214 @@ header, nav, main, footer { position: relative; z-index: 1; }
   opacity: .45;
 }
 
+/* ══════════════════════════════════════════
+   段落分块卡片（emoji 段落标题触发）
+   每段套带左侧色条的卡片容器，段间 18px 间距
+══════════════════════════════════════════ */
+.digest-raw .raw-section-card {
+  position: relative;
+  display: flex;
+  gap: 0;
+  border-radius: 0 var(--r) var(--r) 0;
+  border: 1px solid rgba(255,255,255,.05);
+  border-left: 3px solid var(--gold);   /* 由 JS inline style 覆盖 */
+  margin: 18px 0 0;
+  overflow: hidden;
+  /* bg 由 JS inline style 覆盖 */
+}
+.digest-raw .raw-section-card:first-child { margin-top: 0; }
+
+.digest-raw .raw-section-card-strip {
+  /* 左侧竖色条 — 视觉宽度由 border-left 承担，strip 隐藏，仅作备份 */
+  display: none;
+}
+
+.digest-raw .raw-section-card-body {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 18px 14px;
+}
+
+/* 卡片内的标题行 */
+.digest-raw .raw-section-title {
+  font-family: var(--font-serif); font-size: 1.0rem; font-weight: 700;
+  color: var(--gold-light); letter-spacing: .07em;
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+/* 卡片内段落间距 */
+.digest-raw .raw-section-card-body .raw-para { margin-bottom: .75em; }
+.digest-raw .raw-section-card-body .raw-para:last-child { margin-bottom: 0; }
+
+/* ══════════════════════════════════════════
+   ▸ 影响行（次要色 + 左缩进 + 略小字号）
+══════════════════════════════════════════ */
+.digest-raw .raw-effect {
+  font-family: var(--font-serif);
+  font-size: .88rem;
+  color: rgba(180,162,130,.65);
+  line-height: 1.75;
+  padding: 2px 0 2px 1.6em;
+  margin: 2px 0;
+  border-left: 2px solid rgba(180,140,60,.18);
+  border-radius: 0 3px 3px 0;
+  letter-spacing: .01em;
+}
+
+/* ══════════════════════════════════════════
+   🎲 战斗骰子行（等宽字体 + 浅色边框框 + 横向可滚动）
+══════════════════════════════════════════ */
+.digest-raw .raw-battle {
+  font-family: var(--font-serif); font-size: .92rem; font-weight: 500;
+  color: #e8b850; margin: 8px 0;
+  padding: 0;
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(180,130,40,.28);
+  border-radius: var(--r);
+  overflow-x: auto;
+  /* 横向滚动 */
+  -webkit-overflow-scrolling: touch;
+}
+.digest-raw .raw-battle-code {
+  display: block;
+  font-family: 'Noto Sans Mono', 'Source Code Pro', 'Courier New', monospace;
+  font-size: .85rem;
+  color: #e8b850;
+  background: transparent;
+  padding: 7px 14px;
+  white-space: pre;
+  letter-spacing: .01em;
+  line-height: 1.7;
+}
+
+/* ══════════════════════════════════════════
+   ①②③④ / A. B. C. 编号项（金色大号编号）
+══════════════════════════════════════════ */
+.digest-raw .raw-numbered-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0;
+  line-height: 1.8;
+}
+.digest-raw .raw-num-badge {
+  flex-shrink: 0;
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--gold-light);
+  text-shadow: 0 0 8px rgba(212,168,67,.35);
+  min-width: 1.4em;
+  text-align: center;
+  line-height: 1;
+  margin-top: .15em;
+}
+.digest-raw .raw-num-text {
+  font-family: var(--font-serif);
+  font-size: .95rem;
+  color: #e8dcc4;
+  line-height: 1.8;
+  letter-spacing: .015em;
+}
+
+/* ══════════════════════════════════════════
+   「」书名号内文字 → 斜体淡金
+══════════════════════════════════════════ */
+.digest-raw .raw-quote {
+  font-style: italic;
+  color: rgba(212,168,67,.75);
+  font-family: var(--font-serif);
+}
+
+/* ══════════════════════════════════════════
+   36个= 折叠数据面板
+══════════════════════════════════════════ */
+.digest-raw .raw-data-panel {
+  margin: 20px 0 0;
+  border: 1px solid rgba(120,90,30,.25);
+  border-radius: var(--r);
+  background: rgba(0,0,0,.22);
+  overflow: hidden;
+}
+.digest-raw .raw-data-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  font-family: var(--font-sans);
+  font-size: .72rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  list-style: none;
+  letter-spacing: .06em;
+  user-select: none;
+  background: rgba(0,0,0,.18);
+  border-bottom: 1px solid rgba(120,90,30,.15);
+  transition: color .15s;
+}
+.digest-raw .raw-data-summary::-webkit-details-marker { display: none; }
+.digest-raw .raw-data-summary::before {
+  content: '▶';
+  font-size: .6rem;
+  transition: transform .2s;
+  flex-shrink: 0;
+  opacity: .55;
+}
+.digest-raw .raw-data-panel[open] .raw-data-summary::before { transform: rotate(90deg); }
+.digest-raw .raw-data-summary:hover { color: var(--text-sub); }
+.digest-raw .raw-data-badge {
+  font-size: .62rem;
+  background: rgba(120,90,30,.15);
+  border: 1px solid rgba(120,90,30,.22);
+  border-radius: 8px;
+  padding: 1px 8px;
+  color: var(--gold-dim);
+}
+.digest-raw .raw-data-body {
+  padding: 10px 14px 12px;
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120,90,30,.3) transparent;
+}
+.digest-raw .raw-data-body::-webkit-scrollbar { width: 3px; }
+.digest-raw .raw-data-body::-webkit-scrollbar-thumb { background: rgba(120,90,30,.3); border-radius: 2px; }
+.digest-raw .raw-data-line {
+  font-family: 'Noto Sans Mono', 'Source Code Pro', 'Courier New', monospace;
+  font-size: .75rem;
+  color: rgba(160,140,100,.7);
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.digest-raw .raw-data-line:empty { display: none; }
+
+/* ══════════════════════════════════════════
+   整体留白调优：段落间距更宽松
+══════════════════════════════════════════ */
+.digest-raw .raw-para {
+  margin: 0 0 1.1em;
+  letter-spacing: .015em;
+  line-height: 1.85;
+}
+.digest-raw .raw-note {
+  margin: 6px 0 16px;
+  line-height: 1.8;
+}
+.digest-raw .raw-bullet {
+  margin: 4px 0 4px 1.4em;
+  line-height: 1.9;
+}
+
+/* 手机端数据面板 */
+@media(max-width: 640px) {
+  .digest-raw .raw-section-card-body { padding: 10px 14px 12px; }
+  .digest-raw .raw-section-title { font-size: .92rem; }
+  .digest-raw .raw-battle-code { font-size: .78rem; padding: 6px 12px; }
+  .digest-raw .raw-num-badge { font-size: .96rem; }
+}
+
 
 /* ══════════════════════════════════════════
    三方势力横排
