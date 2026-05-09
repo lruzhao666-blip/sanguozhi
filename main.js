@@ -963,9 +963,236 @@
 
 
   // ══════════════════════════════════════════
-  //  📊 本回合收支详情  v2.0
-  //  三栏玩家卡 + 底部 NPC 天下动态全景
+  //  📊 本回合收支详情  v3.0
+  //  数据驱动·三层卡片·通用锚点渲染
   // ══════════════════════════════════════════
+
+  // 已知锚点图标映射（未知锚点自动用 ◆ 兜底）
+  const ANCHOR_ICON = {
+    '季度':'🗓️','府库':'🏛️','暗账':'🏛️','城':'🏯','驻军':'🛡️',
+    '兵种':'⚔️','情报':'📜','NPC状态':'🎭','野外':'🌿',
+    '收支':'📊','赏赐':'🎁','救灾':'🚑','贡赋':'📦',
+  };
+  // 已知锚点的优先显示顺序
+  const ANCHOR_ORDER = ['季度','府库','暗账','城','驻军','兵种','情报'];
+
+  const sign   = v => v > 0 ? '+' : '';
+  const valCls = v => v < 0 ? 'neg' : v > 0 ? 'pos' : 'zero';
+  const RES_ICON  = { 金:'💰', 粮:'🌾', 兵:'🛡️', 民心:'❤️', 城:'🏯' };
+  const RES_ORDER = ['金', '粮', '兵', '民心'];
+
+  // ── Layer 1：总账条 ──
+  function _renderResRow(res) {
+    if (!res || !Object.keys(res).length) return '';
+    const pills = RES_ORDER.filter(k => k in res).map(k => {
+      const v = res[k];
+      return `<span class="cd-res-pill">
+        <span class="pill-icon">${RES_ICON[k]||''}</span>
+        <span class="pill-name">${k}</span>
+        <span class="pill-val ${valCls(v)}">${sign(v)}${v}</span>
+      </span>`;
+    }).join('');
+    return pills ? `<div class="cd-res-row">${pills}</div>` : '';
+  }
+
+  // ── Layer 2：收支明细（可折叠） ──
+  const BD_ITEM_ORDER = ['产出','维护','季度','明账','府库','贸易','事件'];
+  function _renderBreakdown(bd, troopChanges) {
+    if (!bd) return '';
+    const cats = RES_ORDER.filter(k => k in bd);
+    // 兵种变动聚合
+    const troopMap = {};
+    for (const tc of (troopChanges || [])) troopMap[tc.cityName] = tc.entries || [];
+    const hasTroops = Object.keys(troopMap).length > 0;
+    const allCats = [...cats];
+    if (hasTroops && !allCats.includes('兵')) allCats.push('兵');
+    if (!allCats.length) return '';
+
+    const rows = allCats.map(cat => {
+      const d = bd[cat] || { items: [], total: null };
+      if ((!d.items || !d.items.length) && (d.total === 0 || d.total === null)) {
+        if (cat !== '兵' || !hasTroops) return '';
+      }
+      // 分项排序
+      const sorted = [...(d.items || [])].sort((a, b) => {
+        const ai = BD_ITEM_ORDER.indexOf(a.label), bi = BD_ITEM_ORDER.indexOf(b.label);
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      });
+      const chips = sorted.map(it =>
+        `<span class="bd-chip">
+          <span class="bd-chip-lbl">${esc(it.label)}</span>
+          <span class="bd-chip-val ${valCls(it.val)}">${sign(it.val)}${it.val}</span>
+        </span>`).join('');
+      const tv = d.total != null
+        ? `<span class="bd-total ${valCls(d.total)}">${sign(d.total)}${d.total}</span>` : '';
+      // 兵行：附兵种细项
+      let troopHtml = '';
+      if (cat === '兵' && hasTroops) {
+        troopHtml = '<div class="bd-troop-block">' +
+          Object.entries(troopMap).map(([city, entries]) =>
+            `<div class="bd-troop-row">
+              <span class="bd-troop-city">${esc(city)}</span>
+              <span class="bd-troop-chips">${entries.map(e =>
+                `<span class="troop-chip ${valCls(e.val)}">${e.type}${sign(e.val)}${e.val}</span>`
+              ).join('')}</span>
+            </div>`
+          ).join('') + '</div>';
+      }
+      return `<tr class="cd-bd-tr">
+        <td class="cd-bd-cat">${RES_ICON[cat]||''}${cat}</td>
+        <td class="cd-bd-items">${chips}${troopHtml}</td>
+        <td class="cd-bd-total-cell">${tv}</td>
+      </tr>`;
+    }).filter(Boolean).join('');
+
+    if (!rows) return '';
+    return `<details class="cc-breakdown" open>
+      <summary class="cc-breakdown-summary">收支明细</summary>
+      <table class="cd-bd-table"><tbody>${rows}</tbody></table>
+    </details>`;
+  }
+
+  // ── Layer 3：通用锚点组渲染（数据驱动，无白名单）──
+  function _renderAnchorGroups(groups) {
+    if (!groups || !Object.keys(groups).length) return '';
+    const knownKeys   = ANCHOR_ORDER.filter(k => groups[k]);
+    const unknownKeys = Object.keys(groups).filter(k => !ANCHOR_ORDER.includes(k));
+    const allKeys     = [...knownKeys, ...unknownKeys];
+
+    return allKeys.map(key => {
+      const items = groups[key];
+      const icon  = ANCHOR_ICON[key] || '◆';
+      const itemsHtml = items.map(it => {
+        const deltasHtml = (it.deltas && it.deltas.length)
+          ? `<span class="ag-deltas">${it.deltas.map(d =>
+              `<span class="delta-chip ${valCls(d.val)}">${RES_ICON[d.res]||''}${d.res} ${sign(d.val)}${d.val}</span>`
+            ).join('')}</span>` : '';
+        const labelTxt = it.label || it.text || '';
+        return `<li class="ag-item">
+          <span class="ag-label">${esc(labelTxt)}</span>
+          ${deltasHtml}
+        </li>`;
+      }).join('');
+      return `<section class="anchor-group" data-anchor="${esc(key)}">
+        <h4 class="ag-title"><span class="ag-icon">${icon}</span>${esc(key)}</h4>
+        <ul class="ag-items">${itemsHtml}</ul>
+      </section>`;
+    }).join('');
+  }
+
+  // ── 兼容旧数据：把旧字段转换为 anchorGroups ──
+  function _migrateToAnchorGroups(ch) {
+    const groups = Object.assign({}, ch.anchorGroups || {});
+
+    // 季度△
+    if (ch.seasonal && ch.seasonal.length) {
+      if (!groups['季度']) groups['季度'] = [];
+      groups['季度'].push({
+        label: '',
+        deltas: ch.seasonal.map(s => ({ res: s.res, val: s.val })),
+        text: '',
+      });
+    }
+    // 府库△
+    if (ch.darkItems && ch.darkItems.length) {
+      if (!groups['府库']) groups['府库'] = [];
+      ch.darkItems.forEach(d => {
+        groups['府库'].push({
+          label:  typeof d === 'string' ? d : (d.desc || ''),
+          deltas: typeof d === 'string' ? [] : (d.entries || []).map(e => ({ res: e.res, val: e.val })),
+          text:   typeof d === 'string' ? d : '',
+        });
+      });
+    }
+    // 情报△（合并进 anchorGroups）
+    if (ch.intel && ch.intel.length) {
+      if (!groups['情报']) groups['情报'] = [];
+      ch.intel.forEach(s => groups['情报'].push({ label: s, deltas: [], text: s }));
+    }
+    // 兵种变动
+    if (ch.troopChanges && ch.troopChanges.length) {
+      if (!groups['兵种']) groups['兵种'] = [];
+      ch.troopChanges.forEach(tc => {
+        groups['兵种'].push({
+          label:  tc.cityName,
+          deltas: (tc.entries || []).map(e => ({ res: e.type, val: e.val })),
+          text:   tc.spec || '',
+        });
+      });
+    }
+    return groups;
+  }
+
+  // ── 公共事件区（天下动态）──
+  function _renderPublicEvents(publicEvents, v3Events, v3Errors) {
+    let html = '';
+
+    // 公共事件（NPC状态 / 野外 / 其他无归属锚点）
+    if (publicEvents && publicEvents.length) {
+      // 按 anchor 分组
+      const grouped = {};
+      publicEvents.forEach(ev => {
+        if (!grouped[ev.anchor]) grouped[ev.anchor] = [];
+        grouped[ev.anchor].push(ev);
+      });
+      const groupsHtml = Object.entries(grouped).map(([anchor, list]) => {
+        const icon = ANCHOR_ICON[anchor] || '◆';
+        const itemsHtml = list.map(ev =>
+          `<li class="ag-item">
+            ${ev.label ? `<span class="ev-city">${esc(ev.label)}</span>` : ''}
+            <span class="ag-label">${esc(ev.text)}</span>
+          </li>`
+        ).join('');
+        return `<section class="anchor-group public-anchor" data-anchor="${esc(anchor)}">
+          <h4 class="ag-title"><span class="ag-icon">${icon}</span>${esc(anchor)}</h4>
+          <ul class="ag-items">${itemsHtml}</ul>
+        </section>`;
+      }).join('');
+      html += `<div class="public-events-block">
+        <div class="public-events-hd">🌐 天下动态</div>
+        <div class="public-events-body">${groupsHtml}</div>
+      </div>`;
+    }
+
+    // v3 事件列表
+    if (v3Events && v3Events.length) {
+      const byLord = {};
+      v3Events.forEach(ev => {
+        const k = ev.lord || '全局';
+        if (!byLord[k]) byLord[k] = [];
+        byLord[k].push(ev);
+      });
+      const cols = Object.entries(byLord).map(([lord, evs]) => {
+        const items = evs.map(ev => {
+          const placeTag = ev.place ? `<span class="v3-ev-place">📍${esc(ev.place)}</span>` : '';
+          return `<div class="v3-ev-item">${placeTag}<span class="v3-ev-content">${esc(ev.content)}</span></div>`;
+        }).join('');
+        return `<div class="v3-ev-col"><div class="v3-ev-lord">${esc(lord)}</div>${items}</div>`;
+      }).join('');
+      html += `<div class="public-events-block">
+        <div class="public-events-hd">📋 本回合事件</div>
+        <div class="v3-ev-grid">${cols}</div>
+      </div>`;
+    }
+
+    // v3 错误提示
+    if (v3Errors && v3Errors.length) {
+      const errItems = v3Errors.map(e =>
+        `<div class="v3-err-item">
+          <span class="v3-err-type">${esc(e.type)}</span>
+          <span class="v3-err-raw">${esc(e.raw)}</span>
+          ${e.problem ? `<span class="v3-err-problem">⚠ ${esc(e.problem)}</span>` : ''}
+          ${e.fix ? `<span class="v3-err-fix">→ ${esc(e.fix)}</span>` : ''}
+        </div>`).join('');
+      html += `<div class="public-events-block v3-errors-block">
+        <div class="public-events-hd">⚠ 数据错误</div>
+        <div>${errItems}</div>
+      </div>`;
+    }
+
+    return html;
+  }
+
   function renderChangesDetail() {
     const el = document.getElementById('block-changes-detail');
     if (!el) return;
@@ -973,7 +1200,7 @@
     const latest = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
     if (!latest) { el.classList.add('hidden'); return; }
 
-    // ── 从 rawContent 实时重解析（保证使用最新解析器逻辑）──
+    // 从 rawContent 实时重解析（保证使用最新解析器逻辑）
     let changes = latest.parsed.changes || [];
     if (latest.rawContent) {
       try {
@@ -983,7 +1210,6 @@
     }
 
     if (!changes.length) { el.classList.add('hidden'); return; }
-
     el.classList.remove('hidden');
 
     const sub = document.getElementById('changes-detail-sub');
@@ -992,216 +1218,9 @@
     const row = document.getElementById('changes-cards-row');
     if (!row) return;
 
-    // ── 配置 & 工具函数 ──
-    const SLOT_CFG = [
-      { slot:'甲', idx:0 },
-      { slot:'乙', idx:1 },
-      { slot:'丙', idx:2 },
-    ];
-    const RES_ICON = { 金:'💰', 粮:'🌾', 兵:'🛡️', 民心:'❤️' };
-    const sign   = v => v > 0 ? '+' : '';
-    const valCls = v => v < 0 ? 'neg' : v > 0 ? 'pos' : 'zero';
+    const SLOT_CFG = [{ slot:'甲', idx:0 }, { slot:'乙', idx:1 }, { slot:'丙', idx:2 }];
 
-    // ── 资源 pills 固定顺序：金→粮→兵→民心 ──
-    const RES_ORDER = ['金', '粮', '兵', '民心'];
-
-    // ── 1. 资源总变化行 ──
-    const renderRes = (res) => {
-      if (!res || !Object.keys(res).length) return '';
-      const pills = RES_ORDER.filter(k => k in res).map(k => {
-        const v = res[k];
-        return `<span class="cd-res-pill">
-          <span class="pill-icon">${RES_ICON[k]||''}</span>
-          <span class="pill-name">${k}</span>
-          <span class="pill-val ${valCls(v)}">${sign(v)}${v}</span>
-        </span>`;
-      }).join('');
-      if (!pills) return '';
-      return `<div class="cd-res-row">${pills}</div>`;
-    };
-
-    // ── 2. 收支明细表（分项顺序固定）──
-    // 每个资源内部分项顺序：产出→维护→季度→明账→府库→贸易→事件→其他
-    const BD_ITEM_ORDER = ['产出','维护','季度','明账','府库','贸易','事件'];
-    const sortBdItems = (items) => {
-      const indexed = items.map(it => {
-        const idx = BD_ITEM_ORDER.indexOf(it.label);
-        return { it, idx: idx === -1 ? 999 : idx };
-      });
-      indexed.sort((a, b) => a.idx - b.idx);
-      return indexed.map(x => x.it);
-    };
-
-    // troopChanges → 按城名聚合为 Map，供「兵」行内嵌使用
-    const buildTroopMap = (troopChanges) => {
-      const m = {};
-      for (const tc of (troopChanges || [])) {
-        m[tc.cityName] = tc.entries || [];
-      }
-      return m;
-    };
-
-    const renderBreakdown = (bd, troopChanges) => {
-      if (!bd) return '';
-      const cats = RES_ORDER.filter(k => k in bd);
-      if (!cats.length) return '';
-      // 兵种变动数据：按城聚合
-      const troopMap = buildTroopMap(troopChanges);
-      const hasTroops = Object.keys(troopMap).length > 0;
-
-      // 若 breakdown 没有「兵」但有 troopChanges，补一个虚拟「兵」行
-      const allCats = [...cats];
-      if (hasTroops && !allCats.includes('兵')) allCats.push('兵');
-
-      const rows = allCats.map(cat => {
-        const d = bd[cat] || { items: [], total: null };
-        if ((!d.items || !d.items.length) && (d.total === 0 || d.total === null)) {
-          // 「兵」行即使 breakdown 为空，只要有 troopChanges 也要渲染
-          if (cat !== '兵' || !hasTroops) return '';
-        }
-        const chips = sortBdItems(d.items || []).map(it =>
-          `<span class="bd-chip">
-            <span class="bd-chip-lbl">${esc(it.label)}</span>
-            <span class="bd-chip-val ${valCls(it.val)}">${sign(it.val)}${it.val}</span>
-          </span>`
-        ).join('');
-        const tc = d.total != null ? valCls(d.total) : '';
-        const tv = d.total != null ? `<span class="bd-total ${tc}">${sign(d.total)}${d.total}</span>` : '';
-
-        // 「兵」行：在 chips 后追加兵种细项（套 bd-troop-block 二级展开）
-        let troopHtml = '';
-        if (cat === '兵' && hasTroops) {
-          const troopRows = Object.entries(troopMap).map(([city, entries]) => {
-            const typeChips = entries.map(e =>
-              `<span class="troop-chip ${valCls(e.val)}">${e.type}${sign(e.val)}${e.val}</span>`
-            ).join('');
-            return `<div class="bd-troop-row">
-              <span class="bd-troop-city">${esc(city)}</span>
-              <span class="bd-troop-chips">${typeChips}</span>
-            </div>`;
-          }).join('');
-          troopHtml = `<div class="bd-troop-block">${troopRows}</div>`;
-        }
-
-        return `<tr class="cd-bd-tr${cat === '兵' && hasTroops ? ' cd-bd-tr--troop' : ''}">
-          <td class="cd-bd-cat">${RES_ICON[cat]||''}${cat}</td>
-          <td class="cd-bd-items">${chips}${troopHtml}</td>
-          <td class="cd-bd-total-cell">${tv}</td>
-        </tr>`;
-      }).filter(Boolean).join('');
-
-      if (!rows) return '';
-      return `<div class="cd-section">
-        <div class="cd-sec-label">收支明细</div>
-        <table class="cd-bd-table"><tbody>${rows}</tbody></table>
-      </div>`;
-    };
-
-    // ── 3. 季度结算 ──
-    const renderSeasonal = (seasonal) => {
-      if (!seasonal) return '';
-      if (typeof seasonal === 'string') {
-        return `<div class="cd-section">
-          <div class="cd-sec-label">季度结算</div>
-          <div class="cd-season-row"><span style="font-size:.74rem;color:var(--text-sub)">${esc(seasonal)}</span></div>
-        </div>`;
-      }
-      if (!Array.isArray(seasonal) || !seasonal.length) return '';
-      const chips = seasonal.map(s =>
-        `<span class="season-chip">
-          <span class="sc-icon">${RES_ICON[s.res]||''}</span>
-          <span class="sc-name">${s.res}</span>
-          <span class="sc-val ${valCls(s.val)}">${sign(s.val)}${s.val}</span>
-        </span>`
-      ).join('');
-      return `<div class="cd-section">
-        <div class="cd-sec-label">季度结算</div>
-        <div class="cd-season-row">${chips}</div>
-      </div>`;
-    };
-
-    // ── 4. 府库调度 ──
-    const renderDark = (darkItems) => {
-      if (!darkItems || !darkItems.length) return '';
-      const rows = darkItems.map(d => {
-        if (typeof d === 'string') {
-          return `<div class="dark-item">
-            <span class="dark-icon">🕳</span>
-            <span class="dark-desc">${esc(d.slice(0,8))}</span>
-          </div>`;
-        }
-        // desc 截断至 8 字，数字右对齐
-        const shortDesc = d.desc ? d.desc.slice(0,8) : '';
-        const resHtml = (d.entries || []).map(e =>
-          `<span class="dark-chip ${valCls(e.val)}">${RES_ICON[e.res]||''}${e.res}${sign(e.val)}${e.val}</span>`
-        ).join('');
-        return `<div class="dark-item">
-          <span class="dark-icon">🕳</span>
-          <span class="dark-desc">${esc(shortDesc)}</span>
-          <span class="dark-res-wrap">${resHtml}</span>
-        </div>`;
-      }).join('');
-      return `<div class="cd-section cd-section--dark">
-        <div class="cd-sec-label">府库调度</div>
-        ${rows}
-      </div>`;
-    };
-
-    // ── 5. 兵种变动（与其他 section 同调，不加特殊高亮）──
-    const renderTroops = (troopChanges) => {
-      if (!troopChanges || !troopChanges.length) return '';
-      const sections = troopChanges.map(tc => {
-        const chips = (tc.entries && tc.entries.length)
-          ? tc.entries.map(e =>
-              `<span class="troop-chip ${valCls(e.val)}">${e.type}${sign(e.val)}${e.val}</span>`
-            ).join('')
-          : `<span class="troop-chip zero">${esc(tc.spec)}</span>`;
-        // 标题：「兵种变动」左侧标签 + 城名右跟
-        return `<div class="cd-section">
-          <div class="cd-sec-label">兵种变动 <span class="troop-city-tag">${esc(tc.cityName)}</span></div>
-          <div class="troop-chips-row">${chips}</div>
-        </div>`;
-      }).join('');
-      return sections;
-    };
-
-    // ── 6. 情报（拆两栏：战报回响 / 麾下动态）──
-    // NPC状态△ 开头的条目属于天下动态，不渲染在情报卡内
-    const BATTLE_KW  = /攻|守|战|胜|败|退|围|破|伐|夺|援|突|击|袭|劫|降|灭/;
-    const GENERAL_KW = /武将|将|健康|疲劳|受伤|患病|阵亡|征|招募|招降|离/;
-    const NPC_KW     = /^NPC状态△|^NPC\s*[^\s]+状态△|^野外△/;
-    const renderIntel = (intel) => {
-      if (!intel || !intel.length) return '';
-      const battleItems  = [];
-      const generalItems = [];
-      const otherItems   = [];
-      for (const s of intel) {
-        if (NPC_KW.test(s))           continue;          // ★ NPC事件跳过，不进情报卡
-        if (BATTLE_KW.test(s))        battleItems.push(s);
-        else if (GENERAL_KW.test(s))  generalItems.push(s);
-        else                          otherItems.push(s);
-      }
-      // 「其他」归入麾下动态
-      const genAll = [...generalItems, ...otherItems];
-      const makeLi = arr => arr.map(s => `<li class="intel-item">${esc(s)}</li>`).join('');
-      const colBattle  = battleItems.length
-        ? `<div class="intel-col">
-            <div class="intel-col-hd">⚔️ 战报回响</div>
-            <ul class="intel-list">${makeLi(battleItems)}</ul>
-           </div>` : '';
-      const colGeneral = genAll.length
-        ? `<div class="intel-col">
-            <div class="intel-col-hd">🎖️ 麾下动态</div>
-            <ul class="intel-list">${makeLi(genAll)}</ul>
-           </div>` : '';
-      if (!colBattle && !colGeneral) return '';
-      return `<div class="cd-section cd-section--intel">
-        <div class="cd-sec-label">情报动向</div>
-        <div class="intel-cols">${colBattle}${colGeneral}</div>
-      </div>`;
-    };
-
-    // ── 三栏卡片 ──
+    // ── 三栏玩家卡（三层结构）──
     const cardsHtml = SLOT_CFG.map(cfg => {
       const ch    = changes.find(c => c.slot === cfg.slot);
       const pName = (state.players[cfg.idx] && state.players[cfg.idx].name) || `城主${cfg.slot}`;
@@ -1217,93 +1236,49 @@
         </div>`;
       }
 
-      // ── 收支校验警告 ──
+      // 合并旧字段进 anchorGroups（兼容已存 Supabase 旧数据）
+      const anchorGroups = _migrateToAnchorGroups(ch);
+
+      // 收支校验警告
       const warningsHtml = (ch.warnings && ch.warnings.length)
-        ? `<div class="cd-section cd-section--warn">
-            <div class="cd-sec-label">⚠ 数据校验</div>
-            ${ch.warnings.map(w => `<div class="cd-warn-item">${esc(w)}</div>`).join('')}
-           </div>`
-        : '';
+        ? `<div class="anchor-group" style="border-left-color:rgba(230,80,50,.5)">
+            <h4 class="ag-title"><span class="ag-icon">⚠</span>数据校验</h4>
+            <ul class="ag-items">${ch.warnings.map(w =>
+              `<li class="ag-item"><span class="ag-label" style="color:#f07070">${esc(w)}</span></li>`
+            ).join('')}</ul>
+          </div>` : '';
 
       return `<div class="cd-card cd-card-${ci}">
         <div class="cd-header cd-header-${ci}">
           <div class="cd-strip cd-strip-${ci}"></div>
           <span class="cd-name">${esc(pName)}</span>
         </div>
-        ${renderRes(ch.resources)}
-        ${renderBreakdown(ch.breakdown)}
-        ${renderSeasonal(ch.seasonal)}
-        ${renderDark(ch.darkItems)}
-        ${renderIntel(ch.intel)}
-        ${warningsHtml}
+        ${_renderResRow(ch.resources)}
+        ${_renderBreakdown(ch.breakdown, ch.troopChanges)}
+        <div class="cc-anchor-groups">
+          ${_renderAnchorGroups(anchorGroups)}
+          ${warningsHtml}
+        </div>
       </div>`;
     }).join('');
 
-    // ── NPC 天下动态 ──
-    const npcEvents = changes.__npc || [];
-    // ── NPC 天下动态（旧格式）──
-    let npcHtml = '';
-    if (npcEvents.length) {
-      const npcItems = npcEvents.map(ev => {
-        const icon = ev.type === 'wild' ? '🌿' : '🏯';
-        return `<div class="npc-event-item">
-          <span class="npc-city">${icon} ${esc(ev.city)}</span>
-          <span class="npc-desc">${esc(ev.desc)}</span>
-        </div>`;
-      }).join('');
-      npcHtml = `<div class="npc-events-row">
-        <div class="npc-events-hd">天下动态</div>
-        <div class="npc-events-grid">${npcItems}</div>
-      </div>`;
-    }
+    // ── 公共事件区 ──
+    const publicEvents = changes.__publicEvents || changes.__npc
+      ? (changes.__publicEvents || (changes.__npc || []).map(ev => ({
+          anchor: ev.type === 'wild' ? '野外' : 'NPC状态',
+          label:  ev.city || '',
+          deltas: [],
+          text:   ev.desc || '',
+        })))
+      : [];
 
-    // ── v3 新格式：事件列表（按主公聚合展示）──
-    const v3Events = (latest.parsed.events || []);
-    let v3EventsHtml = '';
-    if (v3Events.length) {
-      // 按主公分组
-      const byLord = {};
-      v3Events.forEach(ev => {
-        const k = ev.lord || '全局';
-        if (!byLord[k]) byLord[k] = [];
-        byLord[k].push(ev);
-      });
-      const cols = Object.entries(byLord).map(([lord, evs]) => {
-        const items = evs.map(ev => {
-          const placeTag = ev.place
-            ? `<span class="v3-ev-place">📍${esc(ev.place)}</span>` : '';
-          return `<div class="v3-ev-item">${placeTag}<span class="v3-ev-content">${esc(ev.content)}</span></div>`;
-        }).join('');
-        return `<div class="v3-ev-col">
-          <div class="v3-ev-lord">${esc(lord)}</div>
-          ${items}
-        </div>`;
-      }).join('');
-      v3EventsHtml = `<div class="npc-events-row v3-events-row">
-        <div class="npc-events-hd">本回合事件</div>
-        <div class="v3-ev-grid">${cols}</div>
-      </div>`;
-    }
+    const publicHtml = _renderPublicEvents(
+      publicEvents,
+      latest.parsed.events || [],
+      latest.parsed.errors || []
+    );
 
-    // ── v3 新格式：错误提示 ──
-    const v3Errors = (latest.parsed.errors || []);
-    let v3ErrorsHtml = '';
-    if (v3Errors.length) {
-      const errItems = v3Errors.map(e =>
-        `<div class="v3-err-item">
-          <span class="v3-err-type">${esc(e.type)}</span>
-          <span class="v3-err-raw">${esc(e.raw)}</span>
-          ${e.problem ? `<span class="v3-err-problem">⚠ ${esc(e.problem)}</span>` : ''}
-          ${e.fix ? `<span class="v3-err-fix">→ ${esc(e.fix)}</span>` : ''}
-        </div>`
-      ).join('');
-      v3ErrorsHtml = `<div class="npc-events-row v3-errors-row">
-        <div class="npc-events-hd">⚠ 数据错误</div>
-        <div>${errItems}</div>
-      </div>`;
-    }
-
-    row.innerHTML = cardsHtml + npcHtml + v3EventsHtml + v3ErrorsHtml;
+    row.innerHTML = cardsHtml + publicHtml;
   }
 
 

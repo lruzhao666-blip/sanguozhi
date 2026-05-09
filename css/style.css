@@ -1144,6 +1144,127 @@ header, nav, main, footer { position: relative; z-index: 1; }
   padding: 14px 0; margin: 0;
 }
 
+/* ══════════════════════════════════════════
+   Layer 2：收支明细折叠
+══════════════════════════════════════════ */
+.cc-breakdown {
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.cc-breakdown-summary {
+  cursor: pointer;
+  font-size: .58rem; font-weight: 700;
+  color: var(--text-dim); letter-spacing: .14em;
+  text-transform: uppercase; font-family: var(--font-sans);
+  padding: 7px 14px;
+  display: flex; align-items: center; gap: 6px;
+  list-style: none; user-select: none;
+}
+.cc-breakdown-summary::-webkit-details-marker { display: none; }
+.cc-breakdown-summary::before {
+  content: '▸'; font-size: .6rem; opacity: .5;
+  transition: transform .2s;
+}
+details[open] .cc-breakdown-summary::before { transform: rotate(90deg); }
+.cc-breakdown .cd-bd-table { margin: 0 0 6px; }
+
+/* ══════════════════════════════════════════
+   Layer 3：通用锚点容器
+══════════════════════════════════════════ */
+.cc-anchor-groups {
+  display: flex; flex-direction: column; gap: 0;
+}
+
+/* ── 通用锚点组（anchor-group）── */
+.anchor-group {
+  padding: 7px 14px 8px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  border-left: 2px solid rgba(200,160,80,.25);
+  margin-left: 0;
+}
+.anchor-group:last-child { border-bottom: none; }
+
+/* 公共事件区锚点微调 */
+.public-anchor {
+  border-left-color: rgba(80,160,200,.25);
+}
+
+.ag-title {
+  font-size: .58rem; font-weight: 700;
+  color: var(--text-dim); letter-spacing: .12em;
+  text-transform: uppercase; font-family: var(--font-sans);
+  display: flex; align-items: center; gap: 4px;
+  margin-bottom: 5px;
+}
+.ag-icon { font-size: .72rem; opacity: .85; }
+
+.ag-items {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.ag-item {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 8px; padding: 2px 0;
+  font-size: .76rem; font-family: var(--font-serif);
+}
+.ag-label {
+  color: var(--text-main); flex: 1;
+  line-height: 1.5; word-break: break-all;
+}
+.ev-city {
+  color: var(--gold-dim); font-weight: 700;
+  font-size: .72rem; flex-shrink: 0;
+  margin-right: 4px;
+}
+.ag-deltas {
+  display: flex; flex-wrap: wrap; gap: 3px; flex-shrink: 0;
+}
+/* delta-chip：通用资源增减标签 */
+.delta-chip {
+  padding: 1px 6px; border-radius: 3px;
+  font-size: .68rem; font-variant-numeric: tabular-nums;
+  font-family: var(--font-sans);
+}
+.delta-chip.pos { background: rgba(60,160,80,.18); color: #6dd68a; }
+.delta-chip.neg { background: rgba(180,60,50,.18); color: #e87a6a; }
+.delta-chip.zero{ background: rgba(100,100,100,.12); color: var(--text-dim); }
+
+/* ══════════════════════════════════════════
+   公共事件区（天下动态）
+══════════════════════════════════════════ */
+.public-events-block {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(100,65,22,.22);
+  border-radius: var(--r);
+  padding: 10px 14px;
+}
+.public-events-hd {
+  font-size: .6rem; font-weight: 700;
+  color: var(--text-dim); letter-spacing: .14em;
+  text-transform: uppercase; font-family: var(--font-sans);
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 8px;
+}
+.public-events-hd::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,.08), transparent);
+}
+.public-events-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+}
+.public-events-body .anchor-group {
+  background: rgba(8,3,3,.6);
+  border: 1px solid rgba(255,255,255,.05);
+  border-left: 2px solid rgba(80,160,200,.3);
+  border-radius: var(--r);
+  padding: 6px 10px;
+  margin-left: 0;
+}
+.v3-errors-block { border-color: rgba(255,100,60,.25); background: rgba(120,20,0,.1); }
+
 /* ══ NPC 天下动态横幅 ══ */
 .npc-events-row {
   grid-column: 1 / -1;

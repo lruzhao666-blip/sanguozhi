@@ -699,6 +699,14 @@ window.SGParser = (function () {
       result.__npc = npcEvents;
     }
 
+    // ★ publicEvents：将 NPC/野外事件统一整理为通用公共事件结构
+    result.__publicEvents = npcEvents.map(ev => ({
+      anchor: ev.type === 'wild' ? '野外' : 'NPC状态',
+      label:  ev.city || '',
+      deltas: [],
+      text:   ev.desc || '',
+    }));
+
     return result;
   }
 
@@ -738,6 +746,36 @@ window.SGParser = (function () {
     return events;
   }
 
+  // ─────────────────────────────────────────
+  //  通用锚点解析：匹配任意 XX△ 模式（不限白名单）
+  //  返回 { anchor, label, deltas, text }
+  // ─────────────────────────────────────────
+  function _parseAnchorLine(line) {
+    const m = line.match(/^([^△\s]{1,10})△\s*(.*)/);
+    if (!m) return null;
+    const anchor = m[1].trim();
+    const body   = m[2].trim();
+
+    // 提取资源变化
+    const deltas = [];
+    const resRe  = /(金|粮|兵|民心|城)([+-]?\d+)/g;
+    let rm;
+    while ((rm = resRe.exec(body)) !== null) {
+      deltas.push({ res: rm[1], val: parseInt(rm[2]) });
+    }
+
+    // 提取 label（冒号前的部分，或整行去掉资源后剩余）
+    const colonIdx = body.search(/[:：]/);
+    let label;
+    if (colonIdx > 0) {
+      label = body.slice(0, colonIdx).trim();
+    } else {
+      label = body.replace(/(金|粮|兵|民心|城)[+-]?\d+[,，]?/g, '').trim();
+    }
+
+    return { anchor, label, deltas, text: line };
+  }
+
   function _parseOneChange(slot, raw) {
     const change = {
       slot,
@@ -751,6 +789,7 @@ window.SGParser = (function () {
       seasonal:     [],   // 季度△ 条目 [{res,val}]
       intel:        [],   // 情报△ 条目 [string]
       warnings:     [],   // 校验报警 [string]
+      anchorGroups: {},   // ★ 通用锚点分组 { 锚点名: [{label,deltas,text}] }
     };
 
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
@@ -860,6 +899,19 @@ window.SGParser = (function () {
         const rest = line.replace(/^情报△\s*/, '').trim();
         if (rest && !/^NPC|状态△|野外△/.test(rest))
           change.intel.push(rest.replace(/^[·•\-]\s*/, ''));
+        continue;
+      }
+
+      /* ── 通用锚点 fallback：任何 XX△ 且不属于已知锚点 ── */
+      const KNOWN_ANCHORS = /^(?:收支|府库|暗账|季度|情报|兵种|NPC状态|野外)△/;
+      if (/^[^△\s]{1,10}△/.test(line) && !KNOWN_ANCHORS.test(line)) {
+        anchor = null;  // 重置文本锚点
+        const parsed = _parseAnchorLine(line);
+        if (parsed) {
+          const key = parsed.anchor;
+          if (!change.anchorGroups[key]) change.anchorGroups[key] = [];
+          change.anchorGroups[key].push({ label: parsed.label, deltas: parsed.deltas, text: parsed.text });
+        }
         continue;
       }
 
