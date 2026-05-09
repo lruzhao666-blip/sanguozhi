@@ -395,6 +395,7 @@
       renderPlayerCards();
       renderBattlesBlock(latest.parsed.battles || []);
       renderMap();
+      renderWorldEvents(latest);
       renderChangesDetail();
       renderHistorySection();
     }
@@ -459,6 +460,77 @@
     setTxt('rb-num', rd.round);
     const countEl = document.getElementById('rb-round-count');
     if (countEl) countEl.textContent = `共 ${state.rounds.length} 回合`;
+  }
+
+  // ══════════════════════════════════════════
+  //  天下动态：渲染 npcStatus + wildEvents
+  //  数据来源优先级：
+  //   1. fp.npcStatus / fp.wildEvents（新版解析器 v11）
+  //   2. changes.__publicEvents（旧版解析器挂载）
+  //   3. changes.__npc（更旧版）
+  // ══════════════════════════════════════════
+  function renderWorldEvents(rd) {
+    const el = document.getElementById('block-world-events');
+    if (!el) return;
+
+    // 优先从 rawContent 实时重解析
+    let p = rd.parsed;
+    if (rd.rawContent) {
+      try {
+        const fp = window.SGParser.parse(rd.rawContent);
+        if ((fp.npcStatus && fp.npcStatus.length) || (fp.wildEvents && fp.wildEvents.length)) {
+          p = fp;
+        }
+      } catch (e) { /* fallback */ }
+    }
+
+    // 收集 npcStatus / wildEvents
+    let npcList  = (p.npcStatus  || []).map(s => ({ type: 'npc',  city: s.city, desc: s.desc }));
+    let wildList = (p.wildEvents || []).map(e => ({ type: 'wild', city: '',     desc: e.desc }));
+
+    // 兼容旧版：从 changes.__publicEvents 提取
+    if (!npcList.length && !wildList.length) {
+      const pe = (p.changes || []).__publicEvents || [];
+      pe.forEach(ev => {
+        if (ev.anchor === 'NPC状态') npcList.push({ type: 'npc',  city: ev.label, desc: ev.text });
+        else if (ev.anchor === '野外') wildList.push({ type: 'wild', city: '',      desc: ev.text });
+      });
+    }
+    // 兼容更旧版：__npc
+    if (!npcList.length && !wildList.length) {
+      const npcArr = (p.changes || []).__npc || [];
+      npcArr.forEach(ev => {
+        if (ev.type === 'npc')  npcList.push({ type: 'npc',  city: ev.city, desc: ev.desc });
+        else                    wildList.push({ type: 'wild', city: '',      desc: ev.desc });
+      });
+    }
+
+    const total = npcList.length + wildList.length;
+    if (!total) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+
+    const subEl = document.getElementById('world-events-sub');
+    if (subEl) subEl.textContent = `第 ${rd.round} 回合 · ${total} 条`;
+
+    const grid = document.getElementById('world-events-grid');
+    if (!grid) return;
+
+    let html = '';
+    npcList.forEach(s => {
+      html += `<div class="we-item we-item--npc">
+        <span class="we-icon">🏯</span>
+        <span class="we-city">${esc(s.city)}</span>
+        <span class="we-desc">${esc(s.desc)}</span>
+      </div>`;
+    });
+    wildList.forEach(e => {
+      html += `<div class="we-item we-item--wild">
+        <span class="we-icon">🌿</span>
+        <span class="we-city">野外</span>
+        <span class="we-desc">${esc(e.desc)}</span>
+      </div>`;
+    });
+    grid.innerHTML = html;
   }
 
   // ══════════════════════════════════════════
@@ -1556,18 +1628,22 @@
       </div>`;
     }).join('');
 
-    // ── 公共事件区 ──
-    const publicEvents = changes.__publicEvents || changes.__npc
-      ? (changes.__publicEvents || (changes.__npc || []).map(ev => ({
-          anchor: ev.type === 'wild' ? '野外' : 'NPC状态',
-          label:  ev.city || '',
-          deltas: [],
-          text:   ev.desc || '',
-        })))
-      : [];
+    // ── 公共事件区（仅渲染 v3 事件/错误，NPC动态已由 renderWorldEvents 独立渲染）──
+    // 兼容旧版数据：changes.__publicEvents 中若仍有 NPC 条目也一并展示
+    const legacyPublicEvents = [];
+    if (changes.__publicEvents && changes.__publicEvents.length) {
+      legacyPublicEvents.push(...changes.__publicEvents);
+    } else if (changes.__npc && changes.__npc.length) {
+      changes.__npc.forEach(ev => legacyPublicEvents.push({
+        anchor: ev.type === 'wild' ? '野外' : 'NPC状态',
+        label:  ev.city || '',
+        deltas: [],
+        text:   ev.desc || '',
+      }));
+    }
 
     const publicHtml = _renderPublicEvents(
-      publicEvents,
+      legacyPublicEvents,
       latest.parsed.events || [],
       latest.parsed.errors || []
     );

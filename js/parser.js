@@ -1,14 +1,22 @@
 /**
- * parser.js — 三国志文字版 · AI内容解析器 v10
+ * parser.js — 三国志文字版 · AI内容解析器 v11
  *
  * 支持三种格式：
- *  A. 简化新格式 v3（本文档规范）：
- *     文本中含【结构化数据】区，每行用 △|字段=值|字段=值 管道格式
- *     标签类型：回合△ / 主公△ / 驻军△ / 收支△ / 事件△ / 错误△
+ *  A. 新版 GM 双段格式 v4（本文档规范）：
+ *     ``` 剧情区 \n====×36\n 数据区 ```
+ *     数据区用 [回合][速递][甲][乙][丙][NPC][战报][变动] 方括号字段块
+ *     [变动] 内：
+ *       总变化行   甲 金△-126 粮△+138 兵△X 民心△X 城△+1(攻下XX)
+ *       收支△明细  金:产出+X,维护-X,合计±X  粮: 兵: 民心:
+ *       专项锚点   甲 府库△事由:金±X,粮±X
+ *                  甲 驻军△城名:+武将/-武将
+ *                  甲 兵种△城名:骑+500,步-300 | 步:2000,弓:1000
+ *                  甲 季度△金-X,粮-X
+ *       全局锚点   NPC状态△城名:动态
+ *                  野外△:动态
  *
- *  B. 旧双段格式 v2.5：
- *     ``` ... ════(36个=)════ ... ```
- *     数据区用 [回合][甲][乙][丙][变动] 等方括号字段块
+ *  B. 简化新格式 v3（旧规范）：
+ *     文本中含【结构化数据】区，每行用 △|字段=值|字段=值 管道格式
  *
  *  C. 降级：最旧格式（👤[...] emoji块）
  */
@@ -21,24 +29,25 @@ window.SGParser = (function () {
   // 兵种顺序（显示用）
   const TROOP_TYPES = ['步', '弓', '骑', '水', '蛮'];
 
+  // 武将合法状态
+  const VALID_STATUS = ['健康', '疲劳', '受伤', '患病', '阵亡'];
+
   // ─────────────────────────────────────────
-  //  主入口
+  //  主入口：格式探针 → 路由到对应解析器
   // ─────────────────────────────────────────
   function parse(rawText) {
     if (!rawText || !rawText.trim()) return _empty();
 
-    // ── 格式 A：简化新格式 v3 ──
-    // 特征：含「【结构化数据】」标记，或每行有「△|」管道格式
+    // ── 格式 B：简化新格式 v3（含【结构化数据】或 △| 管道行）──
     if (/【结构化数据】/.test(rawText) || /[△▽]\|/.test(rawText)) {
       return _parseSimplified(rawText);
     }
 
-    // ── 格式 B：旧双段格式 v2.5 ──
-    // 1. 提取代码块（三反引号）
+    // ── 格式 A / C：提取代码块 ──
     const codeM = rawText.match(/```[\w]*\n?([\s\S]*?)```/);
     const codeBlock = codeM ? codeM[1] : rawText;
 
-    // 2. 按分隔线切分
+    // 按 36 个 = 切分
     const sepIdx = codeBlock.indexOf(SEP);
     let storyZone, dataZone;
     if (sepIdx !== -1) {
@@ -61,283 +70,30 @@ window.SGParser = (function () {
     return result;
   }
 
-  // ═══════════════════════════════════════════════
-  //  格式 A 解析器：简化新格式 v3
-  //  输入示例：
-  //    回合△|回合=54|阶段=回合末|下一回合=55
-  //    主公△|名称=高|金=1416|粮=179|兵=3125|民心=100|城池数=7
-  //    驻军△|城名=吴郡|武将=朱治,周瑜|金=1416|粮=179|兵=3125|民心=100|状态=正常
-  //    收支△|主公=高|金=-50|粮=+200|兵=0|民心=+2|原因=广陵粮契谈判
-  //    事件△|主公=高|地点=吴郡|内容=周瑜正式入幕...
-  //    错误△|类型=显示错误|原文=...|问题=...|修正=...
-  // ═══════════════════════════════════════════════
-  function _parseSimplified(rawText) {
-    const result = _empty();
-
-    // 提取【结构化数据】区（到下一个【...】或文末）
-    const structM = rawText.match(/【结构化数据】([\s\S]*?)(?=【[^】]+】|$)/);
-    const structZone = structM ? structM[1] : rawText;
-
-    // 剧情区（结构化数据之前的部分）
-    const storyZone = structM
-      ? rawText.slice(0, rawText.indexOf('【结构化数据】')).trim()
-      : '';
-    result.rawDigest = storyZone;
-
-    // 逐行解析
-    const lines = structZone.split('\n').map(l => l.trim()).filter(Boolean);
-
-    // 临时存储，按主公名聚合
-    const playerMap   = {};   // 名称 → player 对象
-    const garrisonArr = [];   // 驻军行
-    const changeMap   = {};   // 主公名 → change 对象
-    const eventArr    = [];   // 事件行
-    const errorArr    = [];   // 错误行
-
-    for (const line of lines) {
-      // 跳过纯注释行和标题行
-      if (/^【/.test(line) || /^\/\//.test(line)) continue;
-
-      // 解析类型△|字段=值|...
-      const typeM = line.match(/^([^△\s]+)△\s*\|?(.*)/);
-      if (!typeM) continue;
-
-      const type   = typeM[1].trim();   // 回合 / 主公 / 驻军 / 收支 / 事件 / 错误
-      const rest   = typeM[2].trim();
-      const fields = _parsePipeFields(rest);
-
-      switch (type) {
-        case '回合':
-          result.round     = parseInt(fields['回合']) || result.round;
-          result.roundInfo = {
-            round:     parseInt(fields['回合'])     || null,
-            phase:     fields['阶段']               || '',
-            nextRound: parseInt(fields['下一回合']) || null,
-          };
-          break;
-
-        case '主公': {
-          const name = fields['名称'] || fields['主公'] || '';
-          if (!name) break;
-          if (!playerMap[name]) playerMap[name] = _emptyPlayer(name);
-          const p = playerMap[name];
-          if (fields['金']     != null) p.gold   = parseInt(fields['金'])   || 0;
-          if (fields['粮']     != null) p.food   = parseInt(fields['粮'])   || 0;
-          if (fields['兵']     != null) p.troop  = parseInt(fields['兵'])   || 0;
-          if (fields['民心']   != null) p.morale = parseInt(fields['民心']) || 0;
-          if (fields['城池数'] != null) p.cities = parseInt(fields['城池数']) || 0;
-          break;
-        }
-
-        case '驻军': {
-          const cityName  = fields['城名'] || '';
-          const holderRaw = fields['武将'] || '无';
-          const holders   = holderRaw === '无' ? [] : holderRaw.split(',').map(s => s.trim());
-          const g = {
-            cityName,
-            holder:  holders.join('/') || '无',
-            gold:    parseInt(fields['金'])   || 0,
-            food:    parseInt(fields['粮'])   || 0,
-            troop:   parseInt(fields['兵'])   || 0,
-            morale:  parseInt(fields['民心']) || 0,
-            status:  fields['状态'] || '正常',
-            // 将领列表（供城池弹窗用）
-            generals: holders.map(h => ({ name: h, status: '健康' })),
-          };
-          garrisonArr.push(g);
-
-          // 同步到 cities_list：找该城归属的主公
-          // （主公行之后才能确定归属，延迟关联）
-          if (cityName) {
-            if (!result._pendingCities) result._pendingCities = {};
-            result._pendingCities[cityName] = g;
-          }
-          break;
-        }
-
-        case '收支': {
-          const lord = fields['主公'] || '';
-          if (!changeMap[lord]) changeMap[lord] = _emptyChange(lord);
-          const ch = changeMap[lord];
-          if (fields['金']   != null) ch.resources['金']   = parseInt(fields['金'])   || 0;
-          if (fields['粮']   != null) ch.resources['粮']   = parseInt(fields['粮'])   || 0;
-          if (fields['兵']   != null) ch.resources['兵']   = parseInt(fields['兵'])   || 0;
-          if (fields['民心'] != null) ch.resources['民心'] = parseInt(fields['民心']) || 0;
-          if (fields['原因']) {
-            ch.intel.push(fields['原因']);
-          }
-          break;
-        }
-
-        case '事件': {
-          const lord    = fields['主公'] || '';
-          const place   = fields['地点'] || '';
-          const content = fields['内容'] || '';
-          if (content) {
-            eventArr.push({ lord, place, content });
-            // 同时追加到对应主公的 intel
-            if (lord) {
-              if (!changeMap[lord]) changeMap[lord] = _emptyChange(lord);
-              changeMap[lord].intel.push(content);
-            }
-          }
-          break;
-        }
-
-        case '错误': {
-          errorArr.push({
-            type:    fields['类型']  || '未知',
-            raw:     fields['原文']  || '',
-            problem: fields['问题']  || '',
-            fix:     fields['修正']  || '',
-          });
-          break;
-        }
-      }
-    }
-
-    // ── 后处理：playerMap → result.players ──
-    const slotNames = ['甲', '乙', '丙'];
-    let slotIdx = 0;
-    for (const [name, p] of Object.entries(playerMap)) {
-      p.slot = slotNames[slotIdx] || `玩家${slotIdx + 1}`;
-      slotIdx++;
-      // 关联驻军城池 → cities_list
-      p.cities_list = garrisonArr
-        .filter(g => _isCityOfPlayer(g, name, playerMap))
-        .map(g => ({
-          name:    g.cityName,
-          holder:  g.holder,
-          troops:  {},   // 新格式无兵种细分，仅有总兵力
-          troop:   g.troop,
-        }));
-      p.ownedCities = p.cities_list.map(c => c.name);
-      if (p.cities_list.length > 0) p.city = p.cities_list[0].name;
-      result.players.push(p);
-    }
-
-    // ── 后处理：garrison ──
-    result.garrison = garrisonArr.map(g => ({
-      cityName: g.cityName,
-      generals: g.generals,
-    }));
-
-    // ── 后处理：changes（附 slot）──
-    result.changes = Object.entries(changeMap).map(([lord, ch]) => {
-      // 找对应 player 的 slot
-      const player = result.players.find(p => p.name === lord);
-      ch.slot = player ? player.slot : lord;
-      return ch;
-    });
-
-    // ── 后处理：events 挂到 result ──
-    result.events  = eventArr;
-    result.errors  = errorArr;
-
-    // ── cityOwnership（地图用）──
-    result.cityOwnership = _buildCityOwnershipFromGarrison(
-      result.players, garrisonArr
-    );
-
-    // 清理临时字段
-    delete result._pendingCities;
-
-    return result;
-  }
-
-  // ── 辅助：解析管道字段 "城名=吴郡|武将=朱治,周瑜|..." → { 城名:'吴郡', 武将:'朱治,周瑜' } ──
-  function _parsePipeFields(str) {
-    const fields = {};
-    if (!str) return fields;
-    str.split('|').forEach(seg => {
-      const eq = seg.indexOf('=');
-      if (eq === -1) return;
-      const key = seg.slice(0, eq).trim();
-      const val = seg.slice(eq + 1).trim();
-      if (key) fields[key] = val;
-    });
-    return fields;
-  }
-
-  // ── 辅助：空 player 对象 ──
-  function _emptyPlayer(name) {
-    return {
-      slot: '', name,
-      city: '', gold: null, food: null, troop: null, morale: null, cities: null,
-      generals: [], cities_list: [], ownedCities: [],
-      situation_note: '', suggestions: [],
-    };
-  }
-
-  // ── 辅助：空 change 对象 ──
-  function _emptyChange(lord) {
-    return {
-      slot: lord, raw: '',
-      resources: {}, cities: [], guards: [], troopChanges: [],
-      breakdown: {}, darkItems: [], seasonal: [], intel: [], warnings: [],
-    };
-  }
-
-  // ── 辅助：城市是否属于某主公 ──
-  // 新格式无城市-主公归属行，暂时按驻军顺序均分；
-  // 若主公行含城池数，可按数量切分
-  function _isCityOfPlayer(garrison, lordName, playerMap) {
-    // 简化策略：所有驻军城池都暂不绑定主公（主公行缺少城池列表时）
-    // 调用方会自行按 garrisonArr 全部列出
-    return false;
-  }
-
-  // ── 辅助：从驻军数据构建 cityOwnership ──
-  function _buildCityOwnershipFromGarrison(players, garrisonArr) {
-    const result = {};
-    // 先从 players.cities_list 建立归属
-    players.forEach((p, idx) => {
-      (p.cities_list || []).forEach((c, ci) => {
-        result[c.name] = {
-          owner:      `p${idx}`,
-          playerIdx:  idx,
-          playerName: p.name,
-          holder:     c.holder || '无',
-          troops:     c.troops || {},
-          isMulti:    ci > 0,
-        };
-      });
-    });
-    // 再补充未归属的驻军城池（标记为 npc 或 unknown）
-    garrisonArr.forEach(g => {
-      if (!result[g.cityName]) {
-        result[g.cityName] = {
-          owner:      'npc',
-          playerIdx:  -1,
-          playerName: '',
-          holder:     g.holder || '无',
-          troops:     {},
-          isMulti:    false,
-        };
-      }
-    });
-    return result;
-  }
-
+  // ─────────────────────────────────────────
+  //  空结果骨架
+  // ─────────────────────────────────────────
   function _empty() {
     return {
       round:         null,
       digest:        '',
       rawDigest:     '',
-      players:       [],     // [{slot,name,gold,food,troop,morale,cities,cities_list,generals,troops}]
-      npcCities:     [],     // [{name,holder,troops}]
-      battles:       [],
-      changes:       [],
+      players:       [],      // [{slot,name,gold,food,troop,morale,cities,cities_list,generals}]
+      npcCities:     [],      // [{name,holders:[],troops:{}}]
+      battles:       [],      // [{attacker,defender,result,attacker_loss,defender_loss,success}]
+      changes:       [],      // [{slot,resources,breakdown,treasury,garrisonOps,troopOps,quarterly,…}]
       garrison:      [],
       cityOwnership: {},
       roundInfo:     {},
-      events:        [],     // v3 新格式：事件列表 [{lord,place,content}]
-      errors:        [],     // v3 新格式：错误列表 [{type,raw,problem,fix}]
+      npcStatus:     [],      // [{city,desc}]  ← 新增
+      wildEvents:    [],      // [{desc}]        ← 新增
+      events:        [],      // v3 格式事件
+      errors:        [],      // v3 格式错误
     };
   }
 
   // ─────────────────────────────────────────
-  //  数据区解析
+  //  数据区总调度
   // ─────────────────────────────────────────
   function _parseDataZone(text, result) {
     const blocks = _splitBlocks(text);
@@ -346,26 +102,28 @@ window.SGParser = (function () {
     if (blocks['回合']) {
       const m = blocks['回合'].match(/第\s*(\d+)\s*回合/);
       if (m) result.round = parseInt(m[1]);
+      // [速递] 可能紧跟在 [回合] 同块内
+      const sdM = blocks['回合'].match(/\[速递\]\s*(.+)/);
+      if (sdM) result.digest = sdM[1].trim();
     }
 
-    // [速递]
+    // [速递]（单独块）
     if (blocks['速递']) {
       result.digest = blocks['速递'].trim();
     }
 
     // [甲][乙][丙]
     const SLOTS = ['甲', '乙', '丙'];
-    SLOTS.forEach((slot) => {
+    SLOTS.forEach(slot => {
       if (blocks[slot]) {
-        const p = _parsePlayerBlock(slot, blocks[slot]);
-        result.players.push(p);
+        result.players.push(_parsePlayerBlock(slot, blocks[slot]));
       }
     });
 
     // [NPC]
-    if (blocks['NPC'] || blocks['npc']) {
-      const npcRaw = blocks['NPC'] || blocks['npc'] || '';
-      result.npcCities = _parseCityList(npcRaw.replace(/^城池[:：]?\s*/i, ''));
+    const npcRaw = blocks['NPC'] || blocks['npc'] || '';
+    if (npcRaw) {
+      result.npcCities = _parseNpcBlock(npcRaw);
     }
 
     // [战报]
@@ -375,38 +133,43 @@ window.SGParser = (function () {
 
     // [变动]
     if (blocks['变动']) {
-      result.changes = _parseChanges(blocks['变动']);
-      // 从变动中更新兵力到 cityOwnership（延迟：先建好 cityOwnership 后处理）
-    }
+      const { changes, npcStatus, wildEvents } = _parseChangesBlock(blocks['变动']);
+      result.changes    = changes;
+      result.npcStatus  = npcStatus;
+      result.wildEvents = wildEvents;
 
-    // [驻城]
-    if (blocks['驻城']) {
-      result.garrison = _parseGarrisonBlock(blocks['驻城']);
+      // __publicEvents 供 main.js 的 renderChangesDetail 读取（向后兼容）
+      result.changes.__publicEvents = [
+        ...npcStatus.map(s => ({ anchor: 'NPC状态', label: s.city, deltas: [], text: s.desc })),
+        ...wildEvents.map(e => ({ anchor: '野外',   label: '',      deltas: [], text: e.desc })),
+      ];
     }
 
     // 构建 cityOwnership
     result.cityOwnership = _buildCityOwnership(result.players, result.npcCities);
 
-    // 应用 兵种△ 变动
-    if (blocks['变动']) {
-      _applyTroopChanges(blocks['变动'], result.cityOwnership);
-    }
+    // 应用 troopOps（兵种覆写/增减）到 cityOwnership
+    result.changes.forEach(ch => {
+      (ch.troopOps || []).forEach(op => {
+        _applyOneTroopOp(op, result.cityOwnership);
+      });
+    });
   }
 
   // ─────────────────────────────────────────
-  //  按字段名切块
+  //  按方括号标签切块
   // ─────────────────────────────────────────
   function _splitBlocks(text) {
+    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','变动','驻城']);
     const lines  = text.split('\n');
     const blocks = {};
-    let curKey  = null;
-    let curBuf  = [];
+    let curKey = null, curBuf = [];
 
     for (const line of lines) {
       const m = line.match(/^[\[【]([^\]】\n]{1,10})[\]】]/);
       if (m) {
         const key = m[1].trim();
-        if (['回合','速递','甲','乙','丙','NPC','npc','战报','变动','驻城'].includes(key)) {
+        if (KNOWN.has(key)) {
           if (curKey !== null) blocks[curKey] = curBuf.join('\n');
           curKey = key;
           const rest = line.replace(/^[\[【][^\]】\n]{1,10}[\]】]\s*/, '').trim();
@@ -434,21 +197,20 @@ window.SGParser = (function () {
       morale:         null,
       cities:         null,
       generals:       [],
-      cities_list:    [],   // [{name, holder, troops:{步:n,弓:n,...}}]
+      cities_list:    [],
       ownedCities:    [],
       situation_note: '',
       suggestions:    [],
     };
 
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-
     for (const line of lines) {
       // 名号
       if (/^名号[:：]/.test(line)) {
         p.name = line.replace(/^名号[:：]\s*/, '').trim();
         continue;
       }
-      // 资源行
+      // 资源行：金:54 粮:281 兵:680 民心:65 城:2
       const resM = line.match(/金[:：](\d+)\s+粮[:：](\d+)\s+兵[:：](\d+)\s+民心[:：](\d+)\s+城[:：](\d+)/);
       if (resM) {
         p.gold   = parseInt(resM[1]);
@@ -458,92 +220,94 @@ window.SGParser = (function () {
         p.cities = parseInt(resM[5]);
         continue;
       }
-      // 城池行（v2.5 新格式兼容）
+      // 城池行
       if (/^城池[:：]/.test(line)) {
         const cityRaw = line.replace(/^城池[:：]\s*/, '');
         p.cities_list = _parseCityList(cityRaw);
         p.ownedCities = p.cities_list.map(c => c.name);
-        if (p.cities_list.length > 0) p.city = p.cities_list[0].name;
+        if (p.cities_list.length) p.city = p.cities_list[0].name;
         continue;
       }
       // 武将行
       if (/^武将[:：]/.test(line)) {
-        const genRaw = line.replace(/^武将[:：]\s*/, '');
-        p.generals = _parseGeneralList(genRaw);
+        p.generals = _parseGeneralList(line.replace(/^武将[:：]\s*/, ''));
         continue;
       }
     }
-
     return p;
   }
 
   // ─────────────────────────────────────────
-  //  解析城池列表（v2.5）
-  //  支持：
-  //    城名(守将/守将2|骑:3000,步:2000)   ← 新格式
-  //    城名(守将)                          ← 旧格式
-  //    城名(无|无兵)                       ← 新格式空城
+  //  解析城池列表
+  //  格式：城名(守将1/守将2|骑:3000,步:2000),城名(无|步:800)
+  //        NPC用：城名(守将1/守将2)
   // ─────────────────────────────────────────
   function _parseCityList(raw) {
     if (!raw || !raw.trim()) return [];
-    const result = [];
-    // v2.7.9 解析铁律：标准格式 城名(守将/守将2|骑:3000,步:2000)
-    // 中文括号/全角逗号兼容，但发出警告
     if (/[（）]/.test(raw)) {
-      console.warn('[SGParser] 城池行含中文括号（），建议改用英文括号(): ' + raw.slice(0,60));
+      console.warn('[SGParser] 城池行含全角括号: ' + raw.slice(0, 60));
     }
-    if (/，/.test(raw)) {
-      console.warn('[SGParser] 城池行含全角逗号，，建议改用半角逗号,: ' + raw.slice(0,60));
-    }
-    // 匹配：城名(内容) 或 城名（内容）
+    const result = [];
+    // 匹配 城名(内容)，内容可含嵌套括号（不含顶层括号）
     const re = /([^,，、(（\s]+)[（(]([^）)]*)[）)]/g;
     let m;
     while ((m = re.exec(raw)) !== null) {
-      const name    = m[1].trim();
-      const inner   = m[2].trim();
+      const name  = m[1].trim();
+      const inner = m[2].trim();
       if (!name) continue;
 
-      // v2.5：内部含 | → 分离守将和兵力
       const pipeIdx = inner.indexOf('|');
       let holderRaw, troopsRaw;
       if (pipeIdx !== -1) {
         holderRaw = inner.slice(0, pipeIdx).trim();
         troopsRaw = inner.slice(pipeIdx + 1).trim();
       } else {
-        // 旧格式：内部全部视为守将
         holderRaw = inner;
         troopsRaw = null;
       }
 
-      // 守将：支持 / 分隔多将，"无" → ''
-      const holders = holderRaw === '无' ? [] : holderRaw.split('/').map(s => s.trim()).filter(Boolean);
-      const holder  = holders.join('/') || '无';
-
-      // 兵力
-      const troops = _parseTroops(troopsRaw);
-
-      result.push({ name, holder, troops });
+      const holders = (holderRaw === '无') ? [] : holderRaw.split('/').map(s => s.trim()).filter(Boolean);
+      result.push({
+        name,
+        holder:  holders.join('/') || '无',
+        holders,
+        troops:  _parseTroops(troopsRaw),
+      });
     }
 
-    // 兼容无括号纯城名列表
+    // 兼容无括号纯城名
     if (!result.length) {
       raw.split(/[,，、\s]+/).forEach(s => {
         const n = s.trim();
-        if (n) result.push({ name: n, holder: '无', troops: {} });
+        if (n) result.push({ name: n, holder: '无', holders: [], troops: {} });
       });
     }
     return result;
   }
 
   // ─────────────────────────────────────────
+  //  解析 [NPC] 块
+  //  城池:许昌(夏侯惇/张辽),邺城(袁绍),合肥(乐进)
+  // ─────────────────────────────────────────
+  function _parseNpcBlock(raw) {
+    const cityRaw = raw.replace(/^城池[:：]?\s*/i, '').trim();
+    const list = _parseCityList(cityRaw);
+    return list.map(c => ({
+      name:    c.name,
+      holders: c.holders || (c.holder && c.holder !== '无' ? c.holder.split('/') : []),
+      holder:  c.holder,
+      troops:  c.troops || {},
+    }));
+  }
+
+  // ─────────────────────────────────────────
   //  解析兵力字符串
-  //  输入：骑:3000,步:2000 / 无兵 / null
-  //  输出：{ 骑:3000, 步:2000 } / {}
+  //  输入：骑:3000,步:2000  /  无兵  /  null
+  //  输出：{ 骑:3000, 步:2000 }
   // ─────────────────────────────────────────
   function _parseTroops(raw) {
-    if (!raw || raw === '无兵' || raw.trim() === '') return {};
+    if (!raw || raw === '无兵' || !raw.trim()) return {};
     const result = {};
-    // 格式：步:500,弓:200,骑:1000
     raw.split(',').forEach(seg => {
       const m = seg.trim().match(/^([步弓骑水蛮])[:：](\d+)$/);
       if (m) result[m[1]] = parseInt(m[2]);
@@ -552,10 +316,8 @@ window.SGParser = (function () {
   }
 
   // ─────────────────────────────────────────
-  //  解析武将列表
+  //  解析武将列表：马超(健康),庞德(疲劳)
   // ─────────────────────────────────────────
-  const VALID_STATUS = ['健康', '疲劳', '受伤', '患病', '阵亡'];
-
   function _parseGeneralList(raw) {
     if (!raw || !raw.trim()) return [];
     const result = [];
@@ -572,6 +334,7 @@ window.SGParser = (function () {
         result.push({ name, status });
       }
     }
+    // 兜底：无括号格式
     if (!result.length) {
       raw.split(/[,，、\s]+/).forEach(s => {
         const n = s.trim();
@@ -584,47 +347,14 @@ window.SGParser = (function () {
   }
 
   // ─────────────────────────────────────────
-  //  解析驻城块
-  // ─────────────────────────────────────────
-  const GARRISON_ROLES = ['驻城', '任务', '客将', '新附'];
-
-  function _parseGarrisonBlock(raw) {
-    if (!raw || !raw.trim()) return [];
-    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length === 1 && /本回合无驻城调度/.test(lines[0])) return [];
-    const result = [];
-    for (const line of lines) {
-      const colonIdx = line.search(/[:：]/);
-      if (colonIdx < 0) continue;
-      const cityName = line.slice(0, colonIdx).trim();
-      const genRaw   = line.slice(colonIdx + 1).trim();
-      if (!cityName || !genRaw) continue;
-      const generals = [];
-      const re = /([^,，、(（\s]+)[（(]([^）)]+)[）)]/g;
-      let m;
-      while ((m = re.exec(genRaw)) !== null) {
-        const name   = m[1].trim();
-        const detail = m[2].trim();
-        const isTask = /剩\d+/.test(detail);
-        const role   = GARRISON_ROLES.find(r => detail.startsWith(r)) || detail.split('·')[0] || '驻城';
-        generals.push({ name, role, taskDetail: isTask ? detail : '' });
-      }
-      if (cityName && generals.length) {
-        result.push({ cityName, generals });
-      }
-    }
-    return result;
-  }
-
-  // ─────────────────────────────────────────
   //  解析战报
+  //  格式：攻方→守方 | 胜/平/负 | 伤亡:攻X守Y
   // ─────────────────────────────────────────
   function _parseBattles(raw) {
     if (!raw || !raw.trim()) return [];
-    const lines   = raw.split('\n').map(l => l.trim()).filter(Boolean);
     const battles = [];
-    const re = /^(.+?)[→\->\-＞]\s*(.+?)\s*[|｜]\s*(胜|平|负)\s*[|｜]\s*伤亡[:：]攻(\d+)守(\d+)/;
-    for (const line of lines) {
+    const re = /^(.+?)[→\->＞]\s*(.+?)\s*[|｜]\s*(胜|平|负)\s*[|｜]\s*伤亡[:：]攻(\d+)守(\d+)/;
+    for (const line of raw.split('\n').map(l => l.trim()).filter(Boolean)) {
       if (/^本回合无战事/.test(line)) continue;
       const m = line.match(re);
       if (m) {
@@ -641,455 +371,516 @@ window.SGParser = (function () {
     return battles;
   }
 
-  // ─────────────────────────────────────────
-  //  解析变动块 v3.0
-  //  支持：收支△ / 暗账△ / 季度△ / 情报△ / 兵种△
-  //  支持同行内容（暗账△盐铺:金-40）
-  //  新增：NPC 状态事件（NPC 虎牢关状态△... 野外△...）
-  // ─────────────────────────────────────────
-  function _parseChanges(raw) {
-    if (!raw || !raw.trim()) return [];
-    const result   = [];
-    const npcLines = [];  // 收集 NPC / 野外 行
+  // ═══════════════════════════════════════════════════════
+  //  [变动] 块主解析器
+  //  返回 { changes: [], npcStatus: [], wildEvents: [] }
+  //
+  //  支持结构：
+  //  ┌ 总变化行    甲 金△-126 粮△+138 兵△-80 民心△+0 城△+1(攻下陈仓)
+  //  ├ 收支△块    甲 收支△
+  //  │              金:产出+30,维护-24,明账-10,府库-120,合计-124
+  //  │              粮:产出+50,维护-107,府库+195,合计+138
+  //  │              兵:战损-80,合计-80
+  //  │              民心:合计+0
+  //  ├ 专项锚点   甲 府库△事由:金-120,粮+195
+  //  │            甲 驻军△长安:+赵云
+  //  │            甲 兵种△长安:骑+500
+  //  │            甲 季度△金-40,粮-60
+  //  └ 全局锚点   NPC状态△虎牢关:吕布更换西门巡夜
+  //               野外△:高定再送山盐但仍未归附
+  // ═══════════════════════════════════════════════════════
+  function _parseChangesBlock(raw) {
+    const npcStatus  = [];
+    const wildEvents = [];
+    const changes    = [];
 
-    // 按玩家槽切分（甲/乙/丙 开头的行为分隔符）
-    const lines = raw.split('\n');
-    let curSlot = null, curLines = [];
+    // 按槽位切割内容
+    const lines    = raw.split('\n');
+    let curSlot    = null;
+    let curLines   = [];
 
     const flush = () => {
       if (!curSlot) return;
-      const change = _parseOneChange(curSlot, curLines.join('\n'));
-      if (change) result.push(change);
+      const ch = _parseOneChange(curSlot, curLines.join('\n'));
+      if (ch) changes.push(ch);
     };
 
     for (const line of lines) {
       const t = line.trim();
       if (!t) continue;
 
-      // NPC / 野外 行（旧格式："NPC 城名状态△" / 新格式："NPC状态△城名:" / 野外△）
-      if (/^NPC[\s状]/.test(t) || /^NPC状态△/.test(t) || /野外△/.test(t)) {
-        npcLines.push(t);
+      // ── 全局锚点：NPC状态△ / 野外△ ──
+      // 格式A（单行一条）：NPC状态△虎牢关:吕布更换西门巡夜
+      const npcM = t.match(/^NPC状态△([^:：]+)[：:](.+)/);
+      if (npcM) {
+        npcStatus.push({ city: npcM[1].trim(), desc: npcM[2].trim() });
+        continue;
+      }
+      // 格式B（旧行格式）：NPC 城名状态△动态
+      if (/^NPC[\s　]/.test(t)) {
+        const evs = _parseNpcLegacyLine(t);
+        evs.forEach(e => {
+          if (e.type === 'npc')  npcStatus.push({ city: e.city, desc: e.desc });
+          else                   wildEvents.push({ desc: e.desc });
+        });
+        continue;
+      }
+      // 野外△:<动态>  或  野外△<动态>
+      const wildM = t.match(/^野外△[：:]?(.+)/);
+      if (wildM) {
+        wildEvents.push({ desc: wildM[1].trim() });
         continue;
       }
 
-      const slotM = t.match(/^([甲乙丙])\s*[：:]?\s*(.*)/);
+      // ── 玩家行 ──
+      const slotM = t.match(/^([甲乙丙])\s*(.*)/);
       if (slotM && ['甲','乙','丙'].includes(slotM[1])) {
         const newSlot = slotM[1];
-        const rest    = slotM[2] || '';
+        const rest    = slotM[2].trim();
         if (newSlot === curSlot) {
-          // ★ 同一槽位的后续行（甲 收支△ / 甲 情报△xxx 等）→ 追加，绝不 flush
+          // 同槽续行
           if (rest) curLines.push(rest);
         } else {
-          // 切换到新槽 → flush 旧槽，开新槽
           flush();
           curSlot  = newSlot;
           curLines = rest ? [rest] : [];
         }
       } else if (curSlot) {
-        // 纯内容行（无槽前缀）→ 追加到当前槽
+        // 无前缀内容行 → 属于当前槽
         curLines.push(t);
       }
     }
     flush();
 
-    // 解析 NPC 事件并附到第一个 change 上（或单独保存到 result.__npc）
-    const npcEvents = _parseNpcEvents(npcLines);
-    if (npcEvents.length) {
-      // 挂到 result 数组的隐藏属性，renderChangesDetail 会读取
-      result.__npc = npcEvents;
-    }
-
-    // ★ publicEvents：将 NPC/野外事件统一整理为通用公共事件结构
-    result.__publicEvents = npcEvents.map(ev => ({
-      anchor: ev.type === 'wild' ? '野外' : 'NPC状态',
-      label:  ev.city || '',
-      deltas: [],
-      text:   ev.desc || '',
-    }));
-
-    return result;
+    return { changes, npcStatus, wildEvents };
   }
 
   // ─────────────────────────────────────────
-  //  解析 NPC 状态行
-  //  "NPC 虎牢关状态△吕布更换西门巡夜 阳平关状态△杨任修补坡道准备再守"
-  //  "野外△高定再送山盐但仍未归附 野外△士林关注三家治民军纪"
+  //  解析旧版 NPC 行（格式B）
+  //  "NPC 虎牢关状态△吕布更换西门巡夜 野外△高定再送山盐"
   // ─────────────────────────────────────────
-  function _parseNpcEvents(lines) {
+  function _parseNpcLegacyLine(line) {
     const events = [];
-    for (const line of lines) {
-
-      // ── 新格式：NPC状态△城名:动态内容（每行一条）──
-      // 例：NPC状态△虎牢关:吕布严查盐铺
-      const nm = line.match(/^NPC状态△([^:：]+)[：:](.+)/);
-      if (nm) {
-        events.push({ type: 'npc', city: nm[1].trim(), desc: nm[2].trim() });
-        continue;
-      }
-
-      // ── 旧格式：NPC 城名状态△动态 城名状态△动态 … 野外△动态 ──
-      // 例：NPC 虎牢关状态△吕布更换西门巡夜 阳平关状态△杨任修补坡道
-      const reCityStr = '([^\\s△]+)状态△([^△]+?)(?=\\s+[^\\s△]+状态△|\\s*野外△|\\s*$)';
-      const reCity = new RegExp(reCityStr, 'g');
-      const reWild = /野外△([^△]+?)(?=\s+野外△|\s*$)/g;
-      let m;
-      while ((m = reCity.exec(line)) !== null) {
-        const city = m[1].trim();
-        // 跳过「NPC」「NPC状态」本身被误匹配为城名
-        if (city === 'NPC' || city === 'NPC状态') continue;
-        events.push({ type: 'npc', city, desc: m[2].trim() });
-      }
-      while ((m = reWild.exec(line)) !== null) {
-        events.push({ type: 'wild', city: '野外', desc: m[1].trim() });
-      }
+    const reCity = /([^\s△]+)状态△([^△]+?)(?=\s+[^\s△]+状态△|\s*野外△|\s*$)/g;
+    const reWild = /野外△([^△]+?)(?=\s+野外△|\s*$)/g;
+    let m;
+    while ((m = reCity.exec(line)) !== null) {
+      const city = m[1].trim();
+      if (city === 'NPC' || city === 'NPC状态') continue;
+      events.push({ type: 'npc', city, desc: m[2].trim() });
+    }
+    while ((m = reWild.exec(line)) !== null) {
+      events.push({ type: 'wild', city: '野外', desc: m[1].trim() });
     }
     return events;
   }
 
-  // 资源名集合：不允许作为锚点名
-  const RES_NAMES = new Set(['金','粮','兵','民心','城']);
-
   // ─────────────────────────────────────────
-  //  通用锚点解析：匹配任意 XX△ 模式（不限白名单）
-  //  返回 { anchor, label, deltas, text }
-  //  注：资源名（金/粮/兵/民心/城）不允许作为锚点名
+  //  解析单槽变动内容
+  //  输入 raw 已剥去 "甲 " 前缀
   // ─────────────────────────────────────────
-  function _parseAnchorLine(line) {
-    const m = line.match(/^([^△\s]{1,10})△\s*(.*)/);
-    if (!m) return null;
-    const anchor = m[1].trim();
-    // ★ 拦截：资源名不能作为锚点名
-    if (RES_NAMES.has(anchor)) return null;
-    const body   = m[2].trim();
-
-    // 提取资源变化
-    const deltas = [];
-    const resRe  = /(金|粮|兵|民心|城)([+-]?\d+)/g;
-    let rm;
-    while ((rm = resRe.exec(body)) !== null) {
-      deltas.push({ res: rm[1], val: parseInt(rm[2]) });
-    }
-
-    // 提取 label（冒号前的部分，或整行去掉资源后剩余）
-    const colonIdx = body.search(/[:：]/);
-    let label;
-    if (colonIdx > 0) {
-      label = body.slice(0, colonIdx).trim();
-    } else {
-      label = body.replace(/(金|粮|兵|民心|城)[+-]?\d+[,，]?/g, '').trim();
-    }
-
-    return { anchor, label, deltas, text: line };
-  }
-
-  // ★ 总账行判断：一行内出现 ≥2 个「资源△数字」即为总账行
-  const TOTAL_LINE_RE = /(金|粮|兵|民心|城)△([+-]?\d+)/g;
-
   function _parseOneChange(slot, raw) {
     const change = {
       slot,
       raw,
-      resources:    {},   // 总变化 金△粮△兵△民心△城△
-      cities:       [],   // 城池变动
-      guards:       [],   // 守将变动
-      troopChanges: [],   // 兵种变动 [{cityName, entries:[{type,val}]}]
-      breakdown:    {},   // 收支△ 明细 { 金:{items:[{label,val}],total}, 粮:... }
-      darkItems:    [],   // 府库△(兼容暗账△) 条目 [{desc,entries:[{res,val}]}]
-      seasonal:     [],   // 季度△ 条目 [{res,val}]
-      intel:        [],   // 情报△ 条目 [string]
-      warnings:     [],   // 校验报警 [string]
-      anchorGroups: {},   // ★ 通用锚点分组 { 锚点名: [{label,deltas,text}] }
+      resources:    {},   // 总变化  { 金:-126, 粮:+138, … }
+      cities:       [],   // 城池得失 [{delta,action,cityName}]
+      breakdown:    {},   // 收支明细 { 金:{items:[],total}, 粮:{…}, 兵:{…}, 民心:{…} }
+      treasury:     [],   // 府库△   [{desc,entries:[{res,val}]}]
+      garrisonOps:  [],   // 驻军△   [{cityName, ops:[{name,dir}]}]  dir: in|out|dead
+      troopOps:     [],   // 兵种△   [{cityName, entries:[{type,val}], isDelta}]
+      quarterly:    [],   // 季度△   [{res,val}]
+      // 以下保留供旧渲染路径使用
+      guards:       [],
+      troopChanges: [],
+      darkItems:    [],
+      seasonal:     [],
+      intel:        [],
+      anchorGroups: {},
+      warnings:     [],
     };
 
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-
-    // ── 当前解析锚点 ──
-    let anchor = null;   // 'breakdown' | 'dark' | 'seasonal' | 'intel'
+    let anchor = null;  // 当前文本锚点：'breakdown' | null
 
     for (const line of lines) {
 
-      // ════════════════════════════════════════
-      // Step 1：总账行优先检测
-      // 一行内含 ≥2 个「资源△数字」→ 这是总账行
-      // 提取所有资源变化后立即 continue，不进任何锚点
-      // ════════════════════════════════════════
-      TOTAL_LINE_RE.lastIndex = 0;
+      // ══════════════════════════════════════
+      //  Step 1：总变化行检测
+      //  条件：一行内有 ≥2 个「资源△数字」
+      // ══════════════════════════════════════
       const totalMatches = [...line.matchAll(/(金|粮|兵|民心|城)△([+-]?\d+)/g)];
       if (totalMatches.length >= 2) {
-        // 提取所有资源变化
-        totalMatches.forEach(m => { change.resources[m[1]] = parseInt(m[2]); });
-        // 同时提取城池具体变动（城△+1（攻下宛城）等）
-        const cityRe0 = /城△([+-]\d+)[（(](攻下|失去)([^）)]+)[）)]/g;
-        let cm0;
-        while ((cm0 = cityRe0.exec(line)) !== null) {
-          change.cities.push({ delta: parseInt(cm0[1]), action: cm0[2], cityName: cm0[3].trim() });
-          if (!change.anchorGroups['城']) change.anchorGroups['城'] = [];
-          change.anchorGroups['城'].push({
-            label: `${cm0[2]}${cm0[3].trim()}`,
-            deltas: [{ res: '城', val: parseInt(cm0[1]) }],
-            text: line,
-          });
-        }
-        continue; // ★ 总账行处理完毕，不进任何后续锚点逻辑
-      }
-
-      /* ── 城池变动（非总账行中的独立城池行）── */
-      const cityRe = /城△([+-]\d+)[（(](攻下|失去)([^）)]+)[）)]/g;
-      let cm;
-      while ((cm = cityRe.exec(line)) !== null) {
-        change.cities.push({ delta: parseInt(cm[1]), action: cm[2], cityName: cm[3].trim() });
-      }
-
-      /* ── 守将变动（驻军△同城合并，识别 +/- 方向）── */
-      // 支持格式：驻军△汉中:+魏延,-吴懿  / 驻军△汉中:+魏延 / 驻军△江陵:-文聘
-      if (/(?:驻军|守将)△/.test(line)) {
-        const cityBlockRe = /(?:驻军|守将)△([^:：]+)[:：]([^\n]+)/g;
-        let cbm;
-        while ((cbm = cityBlockRe.exec(line)) !== null) {
-          const cityName = cbm[1].trim();
-          const body     = cbm[2].trim();
-          // 逐个武将令牌：+张飞 / -赵云 / 张飞（无符号视为入驻）
-          const tokenRe = /([+-]?)([^+\-,，\s(（]+)/g;
-          let tm;
-          while ((tm = tokenRe.exec(body)) !== null) {
-            const sign    = tm[1] || '+';            // 无符号默认入驻
-            const genName = tm[2].replace(/[）)].*/,'').trim();
-            if (!genName) continue;
-            const dir = sign === '+' ? 'in' : 'out'; // in=入驻 out=调离
-            const existing = change.guards.find(g => g.cityName === cityName);
-            if (existing) {
-              existing.members.push({ name: genName, dir });
-            } else {
-              change.guards.push({ cityName, members: [{ name: genName, dir }] });
-            }
-          }
-        }
-      }
-
-      /* ── 兵种变动：兵种△城名:骑+500,步-200 ── */
-      /* ★ 兵种△ 行同时作为锚点重置触发器，阻止流入 anchor 分支 */
-      if (/^兵种△/.test(line)) {
-        anchor = null;  // 兵种△ 不属于任何文本锚点，重置
-        const troopRe2 = /兵种△([^:：]+)[:：]([^\n]+)/g;
-        let tm2;
-        while ((tm2 = troopRe2.exec(line)) !== null) {
-          const cityName = tm2[1].trim();
-          const spec     = tm2[2].trim();
-          const deltaRe2 = /([步弓骑水蛮])([+-]\d+)/g;
-          let dm2;
-          const deltaEntries = [];
-          while ((dm2 = deltaRe2.exec(spec)) !== null) {
-            deltaEntries.push({ type: dm2[1], val: parseInt(dm2[2]) });
-          }
-          if (deltaEntries.length) {
-            change.troopChanges.push({ cityName, spec, entries: deltaEntries, isDelta: true });
-          } else {
-            // 绝对值格式 步:2000,弓:1000
-            const absEntries = [];
-            const absRe = /([步弓骑水蛮])[:：](\d+)/g;
-            let am;
-            while ((am = absRe.exec(spec)) !== null) {
-              absEntries.push({ type: am[1], val: parseInt(am[2]) });
-            }
-            change.troopChanges.push({ cityName, spec, entries: absEntries, isDelta: false });
-          }
-        }
-        continue;  // ★ 阻止继续流入 anchor 分支
-      }
-
-      /* ── 非 兵种△ 的其他兵种变动（行内，非行首）── */
-      const troopRe = /兵种△([^:：]+)[:：]([^\n]+)/g;
-      let tm;
-      while ((tm = troopRe.exec(line)) !== null) {
-        const cityName = tm[1].trim();
-        const spec     = tm[2].trim();
-        const deltaRe = /([步弓骑水蛮])([+-]\d+)/g;
-        let dm;
-        const deltaEntries = [];
-        while ((dm = deltaRe.exec(spec)) !== null) {
-          deltaEntries.push({ type: dm[1], val: parseInt(dm[2]) });
-        }
-        change.troopChanges.push({
-          cityName,
-          spec,
-          entries: deltaEntries.length ? deltaEntries : [],
-          isDelta: deltaEntries.length > 0,
+        totalMatches.forEach(m => {
+          change.resources[m[1]] = parseInt(m[2]);
         });
+        // 城池得失注解：城△+1(攻下陈仓)
+        for (const m of line.matchAll(/城△([+-]\d+)[（(](攻下|失去)([^）)]+)[）)]/g)) {
+          change.cities.push({ delta: parseInt(m[1]), action: m[2], cityName: m[3].trim() });
+        }
+        anchor = null;
+        continue;
       }
 
-      /* ── 锚点切换（支持同行内容）── */
+      // ══════════════════════════════════════
+      //  Step 2：专项锚点识别
+      // ══════════════════════════════════════
+
+      // 收支△（开启明细块）
       if (/^收支△/.test(line)) {
         anchor = 'breakdown';
         continue;
       }
 
-      if (/^(?:府库|暗账)△/.test(line)) {
-        anchor = 'dark';
-        // 同行内容：府库△盐铺打点:金-40 / 暗账△（旧格式兼容）
-        const rest = line.replace(/^(?:府库|暗账)△\s*/, '').trim();
-        if (rest) _parseDarkLine(rest, change.darkItems);
-        continue;
-      }
-
-      if (/^季度△/.test(line)) {
-        anchor = 'seasonal';
-        // 同行内容：季度△金-280,粮-420
-        const rest = line.replace(/^季度△\s*/, '').trim();
-        if (rest) _parseSeasonalLine(rest, change.seasonal);
-        continue;
-      }
-
-      if (/^情报△/.test(line)) {
-        anchor = 'intel';
-        // 同行内容：情报△陈留粮市继续运转（跳过 NPC状态△ / 野外△）
-        const rest = line.replace(/^情报△\s*/, '').trim();
-        if (rest && !/^NPC|状态△|野外△/.test(rest))
-          change.intel.push(rest.replace(/^[·•\-]\s*/, ''));
-        continue;
-      }
-
-      /* ── 通用锚点 fallback：任何 XX△ 且不属于已知锚点，且锚点名不是资源名 ── */
-      const KNOWN_ANCHORS = /^(?:收支|府库|暗账|季度|情报|兵种|驻军|守将|NPC状态|野外)△/;
-      if (/^[^△\s]{1,10}△/.test(line) && !KNOWN_ANCHORS.test(line)) {
-        anchor = null;  // 重置文本锚点
-        const parsed = _parseAnchorLine(line);  // 内部已拦截资源名
-        if (parsed) {
-          const key = parsed.anchor;
-          if (!change.anchorGroups[key]) change.anchorGroups[key] = [];
-          change.anchorGroups[key].push({ label: parsed.label, deltas: parsed.deltas, text: parsed.text });
-        } else {
-          // 解析失败（含资源名作锚点等）→ 静默丢弃，仅 console.warn
-          console.warn('[SGParser] 丢弃无法解析的行:', line.slice(0, 60));
+      // 府库△事由:金-120,粮+195
+      if (/^府库△/.test(line)) {
+        anchor = null;
+        const rest = line.replace(/^府库△\s*/, '').trim();
+        if (rest) {
+          const item = _parseTreasuryLine(rest);
+          change.treasury.push(item);
+          // 兼容旧字段
+          change.darkItems.push({ desc: item.desc, entries: item.entries });
+          // 加入 anchorGroups.府库
+          if (!change.anchorGroups['府库']) change.anchorGroups['府库'] = [];
+          change.anchorGroups['府库'].push({
+            label:  item.desc,
+            deltas: item.entries.map(e => ({ res: e.res, val: e.val })),
+            text:   line,
+          });
         }
         continue;
       }
 
-      /* ── 锚点内容解析 ── */
+      // 暗账△（兼容旧名称，等同府库△）
+      if (/^暗账△/.test(line)) {
+        anchor = null;
+        const rest = line.replace(/^暗账△\s*/, '').trim();
+        if (rest) {
+          const item = _parseTreasuryLine(rest);
+          change.treasury.push(item);
+          change.darkItems.push({ desc: item.desc, entries: item.entries });
+          if (!change.anchorGroups['府库']) change.anchorGroups['府库'] = [];
+          change.anchorGroups['府库'].push({
+            label:  item.desc,
+            deltas: item.entries.map(e => ({ res: e.res, val: e.val })),
+            text:   line,
+          });
+        }
+        continue;
+      }
+
+      // 驻军△城名:+赵云/-魏延/-文聘(阵亡)/无
+      if (/^驻军△/.test(line)) {
+        anchor = null;
+        _parseGarrisonOp(line, change);
+        continue;
+      }
+
+      // 兵种△城名:骑+500  或  兵种△城名:步:2000,弓:1000
+      if (/^兵种△/.test(line)) {
+        anchor = null;
+        _parseTroopOp(line, change);
+        continue;
+      }
+
+      // 季度△金-40,粮-60
+      if (/^季度△/.test(line)) {
+        anchor = null;
+        const rest = line.replace(/^季度△\s*/, '').trim();
+        _parseSeasonalLine(rest, change.quarterly);
+        // 兼容旧字段
+        _parseSeasonalLine(rest, change.seasonal);
+        // 加入 anchorGroups.季度
+        if (!change.anchorGroups['季度']) change.anchorGroups['季度'] = [];
+        change.anchorGroups['季度'].push({
+          label:  '',
+          deltas: change.quarterly.map(s => ({ res: s.res, val: s.val })),
+          text:   line,
+        });
+        continue;
+      }
+
+      // 情报△（旧格式兼容）
+      if (/^情报△/.test(line)) {
+        anchor = null;
+        const rest = line.replace(/^情报△\s*/, '').trim();
+        if (rest) {
+          change.intel.push(rest);
+          if (!change.anchorGroups['情报']) change.anchorGroups['情报'] = [];
+          change.anchorGroups['情报'].push({ label: rest, deltas: [], text: rest });
+        }
+        continue;
+      }
+
+      // ══════════════════════════════════════
+      //  Step 3：锚点内容行
+      // ══════════════════════════════════════
       if (anchor === 'breakdown') {
-        // 格式 A（逗号分隔）：金:产出+242,维护-136,季度-280,合计-484
-        // 格式 B（空格分隔）：金 产出+242 维护-136 季度-280 合计-484
-        const catM = line.match(/^(金|粮|兵|民心)[：:，,\s]+(.*)/);
+        // 格式：金:产出+30,维护-24,明账-10,府库-120,合计-124
+        //       民心:赤字-5,合计-5
+        const catM = line.match(/^(金|粮|兵|民心)[：:,，\s]+(.*)/);
         if (catM) {
           const cat   = catM[1];
-          const rest2 = catM[2];
+          const rest  = catM[2];
           const items = [];
-          const itemRe = /([^\s,，·|·+\-\d合计][^,，·\d+\-]*?)([+-]\d+)/g;
+          // 先把"合计±N"从字符串中摘除，再匹配其余条目
+          // 这样可避免"合计-124"被误拆为 label="计" val=-124
+          const restNoTotal = rest.replace(/合计[+-]?\d+,?/g, '');
+          // 匹配格式：中文标签（不含数字、符号）后跟 ±数字
+          const itemRe = /([^\s,，+\-\d·|][^,，·+\-\d]*?)([+-]\d+)/g;
           let im;
-          while ((im = itemRe.exec(rest2)) !== null) {
-            let lbl = im[1].replace(/[→:：]/g,'').trim();
-            if (lbl === '暗账') lbl = '府库';   // v2.7.9 统一命名
-            if (lbl && lbl !== '合') items.push({ label: lbl, val: parseInt(im[2]) });
+          while ((im = itemRe.exec(restNoTotal)) !== null) {
+            let lbl = im[1].replace(/[→:：]/g, '').trim();
+            if (lbl === '暗账') lbl = '府库';
+            // 过滤空标签和"合"/"计"等残余
+            if (lbl && lbl !== '合' && lbl !== '计' && lbl.length >= 2) {
+              items.push({ label: lbl, val: parseInt(im[2]) });
+            }
           }
-          const totalM = rest2.match(/合计([+-]?\d+)/);
-          change.breakdown[cat] = { items, total: totalM ? parseInt(totalM[1]) : null };
+          const totalM = rest.match(/合计([+-]?\d+)/);
+          const total  = totalM ? parseInt(totalM[1]) : null;
+          change.breakdown[cat] = { items, total };
+          continue;
         }
-      } else if (anchor === 'dark') {
-        // 防线：跳过任何含 兵种△ 的行（已由上方处理并 continue）
-        if (line && !/兵种△/.test(line)) _parseDarkLine(line, change.darkItems);
-      } else if (anchor === 'seasonal') {
-        _parseSeasonalLine(line, change.seasonal);
-      } else if (anchor === 'intel') {
-        // 过滤 NPC状态△ / 野外△ 行：属于天下动态，不进情报
-        if (line && !/^NPC|状态△|野外△/.test(line))
-          change.intel.push(line.replace(/^[·•\-]\s*/, ''));
+        // 空行 / 非资源行：不重置 anchor（整个明细块可能有多行）
+        continue;
       }
-    }
+
+      // ══════════════════════════════════════
+      //  Step 4：通用 fallback（XX△ 模式）
+      // ══════════════════════════════════════
+      const genericM = line.match(/^([^△\s]{1,10})△\s*(.*)/);
+      if (genericM) {
+        const key  = genericM[1].trim();
+        const body = genericM[2].trim();
+        // 资源名本身不做锚点
+        if (!['金','粮','兵','民心','城'].includes(key)) {
+          anchor = null;
+          const deltas = [];
+          for (const dm of body.matchAll(/(金|粮|兵|民心|城)([+-]?\d+)/g)) {
+            deltas.push({ res: dm[1], val: parseInt(dm[2]) });
+          }
+          const colonIdx = body.search(/[:：]/);
+          const label    = colonIdx > 0 ? body.slice(0, colonIdx).trim()
+            : body.replace(/(金|粮|兵|民心|城)[+-]?\d+[,，]?/g, '').trim();
+          if (!change.anchorGroups[key]) change.anchorGroups[key] = [];
+          change.anchorGroups[key].push({ label, deltas, text: line });
+        }
+      }
+    } // end for lines
 
     // ── 收支合计校验 ──
-    // 对每个资源：若 breakdown[res].total 存在，且 resources[res] 也存在，则比对
-    for (const res of ['金','粮','兵','民心']) {
-      const bd = change.breakdown[res];
-      if (!bd || bd.total === null || bd.total === undefined) continue;
-      const declared = change.resources[res];
-      if (declared === undefined) continue;
-      if (bd.total !== declared) {
-        change.warnings.push(
-          `${res}合计不符：收支明细合计${bd.total > 0 ? '+' : ''}${bd.total}，总变化${declared > 0 ? '+' : ''}${declared}`
-        );
-        console.warn(`[SGParser] ${slot} ${res}合计不符: breakdown.total=${bd.total}, resources=${declared}`);
+    _validateBreakdown(change, slot);
+
+    // ── 兼容旧渲染路径：guards ← garrisonOps ──
+    change.garrisonOps.forEach(op => {
+      const existing = change.guards.find(g => g.cityName === op.cityName);
+      const members  = op.ops.map(o => ({ name: o.name, dir: o.dir === 'dead' ? 'out' : o.dir }));
+      if (existing) {
+        existing.members.push(...members);
+      } else {
+        change.guards.push({ cityName: op.cityName, members });
       }
+    });
+
+    // ── 兼容旧渲染路径：troopChanges ← troopOps ──
+    change.troopChanges = change.troopOps.map(op => ({
+      cityName: op.cityName,
+      spec:     op.entries.map(e => e.isDelta ? `${e.type}${e.val > 0 ? '+' : ''}${e.val}` : `${e.type}:${e.val}`).join(','),
+      entries:  op.entries.map(e => ({ type: e.type, val: e.val })),
+      isDelta:  op.isDelta,
+    }));
+
+    // ── 兼容旧渲染路径：anchorGroups.驻军 ← garrisonOps ──
+    if (change.garrisonOps.length && !change.anchorGroups['驻军']) {
+      change.anchorGroups['驻军'] = [];
+      const cityMap = {};
+      change.garrisonOps.forEach(op => {
+        if (!cityMap[op.cityName]) cityMap[op.cityName] = { incoming: [], outgoing: [] };
+        op.ops.forEach(o => {
+          if (o.dir === 'in')  cityMap[op.cityName].incoming.push(o.name);
+          else                 cityMap[op.cityName].outgoing.push(o.name);
+        });
+      });
+      Object.entries(cityMap).forEach(([city, mv]) => {
+        change.anchorGroups['驻军'].push({ cityName: city, incoming: mv.incoming, outgoing: mv.outgoing, label: city });
+      });
+    }
+
+    // ── 兼容旧渲染路径：anchorGroups.兵种 ← troopOps ──
+    if (change.troopOps.length && !change.anchorGroups['兵种']) {
+      change.anchorGroups['兵种'] = [];
+      change.troopOps.forEach(op => {
+        change.anchorGroups['兵种'].push({
+          label:  op.cityName,
+          deltas: op.entries.map(e => ({ res: e.type, val: e.val })),
+          text:   '',
+          isTroop: true,
+        });
+      });
     }
 
     return change;
   }
 
-  // 解析府库行：盐铺打点:金-40  /  周瑜理政:金-80,粮-20
-  function _parseDarkLine(line, arr) {
-    if (!line) return;
-    // 格式：描述:资源变动 或 描述：资源变动
-    const colonM = line.match(/^([^:：]+)[：:](.+)/);
-    if (colonM) {
-      const desc    = colonM[1].trim();
-      const resRaw  = colonM[2].trim();
-      const entries = [];
-      const re      = /(金|粮|兵|民心)([+-]\d+)/g;
-      let m;
-      while ((m = re.exec(resRaw)) !== null) {
-        entries.push({ res: m[1], val: parseInt(m[2]) });
-      }
-      arr.push({ desc, entries });
+  // ─────────────────────────────────────────
+  //  解析府库/暗账行
+  //  格式：陈留粮市:金-120,粮+195
+  // ─────────────────────────────────────────
+  function _parseTreasuryLine(line) {
+    const colonIdx = line.search(/[:：]/);
+    let desc, resRaw;
+    if (colonIdx > 0) {
+      desc   = line.slice(0, colonIdx).trim();
+      resRaw = line.slice(colonIdx + 1).trim();
     } else {
-      arr.push({ desc: line, entries: [] });
+      desc   = line;
+      resRaw = '';
+    }
+    const entries = [];
+    for (const m of resRaw.matchAll(/(金|粮|兵|民心)([+-]\d+)/g)) {
+      entries.push({ res: m[1], val: parseInt(m[2]) });
+    }
+    return { desc, entries };
+  }
+
+  // ─────────────────────────────────────────
+  //  解析驻军△
+  //  格式A：驻军△长安:+赵云          （单人，有+/-）
+  //  格式B：驻军△长安:+赵云,-魏延      （多人，逗号分隔）
+  //  格式C：驻军△长安:-文聘(阵亡)      （阵亡标注）
+  //  格式D：驻军△长安:赵云/马超        （无符号 = 覆写守将）
+  //  格式E：驻军△长安:无              （清空守将）
+  // ─────────────────────────────────────────
+  function _parseGarrisonOp(line, change) {
+    const re = /驻军△([^:：]+)[：:](.+)/g;
+    let m;
+    while ((m = re.exec(line)) !== null) {
+      const cityName = m[1].trim();
+      const body     = m[2].trim();
+      const ops      = [];
+
+      if (body === '无') {
+        // 清空守将
+        ops.push({ name: '无', dir: 'clear' });
+      } else {
+        // 逐 token：+张飞 / -赵云 / -文聘(阵亡) / 赵云/马超（覆写）
+        const tokenRe = /([+-]?)([^+\-,，\s(（]+)(?:[（(]([^）)]*)[）)])?/g;
+        let tm;
+        while ((tm = tokenRe.exec(body)) !== null) {
+          const sign    = tm[1] || '';
+          const name    = tm[2].trim();
+          const annot   = tm[3] ? tm[3].trim() : '';
+          if (!name) continue;
+
+          // 斜线分隔守将视为 in
+          if (name.includes('/')) {
+            name.split('/').forEach(n => {
+              if (n.trim()) ops.push({ name: n.trim(), dir: 'in' });
+            });
+            continue;
+          }
+
+          let dir;
+          if (sign === '+') {
+            dir = 'in';
+          } else if (sign === '-') {
+            dir = (annot === '阵亡') ? 'dead' : 'out';
+          } else {
+            // 无符号：视为入驻
+            dir = 'in';
+          }
+          ops.push({ name, dir });
+        }
+      }
+
+      if (!ops.length) continue;
+      change.garrisonOps.push({ cityName, ops });
     }
   }
 
-  // 解析季度行：金-280,粮-420
-  function _parseSeasonalLine(line, arr) {
-    if (!line) return;
-    const re = /(金|粮|兵|民心)([+-]\d+)/g;
+  // ─────────────────────────────────────────
+  //  解析兵种△
+  //  增减式：兵种△长安:骑+500,步-200   → isDelta=true
+  //  覆写式：兵种△长安:步:2000,弓:1000  → isDelta=false
+  // ─────────────────────────────────────────
+  function _parseTroopOp(line, change) {
+    const re = /兵种△([^:：]+)[：:]([^\n]+)/g;
     let m;
     while ((m = re.exec(line)) !== null) {
+      const cityName = m[1].trim();
+      const spec     = m[2].trim();
+      const deltaEntries = [];
+      const absEntries   = [];
+
+      for (const dm of spec.matchAll(/([步弓骑水蛮])([+-]\d+)/g)) {
+        deltaEntries.push({ type: dm[1], val: parseInt(dm[2]) });
+      }
+      for (const am of spec.matchAll(/([步弓骑水蛮])[:：](\d+)/g)) {
+        absEntries.push({ type: am[1], val: parseInt(am[2]) });
+      }
+
+      if (deltaEntries.length) {
+        change.troopOps.push({ cityName, entries: deltaEntries, isDelta: true });
+      } else if (absEntries.length) {
+        change.troopOps.push({ cityName, entries: absEntries, isDelta: false });
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────
+  //  解析季度行：金-40,粮-60
+  // ─────────────────────────────────────────
+  function _parseSeasonalLine(line, arr) {
+    if (!line) return;
+    for (const m of line.matchAll(/(金|粮|兵|民心)([+-]\d+)/g)) {
       arr.push({ res: m[1], val: parseInt(m[2]) });
     }
   }
 
   // ─────────────────────────────────────────
-  //  应用 兵种△ 变动到 cityOwnership
-  //  格式 A：骑+500 / 水-300  → 增减
-  //  格式 B：步:2000,弓:1000  → 覆盖
+  //  收支合计校验
+  //  breakdown[res].total 应 == resources[res]
   // ─────────────────────────────────────────
-  function _applyTroopChanges(raw, cityOwnership) {
-    // 直接从原始变动行扫描 兵种△
-    for (const line of raw.split('\n')) {
-      const t = line.trim();
-      if (!t) continue;
-      // 兵种△城名:规格（可能有多个，逗号分隔）
-      const re = /兵种△([^:：]+)[:：]([^\s]+)/g;
-      let m;
-      while ((m = re.exec(t)) !== null) {
-        const cityName = m[1].trim();
-        const spec     = m[2].trim();
-        if (!cityOwnership[cityName]) continue;
-        const ow = cityOwnership[cityName];
-        if (!ow.troops) ow.troops = {};
-
-        // 判断是覆盖式（含 : 且不含 + -）还是增减式
-        const isOverwrite = /^([步弓骑水蛮]:[\d]+,?)+$/.test(spec);
-        if (isOverwrite) {
-          // 覆盖
-          ow.troops = _parseTroops(spec);
-        } else {
-          // 增减：骑+500 或 水-300
-          spec.split(',').forEach(seg => {
-            const dm = seg.trim().match(/^([步弓骑水蛮])([+-]\d+)$/);
-            if (dm) {
-              const type  = dm[1];
-              const delta = parseInt(dm[2]);
-              ow.troops[type] = Math.max(0, (ow.troops[type] || 0) + delta);
-            }
-          });
-        }
+  function _validateBreakdown(change, slot) {
+    for (const res of ['金', '粮', '兵', '民心']) {
+      const bd = change.breakdown[res];
+      if (!bd || bd.total === null || bd.total === undefined) continue;
+      const declared = change.resources[res];
+      if (declared === undefined) continue;
+      if (bd.total !== declared) {
+        const msg = `${res}合计不符：收支明细合计${bd.total > 0 ? '+' : ''}${bd.total}，` +
+                    `总变化${declared > 0 ? '+' : ''}${declared}`;
+        change.warnings.push(msg);
+        console.warn(`[SGParser] [变动][${slot}] ${msg}`);
       }
     }
   }
 
   // ─────────────────────────────────────────
+  //  应用单条 troopOp 到 cityOwnership
+  // ─────────────────────────────────────────
+  function _applyOneTroopOp(op, cityOwnership) {
+    const ow = cityOwnership[op.cityName];
+    if (!ow) return;
+    if (!ow.troops) ow.troops = {};
+    if (op.isDelta) {
+      op.entries.forEach(e => {
+        ow.troops[e.type] = Math.max(0, (ow.troops[e.type] || 0) + e.val);
+      });
+    } else {
+      // 覆写
+      ow.troops = {};
+      op.entries.forEach(e => { ow.troops[e.type] = e.val; });
+    }
+  }
+
+  // ─────────────────────────────────────────
   //  构建 cityOwnership（地图用）
-  //  v2.5：携带 troops 字段
   // ─────────────────────────────────────────
   function _buildCityOwnership(players, npcCities) {
     const result = {};
-
     players.forEach((p, idx) => {
       const slotIdx = ['甲','乙','丙'].indexOf(p.slot);
       const pidx    = slotIdx >= 0 ? slotIdx : idx;
@@ -1104,7 +895,6 @@ window.SGParser = (function () {
         };
       });
     });
-
     (npcCities || []).forEach(c => {
       if (!result[c.name]) {
         result[c.name] = {
@@ -1112,17 +902,168 @@ window.SGParser = (function () {
           playerIdx:  -1,
           playerName: '',
           holder:     c.holder || '无',
-          troops:     c.troops || {},   // NPC 兵力保存但前端不渲染
+          troops:     c.troops || {},
           isMulti:    false,
         };
       }
     });
+    return result;
+  }
+
+  // ═══════════════════════════════════════════════
+  //  格式 B 解析器：简化新格式 v3（管道行）
+  //  保持与旧版完全相同的逻辑，仅做整理
+  // ═══════════════════════════════════════════════
+  function _parseSimplified(rawText) {
+    const result = _empty();
+
+    const structM   = rawText.match(/【结构化数据】([\s\S]*?)(?=【[^】]+】|$)/);
+    const structZone = structM ? structM[1] : rawText;
+    result.rawDigest = structM
+      ? rawText.slice(0, rawText.indexOf('【结构化数据】')).trim()
+      : '';
+
+    const lines = structZone.split('\n').map(l => l.trim()).filter(Boolean);
+    const playerMap = {}, garrisonArr = [], changeMap = {}, eventArr = [], errorArr = [];
+
+    for (const line of lines) {
+      if (/^【/.test(line) || /^\/\//.test(line)) continue;
+      const typeM = line.match(/^([^△\s]+)△\s*\|?(.*)/);
+      if (!typeM) continue;
+      const type   = typeM[1].trim();
+      const fields = _parsePipeFields(typeM[2].trim());
+
+      switch (type) {
+        case '回合':
+          result.round     = parseInt(fields['回合']) || result.round;
+          result.roundInfo = {
+            round:     parseInt(fields['回合'])     || null,
+            phase:     fields['阶段']               || '',
+            nextRound: parseInt(fields['下一回合']) || null,
+          };
+          break;
+        case '主公': {
+          const name = fields['名称'] || fields['主公'] || '';
+          if (!name) break;
+          if (!playerMap[name]) playerMap[name] = _emptyPlayer(name);
+          const p = playerMap[name];
+          if (fields['金']     != null) p.gold   = parseInt(fields['金'])   || 0;
+          if (fields['粮']     != null) p.food   = parseInt(fields['粮'])   || 0;
+          if (fields['兵']     != null) p.troop  = parseInt(fields['兵'])   || 0;
+          if (fields['民心']   != null) p.morale = parseInt(fields['民心']) || 0;
+          if (fields['城池数'] != null) p.cities = parseInt(fields['城池数']) || 0;
+          break;
+        }
+        case '驻军': {
+          const cityName  = fields['城名'] || '';
+          const holderRaw = fields['武将'] || '无';
+          const holders   = holderRaw === '无' ? [] : holderRaw.split(',').map(s => s.trim());
+          garrisonArr.push({
+            cityName,
+            holder:   holders.join('/') || '无',
+            gold:     parseInt(fields['金'])   || 0,
+            food:     parseInt(fields['粮'])   || 0,
+            troop:    parseInt(fields['兵'])   || 0,
+            morale:   parseInt(fields['民心']) || 0,
+            status:   fields['状态'] || '正常',
+            generals: holders.map(h => ({ name: h, status: '健康' })),
+          });
+          break;
+        }
+        case '收支': {
+          const lord = fields['主公'] || '';
+          if (!changeMap[lord]) changeMap[lord] = _emptyChange(lord);
+          const ch = changeMap[lord];
+          if (fields['金']   != null) ch.resources['金']   = parseInt(fields['金'])   || 0;
+          if (fields['粮']   != null) ch.resources['粮']   = parseInt(fields['粮'])   || 0;
+          if (fields['兵']   != null) ch.resources['兵']   = parseInt(fields['兵'])   || 0;
+          if (fields['民心'] != null) ch.resources['民心'] = parseInt(fields['民心']) || 0;
+          if (fields['原因']) ch.intel.push(fields['原因']);
+          break;
+        }
+        case '事件': {
+          const lord = fields['主公'] || '';
+          const content = fields['内容'] || '';
+          if (content) {
+            eventArr.push({ lord, place: fields['地点'] || '', content });
+            if (lord) {
+              if (!changeMap[lord]) changeMap[lord] = _emptyChange(lord);
+              changeMap[lord].intel.push(content);
+            }
+          }
+          break;
+        }
+        case '错误':
+          errorArr.push({
+            type:    fields['类型'] || '未知',
+            raw:     fields['原文'] || '',
+            problem: fields['问题'] || '',
+            fix:     fields['修正'] || '',
+          });
+          break;
+      }
+    }
+
+    // 后处理：players
+    const slotNames = ['甲', '乙', '丙'];
+    let slotIdx = 0;
+    for (const [name, p] of Object.entries(playerMap)) {
+      p.slot = slotNames[slotIdx] || `玩家${slotIdx + 1}`;
+      slotIdx++;
+      p.cities_list = [];
+      p.ownedCities = [];
+      if (p.cities_list.length) p.city = p.cities_list[0].name;
+      result.players.push(p);
+    }
+
+    result.garrison = garrisonArr.map(g => ({ cityName: g.cityName, generals: g.generals }));
+
+    result.changes = Object.entries(changeMap).map(([lord, ch]) => {
+      const player = result.players.find(p => p.name === lord);
+      ch.slot = player ? player.slot : lord;
+      return ch;
+    });
+
+    result.events = eventArr;
+    result.errors  = errorArr;
+    result.cityOwnership = _buildCityOwnership(result.players, []);
 
     return result;
   }
 
+  function _parsePipeFields(str) {
+    const fields = {};
+    if (!str) return fields;
+    str.split('|').forEach(seg => {
+      const eq = seg.indexOf('=');
+      if (eq === -1) return;
+      const key = seg.slice(0, eq).trim();
+      const val = seg.slice(eq + 1).trim();
+      if (key) fields[key] = val;
+    });
+    return fields;
+  }
+
+  function _emptyPlayer(name) {
+    return {
+      slot: '', name,
+      city: '', gold: null, food: null, troop: null, morale: null, cities: null,
+      generals: [], cities_list: [], ownedCities: [],
+      situation_note: '', suggestions: [],
+    };
+  }
+
+  function _emptyChange(lord) {
+    return {
+      slot: lord, raw: '',
+      resources: {}, cities: [], guards: [], troopChanges: [],
+      breakdown: {}, treasury: [], garrisonOps: [], troopOps: [], quarterly: [],
+      darkItems: [], seasonal: [], intel: [], anchorGroups: {}, warnings: [],
+    };
+  }
+
   // ─────────────────────────────────────────
-  //  降级：旧格式解析
+  //  格式 C：降级（旧 emoji 块格式）
   // ─────────────────────────────────────────
   function _parseLegacy(text, result) {
     const rnM = text.match(/第\s*(\d+)\s*回合/);
@@ -1149,11 +1090,11 @@ window.SGParser = (function () {
       p.ownedCities = [p.city];
     }
     const resMap = [
-      { key:'gold',   re:/💰\s*金[钱]?\s*[：:\s]\s*(\d+)/          },
-      { key:'food',   re:/🌾\s*粮[草食]?\s*[：:\s]\s*(\d+)/         },
+      { key:'gold',   re:/💰\s*金[钱]?\s*[：:\s]\s*(\d+)/            },
+      { key:'food',   re:/🌾\s*粮[草食]?\s*[：:\s]\s*(\d+)/           },
       { key:'troop',  re:/(?:🛡|🛡️)\uFE0F?\s*兵[力]?\s*[：:\s]\s*(\d+)/  },
-      { key:'morale', re:/(?:❤|❤️)\uFE0F?\s*民心\s*[：:\s]\s*(\d+)/ },
-      { key:'cities', re:/🏯\s*城[池]?\s*[：:\s]\s*(\d+)/            },
+      { key:'morale', re:/(?:❤|❤️)\uFE0F?\s*民心\s*[：:\s]\s*(\d+)/   },
+      { key:'cities', re:/🏯\s*城[池]?\s*[：:\s]\s*(\d+)/              },
     ];
     for (const { key, re } of resMap) {
       const rm = body.match(re);
@@ -1162,7 +1103,7 @@ window.SGParser = (function () {
     const genM = body.match(/(?:⚔️?)\s*(?:麾下)?武将[列表]*\s*[：:]\s*([\s\S]+?)(?=\n\s*\n|\n\s*[📍🎯❤💰🌾🛡🏯⚔]|$)/);
     if (genM) {
       genM[1].split(/[,，、\n]/).forEach(s => {
-        const n = s.trim().replace(/[（(][^）)]*[）)]/g,'').trim();
+        const n   = s.trim().replace(/[（(][^）)]*[）)]/g, '').trim();
         const stM = s.match(/[（(](健康|疲劳|受伤|患病|阵亡)[）)]/);
         if (n && n.length >= 2 && n.length <= 8) p.generals.push({ name: n, status: stM ? stM[1] : '健康' });
       });
@@ -1172,8 +1113,6 @@ window.SGParser = (function () {
 
   // ─────────────────────────────────────────
   //  兵力格式化（供弹窗显示用）
-  //  输入：{ 骑:3000, 步:2000 }
-  //  输出：'骑 3000 · 步 2000'（按 步/弓/骑/水/蛮 顺序）
   // ─────────────────────────────────────────
   function formatTroops(troops) {
     if (!troops || typeof troops !== 'object') return '';
@@ -1225,7 +1164,7 @@ window.SGParser = (function () {
     });
 
     if (parsed.npcCities && parsed.npcCities.length) {
-      const npcStr = parsed.npcCities.slice(0,6).map(c =>
+      const npcStr = parsed.npcCities.slice(0, 6).map(c =>
         c.name + (c.holder && c.holder !== '无' ? `[${c.holder}]` : '')
       ).join('、') + (parsed.npcCities.length > 6 ? `…等${parsed.npcCities.length}城` : '');
       lines.push(`<strong>🏯 NPC城池：</strong><span class="pp-ok">${esc(npcStr)}</span>`);
@@ -1238,31 +1177,56 @@ window.SGParser = (function () {
       lines.push(`&nbsp;&nbsp;${icon} ${esc(b.attacker)}→${esc(b.defender)} ${b.result} 攻损${b.attacker_loss}守损${b.defender_loss}`);
     });
 
-    const owned = Object.keys(parsed.cityOwnership || {});
-    if (owned.length) {
-      const pc  = owned.filter(k => parsed.cityOwnership[k].owner !== 'npc').length;
-      const nc  = owned.filter(k => parsed.cityOwnership[k].owner === 'npc').length;
-      lines.push(`<strong>🗺️ 城池归属：</strong><span class="pp-ok">玩家 ${pc} 城 · NPC ${nc} 城（含守将/兵力）</span>`);
-    }
-
-    const garr = parsed.garrison || [];
-    if (garr.length) {
-      lines.push(`<strong>🏯 驻城武将：</strong><span class="pp-ok">${garr.length} 座城有调度</span>`);
-      garr.forEach(g => {
-        const genStr = g.generals.map(gn =>
-          gn.taskDetail ? `${esc(gn.name)}(${esc(gn.taskDetail)})` : `${esc(gn.name)}(${esc(gn.role)})`
-        ).join('、');
-        lines.push(`&nbsp;&nbsp;🏙️ ${esc(g.cityName)}：${genStr}`);
+    // 变动摘要
+    const chLen = (parsed.changes || []).filter(c => !c.__npc && typeof c === 'object').length;
+    if (chLen) {
+      lines.push(`<strong>📜 变动记录：</strong><span class="pp-ok">${chLen} 位玩家</span>`);
+      (parsed.changes || []).forEach(ch => {
+        if (!ch || typeof ch !== 'object' || !ch.slot || ch.slot.length > 1) return;
+        const resStr = Object.entries(ch.resources || {})
+          .map(([k, v]) => `${k}${v > 0 ? '+' : ''}${v}`).join(' ');
+        const warns  = ch.warnings && ch.warnings.length
+          ? ` <span style="color:#f07070">⚠ ${ch.warnings.length}项校验警告</span>` : '';
+        lines.push(`&nbsp;&nbsp;[${ch.slot}] ${resStr || '无变化'}${warns}`);
+        // 府库/驻军/兵种/季度锚点摘要
+        if (ch.treasury && ch.treasury.length)
+          lines.push(`&nbsp;&nbsp;&nbsp;&nbsp;🏛️ 府库 ${ch.treasury.length} 笔`);
+        if (ch.garrisonOps && ch.garrisonOps.length)
+          lines.push(`&nbsp;&nbsp;&nbsp;&nbsp;🛡️ 驻军调度 ${ch.garrisonOps.length} 城`);
+        if (ch.troopOps && ch.troopOps.length)
+          lines.push(`&nbsp;&nbsp;&nbsp;&nbsp;⚔️ 兵种变动 ${ch.troopOps.length} 城`);
+        if (ch.quarterly && ch.quarterly.length)
+          lines.push(`&nbsp;&nbsp;&nbsp;&nbsp;🗓️ 季度扣除`);
       });
     }
 
-    lines.push(`<strong>📜 剧情区：</strong><span class="pp-ok">${(parsed.rawDigest||'').length} 字符</span>`);
+    // 天下动态
+    const npcLen  = (parsed.npcStatus  || []).length;
+    const wildLen = (parsed.wildEvents || []).length;
+    if (npcLen || wildLen) {
+      lines.push(`<strong>🎭 天下动态：</strong><span class="pp-ok">NPC ${npcLen} 条 · 野外 ${wildLen} 条</span>`);
+      (parsed.npcStatus || []).forEach(s => {
+        lines.push(`&nbsp;&nbsp;🏯 ${esc(s.city)}：${esc(s.desc)}`);
+      });
+      (parsed.wildEvents || []).forEach(e => {
+        lines.push(`&nbsp;&nbsp;🌿 野外：${esc(e.desc)}`);
+      });
+    }
+
+    const owned = Object.keys(parsed.cityOwnership || {});
+    if (owned.length) {
+      const pc = owned.filter(k => parsed.cityOwnership[k].owner !== 'npc').length;
+      const nc = owned.filter(k => parsed.cityOwnership[k].owner === 'npc').length;
+      lines.push(`<strong>🗺️ 城池归属：</strong><span class="pp-ok">玩家 ${pc} 城 · NPC ${nc} 城</span>`);
+    }
+
+    lines.push(`<strong>📋 剧情区：</strong><span class="pp-ok">${(parsed.rawDigest || '').length} 字符</span>`);
     return lines;
   }
 
   function esc(s) {
     if (!s) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   return { parse, summarize, formatTroops, TROOP_TYPES };

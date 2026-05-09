@@ -2076,3 +2076,64 @@ header, nav, main, footer { position: relative; z-index: 1; }
   .tips-tab { padding: 7px 9px; font-size: .65rem; }
   .tips-tip-text { font-size: .73rem; }
 }
+
+/* ============================================================
+   天下动态区块  #block-world-events  v11
+   ============================================================ */
+.block-world-events {
+  margin-bottom: 14px;
+}
+
+.world-events-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.we-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: var(--r);
+  font-size: .78rem;
+  line-height: 1.55;
+  border: 1px solid transparent;
+}
+
+.we-item--npc {
+  background: rgba(155,100,20,.12);
+  border-color: rgba(200,150,50,.22);
+}
+
+.we-item--wild {
+  background: rgba(40,110,60,.10);
+  border-color: rgba(60,160,80,.22);
+}
+
+.we-icon {
+  flex-shrink: 0;
+  font-size: .85rem;
+  line-height: 1.4;
+}
+
+.we-city {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--gold-light);
+  min-width: 3em;
+  font-size: .76rem;
+}
+
+.we-item--wild .we-city {
+  color: #6dca8a;
+}
+
+.we-desc {
+  color: var(--text-sub);
+  flex: 1;
+}
+
+@media (max-width: 640px) {
+  .we-item { padding: 6px 10px; font-size: .74rem; }
+}
