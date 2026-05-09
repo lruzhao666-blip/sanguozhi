@@ -512,13 +512,10 @@ window.SGMap = (function () {
         const { x, y } = hexToXY(col, row);
         const pts = _hexPoints(x, y, R);
         parts.push(
-          `<polygon points="${pts}" fill="none"` +
-          ` stroke="rgba(212,175,55,0.3)" stroke-width="3"` +
-          ` style="filter:blur(2px);pointer-events:none"/>` +
           `<polygon class="sgmap-neutral-hex" points="${pts}"` +
-          ` fill="rgba(180,180,180,0.06)"` +
-          ` stroke="rgba(212,175,55,0.7)" stroke-width="1"` +
-          ` style="pointer-events:none"/>`
+          ` fill="rgba(0,0,0,0.15)"` +
+          ` stroke="rgba(180,150,90,0.35)" stroke-width="0.8"` +
+          ` style="filter:blur(0.3px);pointer-events:none"/>`
         );
       }
     }
