@@ -261,7 +261,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 
 /* ══ 玩家名标签 ══
-   组锚点：字重700，玩家色，正文字号 */
+   组锚点：字重700，正文色，正文字号 */
 .digest-raw .action-player-tag {
   display: block;
   font-family: var(--font-serif);
@@ -270,12 +270,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
   letter-spacing: .12em;
   line-height: 1;
   margin-bottom: 8px;
-  color: var(--text-dim);   /* 默认 fallback */
+  color: #e8dcc4;
   text-transform: uppercase;
 }
-.digest-raw .action-player-tag[data-slot="0"] { color: var(--p0-color); }
-.digest-raw .action-player-tag[data-slot="1"] { color: var(--p1-color); }
-.digest-raw .action-player-tag[data-slot="2"] { color: var(--p2-color); }
 
 /* ══ 行动条目：序号 / 行动名 / 破折号 / 注解 ══ */
 .digest-raw .action-item {
