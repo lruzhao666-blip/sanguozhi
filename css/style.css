@@ -154,25 +154,25 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 .digest-tag.tag-situation { color: #d8b85a; border-color: rgba(180,140,40,.3); background: rgba(50,32,0,.25); }
 
-.digest-body { padding: 20px 26px; }
+.digest-body { padding: 20px 28px; }
 
 /* 战局动态原文排版 */
 .digest-raw {
   font-family: var(--font-serif);
   font-size: 1.02rem;
-  line-height: 2.0;
+  line-height: 1.75;
   color: #e8dcc4;
   font-weight: 400;
   word-break: break-word;
-  max-width: 940px;
+  max-width: 960px;
   width: 100%;
   margin: 0 auto;
   -webkit-font-smoothing: antialiased;
 }
 .digest-raw .raw-para {
-  margin: 0 0 1em;
-  letter-spacing: .015em;
-  line-height: 1.7;
+  margin: 0 0 16px;
+  letter-spacing: .018em;
+  line-height: 1.75;
 }
 .digest-raw .raw-para:last-child { margin-bottom: 0; }
 .digest-raw .raw-section {
@@ -202,12 +202,10 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border-radius: var(--r);
 }
 .digest-raw .raw-note {
-  font-size: .91rem; color: rgba(200,184,154,0.70); margin: 4px 0 14px;
-  padding: 5px 10px 5px 16px;
-  margin-left: 14px;
-  background: rgba(255,255,255,0.03);
-  border-left: 2px solid rgba(180,140,50,.30);
-  border-radius: 0 var(--r) var(--r) 0;
+  font-size: .91rem; color: rgba(200,184,154,0.72);
+  margin: 4px 0 14px;
+  padding: 0 0 0 14px;
+  border-left: 2px solid rgba(180,140,50,.22);
   line-height: 1.75;
 }
 .digest-raw .raw-bullet {
@@ -354,44 +352,108 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 
 /* ══════════════════════════════════════════
-   段落分块卡片（emoji 段落标题触发）
-   每段套带左侧色条的卡片容器，段间 18px 间距
+   段落分组（无盒子，纯间距分组）
+   标题是色标签，正文自由呼吸
 ══════════════════════════════════════════ */
 .digest-raw .raw-section-card {
-  position: relative;
-  display: flex;
-  gap: 0;
-  border-radius: 0 var(--r) var(--r) 0;
-  border: 1px solid rgba(255,255,255,.05);
-  border-left: 3px solid var(--gold);   /* 由 JS inline style 覆盖 */
+  /* 去掉盒子：无背景、无边框、无圆角、无box-shadow */
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  /* 只用间距区隔段落 */
   margin: 32px 0 0;
-  overflow: hidden;
-  /* bg 由 JS inline style 覆盖 */
+  padding: 0;
 }
 .digest-raw .raw-section-card:first-child { margin-top: 0; }
 
-.digest-raw .raw-section-card-strip {
-  /* 左侧竖色条 — 视觉宽度由 border-left 承担，strip 隐藏，仅作备份 */
-  display: none;
-}
+.digest-raw .raw-section-card-strip { display: none; }
 
 .digest-raw .raw-section-card-body {
-  flex: 1;
+  /* 去掉内边距，正文直接平铺 */
+  padding: 0;
   min-width: 0;
-  padding: 12px 18px 14px;
 }
 
-/* 卡片内的标题行 */
+/* ── 段落标题：统一色块标签款式 ──
+   左边框 + 小色块背景，颜色由 data-emoji 属性控制 */
 .digest-raw .raw-section-title {
-  font-family: var(--font-serif); font-size: 1.0rem; font-weight: 700;
-  color: var(--gold-light); letter-spacing: .07em;
-  margin: 0 0 10px;
-  line-height: 1.5;
+  font-family: var(--font-serif); font-size: .92rem; font-weight: 700;
+  letter-spacing: .08em; line-height: 1.45;
+  display: inline-block;
+  padding: 3px 12px 3px 10px;
+  border-left: 3px solid var(--gold);
+  border-radius: 0 var(--r) var(--r) 0;
+  background: linear-gradient(90deg, rgba(100,65,0,.18), transparent 70%);
+  color: var(--gold-light);
+  margin: 0 0 14px;
 }
-
-/* 卡片内段落间距 */
-.digest-raw .raw-section-card-body .raw-para { margin-bottom: .75em; }
-.digest-raw .raw-section-card-body .raw-para:last-child { margin-bottom: 0; }
+/* 各 emoji 色调 */
+.digest-raw .raw-section-title[data-emoji="📢"] {
+  border-left-color: rgba(80,160,220,.9);
+  background: linear-gradient(90deg, rgba(8,32,60,.25), transparent 70%);
+  color: #80c8f0;
+}
+.digest-raw .raw-section-title[data-emoji="🌍"] {
+  border-left-color: rgba(80,180,100,.9);
+  background: linear-gradient(90deg, rgba(5,35,12,.25), transparent 70%);
+  color: #80e0a0;
+}
+.digest-raw .raw-section-title[data-emoji="⚡"] {
+  border-left-color: rgba(240,200,60,.95);
+  background: linear-gradient(90deg, rgba(50,38,0,.25), transparent 70%);
+  color: #f0d060;
+}
+.digest-raw .raw-section-title[data-emoji="🔥"] {
+  border-left-color: rgba(220,80,40,.95);
+  background: linear-gradient(90deg, rgba(50,8,2,.25), transparent 70%);
+  color: #f09070;
+}
+.digest-raw .raw-section-title[data-emoji="👤"] {
+  border-left-color: rgba(180,100,220,.9);
+  background: linear-gradient(90deg, rgba(30,8,45,.25), transparent 70%);
+  color: #c890e8;
+}
+.digest-raw .raw-section-title[data-emoji="🎯"] {
+  border-left-color: rgba(60,180,220,.9);
+  background: linear-gradient(90deg, rgba(4,30,38,.25), transparent 70%);
+  color: #60c8e0;
+}
+.digest-raw .raw-section-title[data-emoji="📜"] {
+  border-left-color: rgba(160,130,70,.9);
+  background: linear-gradient(90deg, rgba(30,22,4,.25), transparent 70%);
+  color: #c8a860;
+}
+.digest-raw .raw-section-title[data-emoji="🌐"] {
+  border-left-color: rgba(70,140,200,.9);
+  background: linear-gradient(90deg, rgba(5,22,40,.25), transparent 70%);
+  color: #70b8e8;
+}
+.digest-raw .raw-section-title[data-emoji="⚔️"] {
+  border-left-color: rgba(220,80,40,.95);
+  background: linear-gradient(90deg, rgba(50,8,2,.25), transparent 70%);
+  color: #f09070;
+}
+.digest-raw .raw-section-title[data-emoji="🏯"] {
+  border-left-color: rgba(212,168,67,.85);
+  background: linear-gradient(90deg, rgba(38,25,0,.25), transparent 70%);
+  color: #d4a843;
+}
+.digest-raw .raw-section-title[data-emoji="🌅"] {
+  border-left-color: rgba(220,140,60,.9);
+  background: linear-gradient(90deg, rgba(45,20,2,.25), transparent 70%);
+  color: #e0a060;
+}
+.digest-raw .raw-section-title[data-emoji="🌙"] {
+  border-left-color: rgba(100,100,200,.9);
+  background: linear-gradient(90deg, rgba(8,8,35,.25), transparent 70%);
+  color: #9090d8;
+}
+.digest-raw .raw-section-title[data-emoji="🎴"] {
+  border-left-color: rgba(212,168,67,.8);
+  background: linear-gradient(90deg, rgba(50,32,0,.22), transparent 70%);
+  color: var(--gold-light);
+}
 
 /* ══════════════════════════════════════════
    ▸ 影响行（次要色 + 左缩进 + 略小字号）
@@ -553,16 +615,28 @@ header, nav, main, footer { position: relative; z-index: 1; }
   line-height: 1.9;
 }
 
-/* ── Req 5: 叙事编号弱化（①②③ 与正文同色，不加粗；🎲 骰子行不受影响）── */
+/* 叙事编号弱化（①②③ 与正文同色，不加粗；🎲 骰子行不受影响）*/
 .digest-raw .raw-num-badge {
   font-weight: 400;
   font-size: .95rem;
   color: #e8dcc4;
   text-shadow: none;
 }
-/* raw-section-card 内部的 raw-section 顶距统一 */
 .digest-raw .raw-section { margin-top: 32px; }
 .digest-raw .raw-section:first-child { margin-top: 0; }
+
+/* ══════════════════════════════════════════
+   ⏳ 启幕段尾句压暗（喃喃低语质感）
+══════════════════════════════════════════ */
+.digest-raw .story-outro {
+  color: rgba(230, 210, 170, 0.42);
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 18px 0 8px;
+  padding-left: 14px;
+  border-left: 2px solid rgba(230, 210, 170, 0.15);
+}
 
 /* 手机端数据面板 */
 @media(max-width: 640px) {

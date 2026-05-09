@@ -735,10 +735,9 @@
 
     const flushCard = () => {
       if (!currentCard) return;
-      const cfg = SECTION_CARD_COLOR[currentCard.emoji] || SECTION_CARD_COLOR['🎴'];
+      // 无盒版：去掉背景/边框，仅用间距分组
       const cardHtml =
-        `<div class="raw-section-card" style="border-left-color:${cfg.strip};background:${cfg.bg};box-shadow:inset 0 0 0 1px ${cfg.glow};">`
-        + `<div class="raw-section-card-strip" style="background:${cfg.strip};"></div>`
+        `<div class="raw-section-card">`
         + `<div class="raw-section-card-body">`
         + currentCard.lines.join('')
         + `</div></div>`;
@@ -815,10 +814,9 @@
         flushPara();
         flushCard();
         const emoji = sectionEmojiM[1];
-        const cfg = SECTION_CARD_COLOR[emoji] || SECTION_CARD_COLOR['🎴'];
         currentCard = { emoji, lines: [] };
-        // 标题行本身也放入卡片
-        currentCard.lines.push(`<h4 class="raw-section-title">${highlightInline(tLine)}</h4>`);
+        // 标题行：data-emoji 属性驱动 CSS 色调，独立输出到卡片
+        currentCard.lines.push(`<h4 class="raw-section-title" data-emoji="${emoji}">${highlightInline(tLine)}</h4>`);
         continue;
       }
 
@@ -853,15 +851,11 @@
         continue;
       }
 
-      // ⏳ 等待行
+      // ⏳ 等待/启幕尾句 → story-outro 压暗样式
       if (/^⏳/.test(tLine)) {
         flushPara();
-        const waitHtml = `<div class="raw-wait">${highlightInline(tLine)}</div>`;
-        if (currentCard) {
-          currentCard.lines.push(waitHtml);
-        } else {
-          out.push(waitHtml);
-        }
+        flushCard();
+        out.push(`<p class="story-outro">${highlightInline(tLine)}</p>`);
         continue;
       }
 
