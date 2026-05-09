@@ -1237,11 +1237,45 @@
     return groups;
   }
 
-  // ── 公共事件区（天下动态已移除；仅保留 v3 事件列表和错误提示）──
+  // ── 公共事件区（NPC动态 + v3 事件列表 + 错误提示）──
   function _renderPublicEvents(publicEvents, v3Events, v3Errors) {
     let html = '';
 
-    // v3 事件列表
+    // ── NPC 动态 / 野外动态 ──
+    if (publicEvents && publicEvents.length) {
+      const npcItems = publicEvents.filter(ev =>
+        ev.anchor === 'NPC状态' || ev.anchor === '野外'
+      );
+      if (npcItems.length) {
+        // 分组：NPC城池 / 野外
+        const npcCities = npcItems.filter(ev => ev.anchor === 'NPC状态');
+        const wildItems  = npcItems.filter(ev => ev.anchor === '野外');
+
+        let gridHtml = '';
+        // NPC 城池动态
+        npcCities.forEach(ev => {
+          const cityTxt  = ev.label ? `<span class="npc-city">🏯 ${esc(ev.label)}</span>` : '';
+          const descTxt  = ev.text  ? `<span class="npc-desc">${esc(ev.text)}</span>` : '';
+          if (!cityTxt && !descTxt) return;
+          gridHtml += `<div class="npc-event-item">${cityTxt}${descTxt}</div>`;
+        });
+        // 野外动态
+        wildItems.forEach(ev => {
+          const descTxt = ev.text ? `<span class="npc-desc">${esc(ev.text)}</span>` : '';
+          if (!descTxt) return;
+          gridHtml += `<div class="npc-event-item"><span class="npc-city">🌿 野外</span>${descTxt}</div>`;
+        });
+
+        if (gridHtml) {
+          html += `<div class="npc-events-block">
+            <div class="npc-events-hd">🎭 NPC 动态</div>
+            <div class="npc-events-grid">${gridHtml}</div>
+          </div>`;
+        }
+      }
+    }
+
+    // ── v3 事件列表 ──
     if (v3Events && v3Events.length) {
       const byLord = {};
       v3Events.forEach(ev => {
@@ -1262,7 +1296,7 @@
       </div>`;
     }
 
-    // v3 错误提示
+    // ── v3 错误提示 ──
     if (v3Errors && v3Errors.length) {
       const errItems = v3Errors.map(e =>
         `<div class="v3-err-item">

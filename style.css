@@ -927,12 +927,11 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══ 单张玩家收支卡 ══ */
 .cd-card {
   position: relative;
-  background: rgba(10,4,3,.94);
-  border: 1px solid rgba(100,58,22,.26);
+  background: rgba(8,3,3,.92);
   border-radius: 10px;
   display: flex; flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 2px 14px rgba(0,0,0,.40);
+  box-shadow: 0 2px 12px rgba(0,0,0,.38);
 }
 
 /* 顶部彩色光带（每张卡专属色） */
@@ -940,34 +939,38 @@ header, nav, main, footer { position: relative; z-index: 1; }
   content: ''; position: absolute; top: 0; left: 0; right: 0;
   height: 2px; border-radius: 10px 10px 0 0;
 }
-.cd-card-0 { border-color: rgba(231,76,60,.28); }
-.cd-card-1 { border-color: rgba(61,190,108,.25); }
-.cd-card-2 { border-color: rgba(52,152,219,.25); }
-.cd-card-0::before { background: linear-gradient(90deg, rgba(231,76,60,.7), transparent 65%); }
-.cd-card-1::before { background: linear-gradient(90deg, rgba(61,190,108,.6), transparent 65%); }
-.cd-card-2::before { background: linear-gradient(90deg, rgba(52,152,219,.6), transparent 65%); }
+/* 边框颜色对齐 pcard */
+.cd-card-0 { border: 1px solid rgba(231,76,60,.35); }
+.cd-card-1 { border: 1px solid rgba(61,190,108,.32); }
+.cd-card-2 { border: 1px solid rgba(52,152,219,.32); }
+/* 顶部光带全宽不截断 */
+.cd-card-0::before { background: linear-gradient(90deg, rgba(231,76,60,.85), rgba(231,76,60,.3) 50%, transparent); }
+.cd-card-1::before { background: linear-gradient(90deg, rgba(61,190,108,.75), rgba(61,190,108,.25) 50%, transparent); }
+.cd-card-2::before { background: linear-gradient(90deg, rgba(52,152,219,.75), rgba(52,152,219,.25) 50%, transparent); }
 
 /* 弹性占位块 */
-.cd-card-spacer { flex: 1; min-height: 8px; }
+.cd-card-spacer { flex: 1; min-height: 10px; }
 
-/* ── 卡头 ── */
+/* ── 卡头（完全对齐 pcard-header）──*/
 .cd-header {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px 9px;
+  padding: 12px 14px 11px;
   border-bottom: 1px solid rgba(255,255,255,.04);
+  border-radius: 10px 10px 0 0;
 }
-.cd-header-0 { background: linear-gradient(110deg, rgba(110,14,6,.38) 0%, rgba(50,4,2,.14) 55%, transparent); }
-.cd-header-1 { background: linear-gradient(110deg, rgba(10,80,35,.38) 0%, rgba(4,36,14,.14) 55%, transparent); }
-.cd-header-2 { background: linear-gradient(110deg, rgba(6,46,108,.38) 0%, rgba(3,22,55,.14) 55%, transparent); }
+/* 头部渐变强化，与 pcard 一致（两档颜色 → 透明）*/
+.cd-header-0 { background: linear-gradient(110deg, rgba(120,15,8,.45), rgba(60,5,2,.2)); }
+.cd-header-1 { background: linear-gradient(110deg, rgba(10,88,38,.45), rgba(5,44,18,.2)); }
+.cd-header-2 { background: linear-gradient(110deg, rgba(8,52,120,.45), rgba(4,26,65,.2)); }
 
-/* 左侧竖条 */
+/* 左侧竖条 — 加光晕，与 pcard .p*-strip 一致 */
 .cd-strip {
-  width: 3px; height: 28px; border-radius: 2px;
+  width: 3px; height: 32px; border-radius: 2px;
   flex-shrink: 0; align-self: center;
 }
-.cd-strip-0 { background: var(--p0-color); opacity: .85; }
-.cd-strip-1 { background: var(--p1-color); opacity: .80; }
-.cd-strip-2 { background: var(--p2-color); opacity: .80; }
+.cd-strip-0 { background: var(--p0-color); box-shadow: 0 0 6px rgba(231,76,60,.6); }
+.cd-strip-1 { background: var(--p1-color); box-shadow: 0 0 6px rgba(61,190,108,.6); }
+.cd-strip-2 { background: var(--p2-color); box-shadow: 0 0 6px rgba(52,152,219,.6); }
 
 .cd-name {
   font-family: var(--font-serif); font-size: .96rem; font-weight: 700;
@@ -982,8 +985,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ── Layer 1：资源总量 pills 行 ── */
 .cd-res-row {
-  display: flex; flex-wrap: wrap; gap: 5px;
-  padding: 9px 14px 8px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 10px 14px 9px;
   border-bottom: 1px solid rgba(255,255,255,.04);
   background: rgba(0,0,0,.14);
 }
@@ -1036,7 +1039,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   font-size: .58rem; font-weight: 700;
   color: rgba(160,130,65,.5); letter-spacing: .14em;
   text-transform: uppercase; font-family: var(--font-sans);
-  padding: 7px 14px 3px;
+  padding: 9px 14px 4px;
   display: flex; align-items: center; gap: 6px;
 }
 .cc-breakdown-label::after {
@@ -1047,12 +1050,12 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* 收支明细容器 */
 .cd-bd-table {
   display: flex; flex-direction: column;
-  gap: 0; font-size: .74rem; margin: 0 0 6px;
+  gap: 0; font-size: .74rem; margin: 0 0 8px;
 }
 .cd-bd-row {
   display: flex; align-items: flex-start;
-  border-bottom: 1px solid rgba(255,255,255,.035);
-  padding: 2px 0;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  padding: 4px 0;
 }
 .cd-bd-row:last-child { border-bottom: none; }
 
@@ -1061,29 +1064,29 @@ header, nav, main, footer { position: relative; z-index: 1; }
   padding: 5px 3px 5px 14px;
   color: var(--text-sub); font-weight: 700;
   font-family: var(--font-serif); font-size: .76rem;
-  white-space: nowrap; line-height: 1.6;
+  white-space: nowrap; line-height: 1.7;
 }
 .cd-bd-items {
-  flex: 1; padding: 4px 4px;
+  flex: 1; padding: 4px 6px 4px 4px;
   display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0;
   flex-direction: column;
 }
 .cd-bd-chips-wrap {
-  display: flex; flex-wrap: wrap; gap: 3px;
+  display: flex; flex-wrap: wrap; gap: 4px;
 }
 .cd-bd-total-cell {
-  flex-shrink: 0; width: 4.2em;
-  text-align: right; padding: 5px 13px 5px 4px;
+  flex-shrink: 0; width: 4.4em;
+  text-align: right; padding: 5px 14px 5px 4px;
   white-space: nowrap; align-self: flex-end;
 }
 
 /* 分项 chip */
 .bd-chip {
   display: inline-flex; align-items: center; gap: 3px;
-  margin: 2px 3px 2px 0;
-  background: rgba(0,0,0,.28);
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 5px; padding: 2px 7px;
+  margin: 2px 4px 2px 0;
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 5px; padding: 3px 8px;
   font-size: .72rem; font-family: var(--font-serif);
 }
 .bd-chip-lbl { color: var(--text-dim); }
@@ -1100,9 +1103,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* 兵种明细块（Layer2 兵行子区域）*/
 .bd-troop-block {
-  display: flex; flex-direction: column; gap: 3px;
-  margin-top: 4px; padding-top: 3px;
-  border-top: 1px solid rgba(255,255,255,.04);
+  display: flex; flex-direction: column; gap: 4px;
+  margin-top: 5px; padding-top: 5px;
+  border-top: 1px solid rgba(255,255,255,.05);
   width: 100%;
 }
 .bd-troop-row {
@@ -1259,30 +1262,30 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ── 锚点组 ── */
 .anchor-group {
-  padding: 7px 14px 8px 12px;
+  padding: 8px 14px 9px 12px;
   border-bottom: 1px solid rgba(255,255,255,.04);
   border-left: 2px solid rgba(180,140,60,.18);
 }
 .anchor-group:last-child { border-bottom: none; }
 
-.public-anchor { border-left-color: rgba(80,160,200,.18); }
+.public-anchor { border-left-color: rgba(80,160,200,.22); }
 
 .ag-title {
   font-size: .57rem; font-weight: 700;
   color: rgba(150,120,58,.72); letter-spacing: .14em;
   text-transform: uppercase; font-family: var(--font-sans);
   display: flex; align-items: center; gap: 5px;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
 .ag-icon { font-size: .72rem; opacity: .85; }
 
 .ag-items {
   list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 2px;
+  display: flex; flex-direction: column; gap: 3px;
 }
 .ag-item {
   display: flex; justify-content: space-between; align-items: center;
-  gap: 8px; padding: 3px 4px;
+  gap: 8px; padding: 4px 4px;
   font-size: .76rem; font-family: var(--font-serif);
   border-radius: 4px;
 }
@@ -1336,16 +1339,58 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .ag-status-other   { background: rgba(100,100,100,.10);color: var(--text-dim); border: 1px solid rgba(120,120,120,.18); }
 
 /* ══════════════════════════════════════════
-   v3 事件列表 / 错误区（天下动态已移除）
+   公共事件区（NPC动态 + v3事件 + 错误）
 ══════════════════════════════════════════ */
-/* 保留 public-events-block 供 v3 事件复用 */
 .public-events-block {
   grid-column: 1 / -1;
-  margin-top: 4px;
+  margin-top: 6px;
   background: rgba(0,0,0,.16);
   border: 1px solid rgba(90,58,18,.20);
   border-radius: var(--r);
   padding: 10px 14px;
+}
+
+/* NPC动态专属块 */
+.npc-events-block {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  background: rgba(4,8,14,.55);
+  border: 1px solid rgba(60,100,160,.22);
+  border-radius: var(--r);
+  padding: 10px 14px;
+}
+.npc-events-hd {
+  font-size: .58rem; font-weight: 700;
+  color: rgba(100,160,220,.65); letter-spacing: .14em;
+  text-transform: uppercase; font-family: var(--font-sans);
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 8px;
+}
+.npc-events-hd::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(60,100,200,.18), transparent);
+}
+.npc-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 6px;
+}
+.npc-event-item {
+  padding: 5px 9px;
+  background: rgba(8,16,30,.5);
+  border: 1px solid rgba(60,100,180,.12);
+  border-left: 2px solid rgba(80,140,200,.3);
+  border-radius: 0 var(--r) var(--r) 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.npc-city {
+  font-size: .64rem; color: rgba(120,180,240,.75);
+  font-family: var(--font-serif); font-weight: 700;
+  letter-spacing: .04em;
+}
+.npc-desc {
+  font-size: .72rem; color: var(--text-sub);
+  line-height: 1.55; font-family: var(--font-serif);
 }
 .public-events-hd {
   font-size: .58rem; font-weight: 700;
