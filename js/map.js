@@ -356,7 +356,7 @@ window.SGMap = (function () {
         x="${b.x.toFixed(1)}" y="${b.y.toFixed(1)}"
         width="${b.w.toFixed(1)}" height="${b.h.toFixed(1)}"
         preserveAspectRatio="xMidYMid slice"
-        style="pointer-events:none"/>
+        style="pointer-events:none;filter:saturate(0.72)"/>
 
       <!-- ── 暗化蒙版：压深底图，突出城池与网格 ── -->
       <rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"
