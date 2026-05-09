@@ -469,15 +469,7 @@ window.SGMap = (function () {
       <stop offset="100%" stop-color="#ffe8a0" stop-opacity="0"/>
     </linearGradient>`;
 
-    /* 中立格内发光（所有中立格公用，边缘暖琥珀 → 中心透明） */
-    const neutralGlow = `
-    <radialGradient id="neutralGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="55%"  stop-color="#b8a878" stop-opacity="0"/>
-      <stop offset="82%"  stop-color="#b8a878" stop-opacity="0.10"/>
-      <stop offset="100%" stop-color="#d4bc88" stop-opacity="0.32"/>
-    </radialGradient>`;
-
-    return `${shadow}${hlWhite}${hlGold}${neutralGlow}`;
+    return `${shadow}${hlWhite}${hlGold}`;
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -518,10 +510,14 @@ window.SGMap = (function () {
       for (let row = GRID_ROW_START; row <= GRID_ROW_END; row++) {
         if (_cityMap[`${col},${row}`]) continue;
         const { x, y } = hexToXY(col, row);
+        const pts = _hexPoints(x, y, R);
         parts.push(
-          `<polygon class="sgmap-neutral-hex" points="${_hexPoints(x, y, R)}"` +
-          ` fill="url(#neutralGlow)"` +
-          ` stroke="rgba(175,155,95,0.38)" stroke-width="0.8"` +
+          `<polygon points="${pts}" fill="none"` +
+          ` stroke="rgba(212,175,55,0.3)" stroke-width="3"` +
+          ` style="filter:blur(2px);pointer-events:none"/>` +
+          `<polygon class="sgmap-neutral-hex" points="${pts}"` +
+          ` fill="rgba(180,180,180,0.06)"` +
+          ` stroke="rgba(212,175,55,0.7)" stroke-width="1"` +
           ` style="pointer-events:none"/>`
         );
       }
