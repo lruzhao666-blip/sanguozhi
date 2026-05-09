@@ -660,6 +660,38 @@
     return { text: out.join('\n'), placeholders };
   }
 
+  // ── 段落标题 emoji → 色条颜色映射 ──
+  const SECTION_CARD_COLOR = {
+    '🎴': { strip: 'rgba(212,168,67,.8)',  bg: 'rgba(50,32,0,.22)',   glow: 'rgba(212,168,67,.12)' },   // 旁白
+    '📢': { strip: 'rgba(80,160,220,.8)',  bg: 'rgba(8,32,60,.20)',   glow: 'rgba(80,160,220,.10)' },   // 主持人语
+    '🌍': { strip: 'rgba(80,180,100,.8)',  bg: 'rgba(5,35,12,.20)',   glow: 'rgba(80,180,100,.10)' },   // 天下大势
+    '⚡': { strip: 'rgba(240,200,60,.85)', bg: 'rgba(50,38,0,.22)',   glow: 'rgba(240,200,60,.12)' },   // 风云突变
+    '🔥': { strip: 'rgba(220,80,40,.85)',  bg: 'rgba(50,8,2,.22)',    glow: 'rgba(220,80,40,.12)' },    // 战斗/行动结果
+    '👤': { strip: 'rgba(180,100,220,.8)', bg: 'rgba(30,8,45,.20)',   glow: 'rgba(180,100,220,.10)' },  // 城主行动结果
+    '🎯': { strip: 'rgba(60,180,220,.8)',  bg: 'rgba(4,30,38,.20)',   glow: 'rgba(60,180,220,.10)' },   // 行动建议
+    '⏳': { strip: 'rgba(150,150,150,.6)', bg: 'rgba(18,18,18,.18)',  glow: 'rgba(150,150,150,.08)' },  // 等待决断
+    '📜': { strip: 'rgba(160,130,70,.8)',  bg: 'rgba(30,22,4,.20)',   glow: 'rgba(160,130,70,.10)' },   // 事件
+    '🌐': { strip: 'rgba(70,140,200,.8)',  bg: 'rgba(5,22,40,.20)',   glow: 'rgba(70,140,200,.10)' },
+    '⚔️': { strip: 'rgba(220,80,40,.85)',  bg: 'rgba(50,8,2,.22)',    glow: 'rgba(220,80,40,.12)' },
+    '🏯': { strip: 'rgba(212,168,67,.75)', bg: 'rgba(38,25,0,.20)',   glow: 'rgba(212,168,67,.10)' },
+    '🌅': { strip: 'rgba(220,140,60,.8)',  bg: 'rgba(45,20,2,.20)',   glow: 'rgba(220,140,60,.10)' },
+    '🌙': { strip: 'rgba(100,100,200,.8)', bg: 'rgba(8,8,35,.20)',    glow: 'rgba(100,100,200,.10)' },
+  };
+
+  /**
+   * 对一行文字做内联渲染：
+   *  - 「」→ <em class="raw-quote">...</em>
+   *  - ▸ 开头 → 不在此处理（外层已判断），仅作内联转义
+   */
+  function highlightInline(text) {
+    if (!text) return '';
+    // 先转义
+    let s = esc(text);
+    // 「」书名号内文字 → 斜体淡金
+    s = s.replace(/「([^」]*)」/g, '<em class="raw-quote">「$1」</em>');
+    return s;
+  }
+
   function highlightRaw(rawText) {
     if (!rawText) return '';
 
@@ -667,11 +699,16 @@
     // 这样后续逐行循环完全不会碰到 ①②③ 行，彻底避免 NUMBULLET_RE 抢先匹配
     const { text, placeholders } = _preRenderActionBlocks(rawText);
 
+    // 段落级 emoji 标题检测（匹配7组规定emoji开头，后跟汉字内容）
+    // 注意：🎯 由 _preRenderActionBlocks 处理，这里不重复
+    const SECTION_EMOJI_RE = /^(🎴|📢|🌍|⚡|🔥|👤|⏳|📜|🌐|⚔️|🏯|🌅|🌙)\s*/;
     const SECTION_RE   = /^(🌍|⚡|📢|🔥|📜|🎴|🌐|⚔️|🏯|🌅|🌙)\s*[【\[]?\s*[\u4e00-\u9fa5]{2,}/;
     const PLAYER_RE    = /^👤\s*[【\[]/;
     const NOTE_RE      = /^[📍🔖💡]/;
     const BATTLE_RE    = /^🎲/;
-    const BULLET_RE    = /^[•·▪▸▶◆◇■□]\s+/;
+    // ▸ 影响行：行首 ▸（含全角/半角变体）
+    const EFFECT_RE    = /^▸\s*/;
+    const BULLET_RE    = /^[•·▪▶◆◇■□]\s+/;
     const NUMBULLET_RE = /^(?:[①②③④⑤⑥⑦⑧⑨⑩]|[1-9]\.|[1-9]、)\s*/;
     // GM 内部标注过滤规则
     const GM_LABEL_PREFIX_RE = /^[【\[][^】\]\n]{1,12}[】\]]\s*/;
@@ -679,25 +716,45 @@
     const lines = text.split('\n').map(l => l.replace(/\s+$/, ''));
     const out = [];
     let paraBuf = [];
+    // 当前所在段落卡片（非null时收集到卡片内）
+    let currentCard = null;   // { emoji, lines:[] }
 
     const flushPara = () => {
       if (!paraBuf.length) return;
-      out.push(`<p class="raw-para">${paraBuf.map(highlight).join('<br>')}</p>`);
+      if (currentCard) {
+        currentCard.lines.push(`<p class="raw-para">${paraBuf.map(highlightInline).join('<br>')}</p>`);
+      } else {
+        out.push(`<p class="raw-para">${paraBuf.map(highlightInline).join('<br>')}</p>`);
+      }
       paraBuf = [];
+    };
+
+    const flushCard = () => {
+      if (!currentCard) return;
+      const cfg = SECTION_CARD_COLOR[currentCard.emoji] || SECTION_CARD_COLOR['🎴'];
+      const cardHtml =
+        `<div class="raw-section-card" style="border-left-color:${cfg.strip};background:${cfg.bg};box-shadow:inset 0 0 0 1px ${cfg.glow};">`
+        + `<div class="raw-section-card-strip" style="background:${cfg.strip};"></div>`
+        + `<div class="raw-section-card-body">`
+        + currentCard.lines.join('')
+        + `</div></div>`;
+      out.push(cardHtml);
+      currentCard = null;
     };
 
     for (let i = 0; i < lines.length; i++) {
       const t = lines[i];
 
-      // 空行 → 段落分隔
+      // 空行 → 段落分隔（卡片内保留空行感，但不关闭卡片）
       if (!t.trim()) {
         flushPara();
         continue;
       }
 
-      // 占位符 → 直接输出对应 HTML
+      // 占位符 → 直接输出对应 HTML（🎯 行动建议块）
       if (t.trim() in placeholders) {
         flushPara();
+        flushCard();
         out.push(placeholders[t.trim()]);
         continue;
       }
@@ -709,52 +766,153 @@
         if (!tLine) continue;
       }
 
-      // 分隔线
-      if (/^[═─=\-—]{4,}/.test(tLine)) {
+      // 分隔线（36个=）→ 折叠数据面板触发点
+      if (/^={10,}/.test(tLine.trim())) {
         flushPara();
+        flushCard();
+        // 收集分隔线以后的所有内容进折叠面板
+        const dataLines = [];
+        i++;
+        while (i < lines.length) {
+          dataLines.push(lines[i]);
+          i++;
+        }
+        i--; // 补偿外层 for 的 i++
+        if (dataLines.length > 0) {
+          const dataContent = dataLines.join('\n');
+          const dataHtml = dataContent.split('\n').map(dl => {
+            if (!dl.trim()) return '';
+            return `<div class="raw-data-line">${esc(dl)}</div>`;
+          }).join('');
+          out.push(
+            `<details class="raw-data-panel">`
+            + `<summary class="raw-data-summary">📊 结构化数据区 <span class="raw-data-badge">${dataLines.filter(l=>l.trim()).length} 行</span></summary>`
+            + `<div class="raw-data-body">${dataHtml}</div>`
+            + `</details>`
+          );
+        } else {
+          out.push('<div class="raw-divider"></div>');
+        }
+        continue;
+      }
+
+      // 其他分隔线
+      if (/^[═─\-—]{4,}/.test(tLine)) {
+        flushPara();
+        flushCard();
         out.push('<div class="raw-divider"></div>');
         continue;
       }
 
-      // 章节标题
-      if (SECTION_RE.test(tLine)) {
+      // ── 段落标题 emoji 检测（🎴📢🌍⚡🔥👤⏳📜🌐⚔️🏯🌅🌙）──
+      // 匹配条件：行首为规定 emoji，后跟汉字/空格/【
+      const sectionEmojiM = tLine.match(SECTION_EMOJI_RE);
+      if (sectionEmojiM && /[\u4e00-\u9fa5【\[]/.test(tLine.slice(sectionEmojiM[0].length, sectionEmojiM[0].length + 3))) {
         flushPara();
-        out.push(`<h4 class="raw-section">${highlight(tLine)}</h4>`);
+        flushCard();
+        const emoji = sectionEmojiM[1];
+        const cfg = SECTION_CARD_COLOR[emoji] || SECTION_CARD_COLOR['🎴'];
+        currentCard = { emoji, lines: [] };
+        // 标题行本身也放入卡片
+        currentCard.lines.push(`<h4 class="raw-section-title">${highlightInline(tLine)}</h4>`);
+        continue;
+      }
+
+      // 章节标题（无卡片 fallback）
+      if (SECTION_RE.test(tLine) && !SECTION_EMOJI_RE.test(tLine)) {
+        flushPara();
+        flushCard();
+        out.push(`<h4 class="raw-section">${highlightInline(tLine)}</h4>`);
         continue;
       }
 
       // 玩家行
       if (PLAYER_RE.test(tLine)) {
         flushPara();
-        out.push(`<div class="raw-player">${highlight(tLine)}</div>`);
+        if (currentCard) {
+          currentCard.lines.push(`<div class="raw-player">${highlightInline(tLine)}</div>`);
+        } else {
+          out.push(`<div class="raw-player">${highlightInline(tLine)}</div>`);
+        }
         continue;
       }
 
-      // 战斗骰子行
+      // ── 🎲 战斗骰子行 → 等宽框，横向可滚动 ──
       if (BATTLE_RE.test(tLine)) {
         flushPara();
-        out.push(`<div class="raw-battle">${highlight(tLine)}</div>`);
+        const battleHtml = `<div class="raw-battle"><code class="raw-battle-code">${esc(tLine)}</code></div>`;
+        if (currentCard) {
+          currentCard.lines.push(battleHtml);
+        } else {
+          out.push(battleHtml);
+        }
         continue;
       }
 
-      // ⏳ 等待行（无论是否在 action-block 内都统一渲染）
+      // ⏳ 等待行
       if (/^⏳/.test(tLine)) {
         flushPara();
-        out.push(`<div class="raw-wait">${highlight(tLine)}</div>`);
+        const waitHtml = `<div class="raw-wait">${highlightInline(tLine)}</div>`;
+        if (currentCard) {
+          currentCard.lines.push(waitHtml);
+        } else {
+          out.push(waitHtml);
+        }
         continue;
       }
 
       // 注记行
       if (NOTE_RE.test(tLine)) {
         flushPara();
-        out.push(`<div class="raw-note">${highlight(tLine)}</div>`);
+        const noteHtml = `<div class="raw-note">${highlightInline(tLine)}</div>`;
+        if (currentCard) {
+          currentCard.lines.push(noteHtml);
+        } else {
+          out.push(noteHtml);
+        }
         continue;
       }
 
-      // 列表项
-      if (BULLET_RE.test(tLine) || NUMBULLET_RE.test(tLine)) {
+      // ── ▸ 影响行 → 降级样式（次要色 + 左缩进 + 略小字号）──
+      if (EFFECT_RE.test(tLine)) {
         flushPara();
-        out.push(`<div class="raw-bullet">${highlight(tLine)}</div>`);
+        const effectHtml = `<div class="raw-effect">${highlightInline(tLine)}</div>`;
+        if (currentCard) {
+          currentCard.lines.push(effectHtml);
+        } else {
+          out.push(effectHtml);
+        }
+        continue;
+      }
+
+      // ── ①②③④/A/B/C 编号项（仅在卡片外作为 bullet 处理；卡片内已由 _preRenderActionBlocks 处理）──
+      if (NUMBULLET_RE.test(tLine)) {
+        flushPara();
+        // 提取编号和内容
+        const numM = tLine.match(/^([①②③④⑤⑥⑦⑧⑨⑩]|[1-9]\.|[1-9]、)\s*/);
+        const numStr = numM ? numM[1] : '';
+        const rest = numStr ? tLine.slice(numM[0].length) : tLine;
+        const bulletHtml = `<div class="raw-numbered-item">`
+          + (numStr ? `<span class="raw-num-badge">${esc(numStr)}</span>` : '')
+          + `<span class="raw-num-text">${highlightInline(rest)}</span>`
+          + `</div>`;
+        if (currentCard) {
+          currentCard.lines.push(bulletHtml);
+        } else {
+          out.push(bulletHtml);
+        }
+        continue;
+      }
+
+      // 普通列表项
+      if (BULLET_RE.test(tLine)) {
+        flushPara();
+        const bHtml = `<div class="raw-bullet">${highlightInline(tLine)}</div>`;
+        if (currentCard) {
+          currentCard.lines.push(bHtml);
+        } else {
+          out.push(bHtml);
+        }
         continue;
       }
 
@@ -762,6 +920,7 @@
       paraBuf.push(tLine);
     }
     flushPara();
+    flushCard();
 
     return out.join('');
   }
