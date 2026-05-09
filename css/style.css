@@ -1056,38 +1056,39 @@ header, nav, main, footer { position: relative; z-index: 1; }
   display: flex; align-items: flex-start;
   border-bottom: 1px solid rgba(255,255,255,.03);
   padding: 4px 0;
+  min-width: 0;
 }
 .cd-bd-row:last-child { border-bottom: none; }
 
 .cd-bd-cat {
-  flex-shrink: 0; width: 2.8em;
-  padding: 5px 3px 5px 14px;
+  flex-shrink: 0; width: 2.4em;
+  padding: 5px 2px 5px 10px;
   color: var(--text-sub); font-weight: 700;
-  font-family: var(--font-serif); font-size: .76rem;
+  font-family: var(--font-serif); font-size: .72rem;
   white-space: nowrap; line-height: 1.7;
 }
 .cd-bd-items {
-  flex: 1; padding: 4px 6px 4px 4px;
+  flex: 1; min-width: 0; padding: 4px 4px 4px 2px;
   display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0;
   flex-direction: column;
 }
 .cd-bd-chips-wrap {
-  display: flex; flex-wrap: wrap; gap: 4px;
+  display: flex; flex-wrap: wrap; gap: 3px;
 }
 .cd-bd-total-cell {
-  flex-shrink: 0; width: 4.4em;
-  text-align: right; padding: 5px 14px 5px 4px;
+  flex-shrink: 0; width: 3.8em;
+  text-align: right; padding: 5px 10px 5px 2px;
   white-space: nowrap; align-self: flex-end;
 }
 
 /* 分项 chip */
 .bd-chip {
-  display: inline-flex; align-items: center; gap: 3px;
-  margin: 2px 4px 2px 0;
+  display: inline-flex; align-items: center; gap: 2px;
+  margin: 2px 3px 2px 0;
   background: rgba(0,0,0,.25);
   border: 1px solid rgba(255,255,255,.07);
-  border-radius: 5px; padding: 3px 8px;
-  font-size: .72rem; font-family: var(--font-serif);
+  border-radius: 5px; padding: 2px 6px;
+  font-size: .70rem; font-family: var(--font-serif);
 }
 .bd-chip-lbl { color: var(--text-dim); }
 .bd-chip-val { font-weight: 700; }
@@ -1354,21 +1355,21 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .npc-events-block {
   grid-column: 1 / -1;
   margin-top: 6px;
-  background: rgba(4,8,14,.55);
-  border: 1px solid rgba(60,100,160,.22);
+  background: rgba(10,8,2,.55);
+  border: 1px solid rgba(180,130,50,.20);
   border-radius: var(--r);
   padding: 10px 14px;
 }
 .npc-events-hd {
   font-size: .58rem; font-weight: 700;
-  color: rgba(100,160,220,.65); letter-spacing: .14em;
+  color: rgba(212,168,67,.75); letter-spacing: .14em;
   text-transform: uppercase; font-family: var(--font-sans);
   display: flex; align-items: center; gap: 6px;
   margin-bottom: 8px;
 }
 .npc-events-hd::after {
   content: ''; flex: 1; height: 1px;
-  background: linear-gradient(90deg, rgba(60,100,200,.18), transparent);
+  background: linear-gradient(90deg, rgba(180,130,50,.25), transparent);
 }
 .npc-events-grid {
   display: grid;
@@ -1377,14 +1378,14 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 .npc-event-item {
   padding: 5px 9px;
-  background: rgba(8,16,30,.5);
-  border: 1px solid rgba(60,100,180,.12);
-  border-left: 2px solid rgba(80,140,200,.3);
+  background: rgba(18,12,2,.5);
+  border: 1px solid rgba(180,130,50,.10);
+  border-left: 2px solid rgba(212,168,67,.35);
   border-radius: 0 var(--r) var(--r) 0;
   display: flex; flex-direction: column; gap: 2px;
 }
 .npc-city {
-  font-size: .64rem; color: rgba(120,180,240,.75);
+  font-size: .64rem; color: var(--gold-light);
   font-family: var(--font-serif); font-weight: 700;
   letter-spacing: .04em;
 }
@@ -1541,32 +1542,63 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* 悬浮问号按钮 */
 .tips-btn {
   position: fixed;
-  bottom: 24px;
-  left: 24px;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 9000;
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  border: 1px solid rgba(180,130,50,.45);
-  background: rgba(18,8,4,.88);
-  color: var(--gold-dim);
-  font-size: 1.1rem;
+  border: 1.5px solid rgba(212,168,67,.55);
+  background: radial-gradient(circle at 38% 35%, rgba(80,45,8,.98) 0%, rgba(22,10,3,.97) 60%, rgba(12,5,1,.99) 100%);
+  color: #c8992a;
+  font-size: 1.18rem;
   font-family: var(--font-serif);
-  font-weight: 700;
+  font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 2px 12px rgba(0,0,0,.55), 0 0 0 1px rgba(180,130,50,.12);
+  box-shadow:
+    0 3px 16px rgba(0,0,0,.75),
+    0 1px 4px rgba(0,0,0,.9),
+    0 0 0 1px rgba(212,168,67,.10),
+    inset 0 1px 0 rgba(255,210,100,.13),
+    inset 0 -1px 0 rgba(0,0,0,.45);
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   letter-spacing: 0;
+  transition: all .2s ease;
+  text-shadow: 0 0 8px rgba(212,168,67,.5), 0 1px 2px rgba(0,0,0,.8);
+}
+.tips-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 28%, rgba(255,210,100,.10) 0%, transparent 65%);
+  pointer-events: none;
 }
 .tips-btn:hover {
-  border-color: rgba(200,155,65,.7);
-  color: #d4a84b;
-  box-shadow: 0 2px 18px rgba(0,0,0,.6), 0 0 8px rgba(180,130,50,.22);
+  border-color: rgba(212,168,67,.85);
+  color: #e8b94a;
+  box-shadow:
+    0 4px 22px rgba(0,0,0,.8),
+    0 1px 4px rgba(0,0,0,.9),
+    0 0 14px rgba(180,130,50,.28),
+    0 0 0 1px rgba(212,168,67,.18),
+    inset 0 1px 0 rgba(255,210,100,.20),
+    inset 0 -1px 0 rgba(0,0,0,.5);
+  text-shadow: 0 0 12px rgba(212,168,67,.7), 0 1px 2px rgba(0,0,0,.8);
+  transform: translateX(-50%) translateY(-1px);
+}
+.tips-btn:active {
+  transform: translateX(-50%) translateY(0px);
+  box-shadow:
+    0 2px 10px rgba(0,0,0,.75),
+    0 0 0 1px rgba(212,168,67,.12),
+    inset 0 2px 4px rgba(0,0,0,.5);
 }
 
 /* 半透明遮罩层 */
@@ -1756,7 +1788,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ── 移动端适配 ── */
 @media (max-width: 640px) {
-  .tips-btn { bottom: 18px; left: 14px; width: 40px; height: 40px; font-size: 1rem; }
+  .tips-btn { bottom: 18px; left: 50%; transform: translateX(-50%); width: 42px; height: 42px; font-size: 1.05rem; }
+  .tips-btn:hover { transform: translateX(-50%) translateY(-1px); }
+  .tips-btn:active { transform: translateX(-50%) translateY(0px); }
   .tips-overlay { padding: 0 0 68px 8px; }
   .tips-card { max-height: 68vh; }
   .tips-tab { padding: 7px 9px; font-size: .65rem; }
