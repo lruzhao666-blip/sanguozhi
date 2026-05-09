@@ -352,7 +352,7 @@ window.SGMap = (function () {
       <defs>${_defs()}</defs>
 
       <!-- ── 最底层：水墨战略底图 ── -->
-      <image href="images/map-bg.jpg"
+      <image href="images/map-bg2.jpg"
         x="${b.x.toFixed(1)}" y="${b.y.toFixed(1)}"
         width="${b.w.toFixed(1)}" height="${b.h.toFixed(1)}"
         preserveAspectRatio="xMidYMid slice"
@@ -360,7 +360,7 @@ window.SGMap = (function () {
 
       <!-- ── 暗化蒙版：压深底图，突出城池与网格 ── -->
       <rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"
-        fill="rgba(5,4,10,0.44)" style="pointer-events:none"/>
+        fill="rgba(5,4,10,0.62)" style="pointer-events:none"/>
 
       ${_allHexes()}
     </svg>`;
