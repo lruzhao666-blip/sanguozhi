@@ -1061,34 +1061,34 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .cd-bd-row:last-child { border-bottom: none; }
 
 .cd-bd-cat {
-  flex-shrink: 0; width: 3.6em;
-  padding: 5px 4px 5px 14px;
+  flex-shrink: 0; width: 2.4em;
+  padding: 5px 2px 5px 10px;
   color: var(--text-sub); font-weight: 700;
-  font-family: var(--font-serif); font-size: .76rem;
+  font-family: var(--font-serif); font-size: .72rem;
   white-space: nowrap; line-height: 1.7;
 }
 .cd-bd-items {
-  flex: 1; min-width: 0; padding: 4px 6px 4px 4px;
+  flex: 1; min-width: 0; padding: 4px 4px 4px 2px;
   display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0;
   flex-direction: column;
 }
 .cd-bd-chips-wrap {
-  display: flex; flex-wrap: wrap; gap: 4px;
+  display: flex; flex-wrap: wrap; gap: 3px;
 }
 .cd-bd-total-cell {
-  flex-shrink: 0; width: 4.4em;
-  text-align: right; padding: 5px 14px 5px 4px;
+  flex-shrink: 0; width: 3.8em;
+  text-align: right; padding: 5px 10px 5px 2px;
   white-space: nowrap; align-self: flex-end;
 }
 
 /* 分项 chip */
 .bd-chip {
-  display: inline-flex; align-items: center; gap: 3px;
-  margin: 2px 4px 2px 0;
+  display: inline-flex; align-items: center; gap: 2px;
+  margin: 2px 3px 2px 0;
   background: rgba(0,0,0,.25);
   border: 1px solid rgba(255,255,255,.07);
-  border-radius: 5px; padding: 3px 8px;
-  font-size: .72rem; font-family: var(--font-serif);
+  border-radius: 5px; padding: 2px 6px;
+  font-size: .70rem; font-family: var(--font-serif);
 }
 .bd-chip-lbl { color: var(--text-dim); }
 .bd-chip-val { font-weight: 700; }
@@ -1355,21 +1355,21 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .npc-events-block {
   grid-column: 1 / -1;
   margin-top: 6px;
-  background: rgba(4,8,14,.55);
-  border: 1px solid rgba(60,100,160,.22);
+  background: rgba(10,8,2,.55);
+  border: 1px solid rgba(180,130,50,.20);
   border-radius: var(--r);
   padding: 10px 14px;
 }
 .npc-events-hd {
   font-size: .58rem; font-weight: 700;
-  color: rgba(100,160,220,.65); letter-spacing: .14em;
+  color: rgba(212,168,67,.75); letter-spacing: .14em;
   text-transform: uppercase; font-family: var(--font-sans);
   display: flex; align-items: center; gap: 6px;
   margin-bottom: 8px;
 }
 .npc-events-hd::after {
   content: ''; flex: 1; height: 1px;
-  background: linear-gradient(90deg, rgba(60,100,200,.18), transparent);
+  background: linear-gradient(90deg, rgba(180,130,50,.25), transparent);
 }
 .npc-events-grid {
   display: grid;
@@ -1378,14 +1378,14 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 .npc-event-item {
   padding: 5px 9px;
-  background: rgba(8,16,30,.5);
-  border: 1px solid rgba(60,100,180,.12);
-  border-left: 2px solid rgba(80,140,200,.3);
+  background: rgba(18,12,2,.5);
+  border: 1px solid rgba(180,130,50,.10);
+  border-left: 2px solid rgba(212,168,67,.35);
   border-radius: 0 var(--r) var(--r) 0;
   display: flex; flex-direction: column; gap: 2px;
 }
 .npc-city {
-  font-size: .64rem; color: rgba(120,180,240,.75);
+  font-size: .64rem; color: var(--gold-light);
   font-family: var(--font-serif); font-weight: 700;
   letter-spacing: .04em;
 }
