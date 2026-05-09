@@ -776,13 +776,98 @@
       paraBuf = [];
     };
 
+    // ── 👤 各城主行动结果：子玩家分组 ──
+    // 与 🎯 行动建议 完全相同的 action-item 排版
+    const _groupPlayerResultLines = (cardLines) => {
+      const SUB_PLAYER_RE = /^([\u4e00-\u9fa5A-Za-z]{1,4})[·\u30fb\u2022::\uff1a]\s*(.*)$/;
+      const hasSubPlayer = cardLines.some(l => !l.startsWith('<') && SUB_PLAYER_RE.test(l.trim()));
+      if (!hasSubPlayer) return cardLines;
+
+      // 破折号拆分：标题 —— 注解（与 renderBlock 完全一致）
+      const splitDash = text => {
+        const idx = text.search(/\u2014\u2014|\u2500\u2500|\s[\-\u2014]{2}\s/);
+        if (idx <= 0) return { name: text, desc: '' };
+        return {
+          name: text.slice(0, idx).trim(),
+          desc: text.slice(idx).replace(/^[\u2014\u2500\s\-]+/, '').trim()
+        };
+      };
+
+      // slot 分配（首次出现顺序）
+      const slotMap = {};
+      let slotIdx = 0;
+      const getSlot = n => { if (!(n in slotMap)) slotMap[n] = slotIdx++; return slotMap[n]; };
+
+      const result = [];
+      // { name, slot, titleText, bodyLines[], extraHtml[] }
+      let grp = null;
+
+      const flushGroup = () => {
+        if (!grp) return;
+        const sl = grp.slot % 3;
+        let inner = `<div class="action-player-tag" data-slot="${sl}">${esc(grp.name)}</div>`;
+
+        // ── 主行动条目：玩家名后的标题行（action-item，无序号） ──
+        if (grp.titleText) {
+          const { name, desc } = splitDash(grp.titleText);
+          inner += '<div class="action-item">';
+          inner += `<span class="name">${highlightInline(name)}</span>`;
+          if (desc) {
+            inner += `<span class="dash">\u2014\u2014</span>`;
+            inner += `<span class="desc">${highlightInline(desc)}</span>`;
+          }
+          inner += '</div>';
+        }
+
+        // ── 后续描述行：每行独立 action-item，无序号，desc 色 ──
+        grp.bodyLines.forEach(line => {
+          const { name, desc } = splitDash(line);
+          inner += '<div class="action-item result-body-item">';
+          inner += `<span class="desc">${highlightInline(name)}</span>`;
+          if (desc) {
+            inner += `<span class="dash">\u2014\u2014</span>`;
+            inner += `<span class="desc">${highlightInline(desc)}</span>`;
+          }
+          inner += '</div>';
+        });
+
+        // ── 已渲染 HTML（▸ 影响、note 等）原样附后 ──
+        inner += grp.extraHtml.join('');
+
+        result.push(`<div class="result-player-group" data-slot="${sl}">${inner}</div>`);
+        grp = null;
+      };
+
+      cardLines.forEach(line => {
+        if (line.startsWith('<')) {
+          if (grp) grp.extraHtml.push(line);
+          else result.push(line);
+          return;
+        }
+        const m = line.trim().match(SUB_PLAYER_RE);
+        if (m) {
+          flushGroup();
+          grp = { name: m[1], slot: getSlot(m[1]), titleText: m[2].trim(), bodyLines: [], extraHtml: [] };
+        } else {
+          if (grp) grp.bodyLines.push(line.trim());
+          else result.push(`<p class="raw-para">${highlightInline(line)}</p>`);
+        }
+      });
+      flushGroup();
+      return result;
+    };
+
     const flushCard = () => {
       if (!currentCard) return;
+      // 对 👤 段落卡片执行子玩家分组后处理
+      const finalLines = currentCard.emoji === '👤'
+        ? _groupPlayerResultLines(currentCard.lines)
+        : currentCard.lines;
       // 无盒版：去掉背景/边框，仅用间距分组
       const cardHtml =
         `<div class="raw-section-card">`
         + `<div class="raw-section-card-body">`
-        + currentCard.lines.join('')
+        + finalLines.join('')
         + `</div></div>`;
       out.push(cardHtml);
       currentCard = null;
