@@ -533,45 +533,55 @@
     // GM 标注剥除
     const stripGM = l => l.trim().replace(/^[【\[][^】\]\n]{1,12}[】\]]\s*/, '').trim();
 
+    // 判断是否是 A/B/C 分支行
+    const isBranchLine = l => /^\s*[A-Ca-c][.．、]\s*.+/.test(l);
+    // 提取分支字母
+    const branchLetter = l => l.trim().slice(0,1).toUpperCase();
+    // 提取分支正文（去掉 "A. " 前缀）
+    const branchText   = l => l.trim().replace(/^[A-Ca-c][.．、]\s*/, '');
+
     // 渲染一组 actionLines + waitLine → HTML字符串
+    // actionLines: [{ playerLabel, opts: [{ text, branches: [{label,text}] }] }]
     const renderBlock = (actionLines, waitLine) => {
       let ab = '<div class="raw-action-block">';
-      ab += '<div class="rab-title">🎯 行动建议</div>';
+      ab += '<div class="action-block-title">🎯 行动建议</div>';
       if (actionLines.length) {
-        ab += '<div class="rab-players">';
         actionLines.forEach((al, pi) => {
-          ab += `<div class="rab-player-row" data-slot="${pi}">`;
-          ab += `<div class="rab-pname">${esc(al.playerLabel)}</div>`;
-          ab += '<div class="rab-opts">';
+          ab += `<div class="action-player-group" data-slot="${pi}">`;
+          ab += `<div class="action-player-tag" data-slot="${pi}">${esc(al.playerLabel)}</div>`;
           al.opts.forEach((opt, oi) => {
-            const isCustom = /自定义/.test(opt);
-            // A/B/C 分支行：以 "A." "B." "C." 或 "A、""B、" 开头
-            const isBranch = /^[A-Ca-c][.、．]/.test(opt.trim());
-            // 破折号后注解拆分：「行动名 —— 注解」
-            const dashIdx = opt.search(/——|──|\s[-—]{2}\s/);
-            let optMain = opt, optNote = '';
-            if (!isBranch && dashIdx > 0) {
-              optMain = opt.slice(0, dashIdx);
-              optNote = opt.slice(dashIdx);
+            // 破折号拆分：行动名 —— 注解
+            const dashIdx = opt.text.search(/——|──|\s[-—]{2}\s/);
+            let name = opt.text, desc = '';
+            if (dashIdx > 0) {
+              name = opt.text.slice(0, dashIdx).trim();
+              desc = opt.text.slice(dashIdx).replace(/^[——──\s-—]+/, '').trim();
             }
-            const cls = ['rab-opt',
-              isCustom ? 'rab-opt--custom' : '',
-              isBranch ? 'rab-opt--branch' : ''
-            ].filter(Boolean).join(' ');
-            // 提取 A/B/C 字母用于徽章
-            const branchLetter = isBranch ? opt.trim().slice(0, 1).toUpperCase() : '';
-            ab += `<div class="${cls}">`
-                + (isBranch
-                    ? `<span class="rab-opt-branch-letter">${branchLetter}</span>`
-                    : `<span class="rab-opt-num">${ICONS[oi]||''}</span>`)
-                + `<span class="rab-opt-txt">${esc(optMain)}${optNote ? `<span class="rab-opt-note">${esc(optNote)}</span>` : ''}</span>`
-                + '</div>';
+            ab += `<div class="action-item">`;
+            ab += `<span class="num">${ICONS[oi] || ''}</span>`;
+            ab += `<span class="name">${esc(name)}</span>`;
+            if (desc) {
+              ab += `<span class="dash">——</span>`;
+              ab += `<span class="desc">${esc(desc)}</span>`;
+            }
+            // A/B/C 分支
+            if (opt.branches && opt.branches.length) {
+              ab += '<div class="branch-list">';
+              opt.branches.forEach(br => {
+                const lbl = br.label.toUpperCase();
+                ab += `<div class="branch-option" data-label="${lbl}">`;
+                ab += `<span class="branch-label">${lbl}</span>`;
+                ab += `<span class="branch-text">${esc(br.text)}</span>`;
+                ab += '</div>';
+              });
+              ab += '</div>';
+            }
+            ab += '</div>'; // .action-item
           });
-          ab += '</div></div>';
+          ab += '</div>'; // .action-player-group
         });
-        ab += '</div>';
       }
-      if (waitLine) ab += `<div class="rab-wait">${esc(waitLine)}</div>`;
+      if (waitLine) ab += `<div class="action-wait">${esc(waitLine)}</div>`;
       ab += '</div>';
       return ab;
     };
@@ -591,6 +601,7 @@
           if (pendingPlayer !== null && pendingOpts.length) {
             actionLines.push({ playerLabel: pendingPlayer, opts: pendingOpts });
           }
+          // pendingOpts 现在是 [{text, branches}]，flushP 直接赋值即可
           pendingPlayer = null;
           pendingOpts   = [];
         };
@@ -614,7 +625,7 @@
           }
           emptyCount = 0;
 
-          // 单行格式：「名: ① xxx ② xxx」
+          // 单行格式：「名: ① xxx ② xxx」（单行内不含 A/B/C 分支）
           if (isSingleLine(s2)) {
             flushP();
             const cm = s2.match(/^([^:：①②③④⑤⑥\s][^:：]{0,12})[：:]\s*(.+)$/);
@@ -624,17 +635,31 @@
               const opts   = [];
               const re     = /[①②③④⑤⑥]\s*([^①②③④⑤⑥]+)/g;
               let m;
-              while ((m = re.exec(rest)) !== null) opts.push(m[1].trim().replace(/[,，]+$/, ''));
+              while ((m = re.exec(rest)) !== null)
+                opts.push({ text: m[1].trim().replace(/[,，]+$/, ''), branches: [] });
               actionLines.push({ playerLabel: pLabel, opts });
             }
             i++; continue;
           }
 
-          // 纯选项行：① xxx
+          // 纯选项行：① xxx（读完后继续读附属 A/B/C 分支行）
           if (isOpt(s2)) {
             const optTxt = s2.trim().replace(/^[①②③④⑤⑥]\s*/, '').replace(/[,，]+$/, '');
-            pendingOpts.push(optTxt);
-            i++; continue;
+            const branches = [];
+            i++;
+            // 向前预读：连续吃掉所有 A./B./C. 行（允许中间有单个空行）
+            while (i < lines.length) {
+              const ahead = stripGM(lines[i]);
+              if (!ahead) { i++; continue; }          // 空行跳过
+              if (isBranchLine(ahead)) {
+                branches.push({ label: branchLetter(ahead), text: branchText(ahead) });
+                i++;
+              } else {
+                break;                               // 非分支行，停止预读
+              }
+            }
+            pendingOpts.push({ text: optTxt, branches });
+            continue;  // i 已在内层循环推进，外层不再 i++
           }
 
           // 纯玩家名行
@@ -643,6 +668,9 @@
             pendingPlayer = s2;
             i++; continue;
           }
+
+          // A/B/C 分支行游离在选项之外（理论不应出现，安全跳过）
+          if (isBranchLine(s2)) { i++; continue; }
 
           // 其他行 → 块结束
           flushP();
