@@ -1034,7 +1034,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══ Layer 2：收支明细 ══ */
 .cc-breakdown {
   border-bottom: 1px solid rgba(255,255,255,.04);
-  margin: 4px 10px 2px;
+  margin: 4px 10px 2px 36px;
   border: 1px solid rgba(255,255,255,.05);
   border-radius: 7px;
   background: rgba(0,0,0,.18);
