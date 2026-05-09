@@ -1032,116 +1032,138 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 
 /* ══ Layer 2：收支明细 ══ */
+
 .cc-breakdown {
-  border-bottom: 1px solid rgba(255,255,255,.04);
-  margin: 4px 10px 2px 36px;
-  border: 1px solid rgba(255,255,255,.05);
-  border-radius: 7px;
-  background: rgba(0,0,0,.18);
-  overflow: hidden;
+  margin: 4px 0 6px;
 }
 .cc-breakdown-label {
-  font-size: .58rem; font-weight: 700;
-  color: rgba(160,130,65,.5); letter-spacing: .14em;
-  text-transform: uppercase; font-family: var(--font-sans);
-  padding: 9px 14px 4px;
-  display: flex; align-items: center; gap: 6px;
+  font-size: .55rem; font-weight: 700; letter-spacing: .15em;
+  color: rgba(160,130,65,.4); text-transform: uppercase;
+  font-family: var(--font-sans);
+  padding: 5px 14px 4px;
+  display: flex; align-items: center; gap: 8px;
 }
 .cc-breakdown-label::after {
   content: ''; flex: 1; height: 1px;
-  background: linear-gradient(90deg, rgba(160,130,65,.18), transparent);
+  background: linear-gradient(90deg, rgba(160,130,65,.2), transparent);
 }
 
-/* 收支明细容器 */
+/* 表格：纵向堆叠各资源行 */
 .cd-bd-table {
   display: flex; flex-direction: column;
-  gap: 0; font-size: .74rem; margin: 0 0 8px;
+  padding: 0 14px 4px;
+  font-size: .72rem;
 }
+
+/* 每资源行：左资源名 · 中chips自动换行 · 右合计 */
 .cd-bd-row {
-  display: flex; align-items: flex-start;
-  border-bottom: 1px solid rgba(255,255,255,.03);
+  display: flex;
+  align-items: flex-start;
   padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
   min-width: 0;
 }
 .cd-bd-row:last-child { border-bottom: none; }
 
+/* 左：资源图标+名，固定宽按最长"民心"定，保证所有行左对齐 */
 .cd-bd-cat {
-  flex-shrink: 0; width: 2.8em;
-  padding: 5px 3px 5px 14px;
-  color: var(--text-sub); font-weight: 700;
-  font-family: var(--font-serif); font-size: .76rem;
-  white-space: nowrap; line-height: 1.7;
+  flex: 0 0 4.2em;
+  display: flex; align-items: flex-start;
+  font-size: .74rem; font-weight: 700;
+  font-family: var(--font-serif);
+  color: var(--text-sub);
+  white-space: nowrap;
+  line-height: 1.8;
 }
-.cd-bd-items {
-  flex: 1; min-width: 0; padding: 4px 6px 4px 4px;
-  display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0;
-  flex-direction: column;
+.cd-bd-cat-icon {
+  display: inline-block;
+  width: 1.4em; text-align: center;
+  flex-shrink: 0;
 }
-.cd-bd-chips-wrap {
-  display: flex; flex-wrap: wrap; gap: 4px;
-}
-.cd-bd-total-cell {
-  flex-shrink: 0; width: 4.4em;
-  text-align: right; padding: 5px 14px 5px 4px;
-  white-space: nowrap; align-self: flex-end;
+.cd-bd-cat-name {
+  flex: 1;
 }
 
-/* 分项 chip */
-.bd-chip {
-  display: inline-flex; align-items: center; gap: 3px;
-  margin: 2px 4px 2px 0;
-  background: rgba(0,0,0,.25);
-  border: 1px solid rgba(255,255,255,.07);
-  border-radius: 5px; padding: 3px 8px;
-  font-size: .72rem; font-family: var(--font-serif);
+/* 中：chips换行区 + 兵种子块，占满剩余空间 */
+.cd-bd-items {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  gap: 3px;
 }
-.bd-chip-lbl { color: var(--text-dim); }
+
+/* chips横排，自动换行 */
+.cd-bd-chips-wrap {
+  display: flex; flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1px 10px;
+}
+
+/* 右：合计数字，顶部对齐 */
+.cd-bd-total-cell {
+  flex: 0 0 auto;
+  min-width: 3.6em;
+  text-align: right;
+  padding-left: 8px;
+  white-space: nowrap;
+  align-self: flex-start;
+  padding-top: 2px;
+}
+
+/* 明细项：无框纯文字，标签暗色+数值亮色 */
+.bd-chip {
+  display: inline-flex; align-items: baseline; gap: 1px;
+  font-size: .71rem; font-family: var(--font-serif);
+  white-space: nowrap; line-height: 1.8;
+}
+.bd-chip-lbl { color: var(--text-dim); font-weight: 400; }
 .bd-chip-val { font-weight: 700; }
 .bd-chip-val.pos  { color: #5dda8a; }
 .bd-chip-val.neg  { color: #f07070; }
 .bd-chip-val.zero { color: var(--text-dim); }
 
 /* 合计值 */
-.bd-total { font-weight: 800; font-size: .86rem; font-variant-numeric: tabular-nums; }
+.bd-total {
+  font-weight: 800; font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+}
 .bd-total.pos  { color: #6de898; }
 .bd-total.neg  { color: #f07878; }
 .bd-total.zero { color: var(--text-dim); }
 
-/* 兵种明细块（Layer2 兵行子区域）*/
+/* ── 兵种城市明细（兵行专属） ── */
 .bd-troop-block {
-  display: flex; flex-direction: column; gap: 4px;
-  margin-top: 5px; padding-top: 5px;
+  display: flex; flex-direction: column;
+  gap: 0;
+  margin-top: 2px; padding-top: 3px;
   border-top: 1px solid rgba(255,255,255,.05);
   width: 100%;
 }
+/* 城市一行 = 城市名 + 兵种数值横排自动换行 */
 .bd-troop-row {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  display: flex; align-items: baseline; flex-wrap: wrap;
+  gap: 0 10px;
+  padding: 1px 0;
 }
 .bd-troop-city {
-  font-size: .68rem; color: var(--gold-dim); font-family: var(--font-serif);
-  font-weight: 700; flex-shrink: 0; min-width: 2.4em;
+  flex: 0 0 2.8em;
+  font-size: .68rem; font-weight: 700;
+  color: var(--gold-dim); font-family: var(--font-serif);
+  white-space: nowrap; line-height: 1.7;
 }
 .bd-troop-chips {
-  display: flex; flex-wrap: wrap; gap: 3px;
+  display: flex; flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 10px;
 }
-
-/* troop chip */
 .troop-chip {
-  font-size: .72rem; font-family: var(--font-serif); font-weight: 700; padding: 2px 7px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,.07);
-  background: rgba(0,0,0,.28);
+  font-size: .70rem; font-family: var(--font-serif); font-weight: 700;
+  white-space: nowrap; line-height: 1.8;
 }
 .troop-chip.pos  { color: #5dda8a; }
 .troop-chip.neg  { color: #f07070; }
 .troop-chip.zero { color: var(--text-dim); }
-.troop-chips-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-.troop-city-tag {
-  font-size: .72rem; color: var(--text-sub);
-  font-family: var(--font-serif);
-  font-weight: 400; letter-spacing: 0;
-  text-transform: none; margin-left: 4px;
-}
+.troop-chips-row { display: flex; flex-wrap: wrap; gap: 1px 8px; }
+.troop-city-tag  { font-size: .68rem; color: var(--text-dim); margin-left: 4px; }
 
 /* ══ 季度结算 chips ══ */
 .cd-season-row { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1453,7 +1475,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
     gap: 8px; padding: 10px 10px;
   }
   .npc-events-grid { grid-template-columns: 1fr; }
-  .cd-bd-table { font-size: .7rem; }
+  .cd-bd-table { font-size: .68rem; }
+  .cd-bd-row { grid-template-columns: 2.2em 1fr auto; }
+  .cd-bd-cat { padding-left: 10px; }
 }
 
 /* 正负色（全局复用）*/
