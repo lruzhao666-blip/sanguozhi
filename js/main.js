@@ -539,8 +539,8 @@
       ab += '<div class="rab-title">🎯 行动建议</div>';
       if (actionLines.length) {
         ab += '<div class="rab-players">';
-        actionLines.forEach(al => {
-          ab += '<div class="rab-player-row">';
+        actionLines.forEach((al, pi) => {
+          ab += `<div class="rab-player-row" data-slot="${pi}">`;
           ab += `<div class="rab-pname">${esc(al.playerLabel)}</div>`;
           ab += '<div class="rab-opts">';
           al.opts.forEach((opt, oi) => {
@@ -558,8 +558,12 @@
               isCustom ? 'rab-opt--custom' : '',
               isBranch ? 'rab-opt--branch' : ''
             ].filter(Boolean).join(' ');
+            // 提取 A/B/C 字母用于徽章
+            const branchLetter = isBranch ? opt.trim().slice(0, 1).toUpperCase() : '';
             ab += `<div class="${cls}">`
-                + (isBranch ? '' : `<span class="rab-opt-num">${ICONS[oi]||''}</span>`)
+                + (isBranch
+                    ? `<span class="rab-opt-branch-letter">${branchLetter}</span>`
+                    : `<span class="rab-opt-num">${ICONS[oi]||''}</span>`)
                 + `<span class="rab-opt-txt">${esc(optMain)}${optNote ? `<span class="rab-opt-note">${esc(optNote)}</span>` : ''}</span>`
                 + '</div>';
           });

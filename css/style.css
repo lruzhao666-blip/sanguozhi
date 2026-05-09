@@ -164,7 +164,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
   color: #e8dcc4;
   font-weight: 400;
   word-break: break-word;
-  max-width: 64em;
+  max-width: 940px;
+  width: 100%;
   margin: 0 auto;
   -webkit-font-smoothing: antialiased;
 }
@@ -218,7 +219,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   background: linear-gradient(90deg, transparent, rgba(140,100,30,.4), transparent);
 }
 
-/* ── 行动建议块（与战局动态其他内容风格统一）── */
+/* ── 行动建议块（Req 3/4 restyle）── */
 .digest-raw .raw-action-block {
   margin: 20px 0 16px;
 }
@@ -233,38 +234,70 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border-radius: 0 var(--r) var(--r) 0;
 }
 .digest-raw .rab-title::after { display: none; }
+
 /* 三个玩家纵向排列，玩家之间留出明显间距 */
 .digest-raw .rab-players {
-  display: flex; flex-direction: column; gap: 22px;
-  padding-left: 14px;
+  display: flex; flex-direction: column; gap: 18px;
+  padding-left: 0;
 }
-/* 每个玩家独立一块：名字在上，选项在下 */
+
+/* 每个玩家独立一块：左边框颜色按 slot 区分 */
 .digest-raw .rab-player-row {
   display: flex; flex-direction: column; gap: 6px;
-}
-/* 玩家名：与 raw-player 同款风格 */
-.digest-raw .rab-pname {
-  font-family: var(--font-serif); font-size: 1rem; font-weight: 700;
-  color: #f0cfa0; letter-spacing: .04em;
-  padding: 3px 10px;
-  border-left: 3px solid rgba(200,100,50,.5);
-  background: rgba(70,25,10,.18);
+  border-left: 3px solid rgba(160,100,40,.35);
+  padding-left: 12px;
   border-radius: 0 var(--r) var(--r) 0;
-  margin-bottom: 4px;
 }
-/* 选项列表：纵向，每项之间留出间距 */
+/* slot 0 = 甲（红） */
+.digest-raw .rab-player-row[data-slot="0"] { border-left-color: rgba(231,76,60,.55); }
+/* slot 1 = 乙（绿） */
+.digest-raw .rab-player-row[data-slot="1"] { border-left-color: rgba(61,190,108,.50); }
+/* slot 2 = 丙（蓝） */
+.digest-raw .rab-player-row[data-slot="2"] { border-left-color: rgba(52,152,219,.50); }
+
+/* 玩家名：[ 昭 ] 徽章风格 */
+.digest-raw .rab-pname {
+  font-family: var(--font-serif); font-size: .88rem; font-weight: 700;
+  letter-spacing: .12em;
+  padding: 2px 9px;
+  border-radius: var(--r);
+  display: inline-block;
+  margin-bottom: 5px;
+  /* 默认色（无 slot 时） */
+  color: #f0cfa0;
+  background: rgba(70,25,10,.22);
+  border: 1px solid rgba(200,100,50,.30);
+}
+.digest-raw .rab-player-row[data-slot="0"] .rab-pname {
+  color: #f08080;
+  background: rgba(140,30,20,.20);
+  border-color: rgba(231,76,60,.30);
+}
+.digest-raw .rab-player-row[data-slot="1"] .rab-pname {
+  color: #7de0a0;
+  background: rgba(20,80,40,.20);
+  border-color: rgba(61,190,108,.28);
+}
+.digest-raw .rab-player-row[data-slot="2"] .rab-pname {
+  color: #80bfea;
+  background: rgba(10,40,80,.22);
+  border-color: rgba(52,152,219,.28);
+}
+
+/* 选项列表 */
 .digest-raw .rab-opts {
-  display: flex; flex-direction: column; gap: 8px;
-  padding-left: 8px;
+  display: flex; flex-direction: column; gap: 5px;
+  padding-left: 2px;
 }
 /* 每条选项：编号 + 文字同行 */
 .digest-raw .rab-opt {
-  display: flex; align-items: baseline; gap: 7px;
+  display: flex; align-items: baseline; gap: 6px;
   line-height: 1.75;
 }
+/* 编号 ①②③：弱化，与正文同色，不加粗 */
 .digest-raw .rab-opt-num {
-  font-family: var(--font-serif); font-size: .92rem;
-  color: var(--gold-light); flex-shrink: 0; font-weight: 700;
+  font-family: var(--font-serif); font-size: .88rem;
+  color: rgba(200,184,154,0.45); flex-shrink: 0; font-weight: 400;
 }
 .digest-raw .rab-opt-txt {
   font-family: var(--font-serif); font-size: .95rem;
@@ -273,19 +306,38 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .rab-opt--custom .rab-opt-txt {
   color: var(--text-sub);
 }
-/* A/B/C 分支：缩进，字号小半档，颜色淡一档 */
+/* 破折号后注解：明显弱化 */
+.digest-raw .rab-opt-note {
+  color: rgba(200,184,154,0.50);
+  font-size: .90rem;
+}
+
+/* ── Req 4: A/B/C 分支行 ── */
 .digest-raw .rab-opt--branch {
-  padding-left: 24px;
-  margin-top: 2px;
+  padding-left: 28px;
+  margin-top: 1px;
+  align-items: baseline;
+}
+/* 字母徽章 A / B / C */
+.digest-raw .rab-opt-branch-letter {
+  flex-shrink: 0;
+  display: inline-block;
+  font-family: var(--font-sans); font-size: .72rem; font-weight: 700;
+  color: rgba(160,140,100,.70);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(160,140,100,.22);
+  border-radius: 3px;
+  padding: 0 4px;
+  line-height: 1.5;
+  letter-spacing: .04em;
+  min-width: 1.5em;
+  text-align: center;
 }
 .digest-raw .rab-opt--branch .rab-opt-txt {
   font-size: .88rem;
-  color: rgba(200,184,154,0.68);
+  color: rgba(180,165,138,0.62);
 }
-/* 破折号后注解：淡一档 */
-.digest-raw .rab-opt-note {
-  color: rgba(200,184,154,0.68);
-}
+
 .digest-raw .rab-wait {
   font-family: var(--font-serif); font-size: .88rem;
   color: var(--text-dim); letter-spacing: .06em;
@@ -312,7 +364,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border-radius: 0 var(--r) var(--r) 0;
   border: 1px solid rgba(255,255,255,.05);
   border-left: 3px solid var(--gold);   /* 由 JS inline style 覆盖 */
-  margin: 18px 0 0;
+  margin: 32px 0 0;
   overflow: hidden;
   /* bg 由 JS inline style 覆盖 */
 }
@@ -500,6 +552,17 @@ header, nav, main, footer { position: relative; z-index: 1; }
   margin: 4px 0 4px 1.4em;
   line-height: 1.9;
 }
+
+/* ── Req 5: 叙事编号弱化（①②③ 与正文同色，不加粗；🎲 骰子行不受影响）── */
+.digest-raw .raw-num-badge {
+  font-weight: 400;
+  font-size: .95rem;
+  color: #e8dcc4;
+  text-shadow: none;
+}
+/* raw-section-card 内部的 raw-section 顶距统一 */
+.digest-raw .raw-section { margin-top: 32px; }
+.digest-raw .raw-section:first-child { margin-top: 0; }
 
 /* 手机端数据面板 */
 @media(max-width: 640px) {
