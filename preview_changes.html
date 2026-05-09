@@ -1,3 +1,12 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>收支预览</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
 /* ============================================
    三国志文字版 — 战旗赤红风 CSS v8
    精简 · 高级 · 呼吸感
@@ -888,18 +897,18 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .toast.hidden { display: none; }
 
 /* ══════════════════════════════════════════
-   💰 本回合收支详情  v5.0  — 精炼版
-   三层卡片：Layer1 总览 / Layer2 明细 / Layer3 锚点
+   📊 本回合收支详情  v4.0  — 重设计版
+   三层卡片：Layer1 总览 / Layer2 明细折叠 / Layer3 锚点折叠
 ══════════════════════════════════════════ */
 
 /* ── 外层 info-block 定制 ── */
 .block-changes-detail {
-  border-color: rgba(160,115,35,.20);
-  box-shadow: 0 2px 24px rgba(0,0,0,.38);
+  border-color: rgba(180,130,40,.22);
+  box-shadow: 0 4px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.03);
 }
 .block-changes-detail .ib-header {
-  background: linear-gradient(90deg, rgba(40,24,2,.70) 0%, rgba(16,8,2,.40) 70%, transparent);
-  border-bottom: 1px solid rgba(160,115,35,.16);
+  background: linear-gradient(90deg, rgba(45,28,4,.65) 0%, rgba(18,10,2,.45) 60%, transparent);
+  border-bottom: 1px solid rgba(180,130,40,.18);
   padding: 11px 20px;
 }
 .block-changes-detail .ib-title {
@@ -910,8 +919,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
   margin-left: auto;
   font-size: .64rem; color: var(--text-dim);
   font-family: var(--font-sans); letter-spacing: .06em;
-  background: rgba(212,168,67,.06);
-  border: 1px solid rgba(212,168,67,.12);
+  background: rgba(212,168,67,.07);
+  border: 1px solid rgba(212,168,67,.14);
   border-radius: 8px; padding: 2px 9px;
 }
 
@@ -919,94 +928,107 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .changes-cards-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  padding: 14px 0 18px;
+  gap: 14px;
+  padding: 16px 18px 20px;
   align-items: stretch;
 }
 
 /* ══ 单张玩家收支卡 ══ */
 .cd-card {
   position: relative;
-  background: rgba(10,4,3,.94);
-  border: 1px solid rgba(100,58,22,.26);
-  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(14,6,4,.96) 0%, rgba(8,3,2,.98) 100%);
+  border: 1px solid rgba(120,70,30,.28);
+  border-radius: 12px;
   display: flex; flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 2px 14px rgba(0,0,0,.40);
+  box-shadow:
+    0 4px 20px rgba(0,0,0,.5),
+    0 1px 0 rgba(255,255,255,.03) inset,
+    0 -1px 0 rgba(0,0,0,.4) inset;
+  transition: box-shadow .22s, transform .18s;
+}
+.cd-card:hover {
+  box-shadow:
+    0 8px 32px rgba(0,0,0,.6),
+    0 1px 0 rgba(255,255,255,.04) inset;
+  transform: translateY(-2px);
 }
 
 /* 顶部彩色光带（每张卡专属色） */
 .cd-card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0;
-  height: 2px; border-radius: 10px 10px 0 0;
+  height: 2px; border-radius: 12px 12px 0 0;
 }
-.cd-card-0 { border-color: rgba(231,76,60,.28); }
-.cd-card-1 { border-color: rgba(61,190,108,.25); }
-.cd-card-2 { border-color: rgba(52,152,219,.25); }
-.cd-card-0::before { background: linear-gradient(90deg, rgba(231,76,60,.7), transparent 65%); }
-.cd-card-1::before { background: linear-gradient(90deg, rgba(61,190,108,.6), transparent 65%); }
-.cd-card-2::before { background: linear-gradient(90deg, rgba(52,152,219,.6), transparent 65%); }
+.cd-card-0 { border-color: rgba(231,76,60,.30); }
+.cd-card-1 { border-color: rgba(61,190,108,.28); }
+.cd-card-2 { border-color: rgba(52,152,219,.28); }
+.cd-card-0::before { background: linear-gradient(90deg, var(--p0-color), transparent 70%); }
+.cd-card-1::before { background: linear-gradient(90deg, var(--p1-color), transparent 70%); }
+.cd-card-2::before { background: linear-gradient(90deg, var(--p2-color), transparent 70%); }
 
 /* 弹性占位块 */
 .cd-card-spacer { flex: 1; min-height: 8px; }
 
 /* ── 卡头 ── */
 .cd-header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px 9px;
-  border-bottom: 1px solid rgba(255,255,255,.04);
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 15px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
 }
-.cd-header-0 { background: linear-gradient(110deg, rgba(110,14,6,.38) 0%, rgba(50,4,2,.14) 55%, transparent); }
-.cd-header-1 { background: linear-gradient(110deg, rgba(10,80,35,.38) 0%, rgba(4,36,14,.14) 55%, transparent); }
-.cd-header-2 { background: linear-gradient(110deg, rgba(6,46,108,.38) 0%, rgba(3,22,55,.14) 55%, transparent); }
+.cd-header-0 { background: linear-gradient(110deg, rgba(130,18,8,.42) 0%, rgba(60,5,2,.18) 60%, transparent); }
+.cd-header-1 { background: linear-gradient(110deg, rgba(12,96,42,.42) 0%, rgba(5,44,18,.18) 60%, transparent); }
+.cd-header-2 { background: linear-gradient(110deg, rgba(8,56,130,.42) 0%, rgba(4,26,65,.18) 60%, transparent); }
 
 /* 左侧竖条 */
 .cd-strip {
-  width: 3px; height: 28px; border-radius: 2px;
+  width: 3px; height: 32px; border-radius: 2px;
   flex-shrink: 0; align-self: center;
 }
-.cd-strip-0 { background: var(--p0-color); opacity: .85; }
-.cd-strip-1 { background: var(--p1-color); opacity: .80; }
-.cd-strip-2 { background: var(--p2-color); opacity: .80; }
+.cd-strip-0 { background: linear-gradient(180deg, #ff6b5a, var(--p0-color)); box-shadow: 0 0 8px rgba(231,76,60,.7); }
+.cd-strip-1 { background: linear-gradient(180deg, #6fe88e, var(--p1-color)); box-shadow: 0 0 8px rgba(61,190,108,.7); }
+.cd-strip-2 { background: linear-gradient(180deg, #6ab8f0, var(--p2-color)); box-shadow: 0 0 8px rgba(52,152,219,.7); }
 
 .cd-name {
-  font-family: var(--font-serif); font-size: .96rem; font-weight: 700;
-  color: var(--gold-light); letter-spacing: .05em; flex: 1;
+  font-family: var(--font-serif); font-size: 1rem; font-weight: 700;
+  color: var(--gold-light); letter-spacing: .06em; flex: 1;
+  text-shadow: 0 0 12px rgba(212,168,67,.25);
 }
 /* 卡头右侧小标 */
 .cd-header-badge {
   font-size: .58rem; color: var(--text-dim);
-  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
   border-radius: 7px; padding: 1px 7px; white-space: nowrap;
 }
 
 /* ── Layer 1：资源总量 pills 行 ── */
 .cd-res-row {
-  display: flex; flex-wrap: wrap; gap: 5px;
-  padding: 9px 14px 8px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 10px 15px 9px;
   border-bottom: 1px solid rgba(255,255,255,.04);
-  background: rgba(0,0,0,.14);
+  background: rgba(0,0,0,.18);
 }
 .cd-res-pill {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px 4px 8px;
-  border-radius: 16px;
+  padding: 4px 11px 4px 9px;
+  border-radius: 20px;
   font-family: var(--font-serif);
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.09);
+  transition: background .15s, border-color .15s;
 }
-.cd-res-pill .pill-icon { font-size: .78rem; line-height: 1; }
+.cd-res-pill:hover { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); }
+.cd-res-pill .pill-icon { font-size: .82rem; line-height: 1; }
 .cd-res-pill .pill-name {
-  color: var(--text-dim); font-size: .66rem; letter-spacing: .02em;
+  color: var(--text-dim); font-size: .68rem; letter-spacing: .02em;
 }
 /* 数字：大号、粗体、等宽数字、高对比色 */
 .cd-res-pill .pill-val {
-  font-weight: 800; font-size: .94rem; margin-left: 1px;
+  font-weight: 800; font-size: 1rem; margin-left: 2px;
   font-variant-numeric: tabular-nums; letter-spacing: -.01em;
   line-height: 1;
 }
-.cd-res-pill .pill-val.pos  { color: #72e292; }
-.cd-res-pill .pill-val.neg  { color: #f08070; }
+.cd-res-pill .pill-val.pos  { color: #72e292; text-shadow: 0 0 8px rgba(90,210,120,.35); }
+.cd-res-pill .pill-val.neg  { color: #f08070; text-shadow: 0 0 8px rgba(220,80,60,.30); }
 .cd-res-pill .pill-val.zero { color: var(--text-dim); }
 
 /* ── 通用小节 ── */
@@ -1028,64 +1050,64 @@ header, nav, main, footer { position: relative; z-index: 1; }
   background: linear-gradient(90deg, rgba(180,150,80,.2), transparent);
 }
 
-/* ══ Layer 2：收支明细 ══ */
+/* ══ Layer 2：收支明细折叠 details ══ */
 .cc-breakdown {
   border-bottom: 1px solid rgba(255,255,255,.04);
 }
-.cc-breakdown-label {
-  font-size: .58rem; font-weight: 700;
-  color: rgba(160,130,65,.5); letter-spacing: .14em;
+.cc-breakdown-summary {
+  cursor: pointer;
+  font-size: .64rem; font-weight: 700;
+  color: rgba(180,150,80,.7); letter-spacing: .12em;
   text-transform: uppercase; font-family: var(--font-sans);
-  padding: 7px 14px 3px;
-  display: flex; align-items: center; gap: 6px;
+  padding: 7px 15px;
+  display: flex; align-items: center; gap: 7px;
+  list-style: none; user-select: none;
+  transition: color .18s;
 }
-.cc-breakdown-label::after {
-  content: ''; flex: 1; height: 1px;
-  background: linear-gradient(90deg, rgba(160,130,65,.18), transparent);
+.cc-breakdown-summary:hover { color: var(--gold); }
+.cc-breakdown-summary::-webkit-details-marker { display: none; }
+.cc-breakdown-summary::before {
+  content: '▸'; font-size: .6rem;
+  opacity: .6; transition: transform .2s, opacity .2s;
 }
+details[open] .cc-breakdown-summary::before { transform: rotate(90deg); opacity: 1; }
 
-/* 收支明细容器 */
+/* 收支明细表 */
 .cd-bd-table {
-  display: flex; flex-direction: column;
-  gap: 0; font-size: .74rem; margin: 0 0 6px;
+  width: 100%; border-collapse: collapse; font-size: .74rem;
+  margin: 0 0 7px;
 }
-.cd-bd-row {
-  display: flex; align-items: flex-start;
-  border-bottom: 1px solid rgba(255,255,255,.035);
-  padding: 2px 0;
+.cd-bd-tr {
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  transition: background .12s;
 }
-.cd-bd-row:last-child { border-bottom: none; }
+.cd-bd-tr:hover { background: rgba(255,255,255,.025); }
+.cd-bd-tr:last-child { border-bottom: none; }
 
 .cd-bd-cat {
-  flex-shrink: 0; width: 2.8em;
-  padding: 5px 3px 5px 14px;
+  width: 2.6em; padding: 5px 8px 5px 15px;
   color: var(--text-sub); font-weight: 700;
-  font-family: var(--font-serif); font-size: .76rem;
-  white-space: nowrap; line-height: 1.6;
+  font-family: var(--font-serif); font-size: .78rem;
+  vertical-align: middle; white-space: nowrap;
 }
 .cd-bd-items {
-  flex: 1; padding: 4px 4px;
-  display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0;
-  flex-direction: column;
-}
-.cd-bd-chips-wrap {
-  display: flex; flex-wrap: wrap; gap: 3px;
+  padding: 4px 6px; vertical-align: middle;
 }
 .cd-bd-total-cell {
-  flex-shrink: 0; width: 4.2em;
-  text-align: right; padding: 5px 13px 5px 4px;
-  white-space: nowrap; align-self: flex-end;
+  text-align: right; padding: 5px 14px 5px 4px;
+  vertical-align: middle; white-space: nowrap; width: 3.8em;
 }
 
 /* 分项 chip */
 .bd-chip {
   display: inline-flex; align-items: center; gap: 3px;
-  margin: 2px 3px 2px 0;
-  background: rgba(0,0,0,.28);
-  border: 1px solid rgba(255,255,255,.06);
+  margin: 2px 4px 2px 0;
+  background: rgba(0,0,0,.32);
+  border: 1px solid rgba(255,255,255,.07);
   border-radius: 5px; padding: 2px 7px;
-  font-size: .72rem; font-family: var(--font-serif);
+  font-size: .68rem; transition: border-color .12s;
 }
+.bd-chip:hover { border-color: rgba(255,255,255,.13); }
 .bd-chip-lbl { color: var(--text-dim); }
 .bd-chip-val { font-weight: 700; }
 .bd-chip-val.pos  { color: #5dda8a; }
@@ -1098,27 +1120,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .bd-total.neg  { color: #f07878; }
 .bd-total.zero { color: var(--text-dim); }
 
-/* 兵种明细块（Layer2 兵行子区域）*/
-.bd-troop-block {
-  display: flex; flex-direction: column; gap: 3px;
-  margin-top: 4px; padding-top: 3px;
-  border-top: 1px solid rgba(255,255,255,.04);
-  width: 100%;
-}
-.bd-troop-row {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-}
-.bd-troop-city {
-  font-size: .7rem; color: var(--gold-dim); font-family: var(--font-serif);
-  font-weight: 700; flex-shrink: 0; min-width: 2.5em;
-}
-.bd-troop-chips {
-  display: flex; flex-wrap: wrap; gap: 4px;
-}
-
 /* troop chip */
 .troop-chip {
-  font-size: .72rem; font-family: var(--font-serif); font-weight: 700; padding: 2px 7px;
+  font-size: .68rem; font-weight: 700; padding: 2px 7px;
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,.07);
   background: rgba(0,0,0,.28);
@@ -1202,7 +1206,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   display: flex; flex-direction: column; gap: 3px;
 }
 .intel-item {
-  font-size: .74rem; color: var(--text-sub);
+  font-size: .72rem; color: var(--text-sub);
   line-height: 1.6; padding: 3px 8px;
   background: rgba(0,0,0,.2);
   border-left: 2px solid rgba(80,130,220,.3);
@@ -1231,61 +1235,90 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 
 /* ══════════════════════════════════════════
-   Layer 3：通用锚点组（常驻展示）
+   Layer 3：通用锚点折叠 details
 ══════════════════════════════════════════ */
 .cc-anchor-groups {
   display: flex; flex-direction: column; gap: 0;
 }
-.cc-anchor-groups-body {
+
+.cc-anchor-groups-details {
   border-top: 1px solid rgba(255,255,255,.04);
 }
+.cc-anchor-groups-summary {
+  cursor: pointer;
+  font-size: .68rem; font-weight: 600;
+  color: rgba(160,130,70,.8); letter-spacing: .05em;
+  font-family: var(--font-sans);
+  padding: 7px 15px;
+  display: flex; align-items: center; gap: 6px;
+  list-style: none; user-select: none;
+  line-height: 1.5;
+  transition: color .18s, background .18s;
+}
+.cc-anchor-groups-summary:hover {
+  color: var(--gold-light);
+  background: rgba(212,168,67,.04);
+}
+.cc-anchor-groups-summary::-webkit-details-marker { display: none; }
+.cc-anchor-groups-summary::before {
+  content: '\25B8'; font-size: .6rem;
+  opacity: .55; transition: transform .2s, opacity .2s; flex-shrink: 0;
+}
+details[open].cc-anchor-groups-details .cc-anchor-groups-summary::before {
+  transform: rotate(90deg); opacity: 1;
+}
+/* 摘要中的锚点图标 tag */
+.cc-anchor-groups-summary .ag-hint-tag {
+  font-size: .6rem; padding: 1px 6px; border-radius: 8px;
+  background: rgba(212,168,67,.08); border: 1px solid rgba(212,168,67,.14);
+  color: var(--gold-dim); white-space: nowrap;
+}
 
-/* ── 驻军调度专属 ── */
-.ag-item-guard {
-  display: flex; align-items: baseline; flex-wrap: wrap;
-  gap: 6px; padding: 4px 4px;
+.cc-anchor-groups-body {
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160,50,30,.5) transparent;
 }
-.ag-guard-city {
-  font-size: .76rem; font-family: var(--font-serif);
-  color: var(--gold-dim); font-weight: 700;
-  flex-shrink: 0; min-width: 2.8em;
-}
-.ag-guard-moves {
-  display: flex; flex-wrap: wrap; gap: 6px;
-}
-.guard-in  { color: #72e292; font-size: .74rem; font-family: var(--font-serif); }
-.guard-out { color: #f08878; font-size: .74rem; font-family: var(--font-serif); }
-.guard-action { font-size: .66rem; opacity: .75; letter-spacing: .04em; font-family: var(--font-sans); }
+.cc-anchor-groups-body::-webkit-scrollbar { width: 3px; }
+.cc-anchor-groups-body::-webkit-scrollbar-thumb { background: rgba(160,50,30,.5); border-radius: 2px; }
 
 /* ── 锚点组 ── */
 .anchor-group {
-  padding: 7px 14px 8px 12px;
+  padding: 8px 15px 9px 13px;
   border-bottom: 1px solid rgba(255,255,255,.04);
-  border-left: 2px solid rgba(180,140,60,.18);
+  border-left: 2px solid rgba(200,160,80,.22);
+  transition: border-left-color .15s, background .15s;
+}
+.anchor-group:hover {
+  background: rgba(255,255,255,.015);
+  border-left-color: rgba(200,160,80,.45);
 }
 .anchor-group:last-child { border-bottom: none; }
 
-.public-anchor { border-left-color: rgba(80,160,200,.18); }
+.public-anchor { border-left-color: rgba(80,160,200,.22); }
+.public-anchor:hover { border-left-color: rgba(80,160,200,.45); }
 
 .ag-title {
-  font-size: .57rem; font-weight: 700;
-  color: rgba(150,120,58,.72); letter-spacing: .14em;
+  font-size: .58rem; font-weight: 700;
+  color: rgba(160,130,70,.75); letter-spacing: .14em;
   text-transform: uppercase; font-family: var(--font-sans);
   display: flex; align-items: center; gap: 5px;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
-.ag-icon { font-size: .72rem; opacity: .85; }
+.ag-icon { font-size: .75rem; opacity: .9; }
 
 .ag-items {
   list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 2px;
+  display: flex; flex-direction: column; gap: 3px;
 }
 .ag-item {
   display: flex; justify-content: space-between; align-items: center;
   gap: 8px; padding: 3px 4px;
   font-size: .76rem; font-family: var(--font-serif);
-  border-radius: 4px;
+  border-radius: 4px; transition: background .12s;
 }
+.ag-item:hover { background: rgba(255,255,255,.03); }
 .ag-label {
   color: var(--text-sub); flex: 1;
   line-height: 1.55; word-break: break-all;
@@ -1307,48 +1340,24 @@ header, nav, main, footer { position: relative; z-index: 1; }
   font-family: var(--font-sans); font-weight: 700;
   letter-spacing: .01em;
 }
-.delta-chip.pos  { background: rgba(50,150,75,.12);  color: #72e292; border: 1px solid rgba(60,160,80,.20); }
-.delta-chip.neg  { background: rgba(180,55,45,.12);  color: #f08878; border: 1px solid rgba(190,65,55,.20); }
-.delta-chip.zero { background: rgba(100,100,100,.07); color: var(--text-dim); border: 1px solid rgba(100,100,100,.11); }
-
-/* ── 武将状态（状态△）专属样式 ── */
-.ag-item-status {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 8px; padding: 3px 4px;
-  border-radius: 4px;
-}
-.ag-gen-name {
-  font-size: .76rem; font-family: var(--font-serif);
-  color: var(--text-sub); font-weight: 600; flex-shrink: 0;
-  min-width: 3em;
-}
-/* 状态 badge */
-.ag-status-badge {
-  display: inline-block; padding: 1px 9px; border-radius: 10px;
-  font-size: .68rem; font-family: var(--font-sans); font-weight: 700;
-  letter-spacing: .06em; white-space: nowrap;
-}
-.ag-status-injured { background: rgba(200,55,45,.18);  color: #f08878; border: 1px solid rgba(210,65,55,.30); }
-.ag-status-tired   { background: rgba(180,120,30,.16); color: #d4aa43; border: 1px solid rgba(190,130,40,.28); }
-.ag-status-sick    { background: rgba(140,60,180,.16); color: #c08ae0; border: 1px solid rgba(150,70,190,.26); }
-.ag-status-dead    { background: rgba(60,60,60,.22);   color: #888;    border: 1px solid rgba(80,80,80,.30); }
-.ag-status-normal  { background: rgba(50,150,75,.13);  color: #72e292; border: 1px solid rgba(60,160,80,.22); }
-.ag-status-other   { background: rgba(100,100,100,.10);color: var(--text-dim); border: 1px solid rgba(120,120,120,.18); }
+.delta-chip.pos  { background: rgba(50,150,75,.14);  color: #72e292; border: 1px solid rgba(60,160,80,.22); }
+.delta-chip.neg  { background: rgba(180,55,45,.14);  color: #f08878; border: 1px solid rgba(190,65,55,.22); }
+.delta-chip.zero { background: rgba(100,100,100,.08); color: var(--text-dim); border: 1px solid rgba(100,100,100,.13); }
 
 /* ══════════════════════════════════════════
-   v3 事件列表 / 错误区（天下动态已移除）
+   公共事件区（天下动态）
+   ★ 全宽；NPC 金色，野外绿色
 ══════════════════════════════════════════ */
-/* 保留 public-events-block 供 v3 事件复用 */
 .public-events-block {
-  grid-column: 1 / -1;
+  grid-column: 1 / -1;   /* ★ 全宽横跨三列 */
   margin-top: 4px;
-  background: rgba(0,0,0,.16);
-  border: 1px solid rgba(90,58,18,.20);
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(100,65,22,.22);
   border-radius: var(--r);
   padding: 10px 14px;
 }
 .public-events-hd {
-  font-size: .58rem; font-weight: 700;
+  font-size: .6rem; font-weight: 700;
   color: var(--text-dim); letter-spacing: .14em;
   text-transform: uppercase; font-family: var(--font-sans);
   display: flex; align-items: center; gap: 6px;
@@ -1356,9 +1365,82 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 .public-events-hd::after {
   content: ''; flex: 1; height: 1px;
-  background: linear-gradient(90deg, rgba(255,255,255,.07), transparent);
+  background: linear-gradient(90deg, rgba(255,255,255,.08), transparent);
 }
-.v3-errors-block { border-color: rgba(255,100,60,.22); background: rgba(100,16,0,.08); }
+
+/* 事件条目列表（流式，非网格）*/
+.public-events-items {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.pe-item {
+  display: flex; align-items: baseline; gap: 0;
+  padding: 5px 10px;
+  background: rgba(8,3,3,.55);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: var(--r);
+  font-size: .76rem; font-family: var(--font-serif);
+  line-height: 1.55;
+}
+/* NPC 条目：金色城名 */
+.pe-item--npc .pe-city {
+  color: #c09050;
+  font-weight: 700;
+  font-size: .74rem;
+  flex-shrink: 0;
+}
+.pe-item--npc .pe-text { color: var(--text-sub); }
+/* 野外 条目：绿色 */
+.pe-item--wild .pe-city {
+  color: #6dd68a;
+  font-weight: 700;
+  font-size: .74rem;
+  flex-shrink: 0;
+}
+.pe-item--wild .pe-text { color: #9ed8a8; }
+.pe-sep { color: var(--text-dim); margin: 0 3px; flex-shrink: 0; }
+.v3-errors-block { border-color: rgba(255,100,60,.25); background: rgba(120,20,0,.1); }
+
+/* ══ NPC 天下动态横幅 ══ */
+.npc-events-row {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(100,65,22,.22);
+  border-radius: var(--r);
+  padding: 10px 14px;
+}
+.npc-events-hd {
+  font-size: .6rem; font-weight: 700;
+  color: var(--text-dim); letter-spacing: .14em;
+  text-transform: uppercase; font-family: var(--font-sans);
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 8px;
+}
+.npc-events-hd::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,.08), transparent);
+}
+.npc-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 6px;
+}
+.npc-event-item {
+  display: flex; gap: 6px; align-items: baseline;
+  padding: 5px 10px;
+  background: rgba(8,3,3,.6);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: var(--r);
+}
+.npc-city {
+  font-family: var(--font-serif); font-size: .72rem;
+  color: var(--gold-dim); font-weight: 700;
+  white-space: nowrap; flex-shrink: 0;
+}
+.npc-desc {
+  font-size: .72rem; color: var(--text-dim);
+  line-height: 1.5; font-family: var(--font-serif);
+}
 
 /* ══ v3 新格式：事件列表 ══ */
 .v3-events-row { border-color: rgba(52,152,219,.2); }
@@ -1367,33 +1449,46 @@ header, nav, main, footer { position: relative; z-index: 1; }
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 8px; margin-top: 4px;
 }
-.v3-ev-col { display: flex; flex-direction: column; gap: 4px; }
+.v3-ev-col {
+  display: flex; flex-direction: column; gap: 4px;
+}
 .v3-ev-lord {
-  font-size: .58rem; font-weight: 700; color: var(--gold-dim);
-  letter-spacing: .1em; margin-bottom: 2px; text-transform: uppercase;
+  font-size: .6rem; font-weight: 700; color: var(--gold-dim);
+  letter-spacing: .1em; margin-bottom: 2px;
+  text-transform: uppercase;
 }
 .v3-ev-item {
   display: flex; flex-direction: column; gap: 2px;
   padding: 5px 8px;
-  background: rgba(8,3,3,.55);
+  background: rgba(8,3,3,.6);
   border: 1px solid rgba(255,255,255,.05);
   border-radius: var(--r);
 }
-.v3-ev-place  { font-size: .62rem; color: var(--gold-dim); font-family: var(--font-serif); }
-.v3-ev-content { font-size: .74rem; color: var(--text-sub); line-height: 1.5; font-family: var(--font-serif); }
+.v3-ev-place {
+  font-size: .62rem; color: var(--gold-dim);
+  font-family: var(--font-serif);
+}
+.v3-ev-content {
+  font-size: .72rem; color: var(--text-sub);
+  line-height: 1.5; font-family: var(--font-serif);
+}
 
 /* ══ v3 新格式：错误提示 ══ */
-.v3-errors-row { border-color: rgba(255,100,60,.22); background: rgba(100,16,0,.08); }
+.v3-errors-row {
+  border-color: rgba(255,100,60,.25);
+  background: rgba(120,20,0,.1);
+}
 .v3-err-item {
   display: flex; flex-wrap: wrap; align-items: baseline;
   gap: 6px; padding: 4px 0;
-  border-bottom: 1px solid rgba(255,255,255,.04); font-size: .7rem;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: .7rem;
 }
 .v3-err-item:last-child { border-bottom: none; }
-.v3-err-type    { color: #f07070; font-weight: 700; flex-shrink: 0; }
-.v3-err-raw     { color: var(--text-dim); font-family: monospace; }
+.v3-err-type  { color: #f07070; font-weight: 700; flex-shrink: 0; }
+.v3-err-raw   { color: var(--text-dim); font-family: monospace; }
 .v3-err-problem { color: #f0b040; }
-.v3-err-fix     { color: #5dda8a; font-family: var(--font-serif); }
+.v3-err-fix   { color: #5dda8a; font-family: var(--font-serif); }
 
 /* ── 手机端 ── */
 @media(max-width: 700px) {
@@ -1488,3 +1583,256 @@ header, nav, main, footer { position: relative; z-index: 1; }
   .msp-city-list { max-height: 140px; }
   .map-float-panel { width: 180px; font-size: .73rem; }
 }
+
+body { padding: 24px; background: #080808; }
+</style>
+</head>
+<body>
+
+<div class="info-block block-changes-detail" style="max-width:1100px;margin:0 auto;">
+  <div class="ib-header">
+    <span class="ib-icon ib-icon--text">收支</span>
+    <span class="ib-title">本回合收支详情</span>
+    <span class="ib-sub" id="changes-detail-sub">第 5 回合</span>
+  </div>
+  <div class="ib-body" style="padding:0">
+    <div class="changes-cards-row">
+
+      <!-- 玩家0 红色 -->
+      <div class="cd-card cd-card-0">
+        <div class="cd-header cd-header-0">
+          <div class="cd-strip cd-strip-0"></div>
+          <span class="cd-name">曹操</span>
+        </div>
+        <!-- Layer1 资源总变化 -->
+        <div class="cd-res-row">
+          <span class="cd-res-pill">
+            <span class="pill-icon">💰</span>
+            <span class="pill-name">金</span>
+            <span class="pill-val pos">+120</span>
+          </span>
+          <span class="cd-res-pill">
+            <span class="pill-icon">🌾</span>
+            <span class="pill-name">粮</span>
+            <span class="pill-val neg">-40</span>
+          </span>
+          <span class="cd-res-pill">
+            <span class="pill-icon">🛡️</span>
+            <span class="pill-name">兵</span>
+            <span class="pill-val neg">-800</span>
+          </span>
+          <span class="cd-res-pill">
+            <span class="pill-icon">❤️</span>
+            <span class="pill-name">民心</span>
+            <span class="pill-val pos">+5</span>
+          </span>
+        </div>
+        <!-- Layer2 收支明细 折叠 -->
+        <details class="cc-breakdown" open>
+          <summary class="cc-breakdown-summary">收支明细</summary>
+          <table class="cd-bd-table"><tbody>
+            <tr class="cd-bd-tr">
+              <td class="cd-bd-cat">💰金</td>
+              <td class="cd-bd-items">
+                <span class="bd-chip"><span class="bd-chip-lbl">产出</span><span class="bd-chip-val pos">+200</span></span>
+                <span class="bd-chip"><span class="bd-chip-lbl">维护</span><span class="bd-chip-val neg">-80</span></span>
+              </td>
+              <td class="cd-bd-total-cell"><span class="bd-total pos">+120</span></td>
+            </tr>
+            <tr class="cd-bd-tr">
+              <td class="cd-bd-cat">🌾粮</td>
+              <td class="cd-bd-items">
+                <span class="bd-chip"><span class="bd-chip-lbl">产出</span><span class="bd-chip-val pos">+60</span></span>
+                <span class="bd-chip"><span class="bd-chip-lbl">军粮</span><span class="bd-chip-val neg">-100</span></span>
+              </td>
+              <td class="cd-bd-total-cell"><span class="bd-total neg">-40</span></td>
+            </tr>
+            <tr class="cd-bd-tr">
+              <td class="cd-bd-cat">🛡️兵</td>
+              <td class="cd-bd-items">
+                <span class="bd-chip"><span class="bd-chip-lbl">战损</span><span class="bd-chip-val neg">-800</span></span>
+              </td>
+              <td class="cd-bd-total-cell"><span class="bd-total neg">-800</span></td>
+            </tr>
+          </tbody></table>
+        </details>
+        <!-- Layer3 锚点 折叠 -->
+        <div class="cc-anchor-groups">
+          <details class="cc-anchor-groups-details">
+            <summary class="cc-anchor-groups-summary">3 项变动 · 🏛️府库 · 🛡️驻军</summary>
+            <div class="cc-anchor-groups-body">
+              <section class="anchor-group" data-anchor="府库">
+                <h4 class="ag-title"><span class="ag-icon">🏛️</span>府库</h4>
+                <ul class="ag-items">
+                  <li class="ag-item">
+                    <span class="ag-label">支援袁绍粮草</span>
+                    <span class="ag-deltas">
+                      <span class="delta-chip neg">🌾粮 -200</span>
+                    </span>
+                  </li>
+                  <li class="ag-item">
+                    <span class="ag-label">商税收入</span>
+                    <span class="ag-deltas">
+                      <span class="delta-chip pos">💰金 +50</span>
+                    </span>
+                  </li>
+                </ul>
+              </section>
+              <section class="anchor-group" data-anchor="驻军">
+                <h4 class="ag-title"><span class="ag-icon">🛡️</span>驻军</h4>
+                <ul class="ag-items">
+                  <li class="ag-item">
+                    <span class="ag-label">许昌 驻 夏侯惇</span>
+                    <span class="ag-deltas">
+                      <span class="delta-chip zero">🛡️兵 0</span>
+                    </span>
+                  </li>
+                </ul>
+              </section>
+            </div>
+          </details>
+        </div>
+        <div class="cd-card-spacer"></div>
+      </div>
+
+      <!-- 玩家1 绿色 -->
+      <div class="cd-card cd-card-1">
+        <div class="cd-header cd-header-1">
+          <div class="cd-strip cd-strip-1"></div>
+          <span class="cd-name">刘备</span>
+        </div>
+        <div class="cd-res-row">
+          <span class="cd-res-pill">
+            <span class="pill-icon">💰</span>
+            <span class="pill-name">金</span>
+            <span class="pill-val neg">-30</span>
+          </span>
+          <span class="cd-res-pill">
+            <span class="pill-icon">🌾</span>
+            <span class="pill-name">粮</span>
+            <span class="pill-val pos">+80</span>
+          </span>
+          <span class="cd-res-pill">
+            <span class="pill-icon">🛡️</span>
+            <span class="pill-name">兵</span>
+            <span class="pill-val pos">+500</span>
+          </span>
+          <span class="cd-res-pill">
+            <span class="pill-icon">❤️</span>
+            <span class="pill-name">民心</span>
+            <span class="pill-val pos">+12</span>
+          </span>
+        </div>
+        <details class="cc-breakdown" open>
+          <summary class="cc-breakdown-summary">收支明细</summary>
+          <table class="cd-bd-table"><tbody>
+            <tr class="cd-bd-tr">
+              <td class="cd-bd-cat">💰金</td>
+              <td class="cd-bd-items">
+                <span class="bd-chip"><span class="bd-chip-lbl">产出</span><span class="bd-chip-val pos">+50</span></span>
+                <span class="bd-chip"><span class="bd-chip-lbl">募兵</span><span class="bd-chip-val neg">-80</span></span>
+              </td>
+              <td class="cd-bd-total-cell"><span class="bd-total neg">-30</span></td>
+            </tr>
+            <tr class="cd-bd-tr">
+              <td class="cd-bd-cat">🌾粮</td>
+              <td class="cd-bd-items">
+                <span class="bd-chip"><span class="bd-chip-lbl">产出</span><span class="bd-chip-val pos">+80</span></span>
+              </td>
+              <td class="cd-bd-total-cell"><span class="bd-total pos">+80</span></td>
+            </tr>
+            <tr class="cd-bd-tr">
+              <td class="cd-bd-cat">🛡️兵</td>
+              <td class="cd-bd-items">
+                <span class="bd-chip"><span class="bd-chip-lbl">募兵</span><span class="bd-chip-val pos">+500</span></span>
+              </td>
+              <td class="cd-bd-total-cell"><span class="bd-total pos">+500</span></td>
+            </tr>
+          </tbody></table>
+        </details>
+        <div class="cc-anchor-groups">
+          <details class="cc-anchor-groups-details">
+            <summary class="cc-anchor-groups-summary">2 项变动 · 🗓️季度 · 🏯城</summary>
+            <div class="cc-anchor-groups-body">
+              <section class="anchor-group" data-anchor="季度">
+                <h4 class="ag-title"><span class="ag-icon">🗓️</span>季度</h4>
+                <ul class="ag-items">
+                  <li class="ag-item">
+                    <span class="ag-label">春季丰收加成</span>
+                    <span class="ag-deltas">
+                      <span class="delta-chip pos">🌾粮 +100</span>
+                      <span class="delta-chip pos">💰金 +20</span>
+                    </span>
+                  </li>
+                </ul>
+              </section>
+              <section class="anchor-group" data-anchor="城">
+                <h4 class="ag-title"><span class="ag-icon">🏯</span>城</h4>
+                <ul class="ag-items">
+                  <li class="ag-item">
+                    <span class="ag-label">攻下汉中</span>
+                    <span class="ag-deltas">
+                      <span class="delta-chip pos">🏯城 +1</span>
+                    </span>
+                  </li>
+                </ul>
+              </section>
+            </div>
+          </details>
+        </div>
+        <div class="cd-card-spacer"></div>
+      </div>
+
+      <!-- 玩家2 蓝色 -->
+      <div class="cd-card cd-card-2">
+        <div class="cd-header cd-header-2">
+          <div class="cd-strip cd-strip-2"></div>
+          <span class="cd-name">孙权</span>
+        </div>
+        <div class="cd-res-row">
+          <span class="cd-res-pill">
+            <span class="pill-icon">💰</span>
+            <span class="pill-name">金</span>
+            <span class="pill-val pos">+200</span>
+          </span>
+          <span class="cd-res-pill">
+            <span class="pill-icon">🌾</span>
+            <span class="pill-name">粮</span>
+            <span class="pill-val zero">0</span>
+          </span>
+          <span class="cd-res-pill">
+            <span class="pill-icon">🛡️</span>
+            <span class="pill-name">兵</span>
+            <span class="pill-val neg">-1200</span>
+          </span>
+        </div>
+        <details class="cc-breakdown" open>
+          <summary class="cc-breakdown-summary">收支明细</summary>
+          <table class="cd-bd-table"><tbody>
+            <tr class="cd-bd-tr">
+              <td class="cd-bd-cat">💰金</td>
+              <td class="cd-bd-items">
+                <span class="bd-chip"><span class="bd-chip-lbl">产出</span><span class="bd-chip-val pos">+300</span></span>
+                <span class="bd-chip"><span class="bd-chip-lbl">贸易</span><span class="bd-chip-val pos">+80</span></span>
+                <span class="bd-chip"><span class="bd-chip-lbl">维护</span><span class="bd-chip-val neg">-180</span></span>
+              </td>
+              <td class="cd-bd-total-cell"><span class="bd-total pos">+200</span></td>
+            </tr>
+            <tr class="cd-bd-tr">
+              <td class="cd-bd-cat">🛡️兵</td>
+              <td class="cd-bd-items">
+                <span class="bd-chip"><span class="bd-chip-lbl">赤壁战损</span><span class="bd-chip-val neg">-1200</span></span>
+              </td>
+              <td class="cd-bd-total-cell"><span class="bd-total neg">-1200</span></td>
+            </tr>
+          </tbody></table>
+        </details>
+        <p class="cd-empty" style="display:none"></p>
+        <div class="cd-card-spacer"></div>
+      </div>
+
+    </div><!-- /changes-cards-row -->
+  </div>
+</div>
+
+</body></html>

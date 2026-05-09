@@ -1035,33 +1035,43 @@
           <span class="bd-chip-lbl">${esc(it.label)}</span>
           <span class="bd-chip-val ${valCls(it.val)}">${sign(it.val)}${it.val}</span>
         </span>`).join('');
+      // ★ 合计固定右端：用 flex 布局，chip 区自由换行，合计始终贴右
       const tv = d.total != null
         ? `<span class="bd-total ${valCls(d.total)}">${sign(d.total)}${d.total}</span>` : '';
-      // 兵行：附兵种细项
+      // 兵行：附兵种细项（注意：troop entry 用 e.type 不是 e.res，val 正确传入 valCls）
       let troopHtml = '';
       if (cat === '兵' && hasTroops) {
-        troopHtml = '<div class="bd-troop-block">' +
-          Object.entries(troopMap).map(([city, entries]) =>
-            `<div class="bd-troop-row">
-              <span class="bd-troop-city">${esc(city)}</span>
-              <span class="bd-troop-chips">${entries.map(e =>
-                `<span class="troop-chip ${valCls(e.val)}">${e.type}${sign(e.val)}${e.val}</span>`
-              ).join('')}</span>
-            </div>`
-          ).join('') + '</div>';
+        troopHtml = '<div class="bd-troop-block">'
+          + Object.entries(troopMap).map(([city, entries]) =>
+              '<div class="bd-troop-row">'
+              + '<span class="bd-troop-city">' + esc(city) + '</span>'
+              + '<span class="bd-troop-chips">'
+              + entries.map(e =>
+                  '<span class="troop-chip ' + valCls(e.val) + '">'
+                  + esc(e.type) + sign(e.val) + e.val
+                  + '</span>'
+                ).join('')
+              + '</span>'
+              + '</div>'
+            ).join('')
+          + '</div>';
       }
-      return `<tr class="cd-bd-tr">
-        <td class="cd-bd-cat">${RES_ICON[cat]||''}${cat}</td>
-        <td class="cd-bd-items">${chips}${troopHtml}</td>
-        <td class="cd-bd-total-cell">${tv}</td>
-      </tr>`;
+      // 新布局：资源名固定左，chips一行，兵种明细块独占次行，合计固定右
+      return '<div class="cd-bd-row">'
+        + '<span class="cd-bd-cat">' + (RES_ICON[cat]||'') + cat + '</span>'
+        + '<span class="cd-bd-items">'
+          + '<span class="cd-bd-chips-wrap">' + chips + '</span>'
+          + troopHtml
+        + '</span>'
+        + '<span class="cd-bd-total-cell">' + tv + '</span>'
+        + '</div>';
     }).filter(Boolean).join('');
 
     if (!rows) return '';
-    return `<details class="cc-breakdown" open>
-      <summary class="cc-breakdown-summary">收支明细</summary>
-      <table class="cd-bd-table"><tbody>${rows}</tbody></table>
-    </details>`;
+    return `<div class="cc-breakdown">
+      <div class="cc-breakdown-label">收支明细</div>
+      <div class="cd-bd-table">${rows}</div>
+    </div>`;
   }
 
   // ── Layer 3：通用锚点组渲染（数据驱动，无白名单）──
@@ -1075,30 +1085,80 @@
     const sectionsHtml = allKeys.map(key => {
       const items = groups[key];
       const icon  = ANCHOR_ICON[key] || '◆';
-      // 「状态」锚点用专属渲染：武将名 + 状态值（带颜色）
-      const isStatus = key === '状态';
+      const isStatus  = key === '状态';
+      const isGarrison = key === '驻军';
+      const isTroop   = key === '兵种';
+
       const itemsHtml = items.map(it => {
-        const deltasHtml = (it.deltas && it.deltas.length)
-          ? `<span class="ag-deltas">${it.deltas.map(d =>
-              `<span class="delta-chip ${valCls(d.val)}">${RES_ICON[d.res]||''}${d.res} ${sign(d.val)}${d.val}</span>`
-            ).join('')}</span>` : '';
+
+        // ── 驻军：用 incoming/outgoing 字段，每城一行 ──
+        if (isGarrison) {
+          const city = esc(it.cityName || it.label || '');
+          const inList  = (it.incoming || []).map(n => esc(n));
+          const outList = (it.outgoing || []).map(n => esc(n));
+          // 两者都空则跳过（不渲染空行）
+          if (!inList.length && !outList.length) return '';
+          const parts = [];
+          if (inList.length)  parts.push(
+            `<span class="guard-in">← ${inList.join(' / ')}<span class="guard-action"> 入驻</span></span>`);
+          if (outList.length) parts.push(
+            `<span class="guard-out">${outList.join(' / ')} →<span class="guard-action"> 调离</span></span>`);
+          return `<li class="ag-item ag-item-guard">
+            <span class="ag-guard-city">${city}</span>
+            <span class="ag-guard-moves">${parts.join('')}</span>
+          </li>`;
+        }
+
+        // ── 兵种：delta chip 正绿负红 ──
+        if (isTroop) {
+          const city = esc(it.label || '');
+          const chipsHtml = (it.deltas || []).map(d =>
+            `<span class="delta-chip ${valCls(d.val)}">${esc(d.res)}${sign(d.val)}${d.val}</span>`
+          ).join('');
+          if (!chipsHtml) return '';
+          return `<li class="ag-item">
+            <span class="ag-label">${city}</span>
+            <span class="ag-deltas">${chipsHtml}</span>
+          </li>`;
+        }
+
+        // ── 武将状态：武将名 + 纯文字状态 badge（只显示状态值本身）──
         if (isStatus) {
-          const genName  = esc(it.label || '');
-          const descTxt  = esc(it.desc  || it.text || '');
-          const descCls  = STATUS_DESC_CLS(it.desc || it.text || '');
+          const genName = esc(it.label || '');
+          // desc 优先；若无则从 text 里提取冒号后的部分（去掉原始锚点前缀）
+          let rawDesc = it.desc || '';
+          if (!rawDesc && it.text) {
+            const colonIdx = it.text.indexOf(':');
+            rawDesc = colonIdx >= 0 ? it.text.slice(colonIdx + 1).trim() : '';
+          }
+          if (!genName && !rawDesc) return '';
+          const descTxt = esc(rawDesc);
+          const descCls = STATUS_DESC_CLS(rawDesc);
+          // 健康/空状态不显示 badge
+          if (!rawDesc || descCls === 'ag-status-normal') {
+            return `<li class="ag-item ag-item-status">
+              <span class="ag-gen-name">${genName}</span>
+            </li>`;
+          }
           return `<li class="ag-item ag-item-status">
             <span class="ag-gen-name">${genName}</span>
             <span class="ag-status-badge ${descCls}">${descTxt}</span>
           </li>`;
         }
+
+        // ── 通用 ──
+        const deltasHtml = (it.deltas && it.deltas.length)
+          ? `<span class="ag-deltas">${it.deltas.map(d =>
+              `<span class="delta-chip ${valCls(d.val)}">${RES_ICON[d.res]||''}${d.res} ${sign(d.val)}${d.val}</span>`
+            ).join('')}</span>` : '';
         const labelTxt = it.label || it.text || '';
         return `<li class="ag-item">
           <span class="ag-label">${esc(labelTxt)}</span>
           ${deltasHtml}
         </li>`;
       }).join('');
-      // 「状态」锚点标题改为「武将动态」
-      const titleTxt = key === '状态' ? '武将动态' : key;
+
+      const titleTxt = key === '状态' ? '武将状态' : key;
       return `<section class="anchor-group" data-anchor="${esc(key)}">
         <h4 class="ag-title"><span class="ag-icon">${icon}</span>${esc(titleTxt)}</h4>
         <ul class="ag-items">${itemsHtml}</ul>
@@ -1107,28 +1167,7 @@
 
     if (!sectionsHtml) return '';
 
-    // 生成摘要行
-    const totalItems = allKeys.reduce((s, k) => s + groups[k].length, 0);
-    // 列出前2个锚点名作为「含X调度」提示
-    const anchorHints = allKeys.slice(0, 2).map(k => {
-      const icon = ANCHOR_ICON[k] || '';
-      return icon + k;
-    }).join(' · ');
-    // 找第一个有金增减的 delta 作为额外提示
-    let goldHint = '';
-    for (const key of allKeys) {
-      for (const it of groups[key]) {
-        const goldD = (it.deltas || []).find(d => d.res === '金');
-        if (goldD) { goldHint = ` · 府库${sign(goldD.val)}${goldD.val}金`; break; }
-      }
-      if (goldHint) break;
-    }
-    const summaryTxt = `${totalItems} 项变动 · ${anchorHints}${goldHint}`;
-
-    return `<details class="cc-anchor-groups-details">
-      <summary class="cc-anchor-groups-summary">${summaryTxt}</summary>
-      <div class="cc-anchor-groups-body">${sectionsHtml}</div>
-    </details>`;
+    return `<div class="cc-anchor-groups-body">${sectionsHtml}</div>`;
   }
 
   // ── 兼容旧数据：把旧字段转换为 anchorGroups ──
@@ -1160,7 +1199,7 @@
       if (!groups['情报']) groups['情报'] = [];
       ch.intel.forEach(s => groups['情报'].push({ label: s, deltas: [], text: s }));
     }
-    // 兵种变动
+    // 兵种变动 ── res 字段用 type（步/弓/骑/水/蛮），val 保持原值供 valCls 正确配色
     if (ch.troopChanges && ch.troopChanges.length) {
       if (!groups['兵种']) groups['兵种'] = [];
       ch.troopChanges.forEach(tc => {
@@ -1168,38 +1207,38 @@
           label:  tc.cityName,
           deltas: (tc.entries || []).map(e => ({ res: e.type, val: e.val })),
           text:   tc.spec || '',
+          isTroop: true,
         });
+      });
+    }
+    // ★ 驻军变动 ── 迁移 ch.guards 进 anchorGroups，按城名去重聚合
+    if (ch.guards && ch.guards.length) {
+      // 先合并 anchorGroups 里可能已有的旧驻军条目（防止通用锚点二次写入残留）
+      delete groups['驻军'];
+      groups['驻军'] = [];
+      // 按城名聚合：同城的 incoming/outgoing 合并到一条
+      const cityMap = {};
+      ch.guards.forEach(g => {
+        if (!cityMap[g.cityName]) cityMap[g.cityName] = { incoming: [], outgoing: [] };
+        (g.members || []).forEach(m => {
+          if (m.dir === 'in')  cityMap[g.cityName].incoming.push(m.name);
+          else                 cityMap[g.cityName].outgoing.push(m.name);
+        });
+        // 兼容旧格式 newHolder（无 members）
+        if (!g.members && g.newHolder) {
+          cityMap[g.cityName].incoming.push(g.newHolder);
+        }
+      });
+      Object.entries(cityMap).forEach(([city, mv]) => {
+        groups['驻军'].push({ cityName: city, incoming: mv.incoming, outgoing: mv.outgoing, label: city });
       });
     }
     return groups;
   }
 
-  // ── 公共事件区（天下动态）──
-  // NPC事件：金色 #c09050；野外事件：绿色 #6dd68a
+  // ── 公共事件区（天下动态已移除；仅保留 v3 事件列表和错误提示）──
   function _renderPublicEvents(publicEvents, v3Events, v3Errors) {
     let html = '';
-
-    // 公共事件（NPC状态 / 野外 / 其他无归属锚点）
-    if (publicEvents && publicEvents.length) {
-      // 按 anchor 分组
-      const grouped = {};
-      publicEvents.forEach(ev => {
-        if (!grouped[ev.anchor]) grouped[ev.anchor] = [];
-        grouped[ev.anchor].push(ev);
-      });
-      const itemsHtml = publicEvents.map(ev => {
-        const isWild = ev.anchor === '野外';
-        const colorCls = isWild ? 'pe-item--wild' : 'pe-item--npc';
-        const cityHtml = ev.label
-          ? `<span class="pe-city">${esc(ev.label)}</span><span class="pe-sep"> · </span>`
-          : '';
-        return `<div class="pe-item ${colorCls}">${cityHtml}<span class="pe-text">${esc(ev.text)}</span></div>`;
-      }).join('');
-      html += `<div class="public-events-block">
-        <div class="public-events-hd">🌐 天下动态</div>
-        <div class="public-events-items">${itemsHtml}</div>
-      </div>`;
-    }
 
     // v3 事件列表
     if (v3Events && v3Events.length) {

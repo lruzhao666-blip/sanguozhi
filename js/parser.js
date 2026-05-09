@@ -840,20 +840,29 @@ window.SGParser = (function () {
         change.cities.push({ delta: parseInt(cm[1]), action: cm[2], cityName: cm[3].trim() });
       }
 
-      /* ── 守将变动（驻军△同城合并）── */
-      const guardRe = /(?:驻军|守将)△([^:：]+)[:：]([^(（\s,，]+)(?:[（(]原[:：]([^）)]+)[）)])?/g;
-      let gm;
-      while ((gm = guardRe.exec(line)) !== null) {
-        const cityName  = gm[1].trim();
-        const newHolder = gm[2].trim();
-        const prevHolder = gm[3] ? gm[3].trim() : null;
-        // ★ 同城合并：若已存在同城名的 guard 条目，追加武将而非新建
-        const existing = change.guards.find(g => g.cityName === cityName);
-        if (existing) {
-          if (!existing.extras) existing.extras = [];
-          existing.extras.push(newHolder);
-        } else {
-          change.guards.push({ cityName, newHolder, prevHolder, extras: [] });
+      /* ── 守将变动（驻军△同城合并，识别 +/- 方向）── */
+      // 支持格式：驻军△汉中:+魏延,-吴懿  / 驻军△汉中:+魏延 / 驻军△江陵:-文聘
+      if (/(?:驻军|守将)△/.test(line)) {
+        const cityBlockRe = /(?:驻军|守将)△([^:：]+)[:：]([^\n]+)/g;
+        let cbm;
+        while ((cbm = cityBlockRe.exec(line)) !== null) {
+          const cityName = cbm[1].trim();
+          const body     = cbm[2].trim();
+          // 逐个武将令牌：+张飞 / -赵云 / 张飞（无符号视为入驻）
+          const tokenRe = /([+-]?)([^+\-,，\s(（]+)/g;
+          let tm;
+          while ((tm = tokenRe.exec(body)) !== null) {
+            const sign    = tm[1] || '+';            // 无符号默认入驻
+            const genName = tm[2].replace(/[）)].*/,'').trim();
+            if (!genName) continue;
+            const dir = sign === '+' ? 'in' : 'out'; // in=入驻 out=调离
+            const existing = change.guards.find(g => g.cityName === cityName);
+            if (existing) {
+              existing.members.push({ name: genName, dir });
+            } else {
+              change.guards.push({ cityName, members: [{ name: genName, dir }] });
+            }
+          }
         }
       }
 
@@ -940,7 +949,7 @@ window.SGParser = (function () {
       }
 
       /* ── 通用锚点 fallback：任何 XX△ 且不属于已知锚点，且锚点名不是资源名 ── */
-      const KNOWN_ANCHORS = /^(?:收支|府库|暗账|季度|情报|兵种|NPC状态|野外)△/;
+      const KNOWN_ANCHORS = /^(?:收支|府库|暗账|季度|情报|兵种|驻军|守将|NPC状态|野外)△/;
       if (/^[^△\s]{1,10}△/.test(line) && !KNOWN_ANCHORS.test(line)) {
         anchor = null;  // 重置文本锚点
         const parsed = _parseAnchorLine(line);  // 内部已拦截资源名
