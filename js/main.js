@@ -1356,9 +1356,9 @@
         text: '',
       });
     }
-    // 府库△
-    if (ch.darkItems && ch.darkItems.length) {
-      if (!groups['府库']) groups['府库'] = [];
+    // 府库△（旧数据兼容：anchorGroups['府库'] 已由 v11 parser 直接写入时跳过，避免重复）
+    if (ch.darkItems && ch.darkItems.length && !groups['府库']) {
+      groups['府库'] = [];
       ch.darkItems.forEach(d => {
         groups['府库'].push({
           label:  typeof d === 'string' ? d : (d.desc || ''),
