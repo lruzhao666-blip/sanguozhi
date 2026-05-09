@@ -1288,8 +1288,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
   gap: 6px; padding: 4px 4px;
 }
 .ag-guard-city {
-  font-size: .76rem; font-family: var(--font-serif);
-  color: var(--gold-dim); font-weight: 700;
+  font-size: .74rem; font-family: var(--font-serif);
+  color: var(--text-sub); font-weight: 400;
   flex-shrink: 0; min-width: 2.8em;
 }
 .ag-guard-moves {
