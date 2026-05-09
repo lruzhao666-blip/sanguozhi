@@ -1488,3 +1488,232 @@ header, nav, main, footer { position: relative; z-index: 1; }
   .msp-city-list { max-height: 140px; }
   .map-float-panel { width: 180px; font-size: .73rem; }
 }
+
+/* ══════════════════════════════════════════
+   行动提醒卡 — Tips Card
+   ══════════════════════════════════════════ */
+
+/* 悬浮问号按钮 */
+.tips-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9000;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(180,130,50,.45);
+  background: rgba(18,8,4,.88);
+  color: var(--gold-dim);
+  font-size: 1.1rem;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,.55), 0 0 0 1px rgba(180,130,50,.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  letter-spacing: 0;
+}
+.tips-btn:hover {
+  border-color: rgba(200,155,65,.7);
+  color: #d4a84b;
+  box-shadow: 0 2px 18px rgba(0,0,0,.6), 0 0 8px rgba(180,130,50,.22);
+}
+
+/* 半透明遮罩层 */
+.tips-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 0 0 80px 16px;
+  pointer-events: none;
+}
+.tips-overlay.hidden { display: none; }
+.tips-overlay.visible { pointer-events: all; }
+
+/* 卡片主体 */
+.tips-card {
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(72vh, 580px);
+  background: rgba(10,4,2,.96);
+  border: 1px solid rgba(150,100,30,.30);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,.65), 0 0 0 1px rgba(150,100,30,.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  /* 出现动画 */
+  transform: translateY(12px);
+  opacity: 0;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.tips-overlay.visible .tips-card {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* 卡片头部 */
+.tips-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid rgba(150,100,30,.18);
+  background: rgba(0,0,0,.18);
+  flex-shrink: 0;
+}
+.tips-header-icon {
+  font-size: 1rem;
+  opacity: .85;
+}
+.tips-header-title {
+  font-family: var(--font-serif);
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  letter-spacing: .1em;
+  flex: 1;
+}
+.tips-close {
+  background: none;
+  border: none;
+  color: rgba(200,160,80,.5);
+  font-size: .82rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  font-family: var(--font-sans);
+}
+.tips-close:hover { color: rgba(220,180,100,.8); }
+
+/* Tab 栏 */
+.tips-tabs {
+  display: flex;
+  overflow-x: auto;
+  gap: 0;
+  border-bottom: 1px solid rgba(150,100,30,.15);
+  flex-shrink: 0;
+  scrollbar-width: none;
+  background: rgba(0,0,0,.12);
+}
+.tips-tabs::-webkit-scrollbar { display: none; }
+
+.tips-tab {
+  flex-shrink: 0;
+  padding: 7px 11px;
+  font-family: var(--font-sans);
+  font-size: .68rem;
+  color: rgba(200,170,100,.45);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: .02em;
+}
+.tips-tab:hover { color: rgba(200,170,100,.75); }
+.tips-tab.active {
+  color: var(--gold-dim);
+  border-bottom-color: var(--gold-dim);
+  background: rgba(150,100,30,.07);
+}
+
+/* 内容滚动区 */
+.tips-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 14px 18px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(150,100,30,.25) transparent;
+}
+.tips-body::-webkit-scrollbar { width: 4px; }
+.tips-body::-webkit-scrollbar-thumb { background: rgba(150,100,30,.28); border-radius: 2px; }
+
+/* 场景块 */
+.tips-scene {
+  margin-bottom: 16px;
+}
+.tips-scene:last-child { margin-bottom: 0; }
+
+/* 场景标题 */
+.tips-scene-title {
+  font-family: var(--font-serif);
+  font-size: .72rem;
+  font-weight: 700;
+  color: rgba(200,160,80,.6);
+  letter-spacing: .08em;
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(150,100,30,.12);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tips-scene-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 10px;
+  background: linear-gradient(180deg, rgba(200,155,65,.6), transparent);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* 单条话术容器 */
+.tips-tip {
+  margin-bottom: 8px;
+}
+.tips-tip:last-child { margin-bottom: 0; }
+
+/* 话术文本框 — 视觉重点 */
+.tips-tip-text {
+  display: block;
+  background: rgba(150,100,20,.10);
+  border: 1px solid rgba(180,130,40,.22);
+  border-left: 3px solid rgba(180,130,40,.55);
+  border-radius: 0 6px 6px 0;
+  padding: 7px 10px;
+  font-family: var(--font-serif);
+  font-size: .76rem;
+  line-height: 1.65;
+  color: rgba(235,210,160,.92);
+  word-break: break-all;
+}
+
+/* 占位符高亮 [xxx] */
+.tips-tip-text .ph {
+  color: rgba(200,160,60,.75);
+  font-style: italic;
+  font-size: .73rem;
+}
+
+/* 讲解文字 */
+.tips-tip-note {
+  display: block;
+  margin-top: 4px;
+  padding: 0 4px 0 10px;
+  font-family: var(--font-sans);
+  font-size: .66rem;
+  color: rgba(180,155,110,.5);
+  line-height: 1.6;
+  border-left: 1px solid rgba(150,100,30,.14);
+}
+
+/* ── 移动端适配 ── */
+@media (max-width: 640px) {
+  .tips-btn { bottom: 18px; left: 14px; width: 40px; height: 40px; font-size: 1rem; }
+  .tips-overlay { padding: 0 0 68px 8px; }
+  .tips-card { max-height: 68vh; }
+  .tips-tab { padding: 7px 9px; font-size: .65rem; }
+  .tips-tip-text { font-size: .73rem; }
+}
