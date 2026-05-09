@@ -292,7 +292,7 @@
     showToast('⏳ 清空中…');
     try {
       const ids = await getAllApiIds();
-      await Promise.all(ids.map(r => fetch(`${API_BASE}/${r.id}`, { method: 'DELETE' })));
+      await Promise.all(ids.map(r => deleteRoundById(r.id)));
       state.rounds = []; state.players = defaultPlayers();
       state.lastUpdatedAt = 0;
       renderAll();
@@ -1053,13 +1053,14 @@
   }
 
   // ── Layer 3：通用锚点组渲染（数据驱动，无白名单）──
+  // 默认折叠，显示摘要行：「N 项变动 · 含X调度 · 府库-100金」
   function _renderAnchorGroups(groups) {
     if (!groups || !Object.keys(groups).length) return '';
     const knownKeys   = ANCHOR_ORDER.filter(k => groups[k]);
     const unknownKeys = Object.keys(groups).filter(k => !ANCHOR_ORDER.includes(k));
     const allKeys     = [...knownKeys, ...unknownKeys];
 
-    return allKeys.map(key => {
+    const sectionsHtml = allKeys.map(key => {
       const items = groups[key];
       const icon  = ANCHOR_ICON[key] || '◆';
       const itemsHtml = items.map(it => {
@@ -1078,6 +1079,31 @@
         <ul class="ag-items">${itemsHtml}</ul>
       </section>`;
     }).join('');
+
+    if (!sectionsHtml) return '';
+
+    // 生成摘要行
+    const totalItems = allKeys.reduce((s, k) => s + groups[k].length, 0);
+    // 列出前2个锚点名作为「含X调度」提示
+    const anchorHints = allKeys.slice(0, 2).map(k => {
+      const icon = ANCHOR_ICON[k] || '';
+      return icon + k;
+    }).join(' · ');
+    // 找第一个有金增减的 delta 作为额外提示
+    let goldHint = '';
+    for (const key of allKeys) {
+      for (const it of groups[key]) {
+        const goldD = (it.deltas || []).find(d => d.res === '金');
+        if (goldD) { goldHint = ` · 府库${sign(goldD.val)}${goldD.val}金`; break; }
+      }
+      if (goldHint) break;
+    }
+    const summaryTxt = `${totalItems} 项变动 · ${anchorHints}${goldHint}`;
+
+    return `<details class="cc-anchor-groups-details">
+      <summary class="cc-anchor-groups-summary">${summaryTxt}</summary>
+      <div class="cc-anchor-groups-body">${sectionsHtml}</div>
+    </details>`;
   }
 
   // ── 兼容旧数据：把旧字段转换为 anchorGroups ──
@@ -1124,6 +1150,7 @@
   }
 
   // ── 公共事件区（天下动态）──
+  // NPC事件：金色 #c09050；野外事件：绿色 #6dd68a
   function _renderPublicEvents(publicEvents, v3Events, v3Errors) {
     let html = '';
 
@@ -1135,22 +1162,17 @@
         if (!grouped[ev.anchor]) grouped[ev.anchor] = [];
         grouped[ev.anchor].push(ev);
       });
-      const groupsHtml = Object.entries(grouped).map(([anchor, list]) => {
-        const icon = ANCHOR_ICON[anchor] || '◆';
-        const itemsHtml = list.map(ev =>
-          `<li class="ag-item">
-            ${ev.label ? `<span class="ev-city">${esc(ev.label)}</span>` : ''}
-            <span class="ag-label">${esc(ev.text)}</span>
-          </li>`
-        ).join('');
-        return `<section class="anchor-group public-anchor" data-anchor="${esc(anchor)}">
-          <h4 class="ag-title"><span class="ag-icon">${icon}</span>${esc(anchor)}</h4>
-          <ul class="ag-items">${itemsHtml}</ul>
-        </section>`;
+      const itemsHtml = publicEvents.map(ev => {
+        const isWild = ev.anchor === '野外';
+        const colorCls = isWild ? 'pe-item--wild' : 'pe-item--npc';
+        const cityHtml = ev.label
+          ? `<span class="pe-city">${esc(ev.label)}</span><span class="pe-sep"> · </span>`
+          : '';
+        return `<div class="pe-item ${colorCls}">${cityHtml}<span class="pe-text">${esc(ev.text)}</span></div>`;
       }).join('');
       html += `<div class="public-events-block">
         <div class="public-events-hd">🌐 天下动态</div>
-        <div class="public-events-body">${groupsHtml}</div>
+        <div class="public-events-items">${itemsHtml}</div>
       </div>`;
     }
 
@@ -1259,6 +1281,7 @@
           ${_renderAnchorGroups(anchorGroups)}
           ${warningsHtml}
         </div>
+        <div class="cd-card-spacer"></div>
       </div>`;
     }).join('');
 

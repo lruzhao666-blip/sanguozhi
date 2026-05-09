@@ -746,14 +746,20 @@ window.SGParser = (function () {
     return events;
   }
 
+  // 资源名集合：不允许作为锚点名
+  const RES_NAMES = new Set(['金','粮','兵','民心','城']);
+
   // ─────────────────────────────────────────
   //  通用锚点解析：匹配任意 XX△ 模式（不限白名单）
   //  返回 { anchor, label, deltas, text }
+  //  注：资源名（金/粮/兵/民心/城）不允许作为锚点名
   // ─────────────────────────────────────────
   function _parseAnchorLine(line) {
     const m = line.match(/^([^△\s]{1,10})△\s*(.*)/);
     if (!m) return null;
     const anchor = m[1].trim();
+    // ★ 拦截：资源名不能作为锚点名
+    if (RES_NAMES.has(anchor)) return null;
     const body   = m[2].trim();
 
     // 提取资源变化
@@ -775,6 +781,9 @@ window.SGParser = (function () {
 
     return { anchor, label, deltas, text: line };
   }
+
+  // ★ 总账行判断：一行内出现 ≥2 个「资源△数字」即为总账行
+  const TOTAL_LINE_RE = /(金|粮|兵|民心|城)△([+-]?\d+)/g;
 
   function _parseOneChange(slot, raw) {
     const change = {
@@ -799,25 +808,53 @@ window.SGParser = (function () {
 
     for (const line of lines) {
 
-      /* ── 总变化行：金△+200 粮△-100 … ── */
-      const resRe = /(金|粮|兵|民心|城)△([+-]?\d+)/g;
-      let rm;
-      while ((rm = resRe.exec(line)) !== null) {
-        change.resources[rm[1]] = parseInt(rm[2]);
+      // ════════════════════════════════════════
+      // Step 1：总账行优先检测
+      // 一行内含 ≥2 个「资源△数字」→ 这是总账行
+      // 提取所有资源变化后立即 continue，不进任何锚点
+      // ════════════════════════════════════════
+      TOTAL_LINE_RE.lastIndex = 0;
+      const totalMatches = [...line.matchAll(/(金|粮|兵|民心|城)△([+-]?\d+)/g)];
+      if (totalMatches.length >= 2) {
+        // 提取所有资源变化
+        totalMatches.forEach(m => { change.resources[m[1]] = parseInt(m[2]); });
+        // 同时提取城池具体变动（城△+1（攻下宛城）等）
+        const cityRe0 = /城△([+-]\d+)[（(](攻下|失去)([^）)]+)[）)]/g;
+        let cm0;
+        while ((cm0 = cityRe0.exec(line)) !== null) {
+          change.cities.push({ delta: parseInt(cm0[1]), action: cm0[2], cityName: cm0[3].trim() });
+          if (!change.anchorGroups['城']) change.anchorGroups['城'] = [];
+          change.anchorGroups['城'].push({
+            label: `${cm0[2]}${cm0[3].trim()}`,
+            deltas: [{ res: '城', val: parseInt(cm0[1]) }],
+            text: line,
+          });
+        }
+        continue; // ★ 总账行处理完毕，不进任何后续锚点逻辑
       }
 
-      /* ── 城池变动 ── */
+      /* ── 城池变动（非总账行中的独立城池行）── */
       const cityRe = /城△([+-]\d+)[（(](攻下|失去)([^）)]+)[）)]/g;
       let cm;
       while ((cm = cityRe.exec(line)) !== null) {
         change.cities.push({ delta: parseInt(cm[1]), action: cm[2], cityName: cm[3].trim() });
       }
 
-      /* ── 守将变动 ── */
-      const guardRe = /(?:驻军|守将)△([^:：]+)[:：]([^(（\s]+)(?:[（(]原[:：]([^）)]+)[）)])?/g;
+      /* ── 守将变动（驻军△同城合并）── */
+      const guardRe = /(?:驻军|守将)△([^:：]+)[:：]([^(（\s,，]+)(?:[（(]原[:：]([^）)]+)[）)])?/g;
       let gm;
       while ((gm = guardRe.exec(line)) !== null) {
-        change.guards.push({ cityName: gm[1].trim(), newHolder: gm[2].trim(), prevHolder: gm[3] ? gm[3].trim() : null });
+        const cityName  = gm[1].trim();
+        const newHolder = gm[2].trim();
+        const prevHolder = gm[3] ? gm[3].trim() : null;
+        // ★ 同城合并：若已存在同城名的 guard 条目，追加武将而非新建
+        const existing = change.guards.find(g => g.cityName === cityName);
+        if (existing) {
+          if (!existing.extras) existing.extras = [];
+          existing.extras.push(newHolder);
+        } else {
+          change.guards.push({ cityName, newHolder, prevHolder, extras: [] });
+        }
       }
 
       /* ── 兵种变动：兵种△城名:骑+500,步-200 ── */
@@ -902,15 +939,18 @@ window.SGParser = (function () {
         continue;
       }
 
-      /* ── 通用锚点 fallback：任何 XX△ 且不属于已知锚点 ── */
+      /* ── 通用锚点 fallback：任何 XX△ 且不属于已知锚点，且锚点名不是资源名 ── */
       const KNOWN_ANCHORS = /^(?:收支|府库|暗账|季度|情报|兵种|NPC状态|野外)△/;
       if (/^[^△\s]{1,10}△/.test(line) && !KNOWN_ANCHORS.test(line)) {
         anchor = null;  // 重置文本锚点
-        const parsed = _parseAnchorLine(line);
+        const parsed = _parseAnchorLine(line);  // 内部已拦截资源名
         if (parsed) {
           const key = parsed.anchor;
           if (!change.anchorGroups[key]) change.anchorGroups[key] = [];
           change.anchorGroups[key].push({ label: parsed.label, deltas: parsed.deltas, text: parsed.text });
+        } else {
+          // 解析失败（含资源名作锚点等）→ 静默丢弃，仅 console.warn
+          console.warn('[SGParser] 丢弃无法解析的行:', line.slice(0, 60));
         }
         continue;
       }

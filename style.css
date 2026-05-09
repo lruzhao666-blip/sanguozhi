@@ -899,16 +899,16 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border-bottom-color: rgba(100,65,22,.25);
 }
 
-/* ── 三栏网格 ── */
+/* ── 三栏网格（等高）── */
 .changes-cards-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   padding: 14px 16px 16px;
-  align-items: start;
+  align-items: stretch;   /* ★ 等高 */
 }
 
-/* ══ 单张玩家收支卡  ══ */
+/* ══ 单张玩家收支卡（等高）══ */
 .cd-card {
   background: rgba(8,3,3,.88);
   border: 1px solid var(--border-red);
@@ -917,6 +917,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0,0,0,.35);
 }
+/* 弹性占位块，把附加事项推到底部，实现等高 */
+.cd-card-spacer { flex: 1; min-height: 8px; }
 .cd-card-0 { border-color: rgba(231,76,60,.35); }
 .cd-card-1 { border-color: rgba(61,190,108,.32); }
 .cd-card-2 { border-color: rgba(52,152,219,.32); }
@@ -961,10 +963,14 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 .cd-res-pill .pill-icon { font-size: .8rem; opacity: .85; }
 .cd-res-pill .pill-name { color: var(--text-dim); font-size: .72rem; }
-.cd-res-pill .pill-val  { font-weight: 700; font-size: .82rem; margin-left: 1px; }
-.cd-res-pill .pill-val.pos { color: #5dda8a; }
-.cd-res-pill .pill-val.neg { color: #f07070; }
-.cd-res-pill .pill-val.zero{ color: var(--text-dim); }
+/* ★ pill-val：更大字号、bold、tabular-nums、高对比正负色 */
+.cd-res-pill .pill-val {
+  font-weight: 700; font-size: .95rem; margin-left: 1px;
+  font-variant-numeric: tabular-nums; letter-spacing: .01em;
+}
+.cd-res-pill .pill-val.pos  { color: #6dd68a; }
+.cd-res-pill .pill-val.neg  { color: #e87a6a; }
+.cd-res-pill .pill-val.zero { color: var(--text-dim); }
 
 /* ── 通用小节 ── */
 .cd-section {
@@ -1168,11 +1174,42 @@ details[open] .cc-breakdown-summary::before { transform: rotate(90deg); }
 .cc-breakdown .cd-bd-table { margin: 0 0 6px; }
 
 /* ══════════════════════════════════════════
-   Layer 3：通用锚点容器
+   Layer 3：通用锚点容器（折叠式 details）
 ══════════════════════════════════════════ */
 .cc-anchor-groups {
   display: flex; flex-direction: column; gap: 0;
 }
+
+/* details 折叠容器 */
+.cc-anchor-groups-details {
+  border-top: 1px solid rgba(255,255,255,.04);
+}
+.cc-anchor-groups-summary {
+  cursor: pointer;
+  font-size: .68rem; font-weight: 600;
+  color: var(--text-dim); letter-spacing: .06em;
+  font-family: var(--font-sans);
+  padding: 6px 14px;
+  display: flex; align-items: center; gap: 5px;
+  list-style: none; user-select: none;
+  line-height: 1.5;
+}
+.cc-anchor-groups-summary::-webkit-details-marker { display: none; }
+.cc-anchor-groups-summary::before {
+  content: '\25B8'; font-size: .6rem; opacity: .5;
+  transition: transform .2s; flex-shrink: 0;
+}
+details[open].cc-anchor-groups-details .cc-anchor-groups-summary::before {
+  transform: rotate(90deg);
+}
+.cc-anchor-groups-body {
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--red-deep) transparent;
+}
+.cc-anchor-groups-body::-webkit-scrollbar { width: 3px; }
+.cc-anchor-groups-body::-webkit-scrollbar-thumb { background: var(--red-deep); border-radius: 2px; }
 
 /* ── 通用锚点组（anchor-group）── */
 .anchor-group {
@@ -1224,15 +1261,17 @@ details[open] .cc-breakdown-summary::before { transform: rotate(90deg); }
   font-size: .68rem; font-variant-numeric: tabular-nums;
   font-family: var(--font-sans);
 }
-.delta-chip.pos { background: rgba(60,160,80,.18); color: #6dd68a; }
-.delta-chip.neg { background: rgba(180,60,50,.18); color: #e87a6a; }
-.delta-chip.zero{ background: rgba(100,100,100,.12); color: var(--text-dim); }
+/* ★ delta-chip：鲜明正负对比色，移动端可读 */
+.delta-chip.pos  { background: rgba(60,160,80,.15);  color: #6dd68a; border: 1px solid rgba(60,160,80,.25); }
+.delta-chip.neg  { background: rgba(180,60,50,.15);  color: #e87a6a; border: 1px solid rgba(180,60,50,.25); }
+.delta-chip.zero { background: rgba(100,100,100,.10); color: var(--text-dim); border: 1px solid rgba(100,100,100,.15); }
 
 /* ══════════════════════════════════════════
    公共事件区（天下动态）
+   ★ 全宽；NPC 金色，野外绿色
 ══════════════════════════════════════════ */
 .public-events-block {
-  grid-column: 1 / -1;
+  grid-column: 1 / -1;   /* ★ 全宽横跨三列 */
   margin-top: 4px;
   background: rgba(0,0,0,.18);
   border: 1px solid rgba(100,65,22,.22);
@@ -1250,19 +1289,37 @@ details[open] .cc-breakdown-summary::before { transform: rotate(90deg); }
   content: ''; flex: 1; height: 1px;
   background: linear-gradient(90deg, rgba(255,255,255,.08), transparent);
 }
-.public-events-body {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 6px;
+
+/* 事件条目列表（流式，非网格）*/
+.public-events-items {
+  display: flex; flex-direction: column; gap: 4px;
 }
-.public-events-body .anchor-group {
-  background: rgba(8,3,3,.6);
+.pe-item {
+  display: flex; align-items: baseline; gap: 0;
+  padding: 5px 10px;
+  background: rgba(8,3,3,.55);
   border: 1px solid rgba(255,255,255,.05);
-  border-left: 2px solid rgba(80,160,200,.3);
   border-radius: var(--r);
-  padding: 6px 10px;
-  margin-left: 0;
+  font-size: .76rem; font-family: var(--font-serif);
+  line-height: 1.55;
 }
+/* NPC 条目：金色城名 */
+.pe-item--npc .pe-city {
+  color: #c09050;
+  font-weight: 700;
+  font-size: .74rem;
+  flex-shrink: 0;
+}
+.pe-item--npc .pe-text { color: var(--text-sub); }
+/* 野外 条目：绿色 */
+.pe-item--wild .pe-city {
+  color: #6dd68a;
+  font-weight: 700;
+  font-size: .74rem;
+  flex-shrink: 0;
+}
+.pe-item--wild .pe-text { color: #9ed8a8; }
+.pe-sep { color: var(--text-dim); margin: 0 3px; flex-shrink: 0; }
 .v3-errors-block { border-color: rgba(255,100,60,.25); background: rgba(120,20,0,.1); }
 
 /* ══ NPC 天下动态横幅 ══ */
