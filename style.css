@@ -920,7 +920,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
-  padding: 16px 18px 20px;
+  padding: 16px 0 20px;
   align-items: stretch;
 }
 
@@ -936,13 +936,12 @@ header, nav, main, footer { position: relative; z-index: 1; }
     0 4px 20px rgba(0,0,0,.5),
     0 1px 0 rgba(255,255,255,.03) inset,
     0 -1px 0 rgba(0,0,0,.4) inset;
-  transition: box-shadow .22s, transform .18s;
+  transition: box-shadow .22s;
 }
 .cd-card:hover {
   box-shadow:
     0 8px 32px rgba(0,0,0,.6),
     0 1px 0 rgba(255,255,255,.04) inset;
-  transform: translateY(-2px);
 }
 
 /* 顶部彩色光带（每张卡专属色） */
