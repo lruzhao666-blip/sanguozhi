@@ -1335,6 +1335,31 @@ details[open].cc-anchor-groups-details .cc-anchor-groups-summary::before {
 .delta-chip.neg  { background: rgba(180,55,45,.14);  color: #f08878; border: 1px solid rgba(190,65,55,.22); }
 .delta-chip.zero { background: rgba(100,100,100,.08); color: var(--text-dim); border: 1px solid rgba(100,100,100,.13); }
 
+/* ── 武将动态（状态△）专属样式 ── */
+.ag-item-status {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 4px 6px;
+  border-radius: 4px; transition: background .12s;
+}
+.ag-item-status:hover { background: rgba(255,255,255,.04); }
+.ag-gen-name {
+  font-size: .78rem; font-family: var(--font-serif);
+  color: var(--text-sub); font-weight: 600; flex-shrink: 0;
+  min-width: 3em;
+}
+/* 状态 badge */
+.ag-status-badge {
+  display: inline-block; padding: 1px 9px; border-radius: 10px;
+  font-size: .68rem; font-family: var(--font-sans); font-weight: 700;
+  letter-spacing: .06em; white-space: nowrap;
+}
+.ag-status-injured { background: rgba(200,55,45,.18);  color: #f08878; border: 1px solid rgba(210,65,55,.30); }
+.ag-status-tired   { background: rgba(180,120,30,.16); color: #d4aa43; border: 1px solid rgba(190,130,40,.28); }
+.ag-status-sick    { background: rgba(140,60,180,.16); color: #c08ae0; border: 1px solid rgba(150,70,190,.26); }
+.ag-status-dead    { background: rgba(60,60,60,.22);   color: #888;    border: 1px solid rgba(80,80,80,.30); }
+.ag-status-normal  { background: rgba(50,150,75,.13);  color: #72e292; border: 1px solid rgba(60,160,80,.22); }
+.ag-status-other   { background: rgba(100,100,100,.10);color: var(--text-dim); border: 1px solid rgba(120,120,120,.18); }
+
 /* ══════════════════════════════════════════
    公共事件区（天下动态）
    ★ 全宽；NPC 金色，野外绿色

@@ -971,10 +971,22 @@
   const ANCHOR_ICON = {
     '季度':'🗓️','府库':'🏛️','暗账':'🏛️','城':'🏯','驻军':'🛡️',
     '兵种':'⚔️','情报':'📜','NPC状态':'🎭','野外':'🌿',
-    '收支':'📊','赏赐':'🎁','救灾':'🚑','贡赋':'📦',
+    '收支':'💰','赏赐':'🎁','救灾':'🚑','贡赋':'📦',
+    '状态':'🩺',
   };
   // 已知锚点的优先显示顺序
-  const ANCHOR_ORDER = ['季度','府库','暗账','城','驻军','兵种','情报'];
+  const ANCHOR_ORDER = ['季度','府库','暗账','城','驻军','兵种','状态','情报'];
+
+  // 武将状态值 → CSS class 映射
+  const STATUS_DESC_CLS = (desc) => {
+    if (!desc) return 'ag-status-normal';
+    if (/受伤|重伤|伤/.test(desc))  return 'ag-status-injured';
+    if (/疲劳|疲惫|劳/.test(desc))  return 'ag-status-tired';
+    if (/病|染病|重病/.test(desc))   return 'ag-status-sick';
+    if (/战死|阵亡|死/.test(desc))   return 'ag-status-dead';
+    if (/正常|健康|恢复/.test(desc)) return 'ag-status-normal';
+    return 'ag-status-other';
+  };
 
   const sign   = v => v > 0 ? '+' : '';
   const valCls = v => v < 0 ? 'neg' : v > 0 ? 'pos' : 'zero';
@@ -1063,19 +1075,32 @@
     const sectionsHtml = allKeys.map(key => {
       const items = groups[key];
       const icon  = ANCHOR_ICON[key] || '◆';
+      // 「状态」锚点用专属渲染：武将名 + 状态值（带颜色）
+      const isStatus = key === '状态';
       const itemsHtml = items.map(it => {
         const deltasHtml = (it.deltas && it.deltas.length)
           ? `<span class="ag-deltas">${it.deltas.map(d =>
               `<span class="delta-chip ${valCls(d.val)}">${RES_ICON[d.res]||''}${d.res} ${sign(d.val)}${d.val}</span>`
             ).join('')}</span>` : '';
+        if (isStatus) {
+          const genName  = esc(it.label || '');
+          const descTxt  = esc(it.desc  || it.text || '');
+          const descCls  = STATUS_DESC_CLS(it.desc || it.text || '');
+          return `<li class="ag-item ag-item-status">
+            <span class="ag-gen-name">${genName}</span>
+            <span class="ag-status-badge ${descCls}">${descTxt}</span>
+          </li>`;
+        }
         const labelTxt = it.label || it.text || '';
         return `<li class="ag-item">
           <span class="ag-label">${esc(labelTxt)}</span>
           ${deltasHtml}
         </li>`;
       }).join('');
+      // 「状态」锚点标题改为「武将动态」
+      const titleTxt = key === '状态' ? '武将动态' : key;
       return `<section class="anchor-group" data-anchor="${esc(key)}">
-        <h4 class="ag-title"><span class="ag-icon">${icon}</span>${esc(key)}</h4>
+        <h4 class="ag-title"><span class="ag-icon">${icon}</span>${esc(titleTxt)}</h4>
         <ul class="ag-items">${itemsHtml}</ul>
       </section>`;
     }).join('');
