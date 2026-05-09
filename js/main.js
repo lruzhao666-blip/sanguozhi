@@ -545,9 +545,22 @@
           ab += '<div class="rab-opts">';
           al.opts.forEach((opt, oi) => {
             const isCustom = /自定义/.test(opt);
-            ab += `<div class="rab-opt${isCustom ? ' rab-opt--custom' : ''}">`
-                + `<span class="rab-opt-num">${ICONS[oi]||''}</span>`
-                + `<span class="rab-opt-txt">${esc(opt)}</span>`
+            // A/B/C 分支行：以 "A." "B." "C." 或 "A、""B、" 开头
+            const isBranch = /^[A-Ca-c][.、．]/.test(opt.trim());
+            // 破折号后注解拆分：「行动名 —— 注解」
+            const dashIdx = opt.search(/——|──|\s[-—]{2}\s/);
+            let optMain = opt, optNote = '';
+            if (!isBranch && dashIdx > 0) {
+              optMain = opt.slice(0, dashIdx);
+              optNote = opt.slice(dashIdx);
+            }
+            const cls = ['rab-opt',
+              isCustom ? 'rab-opt--custom' : '',
+              isBranch ? 'rab-opt--branch' : ''
+            ].filter(Boolean).join(' ');
+            ab += `<div class="${cls}">`
+                + (isBranch ? '' : `<span class="rab-opt-num">${ICONS[oi]||''}</span>`)
+                + `<span class="rab-opt-txt">${esc(optMain)}${optNote ? `<span class="rab-opt-note">${esc(optNote)}</span>` : ''}</span>`
                 + '</div>';
           });
           ab += '</div></div>';

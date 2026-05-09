@@ -171,24 +171,25 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .raw-para {
   margin: 0 0 1em;
   letter-spacing: .015em;
+  line-height: 1.7;
 }
 .digest-raw .raw-para:last-child { margin-bottom: 0; }
 .digest-raw .raw-section {
-  font-family: var(--font-serif); font-size: 1rem; font-weight: 700;
-  color: var(--gold-light); letter-spacing: .1em;
-  margin: 20px 0 10px;
+  font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700;
+  color: var(--gold-light); letter-spacing: .08em;
+  margin: 24px 0 10px;
   padding: 5px 0 5px 14px;
-  border-left: 2px solid var(--gold);
+  border-left: 3px solid var(--gold);
   background: linear-gradient(90deg, rgba(100,65,0,.15), transparent 60%);
   border-radius: 0 var(--r) var(--r) 0;
 }
 .digest-raw .raw-section:first-child { margin-top: 0; }
 .digest-raw .raw-player {
-  font-family: var(--font-serif); font-size: .96rem; font-weight: 600;
-  color: #f0cfa0; margin: 14px 0 6px;
+  font-family: var(--font-serif); font-size: 1rem; font-weight: 700;
+  color: #f0cfa0; margin: 20px 0 8px;
   padding: 4px 12px;
   background: rgba(70,25,10,.18);
-  border-left: 2px solid rgba(200,100,50,.4);
+  border-left: 3px solid rgba(200,100,50,.5);
   border-radius: 0 var(--r) var(--r) 0;
 }
 .digest-raw .raw-battle {
@@ -200,12 +201,13 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border-radius: var(--r);
 }
 .digest-raw .raw-note {
-  font-size: .92rem; color: var(--text-sub); margin: 6px 0 10px;
-  padding: 5px 14px;
-  background: rgba(0,0,0,.18);
-  border-left: 2px solid rgba(100,75,25,.35);
+  font-size: .91rem; color: rgba(200,184,154,0.70); margin: 4px 0 14px;
+  padding: 5px 10px 5px 16px;
+  margin-left: 14px;
+  background: rgba(255,255,255,0.03);
+  border-left: 2px solid rgba(180,140,50,.30);
   border-radius: 0 var(--r) var(--r) 0;
-  line-height: 1.85;
+  line-height: 1.75;
 }
 .digest-raw .raw-bullet {
   position: relative; margin: 3px 0 3px 1.4em;
@@ -222,18 +224,18 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 /* 总标题：与 raw-section 同款左边框风格 */
 .digest-raw .rab-title {
-  font-family: var(--font-serif); font-size: 1rem; font-weight: 700;
-  color: var(--gold-light); letter-spacing: .1em;
+  font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700;
+  color: var(--gold-light); letter-spacing: .08em;
   margin: 0 0 14px;
   padding: 5px 0 5px 14px;
-  border-left: 2px solid var(--gold);
+  border-left: 3px solid var(--gold);
   background: linear-gradient(90deg, rgba(100,65,0,.15), transparent 60%);
   border-radius: 0 var(--r) var(--r) 0;
 }
 .digest-raw .rab-title::after { display: none; }
 /* 三个玩家纵向排列，玩家之间留出明显间距 */
 .digest-raw .rab-players {
-  display: flex; flex-direction: column; gap: 18px;
+  display: flex; flex-direction: column; gap: 22px;
   padding-left: 14px;
 }
 /* 每个玩家独立一块：名字在上，选项在下 */
@@ -242,8 +244,13 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 /* 玩家名：与 raw-player 同款风格 */
 .digest-raw .rab-pname {
-  font-family: var(--font-serif); font-size: .96rem; font-weight: 600;
+  font-family: var(--font-serif); font-size: 1rem; font-weight: 700;
   color: #f0cfa0; letter-spacing: .04em;
+  padding: 3px 10px;
+  border-left: 3px solid rgba(200,100,50,.5);
+  background: rgba(70,25,10,.18);
+  border-radius: 0 var(--r) var(--r) 0;
+  margin-bottom: 4px;
 }
 /* 选项列表：纵向，每项之间留出间距 */
 .digest-raw .rab-opts {
@@ -253,18 +260,31 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* 每条选项：编号 + 文字同行 */
 .digest-raw .rab-opt {
   display: flex; align-items: baseline; gap: 7px;
-  line-height: 1.85;
+  line-height: 1.75;
 }
 .digest-raw .rab-opt-num {
   font-family: var(--font-serif); font-size: .92rem;
-  color: var(--gold); flex-shrink: 0;
+  color: var(--gold-light); flex-shrink: 0; font-weight: 700;
 }
 .digest-raw .rab-opt-txt {
-  font-family: var(--font-serif); font-size: .98rem;
-  color: #e8dcc4; line-height: 1.85; letter-spacing: .015em;
+  font-family: var(--font-serif); font-size: .95rem;
+  color: #e8dcc4; line-height: 1.75; letter-spacing: .015em;
 }
 .digest-raw .rab-opt--custom .rab-opt-txt {
   color: var(--text-sub);
+}
+/* A/B/C 分支：缩进，字号小半档，颜色淡一档 */
+.digest-raw .rab-opt--branch {
+  padding-left: 24px;
+  margin-top: 2px;
+}
+.digest-raw .rab-opt--branch .rab-opt-txt {
+  font-size: .88rem;
+  color: rgba(200,184,154,0.68);
+}
+/* 破折号后注解：淡一档 */
+.digest-raw .rab-opt-note {
+  color: rgba(200,184,154,0.68);
 }
 .digest-raw .rab-wait {
   font-family: var(--font-serif); font-size: .88rem;
