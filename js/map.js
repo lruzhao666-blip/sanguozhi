@@ -39,12 +39,12 @@ window.SGMap = (function () {
   ───────────────────────────────── */
   const TERRAIN = {
     '平原': { fill:'rgba(195,178,125,0.13)', stroke:'rgba(188,162,88,0.22)',  patternId:null },
-    '山地': { fill:'rgba(108,100, 88,0.16)', stroke:'rgba(148,130,100,0.30)', patternId:'ptMountain' },
-    '水域': { fill:'rgba( 22, 72,138,0.20)', stroke:'rgba( 50,118,195,0.35)', patternId:'ptWater' },
-    '森林': { fill:'rgba( 42, 88, 50,0.16)', stroke:'rgba( 68,128, 72,0.30)', patternId:'ptForest' },
-    '关隘': { fill:'rgba(135, 95, 42,0.18)', stroke:'rgba(195,155, 58,0.36)', patternId:'ptPass' },
-    '苦寒': { fill:'rgba(118,148,192,0.16)', stroke:'rgba(150,178,220,0.30)', patternId:'ptCold' },
-    '瘴林': { fill:'rgba( 38, 80, 50,0.17)', stroke:'rgba( 58,118, 68,0.30)', patternId:'ptMiasma' },
+    '山地': { fill:'rgba(108,100, 88,0.16)', stroke:'rgba(148,130,100,0.30)', patternId:null },
+    '水域': { fill:'rgba( 22, 72,138,0.20)', stroke:'rgba( 50,118,195,0.35)', patternId:null },
+    '森林': { fill:'rgba( 42, 88, 50,0.16)', stroke:'rgba( 68,128, 72,0.30)', patternId:null },
+    '关隘': { fill:'rgba(135, 95, 42,0.18)', stroke:'rgba(195,155, 58,0.36)', patternId:null },
+    '苦寒': { fill:'rgba(118,148,192,0.16)', stroke:'rgba(150,178,220,0.30)', patternId:null },
+    '瘴林': { fill:'rgba( 38, 80, 50,0.17)', stroke:'rgba( 58,118, 68,0.30)', patternId:null },
     _default:{ fill:'rgba(100,100,100,0.05)', stroke:'rgba(160,135,75,0.12)', patternId:null },
   };
 
@@ -350,7 +350,18 @@ window.SGMap = (function () {
       preserveAspectRatio="xMidYMid meet"
       style="display:block;width:100%;height:auto;">
       <defs>${_defs()}</defs>
-      <rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="#07060d"/>
+
+      <!-- ── 最底层：水墨战略底图 ── -->
+      <image href="images/map-bg.jpg"
+        x="${b.x.toFixed(1)}" y="${b.y.toFixed(1)}"
+        width="${b.w.toFixed(1)}" height="${b.h.toFixed(1)}"
+        preserveAspectRatio="xMidYMid slice"
+        style="pointer-events:none"/>
+
+      <!-- ── 暗化蒙版：压深底图，突出城池与网格 ── -->
+      <rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"
+        fill="rgba(5,4,10,0.44)" style="pointer-events:none"/>
+
       ${_allHexes()}
     </svg>`;
   }
@@ -458,155 +469,170 @@ window.SGMap = (function () {
       <stop offset="100%" stop-color="#ffe8a0" stop-opacity="0"/>
     </linearGradient>`;
 
-    /* ── 地形纹理 Patterns ── */
-    /* 山地：45° 斜线，模拟地形起伏 */
-    const ptMountain = `
-    <pattern id="ptMountain" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-      <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(160,140,108,0.18)" stroke-width="1.0"/>
-    </pattern>`;
-    /* 水域：横向波纹 */
-    const ptWater = `
-    <pattern id="ptWater" x="0" y="0" width="8" height="5" patternUnits="userSpaceOnUse">
-      <path d="M0 2.5 Q2 1 4 2.5 Q6 4 8 2.5" fill="none" stroke="rgba(60,140,220,0.18)" stroke-width="0.8"/>
-    </pattern>`;
-    /* 森林：小点阵 */
-    const ptForest = `
-    <pattern id="ptForest" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
-      <circle cx="1.5" cy="1.5" r="0.9" fill="rgba(72,138,68,0.22)"/>
-      <circle cx="5"   cy="4.5" r="0.9" fill="rgba(72,138,68,0.22)"/>
-    </pattern>`;
-    /* 关隘：交叉线（×形） */
-    const ptPass = `
-    <pattern id="ptPass" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-      <line x1="0" y1="0" x2="8" y2="8" stroke="rgba(200,155,55,0.18)" stroke-width="0.9"/>
-      <line x1="8" y1="0" x2="0" y2="8" stroke="rgba(200,155,55,0.18)" stroke-width="0.9"/>
-    </pattern>`;
-    /* 苦寒：细竖线 */
-    const ptCold = `
-    <pattern id="ptCold" x="0" y="0" width="5" height="5" patternUnits="userSpaceOnUse">
-      <line x1="0" y1="0" x2="0" y2="5" stroke="rgba(160,190,230,0.16)" stroke-width="0.8"/>
-    </pattern>`;
-    /* 瘴林：密集小点 */
-    const ptMiasma = `
-    <pattern id="ptMiasma" x="0" y="0" width="5" height="5" patternUnits="userSpaceOnUse">
-      <circle cx="1"   cy="1"   r="0.7" fill="rgba(58,125,65,0.22)"/>
-      <circle cx="3.5" cy="3.5" r="0.7" fill="rgba(58,125,65,0.22)"/>
-      <circle cx="1"   cy="4"   r="0.4" fill="rgba(58,125,65,0.14)"/>
-    </pattern>`;
+    /* 中立格内发光（所有中立格公用，边缘暖琥珀 → 中心透明） */
+    const neutralGlow = `
+    <radialGradient id="neutralGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="55%"  stop-color="#b8a878" stop-opacity="0"/>
+      <stop offset="82%"  stop-color="#b8a878" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#d4bc88" stop-opacity="0.32"/>
+    </radialGradient>`;
 
-    return `${shadow}${hlWhite}${hlGold}${ptMountain}${ptWater}${ptForest}${ptPass}${ptCold}${ptMiasma}`;
+    return `${shadow}${hlWhite}${hlGold}${neutralGlow}`;
   }
 
-  /* ── 全部格子（空地 + 城池，一次遍历整个网格）── */
-  function _allHexes() {
-    const R  = HEX_R - 0.5;   // 外圈半径
-    const Ri = R - 3.5;       // 城池内圈半径（留出地形边缘圈）
-    const cityMap = {};
-    CITIES.forEach(c => { cityMap[`${c.hx},${c.hy}`] = c; });
-    const parts = [];
+  /* ══════════════════════════════════════════════════════════════
+     四层渲染拆分：
+       Layer 1 — 地形底色层        _terrainLayer()
+       Layer 2 — 中立地形格子网格  _neutralGridLayer()
+       Layer 3 — 势力领土染色      （城池外圈已含，保留）
+       Layer 4 — 城池主体层        _cityLayer()
+     统一入口保持 _allHexes() 名称，内部按顺序拼接各层
+  ══════════════════════════════════════════════════════════════ */
 
+  /* ── Layer 1: 地形色调提示层（底图已有地形，此层仅做极淡色调强化）
+     · fill alpha 降至原值 35%，stroke alpha 降至 45%
+     · 底图水墨山川/河流纹理为主视觉，格子色彩仅辅助区域感知
+  ── */
+  function _terrainLayer() {
+    const R = HEX_R; // 满半径，顶点精确对齐
+    const parts = [];
     for (let col = GRID_COL_START; col <= GRID_COL_END; col++) {
       for (let row = GRID_ROW_START; row <= GRID_ROW_END; row++) {
         const { x, y } = hexToXY(col, row);
-        const city    = cityMap[`${col},${row}`];
-        const terrain = city ? (city.terrain || '平原') : _emptyTerrain(col, row);
-        const tc      = TERRAIN[terrain] || TERRAIN._default;
-
-        if (!city) {
-          /* ── 空地格：地形底色 + 纹理叠加 + 描边 ── */
-          const hasPattern = tc.patternId != null;
-          parts.push(
-            `<polygon points="${_hexPoints(x, y, R)}"
-              fill="${tc.fill}" stroke="${tc.stroke}" stroke-width="0.7"/>` +
-            (hasPattern
-              ? `<polygon points="${_hexPoints(x, y, R)}"
-                  fill="url(#${tc.patternId})" stroke="none" style="pointer-events:none"/>`
-              : '')
-          );
-        } else {
-          /* ── 城池格 ── */
-          const ow = cityOwnership[city.name];
-          let isPlayer = false, pidx = -1, isNPC = false, color = EMPTY_C;
-
-          if (!ow || ow.owner === '') {
-            color = EMPTY_C;
-          } else if (ow.owner === 'npc') {
-            color = NPC_C; isNPC = true;
-          } else {
-            pidx = ow.playerIdx;
-            color = P_COLOR[pidx] || EMPTY_C;
-            isPlayer = true;
-          }
-
-          const isCityOwned = isPlayer || isNPC;
-          const hlGrad    = isNPC ? 'hexHLGold' : 'hexHL';
-          const bonusIcon = BONUS_ICON[city.bonusKey] || '';
-          const fontSize  = 8.0;  // 全部统一字号
-          const fw        = 400;                           // 统一细体，不再区分粗细
-
-          parts.push(`
-          <g class="sgmap-city" data-id="${city.id}" data-name="${_esc(city.name)}" data-stroke="${color.stroke}" style="cursor:pointer">
-
-            ${isCityOwned ? `
-            <!-- L1: 地形边缘圈（整格，有纹理） -->
-            <polygon points="${_hexPoints(x, y, R)}"
-              fill="${tc.fill}" stroke="${tc.stroke}" stroke-width="0.7"/>
-            ${tc.patternId ? `<polygon points="${_hexPoints(x, y, R)}" fill="url(#${tc.patternId})" stroke="none" style="pointer-events:none"/>` : ''}
-
-            <!-- L2: 城池主体（内缩，深底色） -->
-            <polygon points="${_hexPoints(x, y, Ri)}"
-              fill="${color.fill}"
-              stroke="${color.stroke}" stroke-width="1.4"
-              filter="url(#fshadow)"/>
-
-            <!-- L3: 势力色半透明薄膜 -->
-            <polygon points="${_hexPoints(x, y, Ri)}"
-              fill="${color.film}" stroke="none"
-              style="pointer-events:none"/>
-
-            <!-- L4: 顶部线性高光（瓷砖反光感） -->
-            <polygon points="${_hexPoints(x, y - 1, Ri * 0.86)}"
-              fill="url(#${hlGrad})" stroke="none"
-              style="pointer-events:none"/>
-
-            <!-- hover 光环（CSS animation 控制，默认隐藏） -->
-            <polygon class="sgmap-city-ring" points="${_hexPoints(x, y, Ri + 2)}"
-              fill="none" stroke="${color.stroke}" stroke-width="2.5"
-              style="opacity:0;pointer-events:none"/>
-
-            <!-- 城名 -->
-            <text x="${x}" y="${y - 1}"
-              font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif"
-              font-size="${fontSize}" font-weight="${fw}"
-              fill="${color.text}" text-anchor="middle"
-              dominant-baseline="middle"
-              filter="url(#fshadow)">${_esc(city.name)}</text>
-
-            <!-- 奖励图标 -->
-            <text x="${x}" y="${y + fontSize * 0.85}"
-              font-size="6.5" text-anchor="middle" dominant-baseline="middle" opacity="0.80"
-              style="font-family:Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif"
-              >${bonusIcon}</text>
-
-            ` : `
-            <!-- 空城：地形外圈 + 极暗内圈 -->
-            <polygon points="${_hexPoints(x, y, R)}"
-              fill="${tc.fill}" stroke="${tc.stroke}" stroke-width="0.7"/>
-            <polygon points="${_hexPoints(x, y, Ri)}"
-              fill="rgba(7,6,13,0.60)" stroke="rgba(180,148,72,0.13)" stroke-width="0.8"/>
-
-            <!-- 空城城名：极淡金色 -->
-            <text class="sgmap-city-label-empty" x="${x}" y="${y}"
-              font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif"
-              font-size="${fontSize}" font-weight="400"
-              fill="rgba(195,162,95,0.28)"
-              text-anchor="middle" dominant-baseline="middle">${_esc(city.name)}</text>
-            `}
-          </g>`);
-        }
+        parts.push(`<polygon points="${_hexPoints(x, y, R)}" fill="rgba(10,8,18,0.18)" stroke="none"/>`);
       }
     }
     return parts.join('\n');
+  }
+
+  /* ── Layer 2: 中立地形蜂巢网格（仅非城池格）
+     · 半透明淡灰填充，让底图水墨透出
+     · 暗金细边线，营造"中立地形"感
+     · hover：灰色加深 + 暖橙金边高亮
+     · pointer-events 只在格子本身，不干扰城池点击
+  ── */
+  function _neutralGridLayer() {
+    const R = HEX_R; // 满半径，与相邻格子顶点精确重合
+    const parts = [];
+    for (let col = GRID_COL_START; col <= GRID_COL_END; col++) {
+      for (let row = GRID_ROW_START; row <= GRID_ROW_END; row++) {
+        if (_cityMap[`${col},${row}`]) continue;
+        const { x, y } = hexToXY(col, row);
+        parts.push(
+          `<polygon class="sgmap-neutral-hex" points="${_hexPoints(x, y, R)}"` +
+          ` fill="url(#neutralGlow)"` +
+          ` stroke="rgba(175,155,95,0.38)" stroke-width="0.8"` +
+          ` style="pointer-events:none"/>`
+        );
+      }
+    }
+    return `<g class="sgmap-neutral-grid">\n${parts.join('\n')}\n</g>`;
+  }
+
+  /* ── Layer 4: 城池主体（有城格全部绘制） ── */
+  function _cityLayer() {
+    const R  = HEX_R;      // 满半径外边框，与中立格完全对齐
+    const Ri = HEX_R - 5;  // 内圈缩进5px
+    const parts = [];
+
+    CITIES.forEach(city => {
+      const { x, y } = hexToXY(city.hx, city.hy);
+      const ow = cityOwnership[city.name];
+      let isPlayer = false, pidx = -1, isNPC = false, color = EMPTY_C;
+
+      if (!ow || ow.owner === '') {
+        color = EMPTY_C;
+      } else if (ow.owner === 'npc') {
+        color = NPC_C; isNPC = true;
+      } else {
+        pidx = ow.playerIdx;
+        color = P_COLOR[pidx] || EMPTY_C;
+        isPlayer = true;
+      }
+
+      const tc         = TERRAIN[city.terrain || '平原'] || TERRAIN._default;
+      const isCityOwned = isPlayer || isNPC;
+      const hlGrad     = isNPC ? 'hexHLGold' : 'hexHL';
+      const bonusIcon  = BONUS_ICON[city.bonusKey] || '';
+      const fontSize   = 8.0;
+      const fw         = 400;
+
+      parts.push(`
+      <g class="sgmap-city" data-id="${city.id}" data-name="${_esc(city.name)}" data-stroke="${color.stroke}" style="cursor:pointer">
+
+        <!-- 外边框：满半径，与中立格对齐 -->
+        <polygon points="${_hexPoints(x, y, R)}"
+          fill="none" stroke="rgba(175,155,95,0.38)" stroke-width="0.8"
+          style="pointer-events:none"/>
+
+        ${isCityOwned ? `
+        <!-- 城池主体（内缩） -->
+        <polygon points="${_hexPoints(x, y, Ri)}"
+          fill="${color.fill}"
+          stroke="${color.stroke}" stroke-width="1.4"
+          filter="url(#fshadow)"/>
+
+        <!-- 势力色薄膜 -->
+        <polygon points="${_hexPoints(x, y, Ri)}"
+          fill="${color.film}" stroke="none"
+          style="pointer-events:none"/>
+
+        <!-- 顶部高光 -->
+        <polygon points="${_hexPoints(x, y - 1, Ri * 0.86)}"
+          fill="url(#${hlGrad})" stroke="none"
+          style="pointer-events:none"/>
+
+        <!-- hover 光环 -->
+        <polygon class="sgmap-city-ring" points="${_hexPoints(x, y, Ri + 2)}"
+          fill="none" stroke="${color.stroke}" stroke-width="2.5"
+          style="opacity:0;pointer-events:none"/>
+
+        <!-- 城名 -->
+        <text x="${x}" y="${y - 1}"
+          font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif"
+          font-size="${fontSize}" font-weight="${fw}"
+          fill="${color.text}" text-anchor="middle"
+          dominant-baseline="middle"
+          filter="url(#fshadow)">${_esc(city.name)}</text>
+
+        <!-- 奖励图标 -->
+        <text x="${x}" y="${y + fontSize * 0.85}"
+          font-size="6.5" text-anchor="middle" dominant-baseline="middle" opacity="0.80"
+          style="font-family:Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif"
+          >${bonusIcon}</text>
+
+        ` : `
+        <!-- 空城内圈 -->
+        <polygon points="${_hexPoints(x, y, Ri)}"
+          fill="rgba(7,6,13,0.60)" stroke="rgba(180,148,72,0.13)" stroke-width="0.8"/>
+
+        <!-- 空城城名 -->
+        <text class="sgmap-city-label-empty" x="${x}" y="${y}"
+          font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif"
+          font-size="${fontSize}" font-weight="400"
+          fill="rgba(195,162,95,0.28)"
+          text-anchor="middle" dominant-baseline="middle">${_esc(city.name)}</text>
+        `}
+      </g>`);
+    });
+
+    return parts.join('\n');
+  }
+
+  /* ── 公共城池查找表（_terrainLayer / _neutralGridLayer 共用） ── */
+  let _cityMap = {};
+
+  /* ── 统一入口（保持旧名称，外部调用不变） ── */
+  function _allHexes() {
+    // 重建城池查找表
+    _cityMap = {};
+    CITIES.forEach(c => { _cityMap[`${c.hx},${c.hy}`] = c; });
+
+    return (
+      _terrainLayer()    + '\n' +   // L1: 水墨地形底色
+      _neutralGridLayer()+ '\n' +   // L2: 中立蜂巢网格（灰色半透明）
+      _cityLayer()                   // L4: 城池主体（含势力薄膜 + 高光 + 城名）
+    );
   }
 
   /* ── 道路连线 ── */
