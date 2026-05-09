@@ -1066,34 +1066,34 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .cd-bd-row:last-child { border-bottom: none; }
 
 .cd-bd-cat {
-  flex-shrink: 0; width: 2.2em;
-  padding: 5px 2px 5px 8px;
+  flex-shrink: 0; width: 2.8em;
+  padding: 5px 3px 5px 14px;
   color: var(--text-sub); font-weight: 700;
-  font-family: var(--font-serif); font-size: .70rem;
+  font-family: var(--font-serif); font-size: .76rem;
   white-space: nowrap; line-height: 1.7;
 }
 .cd-bd-items {
-  flex: 1; min-width: 0; padding: 3px 2px 3px 2px;
+  flex: 1; min-width: 0; padding: 4px 6px 4px 4px;
   display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0;
   flex-direction: column;
 }
 .cd-bd-chips-wrap {
-  display: flex; flex-wrap: wrap; gap: 2px;
+  display: flex; flex-wrap: wrap; gap: 4px;
 }
 .cd-bd-total-cell {
-  flex-shrink: 0; width: 3.4em;
-  text-align: right; padding: 5px 8px 5px 2px;
+  flex-shrink: 0; width: 4.4em;
+  text-align: right; padding: 5px 14px 5px 4px;
   white-space: nowrap; align-self: flex-end;
 }
 
 /* 分项 chip */
 .bd-chip {
-  display: inline-flex; align-items: center; gap: 2px;
-  margin: 2px 3px 2px 0;
+  display: inline-flex; align-items: center; gap: 3px;
+  margin: 2px 4px 2px 0;
   background: rgba(0,0,0,.25);
   border: 1px solid rgba(255,255,255,.07);
-  border-radius: 5px; padding: 2px 6px;
-  font-size: .70rem; font-family: var(--font-serif);
+  border-radius: 5px; padding: 3px 8px;
+  font-size: .72rem; font-family: var(--font-serif);
 }
 .bd-chip-lbl { color: var(--text-dim); }
 .bd-chip-val { font-weight: 700; }
