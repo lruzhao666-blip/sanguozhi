@@ -520,12 +520,19 @@
     const isOpt  = l => /^\s*[①②③④⑤⑥]\s*.+/.test(l);
     // 判断是否是单行格式：「名: ① xxx ② xxx」
     const isSingleLine = l => /^[^:：①②③④⑤⑥\s][^:：]{0,12}[：:]\s*.*[①②③④⑤⑥]/.test(l.trim());
-    // 判断是否是纯玩家名行（短、无特殊符号）
+    // 判断是否是纯玩家名行（短、无特殊符号，无冒号）
     const isPName = l => {
       const t = l.trim();
       return t.length >= 1 && t.length <= 10
         && !/[：:①②③④⑤⑥]/.test(t)
         && !/^[\s\u3000]/.test(t)
+        && !/^[📍🔖💡⏳🎯🌍⚡📢🔥📜🎴🌐⚔️🏯🌅🌙•·▪▸▶◆◇■□=─═—]/.test(t);
+    };
+    // 判断是否是「名字+冒号」行（选项在后续行）：昭: / 高： / 源: 等
+    // 条件：1-8字 + 冒号结尾，冒号后无 ① 选项内容
+    const isPNameColon = l => {
+      const t = l.trim();
+      return /^[^:：①②③④⑤⑥\s][^:：①②③④⑤⑥]{0,7}[：:]\s*$/.test(t)
         && !/^[📍🔖💡⏳🎯🌍⚡📢🔥📜🎴🌐⚔️🏯🌅🌙•·▪▸▶◆◇■□=─═—]/.test(t);
     };
     // 判断是否是等待行
@@ -662,7 +669,15 @@
             continue;  // i 已在内层循环推进，外层不再 i++
           }
 
-          // 纯玩家名行
+          // 玩家名+冒号行：「昭:」「高：」「源:」（选项在后续行）
+          if (isPNameColon(s2)) {
+            flushP();
+            // 去掉尾部冒号，取纯名字
+            pendingPlayer = s2.trim().replace(/[：:]\s*$/, '');
+            i++; continue;
+          }
+
+          // 纯玩家名行（无冒号）
           if (isPName(s2)) {
             flushP();
             pendingPlayer = s2;
