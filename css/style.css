@@ -1475,9 +1475,20 @@ header, nav, main, footer { position: relative; z-index: 1; }
     gap: 8px; padding: 10px 10px;
   }
   .npc-events-grid { grid-template-columns: 1fr; }
+
+  /* 收支明细：字号略缩，其余沿用桌面端flex布局 */
   .cd-bd-table { font-size: .68rem; }
-  .cd-bd-row { grid-template-columns: 2.2em 1fr auto; }
-  .cd-bd-cat { padding-left: 10px; }
+
+  /* 兵种行：城市名auto宽（不占固定2.8em），与chips同行，chips多时换行 */
+  .bd-troop-city {
+    flex: 0 0 auto;
+    min-width: unset;
+    padding-right: 8px;
+  }
+  .bd-troop-chips {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
 /* 正负色（全局复用）*/
