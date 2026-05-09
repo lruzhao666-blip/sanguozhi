@@ -45,6 +45,7 @@
     bindNav();
     bindGMPanel();
     initParticles();
+    initTipsCard();
     loadFromCloud();
   }
 
@@ -1596,6 +1597,104 @@
   function setTxt(id, v) {
     const el = document.getElementById(id);
     if (el) el.textContent = v;
+  }
+
+  // ══════════════════════════════════════════
+  //  行动提醒卡
+  // ══════════════════════════════════════════
+  function initTipsCard() {
+    const btn     = document.getElementById('tips-btn');
+    const overlay = document.getElementById('tips-overlay');
+    const closeBtn= document.getElementById('tips-close');
+    const tabsEl  = document.getElementById('tips-tabs');
+    const bodyEl  = document.getElementById('tips-body');
+    if (!btn || !overlay || !window.TIPS_DATA) return;
+
+    let activeTab = 0;
+
+    // 把 [占位符] 包裹成高亮 span
+    function wrapPlaceholders(text) {
+      return esc(text).replace(/\[([^\]]+)\]/g,
+        '<span class="ph">[$1]</span>');
+    }
+
+    // 渲染指定 tab 内容
+    function renderTab(idx) {
+      const tab = window.TIPS_DATA[idx];
+      if (!tab) return;
+      bodyEl.innerHTML = tab.scenes.map(scene => {
+        const tipsHtml = scene.tips.map(tip => {
+          const noteHtml = tip.note
+            ? '<span class="tips-tip-note">' + esc(tip.note) + '</span>'
+            : '';
+          return '<div class="tips-tip">'
+            + '<span class="tips-tip-text">' + wrapPlaceholders(tip.text) + '</span>'
+            + noteHtml
+            + '</div>';
+        }).join('');
+        return '<div class="tips-scene">'
+          + '<div class="tips-scene-title">' + esc(scene.title) + '</div>'
+          + tipsHtml
+          + '</div>';
+      }).join('');
+      bodyEl.scrollTop = 0;
+    }
+
+    // 渲染 Tab 栏
+    function renderTabs() {
+      tabsEl.innerHTML = window.TIPS_DATA.map((tab, i) =>
+        '<button class="tips-tab' + (i === activeTab ? ' active' : '') + '" data-idx="' + i + '">'
+        + esc(tab.label) + '</button>'
+      ).join('');
+    }
+
+    // 打开卡片
+    function openCard() {
+      overlay.classList.remove('hidden');
+      // 延一帧再加 visible，让 transition 生效
+      requestAnimationFrame(() => overlay.classList.add('visible'));
+      renderTabs();
+      renderTab(activeTab);
+      // 滚动激活的 tab 进视口
+      const activeEl = tabsEl.querySelector('.active');
+      if (activeEl) activeEl.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    }
+
+    // 关闭卡片
+    function closeCard() {
+      overlay.classList.remove('visible');
+      setTimeout(() => overlay.classList.add('hidden'), 190);
+    }
+
+    // 事件绑定
+    btn.addEventListener('click', () => {
+      overlay.classList.contains('visible') ? closeCard() : openCard();
+    });
+
+    closeBtn.addEventListener('click', closeCard);
+
+    // 点遮罩空白区关闭（点 card 本身不关闭）
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closeCard();
+    });
+
+    // ESC 关闭
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && overlay.classList.contains('visible')) closeCard();
+    });
+
+    // Tab 切换（事件委托）
+    tabsEl.addEventListener('click', e => {
+      const tabBtn = e.target.closest('.tips-tab');
+      if (!tabBtn) return;
+      const idx = parseInt(tabBtn.dataset.idx, 10);
+      if (idx === activeTab) return;
+      activeTab = idx;
+      tabsEl.querySelectorAll('.tips-tab').forEach((t, i) =>
+        t.classList.toggle('active', i === activeTab));
+      renderTab(activeTab);
+      tabBtn.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    });
   }
 
   document.addEventListener('DOMContentLoaded', init);
