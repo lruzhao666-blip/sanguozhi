@@ -465,56 +465,12 @@
   //  战局动态：直接展示原文（rawDigest）
   //  对文本做基础格式化：段落换行、关键词高亮
   // ══════════════════════════════════════════
-  const DIGEST_TOC_SECTIONS = [
-    { emoji: '📢', label: '旁白', id: 'digest-sec-narration' },
-    { emoji: '🌍', label: '局势', id: 'digest-sec-situation' },
-    { emoji: '⚡', label: '天时', id: 'digest-sec-timing' },
-    { emoji: '🔥', label: '风云', id: 'digest-sec-storm' },
-    { emoji: '👤', label: '结果', id: 'digest-sec-results' },
-    { emoji: '🎯', label: '建议', id: 'digest-sec-advice' }
-  ];
-
-  const DIGEST_SECTION_EMOJI_RE = /^([📢🌍⚡🔥👤🎯])\s*/;
-  const GM_LABEL_PREFIX_RE = /^[【\[][^】\]\n]{1,12}[】\]]\s*/;
-
-  const getDigestSectionId = emoji => {
-    const found = DIGEST_TOC_SECTIONS.find(sec => sec.emoji === emoji);
-    return found ? found.id : '';
-  };
-
-  const buildDigestToc = rawText => {
-    const counts = {};
-    DIGEST_TOC_SECTIONS.forEach(sec => { counts[sec.emoji] = 0; });
-    let current = null;
-    rawText.split('\n').forEach(line => {
-      let t = line.trim();
-      if (!t) return;
-      t = t.replace(GM_LABEL_PREFIX_RE, '').trim();
-      if (!t) return;
-      const m = t.match(DIGEST_SECTION_EMOJI_RE);
-      if (m) {
-        current = m[1];
-        return;
-      }
-      if (current && counts[current] !== undefined) {
-        counts[current] += 1;
-      }
-    });
-    const parts = DIGEST_TOC_SECTIONS.map(sec => {
-      const count = counts[sec.emoji] ?? 0;
-      const countHtml = ` <span class="digest-toc-count">(${count})</span>`;
-      return `<a class="digest-toc-link" href="#${sec.id}">${sec.emoji} ${sec.label}${countHtml}</a>`;
-    });
-    return parts.join('<span class="digest-toc-sep">·</span>');
-  };
 
   function renderDigest(rd) {
     const p      = rd.parsed;
     const block  = document.getElementById('block-digest');
     const body   = document.getElementById('digest-body');
     const tagsEl = document.getElementById('digest-tags');
-    const tocEl  = document.getElementById('digest-toc');
-    const toggleBtn = document.getElementById('digest-toggle');
     if (!block || !body) return;
 
     // rawDigest 优先，兼容旧数据用 situation + events 拼合
@@ -528,18 +484,8 @@
     // 标签行：仅显示一个简洁标签
     if (tagsEl) tagsEl.innerHTML = `<span class="digest-tag tag-situation">📋 AI 原文</span>`;
 
-    if (tocEl) {
-      const tocHtml = buildDigestToc(rawText);
-      tocEl.innerHTML = tocHtml;
-      tocEl.classList.remove('hidden');
-    }
-
     // 将原文渲染为带高亮的预格式段落
     body.innerHTML = `<div class="digest-raw">${highlightRaw(rawText)}</div>`;
-
-    if (toggleBtn) {
-      toggleBtn.classList.add('hidden');
-    }
   }
 
   /**
@@ -1038,10 +984,8 @@
         flushCard();
         const emoji = sectionEmojiM[1];
         currentCard = { emoji, lines: [] };
-        const digestSectionId = getDigestSectionId(emoji);
-        const digestSectionAttr = digestSectionId ? ` id="${digestSectionId}"` : '';
         // 标题行：data-emoji 属性驱动 CSS 色调，独立输出到卡片
-        currentCard.lines.push(`<h4 class="raw-section-title" data-emoji="${emoji}"${digestSectionAttr}>${highlightInline(tLine)}</h4>`);
+        currentCard.lines.push(`<h4 class="raw-section-title" data-emoji="${emoji}">${highlightInline(tLine)}</h4>`);
         continue;
       }
 
