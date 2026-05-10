@@ -164,10 +164,16 @@ header, nav, main, footer { position: relative; z-index: 1; }
   color: #e8dcc4;
   font-weight: 400;
   word-break: break-word;
-  max-width: 100%;
+  max-width: 1040px;
   width: 100%;
-  margin: 0;
+  margin: 0 auto;
   -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 980px) {
+  .digest-raw {
+    max-width: 92%;
+  }
 }
 
 @media (max-width: 720px) {
