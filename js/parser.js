@@ -1,24 +1,40 @@
 /**
- * parser.js — 三国志文字版 · AI内容解析器 v11
+ * parser.js — 三国志文字版 · AI内容解析器 v12
+ *
+ * 规则基准：《三国志文字版 AI主持人系统提示词》v2.7.9
  *
  * 支持三种格式：
- *  A. 新版 GM 双段格式 v4（本文档规范）：
+ *  A. 新版 GM 双段格式 v4（当前规范）：
  *     ``` 剧情区 \n====×36\n 数据区 ```
- *     数据区用 [回合][速递][甲][乙][丙][NPC][战报][变动] 方括号字段块
- *     [变动] 内：
+ *     数据区字段白名单（顺序固定）：
+ *       [回合] [速递] [甲] [乙] [丙] [NPC] [战报] [变动]
+ *
+ *     [变动] 内双层结构：
  *       总变化行   甲 金△-126 粮△+138 兵△X 民心△X 城△+1(攻下XX)
- *       收支△明细  金:产出+X,维护-X,合计±X  粮: 兵: 民心:
- *       专项锚点   甲 府库△事由:金±X,粮±X
+ *       收支△块   甲 收支△                    <- 开启明细块
+ *                   金:产出+X,维护-X,合计+-X  <- 资源明细行（冒号或空格分隔）
+ *                   粮:... 兵:... 民心:...
+ *       专项锚点   甲 府库△事由:金+-X,粮+-X
  *                  甲 驻军△城名:+武将/-武将
  *                  甲 兵种△城名:骑+500,步-300 | 步:2000,弓:1000
- *                  甲 季度△金-X,粮-X
- *       全局锚点   NPC状态△城名:动态
+ *                  甲 季度△金-X,粮-X          <- 每城-40金-60粮，每5回合触发
+ *       全局锚点   NPC状态△城名:动态           <- 冒号分隔或空格分隔均支持
  *                  野外△:动态
+ *
+ *     [甲/乙/丙] 城池格式：城名(守将1/守将2|骑:3000,步:2000)
+ *     武将状态白名单（5种固定值）：健康/疲劳/受伤/患病/阵亡
  *
  *  B. 简化新格式 v3（旧规范）：
  *     文本中含【结构化数据】区，每行用 △|字段=值|字段=值 管道格式
  *
  *  C. 降级：最旧格式（👤[...] emoji块）
+ *
+ * ── 扩展预留位 ──
+ *   新增[变动]锚点类型：在 _parseOneChange() Step2 专项锚点区追加 if(/^新锚点△/) 分支
+ *   新增全局锚点：在 _parseChangesBlock() 全局锚点区追加匹配逻辑
+ *   新增资源类型：扩展 _parseSeasonalLine / _validateBreakdown 的资源列表
+ *   新增数据区字段块：在 _splitBlocks() 的 KNOWN Set 中追加标签名
+ *   前端无需同步修改：anchorGroups 数据驱动，自动适应新锚点渲染
  */
 
 window.SGParser = (function () {
@@ -317,24 +333,30 @@ window.SGParser = (function () {
 
   // ─────────────────────────────────────────
   //  解析武将列表：马超(健康),庞德(疲劳)
+  //  支持全角括号：马超（健康）
+  //  状态白名单：健康/疲劳/受伤/患病/阵亡（规则v2.7.9 §武将状态）
   // ─────────────────────────────────────────
   function _parseGeneralList(raw) {
     if (!raw || !raw.trim()) return [];
     const result = [];
+    // 同时匹配半角 () 和全角（）括号 — BUG#4 修复
     const re = /([^,，、(（\s]+)[（(]([^）)]*)[）)]/g;
     let m;
     while ((m = re.exec(raw)) !== null) {
       const name   = m[1].trim();
+      // 状态字段去除括号内多余空格，再查白名单
       let   status = m[2].trim();
       if (!VALID_STATUS.includes(status)) {
-        console.warn(`[SGParser] 武将状态不在白名单: "${status}"，视为健康`);
+        // 白名单外状态：记录警告但不丢失武将，默认健康
+        console.warn(`[SGParser] 武将"${name}"状态"${status}"不在白名单，视为健康`);
         status = '健康';
       }
-      if (name && name.length >= 2 && name.length <= 8) {
+      // 武将名：2-8 汉字（过滤拼音、英文、残余标点）
+      if (name && name.length >= 2 && name.length <= 8 && /[\u4e00-\u9fa5]/.test(name)) {
         result.push({ name, status });
       }
     }
-    // 兜底：无括号格式
+    // 兜底：无括号格式（如 "马超,庞德"）
     if (!result.length) {
       raw.split(/[,，、\s]+/).forEach(s => {
         const n = s.trim();
@@ -410,10 +432,28 @@ window.SGParser = (function () {
       if (!t) continue;
 
       // ── 全局锚点：NPC状态△ / 野外△ ──
-      // 格式A（单行一条）：NPC状态△虎牢关:吕布更换西门巡夜
-      const npcM = t.match(/^NPC状态△([^:：]+)[：:](.+)/);
-      if (npcM) {
-        npcStatus.push({ city: npcM[1].trim(), desc: npcM[2].trim() });
+      // 格式A1（冒号分隔）：NPC状态△虎牢关:吕布更换西门巡夜
+      // 格式A2（空格分隔）：NPC状态△虎牢关 吕布更换西门巡夜  — BUG#3 修复
+      if (/^NPC状态△/.test(t)) {
+        const body = t.replace(/^NPC状态△\s*/, '').trim();
+        if (body) {
+          // 优先冒号分隔
+          const colonIdx = body.search(/[:：]/);
+          if (colonIdx > 0) {
+            const city = body.slice(0, colonIdx).trim();
+            const desc = body.slice(colonIdx + 1).trim();
+            if (city && desc) { npcStatus.push({ city, desc }); continue; }
+          }
+          // 降级空格分隔：第一个词为城名，其余为描述
+          const spaceIdx = body.search(/[\s　]/);
+          if (spaceIdx > 0) {
+            const city = body.slice(0, spaceIdx).trim();
+            const desc = body.slice(spaceIdx).trim();
+            if (city && desc) { npcStatus.push({ city, desc }); continue; }
+          }
+          // 无分隔符：整体作为描述，城名留空
+          npcStatus.push({ city: '', desc: body });
+        }
         continue;
       }
       // 格式B（旧行格式）：NPC 城名状态△动态
@@ -507,19 +547,28 @@ window.SGParser = (function () {
 
       // ══════════════════════════════════════
       //  Step 1：总变化行检测
-      //  条件：一行内有 ≥2 个「资源△数字」
+      //  规则：总变化行含 ≥2 个「资源△数字」，如：
+      //    甲 金△-126 粮△+138 兵△-80 民心△+0 城△+1(攻下陈仓)
+      //  BUG#1 修复：单个「资源△数字」（如"兵△+0"单独成行）
+      //    旧逻辑 ≥2 检测不通过 → 落入 Step4 被过滤丢弃
+      //    新逻辑：≥1 即尝试匹配，但只有明确是总变化行（含已知资源名）才采纳
+      //    判定规则：行内资源△数字数量 ≥1，且行首非锚点关键字
       // ══════════════════════════════════════
       const totalMatches = [...line.matchAll(/(金|粮|兵|民心|城)△([+-]?\d+)/g)];
-      if (totalMatches.length >= 2) {
-        totalMatches.forEach(m => {
-          change.resources[m[1]] = parseInt(m[2]);
-        });
-        // 城池得失注解：城△+1(攻下陈仓)
-        for (const m of line.matchAll(/城△([+-]\d+)[（(](攻下|失去)([^）)]+)[）)]/g)) {
-          change.cities.push({ delta: parseInt(m[1]), action: m[2], cityName: m[3].trim() });
+      if (totalMatches.length >= 1) {
+        // 排除已在 Step2 处理的专项锚点行（这些行含 △ 但不是总变化行）
+        const isSpecialAnchor = /^(收支|府库|暗账|驻军|兵种|季度|情报)△/.test(line);
+        if (!isSpecialAnchor) {
+          totalMatches.forEach(m => {
+            change.resources[m[1]] = parseInt(m[2]);
+          });
+          // 城池得失注解：城△+1(攻下陈仓) / 城△-1(失去宛城)
+          for (const m of line.matchAll(/城△([+-]\d+)[（(](攻下|失去)([^）)]+)[）)]/g)) {
+            change.cities.push({ delta: parseInt(m[1]), action: m[2], cityName: m[3].trim() });
+          }
+          anchor = null;
+          continue;
         }
-        anchor = null;
-        continue;
       }
 
       // ══════════════════════════════════════
@@ -588,14 +637,18 @@ window.SGParser = (function () {
       if (/^季度△/.test(line)) {
         anchor = null;
         const rest = line.replace(/^季度△\s*/, '').trim();
-        _parseSeasonalLine(rest, change.quarterly);
-        // 兼容旧字段
-        _parseSeasonalLine(rest, change.seasonal);
-        // 加入 anchorGroups.季度
+        // 先解析到临时数组，避免累积后 deltas 捕获到上一条的内容
+        const newItems = [];
+        _parseSeasonalLine(rest, newItems);
+        newItems.forEach(item => {
+          change.quarterly.push(item);
+          change.seasonal.push(item);  // 兼容旧字段
+        });
+        // 加入 anchorGroups.季度（每条 季度△ 独立一项，label 注明结算周期）
         if (!change.anchorGroups['季度']) change.anchorGroups['季度'] = [];
         change.anchorGroups['季度'].push({
-          label:  '',
-          deltas: change.quarterly.map(s => ({ res: s.res, val: s.val })),
+          label:  '季度结算',
+          deltas: newItems.map(s => ({ res: s.res, val: s.val })),
           text:   line,
         });
         continue;
@@ -614,48 +667,70 @@ window.SGParser = (function () {
       }
 
       // ══════════════════════════════════════
-      //  Step 3：锚点内容行
+      //  Step 3：锚点内容行（收支△明细块）
+      //  规则：收支△后跟资源明细行，每行格式：
+      //    金:产出+30,维护-24,明账-10,府库-120,合计-124
+      //    民心:赤字-5,合计-5
+      //  BUG#2 修复：遇到新的专项锚点行时必须退出 breakdown 状态
+      //    旧逻辑：非资源行只 continue 不重置 anchor，后续锚点行被误归入 breakdown
+      //    新逻辑：明细块只接受「资源名:...」格式行；一旦遇到以下情况则退出 breakdown：
+      //      a) 新专项锚点行（府库△/驻军△/兵种△/季度△/情报△/收支△）
+      //      b) 空行（收支块已结束）
+      //    退出后重新进入主循环 Step2 处理该行
       // ══════════════════════════════════════
       if (anchor === 'breakdown') {
-        // 格式：金:产出+30,维护-24,明账-10,府库-120,合计-124
-        //       民心:赤字-5,合计-5
-        const catM = line.match(/^(金|粮|兵|民心)[：:,，\s]+(.*)/);
-        if (catM) {
-          const cat   = catM[1];
-          const rest  = catM[2];
-          const items = [];
-          // 先把"合计±N"从字符串中摘除，再匹配其余条目
-          // 这样可避免"合计-124"被误拆为 label="计" val=-124
-          const restNoTotal = rest.replace(/合计[+-]?\d+,?/g, '');
-          // 匹配格式：中文标签（不含数字、符号）后跟 ±数字
-          const itemRe = /([^\s,，+\-\d·|][^,，·+\-\d]*?)([+-]\d+)/g;
-          let im;
-          while ((im = itemRe.exec(restNoTotal)) !== null) {
-            let lbl = im[1].replace(/[→:：]/g, '').trim();
-            if (lbl === '暗账') lbl = '府库';
-            // 过滤空标签和"合"/"计"等残余
-            if (lbl && lbl !== '合' && lbl !== '计' && lbl.length >= 2) {
-              items.push({ label: lbl, val: parseInt(im[2]) });
+        // 检查是否遇到了新锚点行 —— 若是，退出 breakdown，让该行在下方 Step2 重新处理
+        // （收支△本身也算新块，虽然不常见但容错）
+        if (/^(收支|府库|暗账|驻军|兵种|季度|情报)△/.test(line)) {
+          anchor = null;
+          // 不 continue，让代码继续往下执行 Step2 处理本行
+        } else {
+          // 格式：金:产出+30,维护-24,明账-10,府库-120,合计-124
+          //       民心:赤字-5,合计-5
+          //       兵 战损-80,合计-80   （空格分隔也支持）
+          const catM = line.match(/^(金|粮|兵|民心)[：:,，\s]+(.*)/);
+          if (catM) {
+            const cat  = catM[1];
+            const rest = catM[2];
+            const items = [];
+            // 先摘除"合计±N"避免被误拆为 label="计" val=N
+            const restNoTotal = rest.replace(/合计[+-]?\d+,?/g, '');
+            // 匹配分项：中文标签 + 数值。排除纯数字、符号开头的残余
+            const itemRe = /([^\s,，+\-\d·|][^,，·+\-\d]*?)([+-]\d+)/g;
+            let im;
+            while ((im = itemRe.exec(restNoTotal)) !== null) {
+              let lbl = im[1].replace(/[→:：]/g, '').trim();
+              if (lbl === '暗账') lbl = '府库';  // 字段别名统一
+              // 过滤：空标签、完整"合计"词、单字残余"合"/"计"
+              if (lbl && lbl !== '合计' && lbl !== '合' && lbl !== '计' && lbl.length >= 2) {
+                items.push({ label: lbl, val: parseInt(im[2]) });
+              }
             }
+            const totalM = rest.match(/合计([+-]?\d+)/);
+            const total  = totalM ? parseInt(totalM[1]) : null;
+            change.breakdown[cat] = { items, total };
+            continue;
           }
-          const totalM = rest.match(/合计([+-]?\d+)/);
-          const total  = totalM ? parseInt(totalM[1]) : null;
-          change.breakdown[cat] = { items, total };
+          // 非资源格式行且非新锚点：可能是收支块内的说明文字，直接跳过
           continue;
         }
-        // 空行 / 非资源行：不重置 anchor（整个明细块可能有多行）
-        continue;
+        // 走到这里意味着 anchor 已被重置为 null，继续往下用 Step2 处理本行
       }
 
       // ══════════════════════════════════════
-      //  Step 4：通用 fallback（XX△ 模式）
+      //  Step 4：通用 fallback（未知 XX△ 模式）
+      //  仅捕获 Step1/Step2 均未命中的行
+      //  排除资源名前缀（金△/粮△/兵△/民心△/城△）——
+      //    这些行在 Step1 处理（总变化行），不应在此二次处理
+      //  排除已知专项锚点前缀——这些行在 Step2 处理
       // ══════════════════════════════════════
       const genericM = line.match(/^([^△\s]{1,10})△\s*(.*)/);
       if (genericM) {
         const key  = genericM[1].trim();
         const body = genericM[2].trim();
-        // 资源名本身不做锚点
-        if (!['金','粮','兵','民心','城'].includes(key)) {
+        // 已知锚点关键字：由 Step1/Step2 专门处理，此处跳过
+        const KNOWN_ANCHORS = ['金','粮','兵','民心','城','收支','府库','暗账','驻军','兵种','季度','情报'];
+        if (!KNOWN_ANCHORS.includes(key)) {
           anchor = null;
           const deltas = [];
           for (const dm of body.matchAll(/(金|粮|兵|民心|城)([+-]?\d+)/g)) {
@@ -667,6 +742,7 @@ window.SGParser = (function () {
           if (!change.anchorGroups[key]) change.anchorGroups[key] = [];
           change.anchorGroups[key].push({ label, deltas, text: line });
         }
+        // 注：KNOWN_ANCHORS 中的资源名前缀行（金△+0 单独成行）已在 Step1 捕获
       }
     } // end for lines
 

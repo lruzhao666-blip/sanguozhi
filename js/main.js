@@ -1362,7 +1362,23 @@
   }
 
   // ── Layer 2：收支明细（可折叠） ──
-  const BD_ITEM_ORDER = ['产出','维护','季度','明账','府库','贸易','事件'];
+  // 收支分项显示顺序（规则 v2.7.9 §收支明细）
+  // 扩展预留：在此数组末尾追加新分项名即可自动排序，无需改动渲染逻辑
+  const BD_ITEM_ORDER = [
+    '产出',   // 常规收入：屯田/税收
+    '维护',   // 常规支出：兵力/城池维护
+    '季度',   // 每5回合季度结算（每城-40金-60粮）
+    '明账',   // 公开账目变动
+    '府库',   // 府库特殊操作（原"暗账"）
+    '贸易',   // 贸易收入
+    '事件',   // 事件奖惩
+    '赤字',   // 资源赤字扣除
+    '战损',   // 战斗兵力损失
+    '急征',   // 紧急征粮/征兵
+    '招募',   // 招募新兵
+    '逃亡',   // 兵力/民心逃亡
+    '攻城',   // 攻城相关消耗
+  ];
   function _renderBreakdown(bd, troopChanges) {
     if (!bd) return '';
     const cats = RES_ORDER.filter(k => k in bd);
@@ -1529,14 +1545,16 @@
   function _migrateToAnchorGroups(ch) {
     const groups = Object.assign({}, ch.anchorGroups || {});
 
-    // 季度△
+    // 季度△（旧数据迁移：seasonal[] → anchorGroups.季度，给一个可读 label）
     if (ch.seasonal && ch.seasonal.length) {
-      if (!groups['季度']) groups['季度'] = [];
-      groups['季度'].push({
-        label: '',
-        deltas: ch.seasonal.map(s => ({ res: s.res, val: s.val })),
-        text: '',
-      });
+      if (!groups['季度']) {
+        groups['季度'] = [];
+        groups['季度'].push({
+          label:  '季度结算',
+          deltas: ch.seasonal.map(s => ({ res: s.res, val: s.val })),
+          text:   '',
+        });
+      }
     }
     // 府库△（旧数据兼容：anchorGroups['府库'] 已由 v11 parser 直接写入时跳过，避免重复）
     if (ch.darkItems && ch.darkItems.length && !groups['府库']) {
@@ -1675,12 +1693,17 @@
     const latest = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
     if (!latest) { el.classList.add('hidden'); return; }
 
-    // 从 rawContent 实时重解析（保证使用最新解析器逻辑）
+    // 从 rawContent 实时重解析（保证使用最新解析器逻辑 + 保留 npcStatus/wildEvents）
     let changes = latest.parsed.changes || [];
+    let freshNpcStatus  = [];
+    let freshWildEvents = [];
     if (latest.rawContent) {
       try {
         const fp = window.SGParser.parse(latest.rawContent);
         if (fp.changes && fp.changes.length) changes = fp.changes;
+        // fp.npcStatus / fp.wildEvents 来自解析器顶层，不依赖数组非索引属性，Supabase 往返安全
+        freshNpcStatus  = fp.npcStatus  || [];
+        freshWildEvents = fp.wildEvents || [];
       } catch(e) {}
     }
 
@@ -1738,22 +1761,27 @@
       </div>`;
     }).join('');
 
-    // ── 公共事件区（仅渲染 v3 事件/错误）──
-    // 兼容旧版数据：changes.__publicEvents 中若仍有 NPC 条目也一并展示
-    const legacyPublicEvents = [];
-    if (changes.__publicEvents && changes.__publicEvents.length) {
-      legacyPublicEvents.push(...changes.__publicEvents);
-    } else if (changes.__npc && changes.__npc.length) {
-      changes.__npc.forEach(ev => legacyPublicEvents.push({
-        anchor: ev.type === 'wild' ? '野外' : 'NPC状态',
-        label:  ev.city || '',
-        deltas: [],
-        text:   ev.desc || '',
-      }));
+    // ── 公共事件区（NPC动态 + 野外动态）──
+    // 优先使用本次重解析的结果（freshNpcStatus/freshWildEvents）；
+    // rawContent 不存在时降级到 parsed 里已有的字段；
+    // 最后兜底尝试 changes.__publicEvents（内存中的新鲜解析不受 JSON 往返影响）。
+    const resolvedNpc  = freshNpcStatus.length  ? freshNpcStatus
+      : (latest.parsed.npcStatus  || []);
+    const resolvedWild = freshWildEvents.length ? freshWildEvents
+      : (latest.parsed.wildEvents || []);
+
+    // 统一转换为 _renderPublicEvents 期望的 publicEvents 格式
+    const publicEvents = [
+      ...resolvedNpc.map(ev  => ({ anchor: 'NPC状态', label: ev.city  || '', deltas: [], text: ev.desc  || '' })),
+      ...resolvedWild.map(ev => ({ anchor: '野外',    label: '',            deltas: [], text: ev.desc  || '' })),
+    ];
+    // 兼容旧版内存数据（未经 JSON 往返时 __publicEvents 仍可用）
+    if (!publicEvents.length && changes.__publicEvents && changes.__publicEvents.length) {
+      publicEvents.push(...changes.__publicEvents);
     }
 
     const publicHtml = _renderPublicEvents(
-      legacyPublicEvents,
+      publicEvents,
       latest.parsed.events || [],
       latest.parsed.errors || []
     );
