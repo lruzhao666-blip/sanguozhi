@@ -264,7 +264,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══ 各城主行动结果：文本流 + 分隔线 ══ */
 .digest-raw .result-player-group {
   padding: 6px 0 0;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .digest-raw .result-player-group:last-child {
@@ -272,11 +272,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 
 .digest-raw .result-divider {
-  height: 1px;
-  width: 60%;
-  margin: 16px auto 16px;
-  opacity: 0.6;
-  background: linear-gradient(90deg, transparent, rgba(180,120,40,.3), rgba(212,168,67,.4), rgba(180,120,40,.3), transparent);
+  display: none;
 }
 /* 玩家分组之间的分隔线（JS 插入 hr） */
 .digest-raw .player-group-divider {
@@ -323,6 +319,10 @@ header, nav, main, footer { position: relative; z-index: 1; }
   gap: 0;
 }
 .digest-raw .raw-action-block .action-player-tag::before {
+  display: none;
+}
+
+.digest-raw .result-player-group .action-player-tag::before {
   display: none;
 }
 
