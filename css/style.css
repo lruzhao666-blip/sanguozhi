@@ -105,6 +105,15 @@ header, nav, main, footer { position: relative; z-index: 1; }
   display: flex; flex-direction: column; gap: 14px;
 }
 
+@media (max-width: 720px) {
+  .arena-wrap {
+    padding: 12px 10px 40px;
+  }
+  #tab-gm {
+    padding: 12px 10px 44px;
+  }
+}
+
 /* 空状态 */
 .arena-empty { text-align: center; padding: 100px 20px; color: var(--text-dim); }
 .ae-icon { font-size: 2.8rem; margin-bottom: 16px; opacity: .25; }
