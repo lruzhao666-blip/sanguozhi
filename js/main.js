@@ -1448,7 +1448,10 @@
   // 默认折叠，显示摘要行：「N 项变动 · 含X调度 · 府库-100金」
   function _renderAnchorGroups(groups) {
     if (!groups || !Object.keys(groups).length) return '';
-    const hiddenAnchors = new Set(['状态']);
+    // 隐藏不需要独立区块显示的锚点：
+    //   状态：武将状态由玩家卡片直接展示
+    //   季度：季度结算已体现在收支明细的「季度」chip 中，独立区块是重复信息
+    const hiddenAnchors = new Set(['状态', '季度']);
     const knownKeys   = ANCHOR_ORDER.filter(k => groups[k] && !hiddenAnchors.has(k));
     const unknownKeys = Object.keys(groups).filter(k => !ANCHOR_ORDER.includes(k) && !hiddenAnchors.has(k));
     const allKeys     = [...knownKeys, ...unknownKeys];
