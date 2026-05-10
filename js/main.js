@@ -456,11 +456,15 @@
     el.innerHTML = html;
   }
 
-  function getLatestRoundNum() {
-    if (!state.rounds.length) return null;
-    const last = state.rounds[state.rounds.length - 1];
-    const num = Number.isInteger(last.round) ? last.round : parseInt(last.round, 10);
-    return Number.isInteger(num) ? num : null;
+  function getRoundStats() {
+    if (!state.rounds.length) return { latest: null, total: 0 };
+    const nums = state.rounds
+      .map(rd => (Number.isInteger(rd.round) ? rd.round : parseInt(rd.round, 10)))
+      .filter(n => Number.isInteger(n) && n > 0);
+    if (!nums.length) return { latest: null, total: state.rounds.length };
+    const latest = nums[nums.length - 1];
+    const total = Math.max(...nums);
+    return { latest, total };
   }
 
   // ── 回合标题条 ──
@@ -472,7 +476,7 @@
     const countEl = document.getElementById('rb-round-count');
     if (countEl) {
       const roundLabel = Number.isInteger(roundNum) ? `当前第 ${roundNum} 回合` : '当前回合';
-      countEl.textContent = `${roundLabel} · 共 ${state.rounds.length} 回合`;
+      countEl.textContent = roundLabel;
     }
   }
 
@@ -574,6 +578,9 @@
             if (dashIdx > 0) {
               name = opt.text.slice(0, dashIdx).trim();
               desc = opt.text.slice(dashIdx).replace(/^[——──\s-—]+/, '').trim();
+            }
+            if (oi === 3) {
+              desc = '主公心中，另有筹谋⋯⋯';
             }
             ab += '<div class="action-opt-card">';
             ab += '<div class="action-opt-title-row">';
@@ -1896,19 +1903,20 @@
     const el = document.getElementById('footer-info');
     if (!el) return;
     if (!state.rounds.length) { el.textContent = '尚未开局'; return; }
-    const last = state.rounds[state.rounds.length - 1];
-    el.textContent = `共 ${state.rounds.length} 回合 · 当前第 ${last.round} 回合`;
+    const { latest } = getRoundStats();
+    const latestLabel = latest || state.rounds[state.rounds.length - 1].round;
+    el.textContent = `当前第 ${latestLabel} 回合`;
   }
 
   function updateSyncStatus(s) {
     const el = document.getElementById('sync-status');
     if (!el) return;
-    const latestRound = getLatestRoundNum();
-    const roundPrefix = latestRound ? `当前第 ${latestRound} 回合 · ` : '';
+    const { latest } = getRoundStats();
+    const roundPrefix = latest ? `当前第 ${latest} 回合` : '';
     const map = {
       loading:  ['☁️ 连接云端中…',                                                         '#3dbe6c'],
-      online:   [`☁️ 云端已连接 · ${roundPrefix}共 ${state.rounds.length} 回合 · 每30秒自动刷新`, '#7dce7d'],
-      updating: [`🔄 正在同步新内容…${latestRound ? ` · 当前第 ${latestRound} 回合` : ''}`, '#3dbe6c'],
+      online:   [`☁️ 云端已连接${roundPrefix ? ` · ${roundPrefix}` : ''} · 每30秒自动刷新`, '#7dce7d'],
+      updating: [`🔄 正在同步新内容…${roundPrefix ? ` · ${roundPrefix}` : ''}`, '#3dbe6c'],
       error:    ['⚠️ 云端连接失败，请刷新页面',                                            '#e74c3c'],
     };
     const [txt, color] = map[s] || map.online;
