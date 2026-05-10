@@ -456,11 +456,24 @@
     el.innerHTML = html;
   }
 
+  function getLatestRoundNum() {
+    if (!state.rounds.length) return null;
+    const last = state.rounds[state.rounds.length - 1];
+    const num = Number.isInteger(last.round) ? last.round : parseInt(last.round, 10);
+    return Number.isInteger(num) ? num : null;
+  }
+
   // ── 回合标题条 ──
   function renderRoundBar(rd) {
-    setTxt('rb-num', rd.round);
+    const roundNum = Number.isInteger(rd.round) ? rd.round : parseInt(rd.round, 10);
+    if (Number.isInteger(roundNum)) {
+      setTxt('rb-num', roundNum);
+    }
     const countEl = document.getElementById('rb-round-count');
-    if (countEl) countEl.textContent = `共 ${state.rounds.length} 回合`;
+    if (countEl) {
+      const roundLabel = Number.isInteger(roundNum) ? `当前第 ${roundNum} 回合` : '当前回合';
+      countEl.textContent = `${roundLabel} · 共 ${state.rounds.length} 回合`;
+    }
   }
 
   // ══════════════════════════════════════════
@@ -1890,10 +1903,12 @@
   function updateSyncStatus(s) {
     const el = document.getElementById('sync-status');
     if (!el) return;
+    const latestRound = getLatestRoundNum();
+    const roundPrefix = latestRound ? `当前第 ${latestRound} 回合 · ` : '';
     const map = {
       loading:  ['☁️ 连接云端中…',                                                         '#3dbe6c'],
-      online:   [`☁️ 云端已连接 · ${state.rounds.length} 个回合 · 每30秒自动刷新`,        '#7dce7d'],
-      updating: ['🔄 正在同步新内容…',                                                     '#3dbe6c'],
+      online:   [`☁️ 云端已连接 · ${roundPrefix}共 ${state.rounds.length} 回合 · 每30秒自动刷新`, '#7dce7d'],
+      updating: [`🔄 正在同步新内容…${latestRound ? ` · 当前第 ${latestRound} 回合` : ''}`, '#3dbe6c'],
       error:    ['⚠️ 云端连接失败，请刷新页面',                                            '#e74c3c'],
     };
     const [txt, color] = map[s] || map.online;
