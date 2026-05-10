@@ -264,18 +264,19 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══ 各城主行动结果：文本流 + 分隔线 ══ */
 .digest-raw .result-player-group {
   padding: 6px 0 0;
+  margin-bottom: 12px;
 }
 
-.digest-raw .result-player-group + .result-player-group {
-  margin-top: 36px;
+.digest-raw .result-player-group:last-child {
+  margin-bottom: 0;
 }
 
 .digest-raw .result-divider {
   height: 1px;
   width: 60%;
-  margin: 18px auto 18px;
-  opacity: 0.7;
-  background: linear-gradient(90deg, transparent, rgba(180,120,40,.35), rgba(212,168,67,.45), rgba(180,120,40,.35), transparent);
+  margin: 16px auto 16px;
+  opacity: 0.6;
+  background: linear-gradient(90deg, transparent, rgba(180,120,40,.3), rgba(212,168,67,.4), rgba(180,120,40,.3), transparent);
 }
 /* 玩家分组之间的分隔线（JS 插入 hr） */
 .digest-raw .player-group-divider {

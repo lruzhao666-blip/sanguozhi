@@ -755,6 +755,7 @@
     const SECTION_EMOJI_RE = /^(🎴|📢|🌍|⚡|🔥|👤|⏳|📜|🌐|⚔️|🏯|🌅|🌙)\s*/;
     const SECTION_RE   = /^(🌍|⚡|📢|🔥|📜|🎴|🌐|⚔️|🏯|🌅|🌙)\s*[【\[]?\s*[\u4e00-\u9fa5]{2,}/;
     const PLAYER_RE    = /^👤\s*[【\[]/;
+    const RESULT_PLAYER_LINE_RE = /^\s*(?:[【\[][^】\]]+[】\]]|[^\s:：·\u30fb\u2022]{1,12}\s*[：:·\u30fb\u2022]).*/;
     const NOTE_RE      = /^[📍🔖💡]/;
     const BATTLE_RE    = /^🎲/;
     // ▸ 影响行：行首 ▸（含全角/半角变体）
@@ -783,11 +784,11 @@
     // ── 👤 各城主行动结果：子玩家分组 ──
     // 与 🎯 行动建议 完全相同的 action-item 排版
     const _groupPlayerResultLines = (cardLines) => {
-      const SUB_PLAYER_RE = /^([\u4e00-\u9fa5A-Za-z]{1,4})[·\u30fb\u2022::\uff1a]\s*(.*)$/;
-      const SUB_PLAYER_BRACKET_RE = /^[【\[]([^】\]]{1,6})[】\]]\s*(.*)$/;
+      const SUB_PLAYER_RE = /^([^\s:：·\u30fb\u2022]{1,12})\s*[·\u30fb\u2022:：]\s*(.*)$/;
+      const SUB_PLAYER_BRACKET_RE = /^[【\[]([^】\]]{1,12})[】\]]\s*(.*)$/;
       const parseRawPlayer = (html) => {
         const text = html.replace(/<[^>]+>/g, '').trim();
-        const bracket = text.match(/[【\[]([^】\]]+)\]\s*(.*)$/) || text.match(/[【\[]([^】\]]+)[】\]]\s*(.*)$/);
+        const bracket = text.match(/[【\[]([^】\]]+)[】\]]\s*(.*)$/);
         if (bracket) {
           return { name: bracket[1], title: bracket[2].trim() };
         }
@@ -997,8 +998,8 @@
         continue;
       }
 
-      // 玩家行
-      if (PLAYER_RE.test(tLine)) {
+      // 玩家行（👤 或 👤 段落内的玩家标识）
+      if (PLAYER_RE.test(tLine) || (currentCard && currentCard.emoji === '👤' && RESULT_PLAYER_LINE_RE.test(tLine))) {
         flushPara();
         if (currentCard) {
           currentCard.lines.push(`<div class="raw-player">${highlightInline(tLine)}</div>`);
