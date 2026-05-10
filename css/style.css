@@ -271,10 +271,69 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ══ 行动建议玩家分组 ══ */
 .digest-raw .action-player-group {
-  margin: 0 0 40px;
-  padding: 0;
-  border: none;
+  margin: 0 0 24px;
+  padding: 2px 0 2px 14px;
+  border-left: 3px solid var(--action-accent, var(--gold-light));
   background: none;
+}
+
+.digest-raw .action-player-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 2px 0 10px;
+  letter-spacing: .04em;
+}
+
+.digest-raw .action-player-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--action-accent, var(--gold-light));
+  box-shadow: 0 0 6px rgba(var(--action-accent-rgb, 212,168,67), .45);
+  flex-shrink: 0;
+}
+
+.digest-raw .action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.digest-raw .action-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0;
+  line-height: 1.75;
+  font-family: var(--font-serif);
+}
+
+.digest-raw .action-num {
+  flex-shrink: 0;
+  min-width: 1.6em;
+  font-weight: 700;
+  color: var(--action-accent, var(--gold-light));
+  text-shadow: none;
+}
+
+.digest-raw .action-name {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.digest-raw .action-sep {
+  margin: 0 6px;
+  color: var(--text-dim);
+}
+
+.digest-raw .action-desc {
+  color: var(--text-sub);
+  font-size: .88rem;
 }
 
 .digest-raw .action-player-group[data-slot="0"] {

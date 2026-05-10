@@ -569,8 +569,8 @@
       if (actionLines.length) {
         actionLines.forEach((al, pi) => {
           ab += `<div class="action-player-group" data-slot="${pi}">`;
-          ab += `<div class="action-player-tag" data-slot="${pi}">${esc(al.playerLabel)}</div>`;
-          ab += '<div class="action-option-grid">';
+          ab += `<div class="action-player-name"><span class="action-player-dot"></span>${esc(al.playerLabel)}</div>`;
+          ab += '<div class="action-list">';
           al.opts.forEach((opt, oi) => {
             // 破折号拆分：行动名 —— 注解
             const dashIdx = opt.text.search(/——|──|\s[-—]{2}\s/);
@@ -579,14 +579,14 @@
               name = opt.text.slice(0, dashIdx).trim();
               desc = opt.text.slice(dashIdx).replace(/^[——──\s-—]+/, '').trim();
             }
-            ab += '<div class="action-opt-card">';
-            ab += '<div class="action-opt-title-row">';
-            ab += `<span class="action-opt-num">${ICONS[oi] || ''}</span>`;
-            ab += `<span class="action-opt-title">${esc(name)}</span>`;
-            ab += '</div>';
+            ab += '<div class="action-row">';
+            ab += `<span class="action-num">${ICONS[oi] || ''}</span>`;
+            ab += `<span class="action-name">${esc(name)}</span>`;
             if (desc) {
-              ab += `<div class="action-opt-desc">${esc(desc)}</div>`;
+              ab += '<span class="action-sep">—</span>';
+              ab += `<span class="action-desc">${esc(desc)}</span>`;
             }
+            ab += '</div>';
             // A/B/C 分支
             if (opt.branches && opt.branches.length) {
               ab += '<div class="action-branch-list">';
@@ -600,9 +600,8 @@
               });
               ab += '</div>';
             }
-            ab += '</div>'; // .action-opt-card
           });
-          ab += '</div>'; // .action-option-grid
+          ab += '</div>'; // .action-list
           ab += '</div>'; // .action-player-group
         });
       }
