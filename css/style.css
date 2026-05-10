@@ -272,8 +272,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══ 行动建议玩家分组 ══ */
 .digest-raw .action-player-group {
   margin: 0 0 24px;
-  padding: 2px 0 2px 12px;
-  border-left: 3px solid var(--action-accent, var(--gold-light));
+  padding: 2px 0;
+  border-left: none;
   background: none;
 }
 
@@ -2245,6 +2245,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   .digest-raw .raw-section { font-size: .94rem; margin: 14px 0 8px; }
   .digest-raw .raw-player  { font-size: .9rem; }
   .digest-raw .raw-battle  { font-size: .88rem; }
+  .digest-raw .action-player-group { padding-left: 8px; }
   .msp-city-list { max-height: 140px; }
   .map-float-panel { width: 180px; font-size: .73rem; }
 }

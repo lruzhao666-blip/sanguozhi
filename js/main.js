@@ -554,12 +554,12 @@
     // GM 标注剥除
     const stripGM = l => l.trim().replace(/^[【\[][^】\]\n]{1,12}[】\]]\s*/, '').trim();
 
-    // 判断是否是 A/B/C 分支行
-    const isBranchLine = l => /^\s*[A-Ca-c][.．、]\s*.+/.test(l);
+    // 判断是否是 A/B/C 分支行（兼容：A. / A、 / A： / A: / A 空格）
+    const isBranchLine = l => /^\s*[A-Ca-c](?:[.．、]|[：:]|\s)\s*.+/.test(l);
     // 提取分支字母
     const branchLetter = l => l.trim().slice(0,1).toUpperCase();
-    // 提取分支正文（去掉 "A. " 前缀）
-    const branchText   = l => l.trim().replace(/^[A-Ca-c][.．、]\s*/, '');
+    // 提取分支正文（去掉 "A. " / "A：" / "A " 前缀）
+    const branchText   = l => l.trim().replace(/^[A-Ca-c](?:[.．、]|[：:]|\s)\s*/, '');
 
     // 渲染一组 actionLines + waitLine → HTML字符串
     // actionLines: [{ playerLabel, opts: [{ text, branches: [{label,text}] }] }]
@@ -1432,8 +1432,9 @@
   // 默认折叠，显示摘要行：「N 项变动 · 含X调度 · 府库-100金」
   function _renderAnchorGroups(groups) {
     if (!groups || !Object.keys(groups).length) return '';
-    const knownKeys   = ANCHOR_ORDER.filter(k => groups[k]);
-    const unknownKeys = Object.keys(groups).filter(k => !ANCHOR_ORDER.includes(k));
+    const hiddenAnchors = new Set(['状态']);
+    const knownKeys   = ANCHOR_ORDER.filter(k => groups[k] && !hiddenAnchors.has(k));
+    const unknownKeys = Object.keys(groups).filter(k => !ANCHOR_ORDER.includes(k) && !hiddenAnchors.has(k));
     const allKeys     = [...knownKeys, ...unknownKeys];
 
     const sectionsHtml = allKeys.map(key => {
@@ -1554,8 +1555,8 @@
       ch.intel.forEach(s => groups['情报'].push({ label: s, deltas: [], text: s }));
     }
     // 兵种变动 ── res 字段用 type（步/弓/骑/水/蛮），val 保持原值供 valCls 正确配色
-    if (ch.troopChanges && ch.troopChanges.length) {
-      if (!groups['兵种']) groups['兵种'] = [];
+    if (ch.troopChanges && ch.troopChanges.length && !groups['兵种']) {
+      groups['兵种'] = [];
       ch.troopChanges.forEach(tc => {
         groups['兵种'].push({
           label:  tc.cityName,
