@@ -1239,7 +1239,7 @@
       listEl.innerHTML = '<span class="gen-empty">——</span>';
       return;
     }
-    listEl.innerHTML = generals.map(g => buildGenTag(g)).join('');
+    listEl.innerHTML = generals.map(g => buildGenTag(g, { slotIdx: idx })).join('');
   }
 
   // ── 武将状态颜色（按钮颜色完全由状态决定，不区分稀有度）
@@ -1251,6 +1251,29 @@
     dead:   { bg:'rgba(18,18,18,.42)',  bd:'rgba(60,60,60,.35)',   c:'#686868',  bc:'rgba(60,60,60,.15)'  }
   };
 
+  var GEN_OWNER_COLORS = {
+    player0: '#e74c3c',
+    player1: '#3dbe6c',
+    player2: '#5dade2',
+    npc: '#d4a843',
+    wild: '#d68910',
+  };
+
+  function resolveGenOwnerType(g, meta) {
+    const ownerHint = (meta && meta.ownerType) ? meta.ownerType : '';
+    if (ownerHint) return ownerHint;
+    if (g && g.isNpc === true) return 'npc';
+    if (g && g.isWild === true) return 'wild';
+    const tag = [g?.owner, g?.type, g?.faction, g?.source]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    if (/npc/.test(tag)) return 'npc';
+    if (/wild|野外/.test(tag)) return 'wild';
+    if (meta && Number.isInteger(meta.slotIdx)) return `player${meta.slotIdx}`;
+    return '';
+  }
+
   function genStatusKey(s) {
     if (!s) return 'healthy';
     if (/疲劳|疲/.test(s))    return 'tired';
@@ -1260,10 +1283,12 @@
     return 'healthy';
   }
 
-  function buildGenTag(g) {
+  function buildGenTag(g, meta) {
     var statusKey = genStatusKey(g.status);
     var sc        = GEN_STATUS_STYLES[statusKey] || GEN_STATUS_STYLES.healthy;
     var isDead    = statusKey === 'dead';
+    var ownerType = resolveGenOwnerType(g, meta);
+    var nameColor = GEN_OWNER_COLORS[ownerType] || sc.c;
 
     // tooltip 悬停提示
     var titleTip = esc(g.name) + ' · ' + esc(g.status || '健康');
@@ -1276,7 +1301,7 @@
       + 'background:' + sc.bg + '!important;'
       + (isDead ? 'text-decoration:line-through;opacity:.5;' : '');
 
-    var nameStyle = 'font-weight:700;color:' + sc.c + '!important;letter-spacing:.02em;';
+    var nameStyle = 'font-weight:700;color:' + nameColor + '!important;letter-spacing:.02em;';
 
     var divStyle = 'display:inline-block;width:1px;height:.9em;margin:0 5px;'
       + 'background:' + sc.bd + ';flex-shrink:0;opacity:.6;';
@@ -1823,7 +1848,7 @@
         if (chips) html += `<div class="hpc-res">${chips}</div>`;
         if (pl.generals && pl.generals.length) {
           html += `<div class="hpc-generals">` +
-            pl.generals.map(g => buildGenTag(g)).join('') +
+            pl.generals.map(g => buildGenTag(g, { slotIdx: i })).join('') +
           `</div>`;
         }
         if (pl.situation_note) html += `<div class="hpc-note">${esc(pl.situation_note)}</div>`;
