@@ -255,7 +255,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ══ 行动建议玩家分组 ══ */
 .digest-raw .action-player-group {
-  margin: 0 0 18px;
+  margin: 0 0 36px;
   padding: 0;
   border: none;
   background: none;
@@ -316,11 +316,29 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .action-player-tag[data-slot="2"]::before { content: '丙'; background: var(--p2-color); }
 
 .digest-raw .raw-action-block .action-player-tag {
-  gap: 0;
+  gap: 10px;
+  font-size: 1.2rem;
+  letter-spacing: .06em;
+  margin-bottom: 12px;
+  padding: 6px 0 6px 12px;
+  position: relative;
+  text-transform: none;
 }
 .digest-raw .raw-action-block .action-player-tag::before {
-  display: none;
+  content: '';
+  width: 4px;
+  height: 100%;
+  border-radius: 3px;
+  position: absolute;
+  left: 0;
+  top: 0;
 }
+.digest-raw .raw-action-block .action-player-tag[data-slot="0"] { color: var(--p0-color); }
+.digest-raw .raw-action-block .action-player-tag[data-slot="1"] { color: var(--p1-color); }
+.digest-raw .raw-action-block .action-player-tag[data-slot="2"] { color: var(--p2-color); }
+.digest-raw .raw-action-block .action-player-tag[data-slot="0"]::before { background: var(--p0-color); }
+.digest-raw .raw-action-block .action-player-tag[data-slot="1"]::before { background: var(--p1-color); }
+.digest-raw .raw-action-block .action-player-tag[data-slot="2"]::before { background: var(--p2-color); }
 
 .digest-raw .result-player-group .action-player-tag::before {
   display: none;
@@ -330,7 +348,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .action-option-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 @media (max-width: 900px) {
   .digest-raw .action-option-grid {
@@ -345,16 +363,28 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 .digest-raw .action-opt-card {
   position: relative;
-  padding: 10px 12px 14px;
-  border-radius: 8px;
-  background: rgba(8,4,4,.55);
+  padding: 12px 14px 16px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(20,8,8,.95), rgba(10,5,5,.98));
   border: 1px solid rgba(255,255,255,.06);
   box-shadow: 0 6px 16px rgba(0,0,0,.35);
-  min-height: 86px;
+  min-height: 90px;
 }
-.digest-raw .action-player-group[data-slot="0"] .action-opt-card { border-top: 3px solid var(--p0-color); }
-.digest-raw .action-player-group[data-slot="1"] .action-opt-card { border-top: 3px solid var(--p1-color); }
-.digest-raw .action-player-group[data-slot="2"] .action-opt-card { border-top: 3px solid var(--p2-color); }
+.digest-raw .action-player-group[data-slot="0"] .action-opt-card {
+  border-top: 4px solid var(--p0-color);
+  box-shadow: 0 0 12px rgba(231,76,60,.15), 0 6px 16px rgba(0,0,0,.35);
+}
+.digest-raw .action-player-group[data-slot="1"] .action-opt-card {
+  border-top: 4px solid var(--p1-color);
+  box-shadow: 0 0 12px rgba(61,190,108,.15), 0 6px 16px rgba(0,0,0,.35);
+}
+.digest-raw .action-player-group[data-slot="2"] .action-opt-card {
+  border-top: 4px solid var(--p2-color);
+  box-shadow: 0 0 12px rgba(52,152,219,.15), 0 6px 16px rgba(0,0,0,.35);
+}
+.digest-raw .action-opt-card:nth-child(4) {
+  background: linear-gradient(180deg, rgba(14,6,6,.92), rgba(7,4,4,.98));
+}
 
 .digest-raw .action-opt-title-row {
   display: flex;
@@ -365,19 +395,21 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .action-opt-num {
   font-family: var(--font-serif);
   font-size: .95rem;
-  color: var(--gold-light);
-  text-shadow: 0 0 6px rgba(212,168,67,.35);
+  text-shadow: 0 0 6px rgba(212,168,67,.18);
 }
+.digest-raw .action-player-group[data-slot="0"] .action-opt-num { color: rgba(231,76,60,.8); }
+.digest-raw .action-player-group[data-slot="1"] .action-opt-num { color: rgba(61,190,108,.8); }
+.digest-raw .action-player-group[data-slot="2"] .action-opt-num { color: rgba(52,152,219,.8); }
 .digest-raw .action-opt-title {
   font-family: var(--font-serif);
-  font-size: .95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--gold-light);
   letter-spacing: .03em;
 }
 .digest-raw .action-opt-desc {
-  font-size: .78rem;
-  color: var(--text-sub);
+  font-size: .85rem;
+  color: rgba(200,184,154,.78);
   line-height: 1.6;
 }
 .digest-raw .action-opt-icon {
