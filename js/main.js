@@ -547,6 +547,14 @@
     // 提取分支正文（去掉 "A. " 前缀）
     const branchText   = l => l.trim().replace(/^[A-Ca-c][.．、]\s*/, '');
 
+    const pickCostIcon = (text) => {
+      if (!text) return '✦';
+      if (/(府库|金|银|财|粮|税|商|贡)/.test(text)) return '💰';
+      if (/(兵|军|战|骑|步|弓|攻|守|募|征|阵)/.test(text)) return '⚔️';
+      if (/(盟|交|谈|使|联|约|和|降)/.test(text)) return '🤝';
+      return '✦';
+    };
+
     // 渲染一组 actionLines + waitLine → HTML字符串
     // actionLines: [{ playerLabel, opts: [{ text, branches: [{label,text}] }] }]
     const renderBlock = (actionLines, waitLine) => {
@@ -556,6 +564,7 @@
         actionLines.forEach((al, pi) => {
           ab += `<div class="action-player-group" data-slot="${pi}">`;
           ab += `<div class="action-player-tag" data-slot="${pi}">${esc(al.playerLabel)}</div>`;
+          ab += '<div class="action-option-grid">';
           al.opts.forEach((opt, oi) => {
             // 破折号拆分：行动名 —— 注解
             const dashIdx = opt.text.search(/——|──|\s[-—]{2}\s/);
@@ -564,27 +573,32 @@
               name = opt.text.slice(0, dashIdx).trim();
               desc = opt.text.slice(dashIdx).replace(/^[——──\s-—]+/, '').trim();
             }
-            ab += `<div class="action-item">`;
-            ab += `<span class="num">${ICONS[oi] || ''}</span>`;
-            ab += `<span class="name">${esc(name)}</span>`;
+            const icon = pickCostIcon(opt.text);
+            ab += '<div class="action-opt-card">';
+            ab += '<div class="action-opt-title-row">';
+            ab += `<span class="action-opt-num">${ICONS[oi] || ''}</span>`;
+            ab += `<span class="action-opt-title">${esc(name)}</span>`;
+            ab += '</div>';
             if (desc) {
-              ab += `<span class="dash">——</span>`;
-              ab += `<span class="desc">${esc(desc)}</span>`;
+              ab += `<div class="action-opt-desc">${esc(desc)}</div>`;
             }
+            ab += `<span class="action-opt-icon">${icon}</span>`;
             // A/B/C 分支
             if (opt.branches && opt.branches.length) {
-              ab += '<div class="branch-list">';
+              ab += '<div class="action-branch-list">';
               opt.branches.forEach(br => {
                 const lbl = br.label.toUpperCase();
-                ab += `<div class="branch-option" data-label="${lbl}">`;
-                ab += `<span class="branch-label">${lbl}</span>`;
-                ab += `<span class="branch-text">${esc(br.text)}</span>`;
+                ab += `<div class="action-branch-card" data-label="${lbl}">`;
+                ab += `<span class="action-branch-prefix">┗</span>`;
+                ab += `<span class="action-branch-label">${lbl}</span>`;
+                ab += `<span class="action-branch-text">${esc(br.text)}</span>`;
                 ab += '</div>';
               });
               ab += '</div>';
             }
-            ab += '</div>'; // .action-item
+            ab += '</div>'; // .action-opt-card
           });
+          ab += '</div>'; // .action-option-grid
           ab += '</div>'; // .action-player-group
         });
       }
@@ -799,6 +813,12 @@
       const getSlot = n => { if (!(n in slotMap)) slotMap[n] = slotIdx++; return slotMap[n]; };
 
       const result = [];
+      const grid = [];
+      const pushGrid = () => {
+        if (!grid.length) return;
+        result.push(`<div class="result-player-grid">${grid.join('')}</div>`);
+        grid.length = 0;
+      };
       // { name, slot, titleText, bodyLines[], extraHtml[] }
       let grp = null;
 
@@ -834,21 +854,23 @@
         // ── 已渲染 HTML（▸ 影响、note 等）原样附后 ──
         inner += grp.extraHtml.join('');
 
-        result.push(`<div class="result-player-group" data-slot="${sl}">${inner}</div>`);
+        grid.push(`<div class="result-player-group" data-slot="${sl}">${inner}</div>`);
         grp = null;
       };
 
       cardLines.forEach(line => {
         if (line.startsWith('<')) {
-          if (grp) grp.extraHtml.push(line);
-          else result.push(line);
+          if (grp) {
+            grp.extraHtml.push(line);
+          } else {
+            pushGrid();
+            result.push(line);
+          }
           return;
         }
         const m = line.trim().match(SUB_PLAYER_RE);
         if (m) {
           flushGroup();
-          // 不是第一组时插入分隔线
-          if (result.length > 0) result.push('<hr class="player-group-divider">');
           grp = { name: m[1], slot: getSlot(m[1]), titleText: m[2].trim(), bodyLines: [], extraHtml: [] };
         } else {
           if (grp) grp.bodyLines.push(line.trim());
@@ -856,6 +878,7 @@
         }
       });
       flushGroup();
+      pushGrid();
       return result;
     };
 
