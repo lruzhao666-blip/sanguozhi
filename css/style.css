@@ -1350,19 +1350,12 @@ header, nav, main, footer { position: relative; z-index: 1; }
   box-shadow: 0 2px 12px rgba(0,0,0,.38);
 }
 
-/* 顶部彩色光带（每张卡专属色） */
-.cd-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0;
-  height: 2px; border-radius: 10px 10px 0 0;
-}
+/* 顶部彩色光带（去除以对齐三方势力卡风格） */
+.cd-card::before { display: none; }
 /* 边框颜色对齐 pcard */
 .cd-card-0 { border: 1px solid rgba(231,76,60,.35); }
 .cd-card-1 { border: 1px solid rgba(61,190,108,.32); }
 .cd-card-2 { border: 1px solid rgba(52,152,219,.32); }
-/* 顶部光带全宽不截断 */
-.cd-card-0::before { background: linear-gradient(90deg, rgba(231,76,60,.85), rgba(231,76,60,.3) 50%, transparent); }
-.cd-card-1::before { background: linear-gradient(90deg, rgba(61,190,108,.75), rgba(61,190,108,.25) 50%, transparent); }
-.cd-card-2::before { background: linear-gradient(90deg, rgba(52,152,219,.75), rgba(52,152,219,.25) 50%, transparent); }
 
 /* 弹性占位块 */
 .cd-card-spacer { flex: 1; min-height: 10px; }
