@@ -51,7 +51,7 @@
     { id:'str_assassin',  cat:'谋略', label:'刺杀暗杀', icon:'🗡️' },
     { id:'str_defect',    cat:'谋略', label:'策反内应', icon:'🎭' },
     { id:'str_rumor',     cat:'谋略', label:'散布谣言', icon:'📢' },
-    { id:'str_deceive',   cat:'谋略', label:'声东击西', icon:'🪤' },
+    { id:'str_deceive',   cat:'谋略', label:'声东击西', icon:'🎯' },
     { id:'str_plan',      cat:'谋略', label:'献计出谋', icon:'🧠' },
   ];
 
