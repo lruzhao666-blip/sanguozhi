@@ -470,7 +470,6 @@
     const p      = rd.parsed;
     const block  = document.getElementById('block-digest');
     const body   = document.getElementById('digest-body');
-    const tagsEl = document.getElementById('digest-tags');
     if (!block || !body) return;
 
     // rawDigest 优先，兼容旧数据用 situation + events 拼合
@@ -480,9 +479,6 @@
       return;
     }
     block.classList.remove('hidden');
-
-    // 标签行：仅显示一个简洁标签
-    if (tagsEl) tagsEl.innerHTML = `<span class="digest-tag tag-situation">📋 AI 原文</span>`;
 
     // 将原文渲染为带高亮的预格式段落
     body.innerHTML = `<div class="digest-raw">${highlightRaw(rawText)}</div>`;
@@ -1804,7 +1800,6 @@
         <div class="ib-header">
           <span class="ib-icon ib-icon--text">动态</span>
           <span class="ib-title">战局动态</span>
-          <span class="digest-tags"><span class="digest-tag tag-situation">AI 原文</span></span>
         </div>
         <div class="ib-body digest-body">
           <div class="digest-raw">${highlightRaw(rawText)}</div>
