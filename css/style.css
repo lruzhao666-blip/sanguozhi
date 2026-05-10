@@ -169,6 +169,12 @@ header, nav, main, footer { position: relative; z-index: 1; }
   gap: 6px;
 }
 
+.digest-toc-label {
+  font-size: .62rem;
+  color: var(--text-dim);
+  letter-spacing: .12em;
+}
+
 .digest-toc-link {
   font-size: .62rem;
   color: var(--text-sub);
@@ -196,39 +202,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   margin-left: 2px;
 }
 
-.digest-toggle {
-  font-size: .62rem;
-  color: var(--gold-dim);
-  border: 1px solid rgba(120,90,30,.35);
-  border-radius: 10px;
-  padding: 1px 10px;
-  background: rgba(0,0,0,.3);
-  cursor: pointer;
-  letter-spacing: .04em;
-}
-
-.digest-toggle:hover {
-  color: var(--gold-light);
-  border-color: rgba(180,140,60,.45);
-}
-
 .digest-body { padding: 18px 18px 20px; }
-
-.digest-body.is-collapsed .digest-raw {
-  max-height: 320px;
-  overflow: hidden;
-  position: relative;
-}
-
-.digest-body.is-collapsed .digest-raw::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 48px;
-  background: linear-gradient(180deg, rgba(8,8,8,0), rgba(8,8,8,.85));
-}
 
 /* 战局动态原文排版 */
 .digest-raw {

@@ -500,13 +500,12 @@
         counts[current] += 1;
       }
     });
-    const parts = DIGEST_TOC_SECTIONS.filter(sec => counts[sec.emoji] > 0)
-      .map(sec => {
-        const count = counts[sec.emoji];
-        const countHtml = count ? ` <span class="digest-toc-count">(${count})</span>` : '';
-        return `<a class="digest-toc-link" href="#${sec.id}">${sec.emoji} ${sec.label}${countHtml}</a>`;
-      });
-    return parts.length ? parts.join('<span class="digest-toc-sep">·</span>') : '';
+    const parts = DIGEST_TOC_SECTIONS.map(sec => {
+      const count = counts[sec.emoji] ?? 0;
+      const countHtml = ` <span class="digest-toc-count">(${count})</span>`;
+      return `<a class="digest-toc-link" href="#${sec.id}">${sec.emoji} ${sec.label}${countHtml}</a>`;
+    });
+    return parts.join('<span class="digest-toc-sep">·</span>');
   };
 
   function renderDigest(rd) {
@@ -532,21 +531,14 @@
     if (tocEl) {
       const tocHtml = buildDigestToc(rawText);
       tocEl.innerHTML = tocHtml;
-      tocEl.classList.toggle('hidden', !tocHtml);
+      tocEl.classList.remove('hidden');
     }
 
     // 将原文渲染为带高亮的预格式段落
     body.innerHTML = `<div class="digest-raw">${highlightRaw(rawText)}</div>`;
 
     if (toggleBtn) {
-      const shouldCollapse = rawText.trim().length > 600;
-      body.classList.toggle('is-collapsed', shouldCollapse);
-      toggleBtn.textContent = shouldCollapse ? '展开' : '折叠';
-      toggleBtn.classList.toggle('hidden', !shouldCollapse);
-      toggleBtn.onclick = () => {
-        const isCollapsed = body.classList.toggle('is-collapsed');
-        toggleBtn.textContent = isCollapsed ? '展开' : '折叠';
-      };
+      toggleBtn.classList.add('hidden');
     }
   }
 
