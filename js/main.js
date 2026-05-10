@@ -298,6 +298,7 @@
       await Promise.all(ids.map(r => deleteRoundById(r.id)));
       state.rounds = []; state.players = defaultPlayers();
       state.lastUpdatedAt = 0;
+      if (window.clearAllGeneralDuties) window.clearAllGeneralDuties();
       renderAll();
       updateUndoBtn();
       showToast('🗑️ 所有记录已清空');
@@ -1270,9 +1271,11 @@
     if (!listEl) return;
     if (!generals || !generals.length) {
       listEl.innerHTML = '<span class="gen-empty">——</span>';
+      if (window.initGenFilter) window.initGenFilter(idx);
       return;
     }
     listEl.innerHTML = generals.map(g => buildGenTag(g)).join('');
+    if (window.initGenFilter) window.initGenFilter(idx);
   }
 
   // ── 武将状态颜色（按钮颜色完全由状态决定，不区分稀有度）
@@ -1304,7 +1307,7 @@
     // ── 容器样式（完全由状态色决定）──
     var wrapStyle = 'display:inline-flex!important;align-items:center!important;'
       + 'border-radius:5px;padding:2px 8px 2px 7px;'
-      + 'font-size:.74rem;font-family:inherit;transition:transform .15s;cursor:default;'
+      + 'font-size:.74rem;font-family:inherit;transition:transform .15s;cursor:pointer;'
       + 'border:1px solid ' + sc.bd + '!important;'
       + 'background:' + sc.bg + '!important;'
       + (isDead ? 'text-decoration:line-through;opacity:.5;' : '');
@@ -1322,7 +1325,9 @@
 
     // 结构：[名字] | [状态]
     return '<span class="gen-tag" data-status="' + statusKey
-      + '" style="' + wrapStyle + '" title="' + titleTip + '">'
+      + '" data-name="' + esc(g.name) + '"'
+      + ' onclick="openGeneralDuties(\'' + esc(g.name) + '\',\'' + esc(g.status || '') + '\')"'
+      + ' style="' + wrapStyle + '" title="' + titleTip + '">'
       + '<span style="' + nameStyle + '">' + esc(g.name) + '</span>'
       + '<span style="' + divStyle + '"></span>'
       + '<span style="' + statusStyle + '">' + esc(statusShort) + '</span>'
