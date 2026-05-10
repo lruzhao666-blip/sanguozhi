@@ -261,36 +261,17 @@ header, nav, main, footer { position: relative; z-index: 1; }
   background: none;
 }
 
-/* ══ 各城主行动结果：三列卡片网格 ══ */
-.digest-raw .result-player-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 6px 0 6px;
-}
-@media (max-width: 900px) {
-  .digest-raw .result-player-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 640px) {
-  .digest-raw .result-player-grid {
-    grid-template-columns: 1fr;
-  }
+/* ══ 各城主行动结果：文本流 + 分隔线 ══ */
+.digest-raw .result-player-group {
+  padding: 6px 0 0;
 }
 
-.digest-raw .result-player-group {
-  position: relative;
-  padding: 14px 14px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.06);
-  background: rgba(10,4,4,.55);
-  box-shadow: 0 8px 20px rgba(0,0,0,.35);
-  border-top: 3px solid rgba(212,168,67,.5);
+.digest-raw .result-divider {
+  height: 1px;
+  width: 60%;
+  margin: 18px auto 16px;
+  background: linear-gradient(90deg, transparent, rgba(180,120,40,.5), rgba(212,168,67,.7), rgba(180,120,40,.5), transparent);
 }
-.digest-raw .result-player-group[data-slot="0"] { border-top-color: var(--p0-color); }
-.digest-raw .result-player-group[data-slot="1"] { border-top-color: var(--p1-color); }
-.digest-raw .result-player-group[data-slot="2"] { border-top-color: var(--p2-color); }
 /* 玩家分组之间的分隔线（JS 插入 hr） */
 .digest-raw .player-group-divider {
   border: none;
@@ -302,16 +283,35 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══ 玩家名标签 ══
    组锚点：字重700，正文色，正文字号 */
 .digest-raw .action-player-tag {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-serif);
   font-weight: 700;
   font-size: 1rem;
   letter-spacing: .12em;
   line-height: 1;
   margin-bottom: 8px;
-  color: #e8dcc4;
+  color: var(--gold-light);
   text-transform: uppercase;
 }
+
+.digest-raw .action-player-tag::before {
+  content: attr(data-slot);
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  color: #fff;
+  background: var(--gold);
+  letter-spacing: 0;
+}
+.digest-raw .action-player-tag[data-slot="0"]::before { content: '甲'; background: var(--p0-color); }
+.digest-raw .action-player-tag[data-slot="1"]::before { content: '乙'; background: var(--p1-color); }
+.digest-raw .action-player-tag[data-slot="2"]::before { content: '丙'; background: var(--p2-color); }
 
 /* ══ 行动建议卡片网格 ══ */
 .digest-raw .action-option-grid {
@@ -608,17 +608,18 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .raw-section-title[data-emoji="🎴"]::after { margin-top: 10px; }
 
 /* ══════════════════════════════════════════
-   ▸ 影响行（次要色 + 左缩进 + 略小字号）
+   ▸ 影响行（独立小卡）
 ══════════════════════════════════════════ */
 .digest-raw .raw-effect {
   font-family: var(--font-serif);
   font-size: .88rem;
-  color: rgba(180,162,130,.65);
+  color: rgba(200,184,154,0.78);
   line-height: 1.75;
-  padding: 2px 0 2px 1.6em;
-  margin: 2px 0;
-  border-left: 2px solid rgba(180,140,60,.18);
-  border-radius: 0 3px 3px 0;
+  padding: 10px 12px;
+  margin: 6px 0 8px;
+  background: rgba(0,0,0,.25);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.06);
   letter-spacing: .01em;
 }
 

@@ -817,14 +817,14 @@
       const getSlot = n => { if (!(n in slotMap)) slotMap[n] = slotIdx++; return slotMap[n]; };
 
       const result = [];
-      const grid = [];
-      const pushGrid = () => {
-        if (!grid.length) return;
-        result.push(`<div class="result-player-grid">${grid.join('')}</div>`);
-        grid.length = 0;
-      };
       // { name, slot, titleText, bodyLines[], extraHtml[] }
       let grp = null;
+      let hasGroup = false;
+
+      const pushDivider = () => {
+        if (hasGroup) result.push('<div class="result-divider"></div>');
+        hasGroup = true;
+      };
 
       const flushGroup = () => {
         if (!grp) return;
@@ -858,22 +858,26 @@
         // ── 已渲染 HTML（▸ 影响、note 等）原样附后 ──
         inner += grp.extraHtml.join('');
 
-        grid.push(`<div class="result-player-group" data-slot="${sl}">${inner}</div>`);
+        result.push(`<div class="result-player-group" data-slot="${sl}">${inner}</div>`);
         grp = null;
+      };
+
+      const startGroup = (name, title) => {
+        flushGroup();
+        pushDivider();
+        grp = { name, slot: getSlot(name), titleText: title, bodyLines: [], extraHtml: [] };
       };
 
       cardLines.forEach(line => {
         if (line.startsWith('<div class="raw-player">')) {
           const parsed = parseRawPlayer(line);
-          flushGroup();
-          grp = { name: parsed.name, slot: getSlot(parsed.name), titleText: parsed.title, bodyLines: [], extraHtml: [] };
+          startGroup(parsed.name, parsed.title);
           return;
         }
         if (line.startsWith('<')) {
           if (grp) {
             grp.extraHtml.push(line);
           } else {
-            pushGrid();
             result.push(line);
           }
           return;
@@ -884,15 +888,13 @@
         if (m || mb) {
           const name = m ? m[1] : mb[1];
           const title = m ? m[2].trim() : mb[2].trim();
-          flushGroup();
-          grp = { name, slot: getSlot(name), titleText: title, bodyLines: [], extraHtml: [] };
+          startGroup(name, title);
         } else {
           if (grp) grp.bodyLines.push(trimmed);
           else result.push(`<p class="raw-para">${highlightInline(line)}</p>`);
         }
       });
       flushGroup();
-      pushGrid();
       return result;
     };
 
