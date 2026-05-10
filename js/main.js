@@ -579,9 +579,6 @@
               name = opt.text.slice(0, dashIdx).trim();
               desc = opt.text.slice(dashIdx).replace(/^[——──\s-—]+/, '').trim();
             }
-            if (oi === 3) {
-              desc = '主公心中，另有筹谋⋯⋯';
-            }
             ab += '<div class="action-opt-card">';
             ab += '<div class="action-opt-title-row">';
             ab += `<span class="action-opt-num">${ICONS[oi] || ''}</span>`;
