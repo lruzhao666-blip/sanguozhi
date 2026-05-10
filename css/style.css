@@ -407,11 +407,10 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border: none !important;
   box-shadow: none !important;
   border-radius: 0 !important;
-  /* 只用间距区隔段落 */
-  margin: 32px 0 0;
+  /* 间距由标题控制 */
+  margin: 0;
   padding: 0;
 }
-.digest-raw .raw-section-card:first-child { margin-top: 0; }
 
 .digest-raw .raw-section-card-strip { display: none; }
 
@@ -424,46 +423,45 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ── 段落标题：统一色块标签款式 ──
    左边框 + 小色块背景，颜色由 data-emoji 属性控制 */
 .digest-raw .raw-section-title {
-  font-family: var(--font-serif); font-size: .92rem; font-weight: 700;
+  font-family: var(--font-serif); font-size: 1.12rem; font-weight: 700;
   letter-spacing: .08em; line-height: 1.45;
   display: inline-block;
-  padding: 3px 12px 3px 10px;
+  padding: 6px 14px 6px 12px;
   border-left: 3px solid var(--gold);
   border-radius: 0 var(--r) var(--r) 0;
   background: linear-gradient(90deg, rgba(100,65,0,.18), transparent 70%);
   color: var(--gold-light);
-  margin: 0 0 14px;
+  margin: 32px 0 14px;
 }
+.digest-raw .raw-section-card:first-child .raw-section-title { margin-top: 0; }
 /* 各 emoji 色调 */
-.digest-raw .raw-section-title[data-emoji="📢"] {
-  border-left-color: rgba(80,160,220,.9);
-  background: linear-gradient(90deg, rgba(8,32,60,.25), transparent 70%);
-  color: #80c8f0;
+.digest-raw .raw-section-title[data-emoji="📢"],
+.digest-raw .raw-section-title[data-emoji="⚡"],
+.digest-raw .raw-section-title[data-emoji="🔥"],
+.digest-raw .raw-section-title[data-emoji="👤"],
+.digest-raw .raw-section-title[data-emoji="🎯"] {
+  border-left-color: var(--gold);
+  background: linear-gradient(90deg, rgba(100,65,0,.18), transparent 70%);
+  color: var(--gold-light);
 }
 .digest-raw .raw-section-title[data-emoji="🌍"] {
-  border-left-color: rgba(80,180,100,.9);
-  background: linear-gradient(90deg, rgba(5,35,12,.25), transparent 70%);
-  color: #80e0a0;
+  border-left-color: rgba(220,140,60,.9);
+  border-left-width: 2px;
+  background: linear-gradient(90deg, rgba(50,24,4,.28), transparent 70%);
+  color: #e0a060;
+  font-size: .95rem;
+  padding: 4px 12px 4px 10px;
+  margin: 22px 0 10px;
 }
-.digest-raw .raw-section-title[data-emoji="⚡"] {
-  border-left-color: rgba(240,200,60,.95);
-  background: linear-gradient(90deg, rgba(50,38,0,.25), transparent 70%);
-  color: #f0d060;
-}
-.digest-raw .raw-section-title[data-emoji="🔥"] {
-  border-left-color: rgba(220,80,40,.95);
-  background: linear-gradient(90deg, rgba(50,8,2,.25), transparent 70%);
-  color: #f09070;
-}
-.digest-raw .raw-section-title[data-emoji="👤"] {
-  border-left-color: rgba(80,180,100,.9);
-  background: linear-gradient(90deg, rgba(5,35,12,.25), transparent 70%);
-  color: #80e0a0;
-}
-.digest-raw .raw-section-title[data-emoji="🎯"] {
-  border-left-color: rgba(60,180,220,.9);
-  background: linear-gradient(90deg, rgba(4,30,38,.25), transparent 70%);
-  color: #60c8e0;
+
+.digest-raw .raw-section-title[data-emoji="⏳"] {
+  border-left-color: rgba(220,140,60,.9);
+  border-left-width: 2px;
+  background: linear-gradient(90deg, rgba(50,24,4,.28), transparent 70%);
+  color: #e0a060;
+  font-size: .95rem;
+  padding: 4px 12px 4px 10px;
+  margin: 22px 0 10px;
 }
 .digest-raw .raw-section-title[data-emoji="📜"] {
   border-left-color: rgba(160,130,70,.9);
@@ -496,10 +494,29 @@ header, nav, main, footer { position: relative; z-index: 1; }
   color: #9090d8;
 }
 .digest-raw .raw-section-title[data-emoji="🎴"] {
-  border-left-color: rgba(212,168,67,.8);
-  background: linear-gradient(90deg, rgba(50,32,0,.22), transparent 70%);
+  display: block;
+  text-align: center;
+  border-left: none;
+  background: none;
+  padding: 8px 0;
+  margin: 24px 0 30px;
+  font-size: 1.4rem;
+  letter-spacing: .14em;
   color: var(--gold-light);
+  text-shadow: 0 0 12px rgba(212,168,67,.45), 0 2px 6px rgba(0,0,0,.7);
+  position: relative;
 }
+
+.digest-raw .raw-section-title[data-emoji="🎴"]::before,
+.digest-raw .raw-section-title[data-emoji="🎴"]::after {
+  content: '';
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(180,120,40,.5), rgba(212,168,67,.7), rgba(180,120,40,.5), transparent);
+}
+
+.digest-raw .raw-section-title[data-emoji="🎴"]::before { margin-bottom: 10px; }
+.digest-raw .raw-section-title[data-emoji="🎴"]::after { margin-top: 10px; }
 
 /* ══════════════════════════════════════════
    ▸ 影响行（次要色 + 左缩进 + 略小字号）
@@ -687,7 +704,16 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* 手机端数据面板 */
 @media(max-width: 640px) {
   .digest-raw .raw-section-card-body { padding: 10px 14px 12px; }
-  .digest-raw .raw-section-title { font-size: .92rem; }
+  .digest-raw .raw-section-title { font-size: 1.02rem; margin-top: 24px; }
+  .digest-raw .raw-section-title[data-emoji="🌍"],
+  .digest-raw .raw-section-title[data-emoji="⏳"] {
+    font-size: .9rem;
+    margin-top: 18px;
+  }
+  .digest-raw .raw-section-title[data-emoji="🎴"] {
+    font-size: 1.2rem;
+    letter-spacing: .12em;
+  }
   .digest-raw .raw-battle-code { font-size: .78rem; padding: 6px 12px; }
   .digest-raw .raw-num-badge { font-size: .96rem; }
 }
