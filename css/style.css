@@ -207,7 +207,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700;
   color: var(--gold-light); letter-spacing: .08em;
   margin: 24px 0 10px;
-  padding: 5px 0 5px 14px;
+  padding: 5px 14px 5px 14px;
   border-left: 3px solid var(--gold);
   background: linear-gradient(90deg, rgba(100,65,0,.15), transparent 60%);
   border-radius: 0 var(--r) var(--r) 0;
@@ -261,7 +261,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   font-family: var(--font-serif); font-size: 1.12rem; font-weight: 700;
   letter-spacing: .08em; line-height: 1.45;
   display: inline-block;
-  padding: 5px 14px 5px 12px;
+  padding: 5px 14px 5px 14px;
   border-left: 3px solid rgba(60,180,220,.9);
   border-radius: 0 var(--r) var(--r) 0;
   background: linear-gradient(90deg, rgba(4,30,38,.28), transparent 70%);
@@ -272,7 +272,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══ 行动建议玩家分组 ══ */
 .digest-raw .action-player-group {
   margin: 0 0 24px;
-  padding: 2px 0 2px 12px;
+  padding: 2px 0 2px 14px;
   border-left: 3px solid var(--action-accent, var(--gold-light));
   background: none;
 }
@@ -658,7 +658,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   font-family: var(--font-serif); font-size: 1.12rem; font-weight: 700;
   letter-spacing: .08em; line-height: 1.45;
   display: inline-block;
-  padding: 6px 14px 6px 12px;
+  padding: 6px 14px 6px 14px;
   border-left: 3px solid var(--gold);
   border-radius: 0 var(--r) var(--r) 0;
   background: linear-gradient(90deg, rgba(100,65,0,.18), transparent 70%);
@@ -936,6 +936,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* 手机端数据面板 */
 @media(max-width: 640px) {
+  .digest-raw .action-player-group { padding: 2px 0 2px 14px; }
+  .digest-raw .action-block-title { padding: 6px 14px 6px 14px; margin-top: 18px; }
+
   .digest-raw .raw-section-card-body { padding: 10px 14px 12px; }
   .digest-raw .raw-section-title { font-size: 1.02rem; margin-top: 24px; }
   .digest-raw .raw-section-title[data-emoji="🌍"],

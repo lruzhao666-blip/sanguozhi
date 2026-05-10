@@ -16,7 +16,7 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
         sys.stderr.flush()
 
 if __name__ == '__main__':
-    port = 8000
+    port = 3000
     server = HTTPServer(('0.0.0.0', port), NoCacheHandler)
     print(f"No-cache server running on port {port}", flush=True)
     server.serve_forever()
