@@ -564,13 +564,25 @@
     // 渲染一组 actionLines + waitLine → HTML字符串
     // actionLines: [{ playerLabel, opts: [{ text, branches: [{label,text}] }] }]
     const renderBlock = (actionLines, waitLine) => {
+      // ── 方案H：竖排名号 · 军帐分列风格 ──
       let ab = '<div class="raw-action-block">';
-      ab += '<div class="action-block-title">🎯 行动建议</div>';
+      // 标题行
+      ab += '<div class="rab-header">';
+      ab += '<span class="rab-header-icon">🎯</span>';
+      ab += '<span class="rab-header-title">行动建议</span>';
+      ab += '</div>';
       if (actionLines.length) {
+        ab += '<div class="rab-players">';
         actionLines.forEach((al, pi) => {
-          ab += `<div class="action-player-group" data-slot="${pi}">`;
-          ab += `<div class="action-player-name"><span class="action-player-dot"></span>${esc(al.playerLabel)}</div>`;
-          ab += '<div class="action-list">';
+          const slot = pi % 3;
+          ab += `<div class="rab-player-row style-h" data-slot="${slot}">`;
+          // 竖排名字列
+          ab += '<div class="rab-pname-h-vert">';
+          ab += `<span class="rab-pname-h-char">${esc(al.playerLabel)}</span>`;
+          ab += '</div>';
+          // 内容区
+          ab += '<div class="rab-pname-h-content">';
+          ab += '<div class="rab-opts">';
           al.opts.forEach((opt, oi) => {
             // 破折号拆分：行动名 —— 注解
             const dashIdx = opt.text.search(/——|──|\s[-—]{2}\s/);
@@ -579,34 +591,37 @@
               name = opt.text.slice(0, dashIdx).trim();
               desc = opt.text.slice(dashIdx).replace(/^[——──\s-—]+/, '').trim();
             }
-            ab += '<div class="action-row">';
-            ab += `<span class="action-num">${ICONS[oi] || ''}</span>`;
-            ab += `<span class="action-name">${esc(name)}</span>`;
+            ab += '<div class="rab-opt">';
+            ab += `<span class="rab-opt-num">${ICONS[oi] || ''}</span>`;
+            ab += '<div class="rab-opt-body">';
+            ab += `<span class="rab-opt-name">${esc(name)}</span>`;
             if (desc) {
-              ab += '<span class="action-sep">—</span>';
-              ab += `<span class="action-desc">${esc(desc)}</span>`;
+              ab += '<span class="rab-opt-sep">—</span>';
+              ab += `<span class="rab-opt-note">${esc(desc)}</span>`;
             }
-            ab += '</div>';
             // A/B/C 分支
             if (opt.branches && opt.branches.length) {
-              ab += '<div class="action-branch-list">';
+              ab += '<div class="rab-branch-list">';
               opt.branches.forEach(br => {
                 const lbl = br.label.toUpperCase();
-                ab += `<div class="action-branch-card" data-label="${lbl}">`;
-                ab += `<span class="action-branch-prefix">┗</span>`;
-                ab += `<span class="action-branch-label">${lbl}</span>`;
-                ab += `<span class="action-branch-text">${esc(br.text)}</span>`;
+                ab += '<div class="rab-branch">';
+                ab += `<span class="rab-branch-label">${lbl}</span>`;
+                ab += `<span class="rab-branch-text">${esc(br.text)}</span>`;
                 ab += '</div>';
               });
-              ab += '</div>';
+              ab += '</div>'; // .rab-branch-list
             }
+            ab += '</div>'; // .rab-opt-body
+            ab += '</div>'; // .rab-opt
           });
-          ab += '</div>'; // .action-list
-          ab += '</div>'; // .action-player-group
+          ab += '</div>'; // .rab-opts
+          ab += '</div>'; // .rab-pname-h-content
+          ab += '</div>'; // .rab-player-row
         });
+        ab += '</div>'; // .rab-players
       }
-      if (waitLine) ab += `<div class="action-wait">${esc(waitLine)}</div>`;
-      ab += '</div>';
+      if (waitLine) ab += `<div class="rab-wait">${esc(waitLine)}</div>`;
+      ab += '</div>'; // .raw-action-block
       return ab;
     };
 
