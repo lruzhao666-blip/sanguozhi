@@ -547,14 +547,6 @@
     // 提取分支正文（去掉 "A. " 前缀）
     const branchText   = l => l.trim().replace(/^[A-Ca-c][.．、]\s*/, '');
 
-    const pickCostIcon = (text) => {
-      if (!text) return '✦';
-      if (/(府库|金|银|财|粮|税|商|贡)/.test(text)) return '💰';
-      if (/(兵|军|战|骑|步|弓|攻|守|募|征|阵)/.test(text)) return '⚔️';
-      if (/(盟|交|谈|使|联|约|和|降)/.test(text)) return '🤝';
-      return '✦';
-    };
-
     // 渲染一组 actionLines + waitLine → HTML字符串
     // actionLines: [{ playerLabel, opts: [{ text, branches: [{label,text}] }] }]
     const renderBlock = (actionLines, waitLine) => {
@@ -573,7 +565,6 @@
               name = opt.text.slice(0, dashIdx).trim();
               desc = opt.text.slice(dashIdx).replace(/^[——──\s-—]+/, '').trim();
             }
-            const icon = pickCostIcon(opt.text);
             ab += '<div class="action-opt-card">';
             ab += '<div class="action-opt-title-row">';
             ab += `<span class="action-opt-num">${ICONS[oi] || ''}</span>`;
@@ -582,7 +573,6 @@
             if (desc) {
               ab += `<div class="action-opt-desc">${esc(desc)}</div>`;
             }
-            ab += `<span class="action-opt-icon">${icon}</span>`;
             // A/B/C 分支
             if (opt.branches && opt.branches.length) {
               ab += '<div class="action-branch-list">';
@@ -794,7 +784,21 @@
     // 与 🎯 行动建议 完全相同的 action-item 排版
     const _groupPlayerResultLines = (cardLines) => {
       const SUB_PLAYER_RE = /^([\u4e00-\u9fa5A-Za-z]{1,4})[·\u30fb\u2022::\uff1a]\s*(.*)$/;
-      const hasSubPlayer = cardLines.some(l => !l.startsWith('<') && SUB_PLAYER_RE.test(l.trim()));
+      const SUB_PLAYER_BRACKET_RE = /^[【\[]([^】\]]{1,6})[】\]]\s*(.*)$/;
+      const parseRawPlayer = (html) => {
+        const text = html.replace(/<[^>]+>/g, '').trim();
+        const bracket = text.match(/[【\[]([^】\]]+)\]\s*(.*)$/) || text.match(/[【\[]([^】\]]+)[】\]]\s*(.*)$/);
+        if (bracket) {
+          return { name: bracket[1], title: bracket[2].trim() };
+        }
+        return { name: text.replace(/^👤\s*/, ''), title: '' };
+      };
+      const hasSubPlayer = cardLines.some(l => {
+        if (l.startsWith('<div class="raw-player">')) return true;
+        if (l.startsWith('<')) return false;
+        const t = l.trim();
+        return SUB_PLAYER_RE.test(t) || SUB_PLAYER_BRACKET_RE.test(t);
+      });
       if (!hasSubPlayer) return cardLines;
 
       // 破折号拆分：标题 —— 注解（与 renderBlock 完全一致）
@@ -859,6 +863,12 @@
       };
 
       cardLines.forEach(line => {
+        if (line.startsWith('<div class="raw-player">')) {
+          const parsed = parseRawPlayer(line);
+          flushGroup();
+          grp = { name: parsed.name, slot: getSlot(parsed.name), titleText: parsed.title, bodyLines: [], extraHtml: [] };
+          return;
+        }
         if (line.startsWith('<')) {
           if (grp) {
             grp.extraHtml.push(line);
@@ -868,12 +878,16 @@
           }
           return;
         }
-        const m = line.trim().match(SUB_PLAYER_RE);
-        if (m) {
+        const trimmed = line.trim();
+        const m = trimmed.match(SUB_PLAYER_RE);
+        const mb = trimmed.match(SUB_PLAYER_BRACKET_RE);
+        if (m || mb) {
+          const name = m ? m[1] : mb[1];
+          const title = m ? m[2].trim() : mb[2].trim();
           flushGroup();
-          grp = { name: m[1], slot: getSlot(m[1]), titleText: m[2].trim(), bodyLines: [], extraHtml: [] };
+          grp = { name, slot: getSlot(name), titleText: title, bodyLines: [], extraHtml: [] };
         } else {
-          if (grp) grp.bodyLines.push(line.trim());
+          if (grp) grp.bodyLines.push(trimmed);
           else result.push(`<p class="raw-para">${highlightInline(line)}</p>`);
         }
       });
