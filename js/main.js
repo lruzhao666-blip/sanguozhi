@@ -1545,16 +1545,16 @@
   function _migrateToAnchorGroups(ch) {
     const groups = Object.assign({}, ch.anchorGroups || {});
 
-    // 季度△（旧数据迁移：seasonal[] → anchorGroups.季度，给一个可读 label）
-    if (ch.seasonal && ch.seasonal.length) {
-      if (!groups['季度']) {
-        groups['季度'] = [];
-        groups['季度'].push({
-          label:  '季度结算',
-          deltas: ch.seasonal.map(s => ({ res: s.res, val: s.val })),
-          text:   '',
-        });
-      }
+    // 季度△（旧存档兼容迁移：seasonal[] → anchorGroups.季度）
+    // v12 parser 不再写入 seasonal，此分支只处理 Supabase 中的历史旧存档。
+    // 保护条件 !groups['季度'] 确保：新数据（anchorGroups已由parser直接写入）不被重复追加。
+    if (ch.seasonal && ch.seasonal.length && !groups['季度']) {
+      groups['季度'] = [];
+      groups['季度'].push({
+        label:  '季度结算',
+        deltas: ch.seasonal.map(s => ({ res: s.res, val: s.val })),
+        text:   '',
+      });
     }
     // 府库△（旧数据兼容：anchorGroups['府库'] 已由 v11 parser 直接写入时跳过，避免重复）
     if (ch.darkItems && ch.darkItems.length && !groups['府库']) {

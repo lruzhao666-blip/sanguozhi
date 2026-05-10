@@ -642,7 +642,9 @@ window.SGParser = (function () {
         _parseSeasonalLine(rest, newItems);
         newItems.forEach(item => {
           change.quarterly.push(item);
-          change.seasonal.push(item);  // 兼容旧字段
+          // 注：不再写入 change.seasonal——seasonal 是旧版字段，
+          // _migrateToAnchorGroups 会检测 anchorGroups['季度'] 已存在时跳过迁移，
+          // 写入 seasonal 反而触发重复渲染。旧存档兼容由 main.js 侧保证。
         });
         // 加入 anchorGroups.季度（每条 季度△ 独立一项，label 注明结算周期）
         if (!change.anchorGroups['季度']) change.anchorGroups['季度'] = [];
