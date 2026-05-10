@@ -309,7 +309,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   align-items: baseline;
   flex-wrap: wrap;
   gap: 0;
-  line-height: 1.75;
+  line-height: 1.7;
   font-family: var(--font-serif);
   font-size: .95rem;
 }
@@ -318,6 +318,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   flex-shrink: 0;
   min-width: 1.6em;
   font-weight: 700;
+  font-size: .82rem;
   color: var(--action-accent, var(--gold-light));
   text-shadow: none;
 }
