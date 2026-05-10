@@ -258,10 +258,10 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* 块标题：保留原暖金色标签样式，不动 */
 .digest-raw .action-block-title {
-  font-family: var(--font-serif); font-size: .92rem; font-weight: 700;
+  font-family: var(--font-serif); font-size: 1.12rem; font-weight: 700;
   letter-spacing: .08em; line-height: 1.45;
   display: inline-block;
-  padding: 3px 12px 3px 10px;
+  padding: 5px 14px 5px 12px;
   border-left: 3px solid rgba(60,180,220,.9);
   border-radius: 0 var(--r) var(--r) 0;
   background: linear-gradient(90deg, rgba(4,30,38,.28), transparent 70%);
@@ -309,7 +309,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   align-items: baseline;
   flex-wrap: wrap;
   gap: 0;
-  line-height: 1.75;
+  line-height: 1.7;
   font-family: var(--font-serif);
   font-size: .95rem;
 }
@@ -318,6 +318,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   flex-shrink: 0;
   min-width: 1.6em;
   font-weight: 700;
+  font-size: .82rem;
   color: var(--action-accent, var(--gold-light));
   text-shadow: none;
 }
