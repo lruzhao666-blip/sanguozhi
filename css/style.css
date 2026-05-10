@@ -265,16 +265,16 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 
 .digest-raw .action-player-group[data-slot="0"] {
-  --action-accent: var(--p0-color);
-  --action-accent-rgb: var(--p0-rgb);
+  --action-accent: #c05a50;
+  --action-accent-rgb: 192,90,80;
 }
 .digest-raw .action-player-group[data-slot="1"] {
-  --action-accent: var(--p1-color);
-  --action-accent-rgb: var(--p1-rgb);
+  --action-accent: #49a678;
+  --action-accent-rgb: 73,166,120;
 }
 .digest-raw .action-player-group[data-slot="2"] {
-  --action-accent: var(--p2-color);
-  --action-accent-rgb: var(--p2-rgb);
+  --action-accent: #4a86c8;
+  --action-accent-rgb: 74,134,200;
 }
 
 /* ══ 各城主行动结果：文本流 + 分隔线 ══ */
@@ -340,12 +340,12 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,.05);
   background: linear-gradient(90deg, rgba(20,10,10,.95), rgba(10,4,4,.35));
-  box-shadow: 0 10px 22px rgba(0,0,0,.55), 0 0 14px rgba(var(--action-accent-rgb, 212,168,67), .14);
-  border-left: 4px solid var(--action-accent, var(--gold));
+  box-shadow: 0 10px 22px rgba(0,0,0,.55), 0 0 14px rgba(var(--action-accent-rgb, 212,168,67), .12);
   color: var(--action-accent, var(--gold-light));
   text-transform: none;
 }
 
+.digest-raw .raw-action-block .action-player-tag::before,
 .digest-raw .result-player-group .action-player-tag::before {
   display: none;
 }
