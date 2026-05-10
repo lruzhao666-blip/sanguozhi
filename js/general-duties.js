@@ -1,11 +1,11 @@
 /**
- * general-duties.js — 武将事务面板 v1.0
+ * general-duties.js — 武将职务面板 v1.0
  *
  * 功能：
- *  1. 点击武将标签 → 弹出该武将的事务面板
- *  2. 面板内全部游戏事务按钮，默认灰色，点击点亮，再点取消
- *  3. 面板内可按类别筛选事务（全部/军事/内政/外交/谋略）
- *  4. 玩家卡武将列表上方加筛选栏，可筛选出"已点亮某类事务"的武将
+ *  1. 点击武将标签 → 弹出该武将的职务面板
+ *  2. 面板内全部游戏职务按钮，默认灰色，点击点亮，再点取消
+ *  3. 面板内可按类别筛选职务（全部/军事/内政/外交/谋略）
+ *  4. 玩家卡武将列表上方加筛选栏，可筛选出"已点亮某类职务"的武将
  *  5. 数据存 localStorage，key = gd_v1_{武将名}
  *  6. window.clearAllGeneralDuties() — onClearAll 时调用，清空所有记录
  */
@@ -14,49 +14,48 @@
   'use strict';
 
   // ══════════════════════════════════════════
-  //  事务数据表
+  //  职务数据表
   // ══════════════════════════════════════════
   const DUTIES = [
     // 军事
-    { id:'mil_attack',    cat:'军事', label:'出征攻城', icon:'⚔️' },
-    { id:'mil_defend',    cat:'军事', label:'驻守防御', icon:'🛡️' },
-    { id:'mil_train',     cat:'军事', label:'练兵备战', icon:'🪖' },
-    { id:'mil_recruit',   cat:'军事', label:'招募新兵', icon:'📯' },
-    { id:'mil_escort',    cat:'军事', label:'护送押运', icon:'🚛' },
-    { id:'mil_raid',      cat:'军事', label:'奇袭扰敌', icon:'🔥' },
-    { id:'mil_siege',     cat:'军事', label:'围城断粮', icon:'🏰' },
-    { id:'mil_reinforce', cat:'军事', label:'驰援友军', icon:'🏇' },
-    { id:'mil_patrol',    cat:'军事', label:'巡防要道', icon:'👁️' },
+    { id:'mil_attack',    cat:'军事', label:'出征攻城' },
+    { id:'mil_defend',    cat:'军事', label:'驻守防御' },
+    { id:'mil_train',     cat:'军事', label:'练兵备战' },
+    { id:'mil_recruit',   cat:'军事', label:'招募新兵' },
+    { id:'mil_escort',    cat:'军事', label:'护送押运' },
+    { id:'mil_raid',      cat:'军事', label:'奇袭扰敌' },
+    { id:'mil_siege',     cat:'军事', label:'围城断粮' },
+    { id:'mil_reinforce', cat:'军事', label:'驰援友军' },
+    { id:'mil_patrol',    cat:'军事', label:'巡防要道' },
     // 内政
-    { id:'adm_farm',      cat:'内政', label:'屯田耕作', icon:'🌾' },
-    { id:'adm_tax',       cat:'内政', label:'征收赋税', icon:'💰' },
-    { id:'adm_build',     cat:'内政', label:'修筑建设', icon:'🏗️' },
-    { id:'adm_road',      cat:'内政', label:'修路通道', icon:'🛤️' },
-    { id:'adm_relief',    cat:'内政', label:'安民救灾', icon:'🚑' },
-    { id:'adm_supply',    cat:'内政', label:'转运粮草', icon:'📦' },
-    { id:'adm_morale',    cat:'内政', label:'安抚民心', icon:'❤️' },
-    { id:'adm_manage',    cat:'内政', label:'治理城务', icon:'🏛️' },
-    { id:'adm_emergency', cat:'内政', label:'急征军备', icon:'⚡' },
+    { id:'adm_farm',      cat:'内政', label:'屯田耕作' },
+    { id:'adm_tax',       cat:'内政', label:'征收赋税' },
+    { id:'adm_build',     cat:'内政', label:'修筑建设' },
+    { id:'adm_road',      cat:'内政', label:'修路通道' },
+    { id:'adm_relief',    cat:'内政', label:'安民救灾' },
+    { id:'adm_supply',    cat:'内政', label:'转运粮草' },
+    { id:'adm_morale',    cat:'内政', label:'安抚民心' },
+    { id:'adm_manage',    cat:'内政', label:'治理城务' },
+    { id:'adm_emergency', cat:'内政', label:'急征军备' },
     // 外交
-    { id:'dip_ally',      cat:'外交', label:'结盟谈判', icon:'🤝' },
-    { id:'dip_bribe',     cat:'外交', label:'游说拉拢', icon:'💬' },
-    { id:'dip_surrender', cat:'外交', label:'劝降纳降', icon:'🏳️' },
-    { id:'dip_tribute',   cat:'外交', label:'进贡朝贡', icon:'🎁' },
-    { id:'dip_envoy',     cat:'外交', label:'出使斡旋', icon:'📜' },
-    { id:'dip_trade',     cat:'外交', label:'互市贸易', icon:'⚖️' },
-    { id:'dip_break',     cat:'外交', label:'离间破盟', icon:'✂️' },
+    { id:'dip_ally',      cat:'外交', label:'结盟谈判' },
+    { id:'dip_bribe',     cat:'外交', label:'游说拉拢' },
+    { id:'dip_surrender', cat:'外交', label:'劝降纳降' },
+    { id:'dip_tribute',   cat:'外交', label:'进贡朝贡' },
+    { id:'dip_envoy',     cat:'外交', label:'出使斡旋' },
+    { id:'dip_trade',     cat:'外交', label:'互市贸易' },
+    { id:'dip_break',     cat:'外交', label:'离间破盟' },
     // 谋略
-    { id:'str_intel',     cat:'谋略', label:'刺探情报', icon:'🕵️' },
-    { id:'str_sabotage',  cat:'谋略', label:'破坏粮道', icon:'🌊' },
-    { id:'str_assassin',  cat:'谋略', label:'刺杀暗杀', icon:'🗡️' },
-    { id:'str_defect',    cat:'谋略', label:'策反内应', icon:'🎭' },
-    { id:'str_rumor',     cat:'谋略', label:'散布谣言', icon:'📢' },
-    { id:'str_deceive',   cat:'谋略', label:'声东击西', icon:'🎯' },
-    { id:'str_plan',      cat:'谋略', label:'献计出谋', icon:'🧠' },
+    { id:'str_intel',     cat:'谋略', label:'刺探情报' },
+    { id:'str_sabotage',  cat:'谋略', label:'破坏粮道' },
+    { id:'str_assassin',  cat:'谋略', label:'刺杀暗杀' },
+    { id:'str_defect',    cat:'谋略', label:'策反内应' },
+    { id:'str_rumor',     cat:'谋略', label:'散布谣言' },
+    { id:'str_deceive',   cat:'谋略', label:'声东击西' },
+    { id:'str_plan',      cat:'谋略', label:'献计出谋' },
   ];
 
   const ALL_CATS   = ['全部', '军事', '内政', '外交', '谋略'];
-  const CAT_ICONS  = { '军事':'⚔️', '内政':'🏛️', '外交':'🤝', '谋略':'🧠' };
   const STORAGE_PFX = 'gd_v1_';
 
   // ── 每个类别包含哪些 duty id ──
@@ -81,7 +80,7 @@
     ks.forEach(k => localStorage.removeItem(k));
   };
 
-  // ── 武将是否拥有某类事务（>=1个点亮） ──
+  // ── 武将是否拥有某类职务（>=1个点亮） ──
   window.genHasCat = function (name, cat) {
     if (cat === '全部') return true;
     const data = load(name);
@@ -90,7 +89,7 @@
     return Object.keys(data).some(id => ids.has(id));
   };
 
-  // ── 武将已点亮的事务数量 ──
+  // ── 武将已点亮的职务数量 ──
   window.genDutyCount = function (name) {
     return Object.keys(load(name)).length;
   };
@@ -114,7 +113,7 @@
           <button class="gd-close" id="gd-close" aria-label="关闭">✕</button>
         </div>
         <div class="gd-modal-cats" id="gd-modal-cats"></div>
-        <p class="gd-hint">点击事务可点亮／再次点击取消</p>
+        <p class="gd-hint">点击职务可点亮／再次点击取消</p>
         <div class="gd-body" id="gd-body"></div>
         <div class="gd-ft">
           <button class="gd-clear-btn" id="gd-clear">清空本将所有点亮</button>
@@ -182,9 +181,7 @@
     const el = document.getElementById('gd-modal-cats');
     if (!el) return;
     el.innerHTML = ALL_CATS.map(c =>
-      `<button class="gd-mcat${c === _modalCat ? ' gd-mcat-on' : ''}" data-cat="${c}">
-        ${c !== '全部' ? CAT_ICONS[c] + ' ' : ''}${c}
-      </button>`
+      `<button class="gd-mcat${c === _modalCat ? ' gd-mcat-on' : ''}" data-cat="${c}">${c}</button>`
     ).join('');
   }
 
@@ -201,20 +198,17 @@
     let html = '';
     for (const [cat, duties] of Object.entries(groups)) {
       if (_modalCat === '全部')
-        html += `<div class="gd-grp-title">${CAT_ICONS[cat]} ${cat}</div>`;
+        html += `<div class="gd-grp-title">${cat}</div>`;
       html += `<div class="gd-grid">`;
       for (const d of duties) {
         const on = data[d.id] ? ' gd-on' : '';
-        html += `<button class="gd-duty${on}" data-id="${d.id}">
-          <span class="gd-dicon">${d.icon}</span>
-          <span class="gd-dlabel">${d.label}</span>
-        </button>`;
+        html += `<button class="gd-duty${on}" data-id="${d.id}">${d.label}</button>`;
       }
       html += `</div>`;
     }
     el.innerHTML = html;
 
-    // 点击事务
+    // 点击职务
     el.querySelectorAll('.gd-duty').forEach(b => {
       b.addEventListener('click', () => {
         const d = load(_cur);
@@ -255,12 +249,17 @@
     if (!listEl) return;
     const cat = _cardCat[idx] || '全部';
     listEl.querySelectorAll('.gen-tag').forEach(tag => {
-      const name   = tag.dataset.name || '';
+      const name    = tag.dataset.name || '';
       const visible = (cat === '全部') || window.genHasCat(name, cat);
-      tag.style.display = visible ? '' : 'none';
+      // inline style 里有 !important，只有 setProperty priority 才能覆盖
+      if (visible) {
+        tag.style.removeProperty('display');
+      } else {
+        tag.style.setProperty('display', 'none', 'important');
+      }
     });
     // 全都隐藏时提示
-    const allHidden = [...listEl.querySelectorAll('.gen-tag')].every(t => t.style.display === 'none');
+    const allHidden = [...listEl.querySelectorAll('.gen-tag')].every(t => t.style.getPropertyValue('display') === 'none');
     let tip = listEl.querySelector('.gf-empty-tip');
     if (allHidden && cat !== '全部') {
       if (!tip) { tip = document.createElement('span'); tip.className = 'gf-empty-tip gen-empty'; listEl.appendChild(tip); }
