@@ -313,6 +313,13 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .action-player-tag[data-slot="1"]::before { content: '乙'; background: var(--p1-color); }
 .digest-raw .action-player-tag[data-slot="2"]::before { content: '丙'; background: var(--p2-color); }
 
+.digest-raw .raw-action-block .action-player-tag {
+  gap: 0;
+}
+.digest-raw .raw-action-block .action-player-tag::before {
+  display: none;
+}
+
 /* ══ 行动建议卡片网格 ══ */
 .digest-raw .action-option-grid {
   display: grid;
