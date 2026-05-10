@@ -588,14 +588,18 @@ window.SGParser = (function () {
       if (/^季度△/.test(line)) {
         anchor = null;
         const rest = line.replace(/^季度△\s*/, '').trim();
-        _parseSeasonalLine(rest, change.quarterly);
-        // 兼容旧字段
-        _parseSeasonalLine(rest, change.seasonal);
-        // 加入 anchorGroups.季度
+        // 先解析到临时数组，避免累积后 deltas 捕获到上一条的内容
+        const newItems = [];
+        _parseSeasonalLine(rest, newItems);
+        newItems.forEach(item => {
+          change.quarterly.push(item);
+          change.seasonal.push(item);  // 兼容旧字段
+        });
+        // 加入 anchorGroups.季度（每条 季度△ 独立一项，label 注明结算周期）
         if (!change.anchorGroups['季度']) change.anchorGroups['季度'] = [];
         change.anchorGroups['季度'].push({
-          label:  '',
-          deltas: change.quarterly.map(s => ({ res: s.res, val: s.val })),
+          label:  '季度结算',
+          deltas: newItems.map(s => ({ res: s.res, val: s.val })),
           text:   line,
         });
         continue;
@@ -633,8 +637,8 @@ window.SGParser = (function () {
           while ((im = itemRe.exec(restNoTotal)) !== null) {
             let lbl = im[1].replace(/[→:：]/g, '').trim();
             if (lbl === '暗账') lbl = '府库';
-            // 过滤空标签和"合"/"计"等残余
-            if (lbl && lbl !== '合' && lbl !== '计' && lbl.length >= 2) {
+            // 过滤空标签、"合计"完整词及拆分残余"合"/"计"
+            if (lbl && lbl !== '合计' && lbl !== '合' && lbl !== '计' && lbl.length >= 2) {
               items.push({ label: lbl, val: parseInt(im[2]) });
             }
           }
