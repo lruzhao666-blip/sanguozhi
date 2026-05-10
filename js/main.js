@@ -232,20 +232,22 @@
     const raw = document.getElementById('gm-content').value.trim();
     if (!raw) { showToast('⚠️ 内容不能为空'); return; }
 
-    // 回合号 = 当前最大回合 + 1（自动递增）
+    // 回合号：优先使用解析到的剧情标题回合数，失败则自动递增
     const nextRound = state.rounds.length
       ? state.rounds[state.rounds.length - 1].round + 1
       : 1;
 
     const parsed = SGParser.parse(raw);
-    parsed.round = nextRound;
+    const detectedRound = Number.isInteger(parsed.round) ? parsed.round : parseInt(parsed.round, 10);
+    const roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
+    parsed.round = roundNum;
 
     state.publishing = true;
     const btn = document.getElementById('btn-publish');
     btn.disabled = true; btn.textContent = '⏳ 发布中…';
 
     try {
-      const rd = { round: nextRound, roundTitle: '', parsed, rawContent: raw };
+      const rd = { round: roundNum, roundTitle: '', parsed, rawContent: raw };
       await publishRound(rd);
       await fetchAllRounds();
       renderAll();
@@ -255,7 +257,7 @@
       document.getElementById('parse-preview').classList.add('hidden');
 
       updateUndoBtn();
-      showToast(`✅ 第 ${nextRound} 回合已发布！`);
+      showToast(`✅ 第 ${roundNum} 回合已发布！`);
     } catch (e) {
       console.error('[SG] 发布失败:', e);
       showToast('❌ 发布失败，请检查网络');
@@ -465,11 +467,11 @@
   //  战局动态：直接展示原文（rawDigest）
   //  对文本做基础格式化：段落换行、关键词高亮
   // ══════════════════════════════════════════
+
   function renderDigest(rd) {
     const p      = rd.parsed;
     const block  = document.getElementById('block-digest');
     const body   = document.getElementById('digest-body');
-    const tagsEl = document.getElementById('digest-tags');
     if (!block || !body) return;
 
     // rawDigest 优先，兼容旧数据用 situation + events 拼合
@@ -480,13 +482,8 @@
     }
     block.classList.remove('hidden');
 
-    // 标签行：仅显示一个简洁标签
-    if (tagsEl) tagsEl.innerHTML = `<span class="digest-tag tag-situation">📋 AI 原文</span>`;
-
     // 将原文渲染为带高亮的预格式段落
     body.innerHTML = `<div class="digest-raw">${highlightRaw(rawText)}</div>`;
-
-
   }
 
   /**
@@ -755,6 +752,7 @@
     const SECTION_EMOJI_RE = /^(🎴|📢|🌍|⚡|🔥|👤|⏳|📜|🌐|⚔️|🏯|🌅|🌙)\s*/;
     const SECTION_RE   = /^(🌍|⚡|📢|🔥|📜|🎴|🌐|⚔️|🏯|🌅|🌙)\s*[【\[]?\s*[\u4e00-\u9fa5]{2,}/;
     const PLAYER_RE    = /^👤\s*[【\[]/;
+    const RESULT_PLAYER_LINE_RE = /^\s*(?:[【\[][^】\]]+[】\]]|[^\s:：·\u30fb\u2022]{1,12}\s*[：:·\u30fb\u2022]).*/;
     const NOTE_RE      = /^[📍🔖💡]/;
     const BATTLE_RE    = /^🎲/;
     // ▸ 影响行：行首 ▸（含全角/半角变体）
@@ -783,11 +781,11 @@
     // ── 👤 各城主行动结果：子玩家分组 ──
     // 与 🎯 行动建议 完全相同的 action-item 排版
     const _groupPlayerResultLines = (cardLines) => {
-      const SUB_PLAYER_RE = /^([\u4e00-\u9fa5A-Za-z]{1,4})[·\u30fb\u2022::\uff1a]\s*(.*)$/;
-      const SUB_PLAYER_BRACKET_RE = /^[【\[]([^】\]]{1,6})[】\]]\s*(.*)$/;
+      const SUB_PLAYER_RE = /^([^\s:：·\u30fb\u2022]{1,12})\s*[·\u30fb\u2022:：]\s*(.*)$/;
+      const SUB_PLAYER_BRACKET_RE = /^[【\[]([^】\]]{1,12})[】\]]\s*(.*)$/;
       const parseRawPlayer = (html) => {
         const text = html.replace(/<[^>]+>/g, '').trim();
-        const bracket = text.match(/[【\[]([^】\]]+)\]\s*(.*)$/) || text.match(/[【\[]([^】\]]+)[】\]]\s*(.*)$/);
+        const bracket = text.match(/[【\[]([^】\]]+)[】\]]\s*(.*)$/);
         if (bracket) {
           return { name: bracket[1], title: bracket[2].trim() };
         }
@@ -997,8 +995,8 @@
         continue;
       }
 
-      // 玩家行
-      if (PLAYER_RE.test(tLine)) {
+      // 玩家行（👤 或 👤 段落内的玩家标识）
+      if (PLAYER_RE.test(tLine) || (currentCard && currentCard.emoji === '👤' && RESULT_PLAYER_LINE_RE.test(tLine))) {
         flushPara();
         if (currentCard) {
           currentCard.lines.push(`<div class="raw-player">${highlightInline(tLine)}</div>`);
@@ -1804,7 +1802,6 @@
         <div class="ib-header">
           <span class="ib-icon ib-icon--text">动态</span>
           <span class="ib-title">战局动态</span>
-          <span class="digest-tags"><span class="digest-tag tag-situation">AI 原文</span></span>
         </div>
         <div class="ib-body digest-body">
           <div class="digest-raw">${highlightRaw(rawText)}</div>
@@ -1868,11 +1865,13 @@
     const res = document.getElementById('parse-result');
     if (!box || !res) return;
     const lines = parsed ? SGParser.summarize(parsed) : ['❌ 无法解析，请检查格式'];
-    // 显示下一回合号提示
+    // 显示回合号提示（优先解析结果）
     const nextRound = state.rounds.length
       ? state.rounds[state.rounds.length - 1].round + 1
       : 1;
-    const header = `<div class="pp-item"><strong>🎴 发布后将成为：</strong><span class="pp-ok">第 ${nextRound} 回合</span></div>`;
+    const detectedRound = Number.isInteger(parsed?.round) ? parsed.round : parseInt(parsed?.round, 10);
+    const roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
+    const header = `<div class="pp-item"><strong>🎴 发布后将成为：</strong><span class="pp-ok">第 ${roundNum} 回合</span></div>`;
     res.innerHTML = header + lines.map(l => `<div class="pp-item">${l}</div>`).join('');
     box.classList.remove('hidden');
   }

@@ -17,8 +17,11 @@
   --border-red:  rgba(160,50,38,.32);
   --border-gold: rgba(212,168,67,.28);
   --p0-color:    #e74c3c;
+  --p0-rgb:      231,76,60;
   --p1-color:    #3dbe6c;
+  --p1-rgb:      61,190,108;
   --p2-color:    #3498db;
+  --p2-rgb:      52,152,219;
   --font-serif:  'Noto Sans SC', 'Source Han Sans SC', '思源黑体', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --font-sans:   'Noto Sans SC', 'Source Han Sans SC', '思源黑体', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --r:  6px;
@@ -147,7 +150,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border-bottom-color: rgba(160,120,40,.22);
   flex-wrap: wrap; gap: 6px;
 }
-.digest-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-left: auto; }
+.digest-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-left: 0; }
 .digest-tag {
   font-size: .6rem; border-radius: 10px; padding: 1px 9px; border: 1px solid;
   font-family: var(--font-sans); white-space: nowrap;
@@ -255,27 +258,43 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ══ 行动建议玩家分组 ══ */
 .digest-raw .action-player-group {
-  margin: 0 0 18px;
+  margin: 0 0 40px;
   padding: 0;
   border: none;
   background: none;
 }
 
+.digest-raw .action-player-group[data-slot="0"] {
+  --action-accent: var(--p0-color);
+  --action-accent-rgb: var(--p0-rgb);
+  --action-border: rgba(231,76,60,.35);
+  --action-header-bg: linear-gradient(110deg, rgba(120,15,8,.45), rgba(60,5,2,.2));
+}
+.digest-raw .action-player-group[data-slot="1"] {
+  --action-accent: var(--p1-color);
+  --action-accent-rgb: var(--p1-rgb);
+  --action-border: rgba(61,190,108,.32);
+  --action-header-bg: linear-gradient(110deg, rgba(10,88,38,.45), rgba(5,44,18,.2));
+}
+.digest-raw .action-player-group[data-slot="2"] {
+  --action-accent: var(--p2-color);
+  --action-accent-rgb: var(--p2-rgb);
+  --action-border: rgba(52,152,219,.32);
+  --action-header-bg: linear-gradient(110deg, rgba(8,52,120,.45), rgba(4,26,65,.2));
+}
+
 /* ══ 各城主行动结果：文本流 + 分隔线 ══ */
 .digest-raw .result-player-group {
   padding: 6px 0 0;
+  margin-bottom: 16px;
 }
 
-.digest-raw .result-player-group + .result-player-group {
-  margin-top: 36px;
+.digest-raw .result-player-group:last-child {
+  margin-bottom: 0;
 }
 
 .digest-raw .result-divider {
-  height: 1px;
-  width: 60%;
-  margin: 18px auto 18px;
-  opacity: 0.7;
-  background: linear-gradient(90deg, transparent, rgba(180,120,40,.35), rgba(212,168,67,.45), rgba(180,120,40,.35), transparent);
+  display: none;
 }
 /* 玩家分组之间的分隔线（JS 插入 hr） */
 .digest-raw .player-group-divider {
@@ -319,9 +338,28 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .action-player-tag[data-slot="2"]::before { content: '丙'; background: var(--p2-color); }
 
 .digest-raw .raw-action-block .action-player-tag {
-  gap: 0;
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 6px;
+  font-size: 1.02rem;
+  letter-spacing: .05em;
+  margin: 6px 0 12px;
+  padding: 0;
+  border: none;
+  border-bottom: none;
+  background: none;
+  box-shadow: none;
+  color: var(--action-accent, var(--gold-light));
+  text-transform: none;
+  text-decoration: none;
 }
-.digest-raw .raw-action-block .action-player-tag::before {
+
+.digest-raw .raw-action-block .action-player-tag::after {
+  display: none;
+}
+
+.digest-raw .raw-action-block .action-player-tag::before,
+.digest-raw .result-player-group .action-player-tag::before {
   display: none;
 }
 
@@ -329,7 +367,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .action-option-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 @media (max-width: 900px) {
   .digest-raw .action-option-grid {
@@ -344,39 +382,60 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 .digest-raw .action-opt-card {
   position: relative;
-  padding: 10px 12px 14px;
-  border-radius: 8px;
-  background: rgba(8,4,4,.55);
-  border: 1px solid rgba(255,255,255,.06);
-  box-shadow: 0 6px 16px rgba(0,0,0,.35);
-  min-height: 86px;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 14px;
+  border-radius: 10px;
+  background: rgba(8,3,3,.88);
+  border: 1px solid rgba(var(--action-accent-rgb, 212,168,67), .22);
+  box-shadow: 0 2px 12px rgba(0,0,0,.38);
+  min-height: 92px;
+  overflow: hidden;
 }
-.digest-raw .action-player-group[data-slot="0"] .action-opt-card { border-top: 3px solid var(--p0-color); }
-.digest-raw .action-player-group[data-slot="1"] .action-opt-card { border-top: 3px solid var(--p1-color); }
-.digest-raw .action-player-group[data-slot="2"] .action-opt-card { border-top: 3px solid var(--p2-color); }
+.digest-raw .action-opt-card:nth-child(4) {
+  background: rgba(6,2,2,.92);
+  border-color: rgba(var(--action-accent-rgb, 212,168,67), .16);
+}
 
 .digest-raw .action-opt-title-row {
+  position: relative;
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 8px;
+  margin: -12px -14px 10px;
+  padding: 12px 14px 11px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(110deg, rgba(var(--action-accent-rgb, 212,168,67), .2), rgba(0,0,0,.14));
+}
+.digest-raw .action-opt-title-row::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 24px;
+  border-radius: 2px;
+  background: rgba(var(--action-accent-rgb, 212,168,67), .6);
+  box-shadow: 0 0 6px rgba(var(--action-accent-rgb, 212,168,67), .22);
 }
 .digest-raw .action-opt-num {
   font-family: var(--font-serif);
-  font-size: .95rem;
+  font-size: 1rem;
   color: var(--gold-light);
-  text-shadow: 0 0 6px rgba(212,168,67,.35);
+  text-shadow: none;
 }
 .digest-raw .action-opt-title {
   font-family: var(--font-serif);
-  font-size: .95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--gold-light);
   letter-spacing: .03em;
 }
 .digest-raw .action-opt-desc {
-  font-size: .78rem;
-  color: var(--text-sub);
+  font-size: .85rem;
+  color: rgba(200,184,154,.72);
   line-height: 1.6;
 }
 .digest-raw .action-opt-icon {
