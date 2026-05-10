@@ -156,7 +156,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 .digest-body { padding: 20px 26px; }
 
-/* 战局动态原文排版 */
+/* ══════════════════════════════════════════
+   战局动态原文排版 — 完整样式集
+══════════════════════════════════════════ */
 .digest-raw {
   font-family: var(--font-serif);
   font-size: 1.02rem;
@@ -168,12 +170,23 @@ header, nav, main, footer { position: relative; z-index: 1; }
   margin: 0 auto;
   -webkit-font-smoothing: antialiased;
 }
+
+/* ── 普通段落 ── */
 .digest-raw .raw-para {
   margin: 0 0 1em;
   letter-spacing: .015em;
   line-height: 1.7;
 }
 .digest-raw .raw-para:last-child { margin-bottom: 0; }
+
+/* ── 「」书名号斜体淡金 ── */
+.digest-raw .raw-quote {
+  font-style: normal;
+  color: var(--gold-dim);
+  font-weight: 500;
+}
+
+/* ── 段落标题（无卡片，fallback）── */
 .digest-raw .raw-section {
   font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700;
   color: var(--gold-light); letter-spacing: .08em;
@@ -184,6 +197,28 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border-radius: 0 var(--r) var(--r) 0;
 }
 .digest-raw .raw-section:first-child { margin-top: 0; }
+
+/* ── 段落标题（卡片版，带 data-emoji）统一金色 ── */
+.digest-raw .raw-section-title {
+  font-family: var(--font-serif); font-size: 1.02rem; font-weight: 700;
+  color: var(--gold-light); letter-spacing: .08em;
+  margin: 0 0 12px;
+  padding: 6px 14px 6px 14px;
+  border-left: 3px solid var(--gold);
+  background: linear-gradient(90deg, rgba(100,65,0,.15), transparent 60%);
+  border-radius: 0 var(--r) var(--r) 0;
+}
+
+/* ── 段落卡片包裹（emoji 标题段落的容器）── */
+.digest-raw .raw-section-card {
+  margin: 20px 0;
+}
+.digest-raw .raw-section-card:first-child { margin-top: 0; }
+.digest-raw .raw-section-card-body {
+  padding-left: 4px;
+}
+
+/* ── 玩家行（raw-player，卡片内出现时）── */
 .digest-raw .raw-player {
   font-family: var(--font-serif); font-size: 1rem; font-weight: 700;
   color: #f0cfa0; margin: 20px 0 8px;
@@ -192,6 +227,18 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border-left: 3px solid rgba(200,100,50,.5);
   border-radius: 0 var(--r) var(--r) 0;
 }
+
+/* ── ▸ 影响行 ── */
+.digest-raw .raw-effect {
+  display: flex; align-items: baseline; gap: 6px;
+  margin: 5px 0 5px 16px; padding: 5px 12px;
+  line-height: 1.75; color: var(--text-sub); font-size: .91rem;
+  background: rgba(100,70,10,.07);
+  border-left: 2px solid rgba(180,140,50,.28);
+  border-radius: 0 5px 5px 0;
+}
+
+/* ── 🎲 战斗骰子行 ── */
 .digest-raw .raw-battle {
   font-family: var(--font-serif); font-size: .92rem; font-weight: 500;
   color: #e8b850; margin: 6px 0;
@@ -199,23 +246,157 @@ header, nav, main, footer { position: relative; z-index: 1; }
   background: rgba(0,0,0,.25);
   border: 1px dashed rgba(180,130,40,.28);
   border-radius: var(--r);
+  overflow-x: auto;
 }
+.digest-raw .raw-battle-code {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: .9em; background: none; border: none; padding: 0;
+  color: inherit; white-space: pre;
+}
+
+/* ── 📍💡🔖 注记行 ── */
 .digest-raw .raw-note {
-  font-size: .91rem; color: rgba(200,184,154,0.70); margin: 4px 0 14px;
+  font-size: .91rem; color: rgba(200,184,154,0.70);
   padding: 5px 10px 5px 16px;
-  margin-left: 14px;
+  margin: 4px 0 14px 14px;
   background: rgba(255,255,255,0.03);
   border-left: 2px solid rgba(180,140,50,.30);
   border-radius: 0 var(--r) var(--r) 0;
   line-height: 1.75;
 }
+
+/* ── 普通列表项（•·▸等）── */
 .digest-raw .raw-bullet {
   position: relative; margin: 3px 0 3px 1.4em;
   padding-left: .3em; line-height: 1.85;
 }
+
+/* ── ①②③ 编号项 ── */
+.digest-raw .raw-numbered-item {
+  display: grid; grid-template-columns: 22px 1fr;
+  align-items: baseline; gap: 0 7px;
+  margin: 4px 0; padding: 3px 0; line-height: 1.78;
+}
+.digest-raw .raw-num-badge {
+  font-family: var(--font-serif); font-size: .9rem;
+  color: var(--gold); font-weight: 700; text-align: center;
+  flex-shrink: 0;
+}
+.digest-raw .raw-num-text {
+  color: var(--text-main); font-size: .93rem; line-height: 1.78;
+}
+
+/* ── ⏳ 结尾尾句（story-outro）── */
+.digest-raw .story-outro {
+  font-family: var(--font-serif); font-size: .9rem;
+  color: var(--text-dim); letter-spacing: .06em;
+  margin: 20px 0 0; opacity: .55; line-height: 1.7;
+  text-align: center;
+}
+
+/* ── 分隔线 ── */
 .digest-raw .raw-divider {
   height: 1px; margin: 20px 0;
   background: linear-gradient(90deg, transparent, rgba(140,100,30,.4), transparent);
+}
+
+/* ══ 👤 城主行动结果块 — result-player-group ══ */
+/* 玩家组容器：带左色条 + 内容区 */
+.digest-raw .result-player-group {
+  display: flex; align-items: stretch; gap: 0;
+  margin: 8px 0;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: rgba(30,18,5,.12);
+  border: 1px solid rgba(140,100,30,.13);
+}
+.digest-raw .result-player-group::before {
+  content: ''; width: 3px; flex-shrink: 0;
+  background: rgba(180,140,50,.35);
+}
+.digest-raw .result-player-group[data-slot="0"]::before { background: var(--p0-color); opacity: .7; }
+.digest-raw .result-player-group[data-slot="1"]::before { background: var(--p1-color); opacity: .7; }
+.digest-raw .result-player-group[data-slot="2"]::before { background: var(--p2-color); opacity: .7; }
+
+/* 玩家名签（行动结果块）*/
+.digest-raw .action-player-tag {
+  display: inline-block;
+  font-family: var(--font-serif); font-size: .82rem; font-weight: 700;
+  letter-spacing: .08em; padding: 3px 12px 3px 12px;
+  margin: 10px 0 6px;
+  border-radius: 0 14px 14px 0;
+  background: rgba(70,40,0,.18); color: var(--gold-dim);
+  border-left: none;
+}
+.digest-raw .result-player-group[data-slot="0"] .action-player-tag { color: #f0a090; background: rgba(231,76,60,.1); }
+.digest-raw .result-player-group[data-slot="1"] .action-player-tag { color: #90e0a8; background: rgba(61,190,108,.1); }
+.digest-raw .result-player-group[data-slot="2"] .action-player-tag { color: #90c8f0; background: rgba(52,152,219,.1); }
+
+/* 行动条目 */
+.digest-raw .action-item {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 4px;
+  padding: 3px 12px; line-height: 1.75; font-size: .92rem;
+}
+.digest-raw .action-item .name {
+  color: var(--text-main); font-weight: 600;
+}
+.digest-raw .action-item .dash {
+  color: var(--text-dim); margin: 0 2px; font-size: .85rem;
+}
+.digest-raw .action-item .desc {
+  color: var(--text-sub); font-size: .88rem;
+}
+.digest-raw .action-item.result-body-item {
+  padding-top: 1px; padding-bottom: 1px;
+}
+.digest-raw .action-item.result-body-item .desc {
+  color: rgba(200,184,154,.75);
+}
+
+/* 玩家组之间的分隔 */
+.digest-raw .result-divider {
+  height: 1px; margin: 6px 0;
+  background: linear-gradient(90deg, transparent, rgba(140,100,30,.18) 20%, rgba(140,100,30,.18) 80%, transparent);
+}
+
+/* ══ 📊 结构化数据折叠区 ══ */
+.digest-raw .raw-data-panel {
+  margin: 20px 0 8px;
+  border: 1px solid rgba(140,100,30,.18);
+  border-radius: var(--r);
+  background: rgba(10,8,3,.35);
+  overflow: hidden;
+}
+.digest-raw .raw-data-summary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; cursor: pointer; user-select: none;
+  font-family: var(--font-serif); font-size: .82rem;
+  color: var(--text-dim); letter-spacing: .04em;
+  list-style: none; outline: none;
+  background: rgba(60,40,5,.2);
+  border-bottom: 1px solid rgba(140,100,30,.1);
+  transition: color .18s;
+}
+.digest-raw .raw-data-summary:hover { color: var(--text-sub); }
+.digest-raw .raw-data-summary::-webkit-details-marker { display: none; }
+.digest-raw .raw-data-summary::before {
+  content: '▶'; font-size: .6rem; transition: transform .2s;
+  color: var(--gold-dim); flex-shrink: 0;
+}
+.digest-raw .raw-data-panel[open] > .raw-data-summary::before { transform: rotate(90deg); }
+.digest-raw .raw-data-badge {
+  font-size: .7rem; padding: 1px 7px; border-radius: 8px;
+  background: rgba(140,100,30,.18); border: 1px solid rgba(140,100,30,.25);
+  color: var(--gold-dim);
+}
+.digest-raw .raw-data-body {
+  padding: 10px 14px 12px;
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: .8rem;
+}
+.digest-raw .raw-data-line {
+  color: rgba(200,184,154,.55); line-height: 1.65;
+  white-space: pre-wrap; word-break: break-all;
 }
 
 /* ══ 🎯 行动建议块 — 方案H：军帐分列·竖排名号 ══ */
@@ -311,15 +492,31 @@ header, nav, main, footer { position: relative; z-index: 1; }
   font-family: var(--font-serif); font-size: .88rem;
   color: var(--text-dim); letter-spacing: .06em; margin-top: 20px; opacity: .45;
 }
-/* 移动端适配 */
+/* ══ 移动端适配 ══ */
 @media (max-width: 640px) {
+  /* 方案H竖排名 */
   .digest-raw .rab-pname-h-vert { width: 24px; padding: 11px 0; }
   .digest-raw .rab-pname-h-char { font-size: .76rem; }
   .digest-raw .rab-pname-h-content { padding: 11px 13px 11px 12px; }
+  /* 选项文字 */
   .digest-raw .rab-opt-name { font-size: .88rem; }
   .digest-raw .rab-opt-note { font-size: .84rem; }
   .digest-raw .rab-branch { padding: 3px 8px; }
   .digest-raw .rab-branch-text { font-size: .82rem; }
+  /* 整体字号 */
+  .digest-raw { font-size: .95rem; }
+  .digest-raw .raw-section { font-size: .96rem; padding: 5px 12px; margin: 20px 0 9px; }
+  .digest-raw .raw-section-title { font-size: .94rem; padding: 5px 12px; }
+  .digest-raw .raw-effect { margin-left: 8px; font-size: .87rem; padding: 4px 10px; }
+  .digest-raw .raw-numbered-item { grid-template-columns: 20px 1fr; gap: 0 5px; }
+  .digest-raw .raw-num-badge { font-size: .86rem; }
+  .digest-raw .raw-num-text { font-size: .88rem; }
+  /* 行动结果块 */
+  .digest-raw .action-item { padding: 2px 10px; font-size: .88rem; }
+  .digest-raw .action-player-tag { font-size: .78rem; padding: 2px 10px; }
+  /* 数据折叠区 */
+  .digest-raw .raw-data-summary { font-size: .78rem; padding: 7px 12px; }
+  .digest-raw .raw-data-body { padding: 8px 12px 10px; font-size: .76rem; }
 }
 
 
