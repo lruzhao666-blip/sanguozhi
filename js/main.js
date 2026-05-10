@@ -577,11 +577,11 @@
           const slot = pi % 3;
           ab += `<div class="rab-player-row style-h" data-slot="${slot}">`;
           // 竖排名字列
-          ab += '<div class="rab-pname-h-vert">';
-          ab += `<span class="rab-pname-h-char">${esc(al.playerLabel)}</span>`;
+          ab += '<div class="pname-h-vert">';
+          ab += `<span class="pname-h-char">${esc(al.playerLabel)}</span>`;
           ab += '</div>';
           // 内容区
-          ab += '<div class="rab-pname-h-content">';
+          ab += '<div class="pname-h-content">';
           ab += '<div class="rab-opts">';
           al.opts.forEach((opt, oi) => {
             // 破折号拆分：行动名 —— 注解
