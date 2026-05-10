@@ -253,16 +253,29 @@ header, nav, main, footer { position: relative; z-index: 1; }
   margin: 0 0 16px;
 }
 
-/* ══ 玩家分组块（🎯 和 👤 共用） ══
-   语言同 .hist-player-card / .pcard：
-   3px 彩色左边框 + 极浅玩家色渐变底 + 单侧圆角 */
-.digest-raw .action-player-group,
-.digest-raw .result-player-group {
-  margin: 0 0 0;
-  padding: 16px 14px 16px 14px;
-  border-left: none;
-  border-radius: 0;
+/* ══ 行动建议玩家分组 ══ */
+.digest-raw .action-player-group {
+  margin: 0 0 18px;
+  padding: 0;
+  border: none;
   background: none;
+}
+
+/* ══ 各城主行动结果：文本流 + 分隔线 ══ */
+.digest-raw .result-player-group {
+  padding: 6px 0 0;
+}
+
+.digest-raw .result-player-group + .result-player-group {
+  margin-top: 36px;
+}
+
+.digest-raw .result-divider {
+  height: 1px;
+  width: 60%;
+  margin: 18px auto 18px;
+  opacity: 0.7;
+  background: linear-gradient(90deg, transparent, rgba(180,120,40,.35), rgba(212,168,67,.45), rgba(180,120,40,.35), transparent);
 }
 /* 玩家分组之间的分隔线（JS 插入 hr） */
 .digest-raw .player-group-divider {
@@ -275,18 +288,150 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══ 玩家名标签 ══
    组锚点：字重700，正文色，正文字号 */
 .digest-raw .action-player-tag {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-serif);
   font-weight: 700;
   font-size: 1rem;
   letter-spacing: .12em;
   line-height: 1;
   margin-bottom: 8px;
-  color: #e8dcc4;
+  color: var(--gold-light);
   text-transform: uppercase;
 }
 
-/* ══ 行动条目：序号 / 行动名 / 破折号 / 注解 ══ */
+.digest-raw .action-player-tag::before {
+  content: attr(data-slot);
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  color: #fff;
+  background: var(--gold);
+  letter-spacing: 0;
+}
+.digest-raw .action-player-tag[data-slot="0"]::before { content: '甲'; background: var(--p0-color); }
+.digest-raw .action-player-tag[data-slot="1"]::before { content: '乙'; background: var(--p1-color); }
+.digest-raw .action-player-tag[data-slot="2"]::before { content: '丙'; background: var(--p2-color); }
+
+.digest-raw .raw-action-block .action-player-tag {
+  gap: 0;
+}
+.digest-raw .raw-action-block .action-player-tag::before {
+  display: none;
+}
+
+/* ══ 行动建议卡片网格 ══ */
+.digest-raw .action-option-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 900px) {
+  .digest-raw .action-option-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .digest-raw .action-option-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.digest-raw .action-opt-card {
+  position: relative;
+  padding: 10px 12px 14px;
+  border-radius: 8px;
+  background: rgba(8,4,4,.55);
+  border: 1px solid rgba(255,255,255,.06);
+  box-shadow: 0 6px 16px rgba(0,0,0,.35);
+  min-height: 86px;
+}
+.digest-raw .action-player-group[data-slot="0"] .action-opt-card { border-top: 3px solid var(--p0-color); }
+.digest-raw .action-player-group[data-slot="1"] .action-opt-card { border-top: 3px solid var(--p1-color); }
+.digest-raw .action-player-group[data-slot="2"] .action-opt-card { border-top: 3px solid var(--p2-color); }
+
+.digest-raw .action-opt-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.digest-raw .action-opt-num {
+  font-family: var(--font-serif);
+  font-size: .95rem;
+  color: var(--gold-light);
+  text-shadow: 0 0 6px rgba(212,168,67,.35);
+}
+.digest-raw .action-opt-title {
+  font-family: var(--font-serif);
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: .03em;
+}
+.digest-raw .action-opt-desc {
+  font-size: .78rem;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+.digest-raw .action-opt-icon {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  font-size: .9rem;
+  opacity: .6;
+}
+
+.digest-raw .action-branch-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.digest-raw .action-branch-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(0,0,0,.22);
+  border: 1px dashed rgba(212,168,67,.25);
+  font-size: .78rem;
+  color: var(--text-sub);
+}
+.digest-raw .action-branch-prefix {
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.digest-raw .action-branch-label {
+  flex-shrink: 0;
+  display: inline-block;
+  min-width: 18px;
+  padding: 0px 5px;
+  background: rgba(212,168,67,.07);
+  border: 1px solid rgba(212,168,67,.28);
+  border-radius: 3px;
+  color: var(--gold-dim);
+  font-size: .7rem;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: .04em;
+}
+.digest-raw .action-branch-card[data-label="C"] .action-branch-label {
+  background: rgba(180,40,30,.10);
+  border-color: rgba(200,80,60,.32);
+  color: rgba(220,130,115,.9);
+}
+.digest-raw .action-branch-text {
+  color: var(--text-sub);
+}
+
+/* ══ 行动结果行（保留用于 👤 结果正文）══ */
 .digest-raw .action-item {
   display: flex;
   align-items: baseline;
@@ -310,7 +455,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .action-item .name {
   color: #e8dcc4;
   font-weight: 500;
-  font-size: 1rem;
+  font-size: .95rem;
 }
 /* 破折号：中性连接，极淡 */
 .digest-raw .action-item .dash {
@@ -321,7 +466,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* 注解：辅助信息，sub色 + 略小 */
 .digest-raw .action-item .desc {
   color: var(--text-sub);
-  font-size: .90rem;
+  font-size: .88rem;
 }
 
 /* ══ result-body-item（各城主行动结果 描述行）══
@@ -340,50 +485,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .result-player-group .raw-note {
   margin-top: 6px;
   margin-bottom: 0;
-}
-
-/* ══ A/B/C 分支选项 ══
-   从属于上方条目：虚线左边框缩进 + 金色细框字母徽章
-   岔路感：比 ▸影响 更主动，但明显次于主条目 */
-.digest-raw .action-item .branch-list {
-  width: 100%;
-  margin-top: 4px;
-  margin-left: 1.4em;
-  padding-left: 10px;
-  border-left: 1px dashed rgba(212,168,67,.22);
-}
-.digest-raw .branch-option {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  font-size: .85rem;
-  line-height: 1.65;
-  padding: 2px 0;
-}
-/* 字母徽章：金色细框，暗底，小号 */
-.digest-raw .branch-option .branch-label {
-  flex-shrink: 0;
-  display: inline-block;
-  min-width: 18px;
-  padding: 0px 5px;
-  background: rgba(212,168,67,.07);
-  border: 1px solid rgba(212,168,67,.28);
-  border-radius: 3px;
-  color: var(--gold-dim);
-  font-size: .72rem;
-  font-weight: 600;
-  text-align: center;
-  letter-spacing: .04em;
-}
-/* 分支文字：sub色，略暗于行动名 */
-.digest-raw .branch-option .branch-text {
-  color: var(--text-sub);
-}
-/* C 选项：高风险暗红提示 */
-.digest-raw .branch-option[data-label="C"] .branch-label {
-  background: rgba(180,40,30,.10);
-  border-color: rgba(200,80,60,.32);
-  color: rgba(220,130,115,.9);
 }
 
 /* ══ 等待行 ══ */
@@ -519,17 +620,18 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .digest-raw .raw-section-title[data-emoji="🎴"]::after { margin-top: 10px; }
 
 /* ══════════════════════════════════════════
-   ▸ 影响行（次要色 + 左缩进 + 略小字号）
+   ▸ 影响行（独立小卡）
 ══════════════════════════════════════════ */
 .digest-raw .raw-effect {
   font-family: var(--font-serif);
   font-size: .88rem;
-  color: rgba(180,162,130,.65);
+  color: rgba(200,184,154,0.78);
   line-height: 1.75;
-  padding: 2px 0 2px 1.6em;
-  margin: 2px 0;
-  border-left: 2px solid rgba(180,140,60,.18);
-  border-radius: 0 3px 3px 0;
+  padding: 10px 12px;
+  margin: 6px 0 8px;
+  background: rgba(0,0,0,.25);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.06);
   letter-spacing: .01em;
 }
 

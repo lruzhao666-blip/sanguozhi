@@ -556,6 +556,7 @@
         actionLines.forEach((al, pi) => {
           ab += `<div class="action-player-group" data-slot="${pi}">`;
           ab += `<div class="action-player-tag" data-slot="${pi}">${esc(al.playerLabel)}</div>`;
+          ab += '<div class="action-option-grid">';
           al.opts.forEach((opt, oi) => {
             // 破折号拆分：行动名 —— 注解
             const dashIdx = opt.text.search(/——|──|\s[-—]{2}\s/);
@@ -564,27 +565,30 @@
               name = opt.text.slice(0, dashIdx).trim();
               desc = opt.text.slice(dashIdx).replace(/^[——──\s-—]+/, '').trim();
             }
-            ab += `<div class="action-item">`;
-            ab += `<span class="num">${ICONS[oi] || ''}</span>`;
-            ab += `<span class="name">${esc(name)}</span>`;
+            ab += '<div class="action-opt-card">';
+            ab += '<div class="action-opt-title-row">';
+            ab += `<span class="action-opt-num">${ICONS[oi] || ''}</span>`;
+            ab += `<span class="action-opt-title">${esc(name)}</span>`;
+            ab += '</div>';
             if (desc) {
-              ab += `<span class="dash">——</span>`;
-              ab += `<span class="desc">${esc(desc)}</span>`;
+              ab += `<div class="action-opt-desc">${esc(desc)}</div>`;
             }
             // A/B/C 分支
             if (opt.branches && opt.branches.length) {
-              ab += '<div class="branch-list">';
+              ab += '<div class="action-branch-list">';
               opt.branches.forEach(br => {
                 const lbl = br.label.toUpperCase();
-                ab += `<div class="branch-option" data-label="${lbl}">`;
-                ab += `<span class="branch-label">${lbl}</span>`;
-                ab += `<span class="branch-text">${esc(br.text)}</span>`;
+                ab += `<div class="action-branch-card" data-label="${lbl}">`;
+                ab += `<span class="action-branch-prefix">┗</span>`;
+                ab += `<span class="action-branch-label">${lbl}</span>`;
+                ab += `<span class="action-branch-text">${esc(br.text)}</span>`;
                 ab += '</div>';
               });
               ab += '</div>';
             }
-            ab += '</div>'; // .action-item
+            ab += '</div>'; // .action-opt-card
           });
+          ab += '</div>'; // .action-option-grid
           ab += '</div>'; // .action-player-group
         });
       }
@@ -780,7 +784,21 @@
     // 与 🎯 行动建议 完全相同的 action-item 排版
     const _groupPlayerResultLines = (cardLines) => {
       const SUB_PLAYER_RE = /^([\u4e00-\u9fa5A-Za-z]{1,4})[·\u30fb\u2022::\uff1a]\s*(.*)$/;
-      const hasSubPlayer = cardLines.some(l => !l.startsWith('<') && SUB_PLAYER_RE.test(l.trim()));
+      const SUB_PLAYER_BRACKET_RE = /^[【\[]([^】\]]{1,6})[】\]]\s*(.*)$/;
+      const parseRawPlayer = (html) => {
+        const text = html.replace(/<[^>]+>/g, '').trim();
+        const bracket = text.match(/[【\[]([^】\]]+)\]\s*(.*)$/) || text.match(/[【\[]([^】\]]+)[】\]]\s*(.*)$/);
+        if (bracket) {
+          return { name: bracket[1], title: bracket[2].trim() };
+        }
+        return { name: text.replace(/^👤\s*/, ''), title: '' };
+      };
+      const hasSubPlayer = cardLines.some(l => {
+        if (l.startsWith('<div class="raw-player">')) return true;
+        if (l.startsWith('<')) return false;
+        const t = l.trim();
+        return SUB_PLAYER_RE.test(t) || SUB_PLAYER_BRACKET_RE.test(t);
+      });
       if (!hasSubPlayer) return cardLines;
 
       // 破折号拆分：标题 —— 注解（与 renderBlock 完全一致）
@@ -801,6 +819,12 @@
       const result = [];
       // { name, slot, titleText, bodyLines[], extraHtml[] }
       let grp = null;
+      let hasGroup = false;
+
+      const pushDivider = () => {
+        if (hasGroup) result.push('<div class="result-divider"></div>');
+        hasGroup = true;
+      };
 
       const flushGroup = () => {
         if (!grp) return;
@@ -838,20 +862,35 @@
         grp = null;
       };
 
+      const startGroup = (name, title) => {
+        flushGroup();
+        pushDivider();
+        grp = { name, slot: getSlot(name), titleText: title, bodyLines: [], extraHtml: [] };
+      };
+
       cardLines.forEach(line => {
-        if (line.startsWith('<')) {
-          if (grp) grp.extraHtml.push(line);
-          else result.push(line);
+        if (line.startsWith('<div class="raw-player">')) {
+          const parsed = parseRawPlayer(line);
+          startGroup(parsed.name, parsed.title);
           return;
         }
-        const m = line.trim().match(SUB_PLAYER_RE);
-        if (m) {
-          flushGroup();
-          // 不是第一组时插入分隔线
-          if (result.length > 0) result.push('<hr class="player-group-divider">');
-          grp = { name: m[1], slot: getSlot(m[1]), titleText: m[2].trim(), bodyLines: [], extraHtml: [] };
+        if (line.startsWith('<')) {
+          if (grp) {
+            grp.extraHtml.push(line);
+          } else {
+            result.push(line);
+          }
+          return;
+        }
+        const trimmed = line.trim();
+        const m = trimmed.match(SUB_PLAYER_RE);
+        const mb = trimmed.match(SUB_PLAYER_BRACKET_RE);
+        if (m || mb) {
+          const name = m ? m[1] : mb[1];
+          const title = m ? m[2].trim() : mb[2].trim();
+          startGroup(name, title);
         } else {
-          if (grp) grp.bodyLines.push(line.trim());
+          if (grp) grp.bodyLines.push(trimmed);
           else result.push(`<p class="raw-para">${highlightInline(line)}</p>`);
         }
       });
