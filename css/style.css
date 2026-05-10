@@ -2245,7 +2245,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   .digest-raw .raw-section { font-size: .94rem; margin: 14px 0 8px; }
   .digest-raw .raw-player  { font-size: .9rem; }
   .digest-raw .raw-battle  { font-size: .88rem; }
-  .digest-raw .action-player-group { padding-left: 8px; }
+  .digest-raw .action-player-group { padding-left: 0; }
   .msp-city-list { max-height: 140px; }
   .map-float-panel { width: 180px; font-size: .73rem; }
 }
