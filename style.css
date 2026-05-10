@@ -218,87 +218,108 @@ header, nav, main, footer { position: relative; z-index: 1; }
   background: linear-gradient(90deg, transparent, rgba(140,100,30,.4), transparent);
 }
 
-/* ── 行动建议块（与战局动态其他内容风格统一）── */
+/* ══ 🎯 行动建议块 — 方案H：军帐分列·竖排名号 ══ */
 .digest-raw .raw-action-block {
-  margin: 20px 0 16px;
+  margin: 22px 0 18px;
+  border: 1px solid rgba(180,140,60,.22);
+  border-radius: var(--rl);
+  background: rgba(50,30,5,.14);
+  overflow: hidden;
+  box-shadow: 0 2px 16px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,220,100,.04);
 }
-/* 总标题：与 raw-section 同款左边框风格 */
-.digest-raw .rab-title {
-  font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700;
-  color: var(--gold-light); letter-spacing: .08em;
-  margin: 0 0 14px;
-  padding: 5px 0 5px 14px;
-  border-left: 3px solid var(--gold);
-  background: linear-gradient(90deg, rgba(100,65,0,.15), transparent 60%);
-  border-radius: 0 var(--r) var(--r) 0;
+/* 标题行 */
+.digest-raw .rab-header {
+  display: flex; align-items: center; gap: 8px; padding: 10px 18px;
+  background: linear-gradient(90deg, rgba(130,82,0,.32), rgba(90,55,0,.14) 60%, transparent);
+  border-bottom: 1px solid rgba(180,140,50,.2);
 }
-.digest-raw .rab-title::after { display: none; }
-/* 三个玩家纵向排列，玩家之间留出明显间距 */
-.digest-raw .rab-players {
-  display: flex; flex-direction: column; gap: 22px;
-  padding-left: 14px;
+.digest-raw .rab-header-icon { font-size: .95rem; line-height: 1; }
+.digest-raw .rab-header-title {
+  font-family: var(--font-serif); font-size: .92rem; font-weight: 700;
+  color: var(--gold-light); letter-spacing: .12em; flex: 1;
 }
-/* 每个玩家独立一块：名字在上，选项在下 */
-.digest-raw .rab-player-row {
-  display: flex; flex-direction: column; gap: 6px;
+/* 玩家列表 */
+.digest-raw .rab-players { display: flex; flex-direction: column; }
+/* 方案H：整行横向，名字竖排在左侧 */
+.digest-raw .rab-player-row.style-h {
+  display: flex; align-items: stretch; gap: 0; padding: 0;
 }
-/* 玩家名：与 raw-player 同款风格 */
-.digest-raw .rab-pname {
-  font-family: var(--font-serif); font-size: 1rem; font-weight: 700;
-  color: #f0cfa0; letter-spacing: .04em;
-  padding: 3px 10px;
-  border-left: 3px solid rgba(200,100,50,.5);
-  background: rgba(70,25,10,.18);
-  border-radius: 0 var(--r) var(--r) 0;
-  margin-bottom: 4px;
+.digest-raw .rab-player-row.style-h + .rab-player-row.style-h {
+  position: relative;
 }
-/* 选项列表：纵向，每项之间留出间距 */
-.digest-raw .rab-opts {
-  display: flex; flex-direction: column; gap: 8px;
-  padding-left: 8px;
+.digest-raw .rab-player-row.style-h + .rab-player-row.style-h::before {
+  content: '· · · · · · · · · · · · · · · · · · · · · · · ·';
+  position: absolute; top: 0; left: 28px; right: 0;
+  font-size: .6rem; color: rgba(180,140,50,.25);
+  letter-spacing: .18em; line-height: 0; overflow: hidden; height: 1px;
+  pointer-events: none;
 }
-/* 每条选项：编号 + 文字同行 */
+/* 竖排名字列 */
+.digest-raw .rab-pname-h-vert {
+  width: 28px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  padding: 14px 0;
+  border-right: 1px dotted rgba(180,140,50,.22);
+}
+.digest-raw .rab-pname-h-char {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: var(--font-serif);
+  font-size: .82rem; font-weight: 700;
+  color: var(--gold-dim); letter-spacing: .2em; line-height: 1;
+  white-space: nowrap;
+}
+/* 内容区 */
+.digest-raw .rab-pname-h-content { flex: 1; padding: 13px 18px 13px 14px; }
+/* 选项 */
+.digest-raw .rab-opts { display: flex; flex-direction: column; gap: 2px; }
 .digest-raw .rab-opt {
-  display: flex; align-items: baseline; gap: 7px;
-  line-height: 1.75;
+  display: grid; grid-template-columns: 22px 1fr;
+  align-items: baseline; gap: 0 7px; padding: 4px 0; line-height: 1.78;
 }
 .digest-raw .rab-opt-num {
-  font-family: var(--font-serif); font-size: .92rem;
-  color: var(--gold-light); flex-shrink: 0; font-weight: 700;
+  font-family: var(--font-serif); font-size: .9rem;
+  color: var(--gold); font-weight: 700; text-align: center;
 }
-.digest-raw .rab-opt-txt {
-  font-family: var(--font-serif); font-size: .95rem;
-  color: #e8dcc4; line-height: 1.75; letter-spacing: .015em;
+.digest-raw .rab-opt-body { line-height: 1.78; }
+.digest-raw .rab-opt-name {
+  color: var(--text-main); font-size: .92rem; font-weight: 600; letter-spacing: .02em;
 }
-.digest-raw .rab-opt--custom .rab-opt-txt {
-  color: var(--text-sub);
+.digest-raw .rab-opt-sep { color: var(--text-dim); margin: 0 3px; font-size: .85rem; }
+.digest-raw .rab-opt-note { color: var(--text-sub); font-size: .87rem; line-height: 1.75; }
+/* A/B/C 分支 */
+.digest-raw .rab-branch-list {
+  grid-column: 2; display: flex; flex-direction: column; gap: 3px; margin-top: 5px;
 }
-/* A/B/C 分支：缩进，字号小半档，颜色淡一档 */
-.digest-raw .rab-opt--branch {
-  padding-left: 24px;
-  margin-top: 2px;
+.digest-raw .rab-branch {
+  display: flex; align-items: baseline; gap: 7px; padding: 4px 10px;
+  background: rgba(100,70,10,.1); border-radius: 4px;
+  border-left: 2px solid rgba(180,140,60,.22);
 }
-.digest-raw .rab-opt--branch .rab-opt-txt {
-  font-size: .88rem;
-  color: rgba(200,184,154,0.68);
+.digest-raw .rab-branch-label {
+  font-size: .78rem; font-weight: 700; color: var(--gold-dim); flex-shrink: 0; min-width: 14px;
 }
-/* 破折号后注解：淡一档 */
-.digest-raw .rab-opt-note {
-  color: rgba(200,184,154,0.68);
-}
+.digest-raw .rab-branch-text { font-size: .85rem; color: rgba(200,184,154,.72); line-height: 1.65; }
+/* 等待行 */
 .digest-raw .rab-wait {
-  font-family: var(--font-serif); font-size: .88rem;
-  color: var(--text-dim); letter-spacing: .06em;
-  padding: 4px 0 4px 14px;
-  margin-top: 16px;
-  opacity: .5;
+  padding: 9px 18px; border-top: 1px solid rgba(140,100,30,.13);
+  font-size: .81rem; color: var(--text-dim); letter-spacing: .06em; opacity: .6; text-align: center;
 }
 /* ⏳ 独立等待行（action-block 外部） */
 .digest-raw .raw-wait {
   font-family: var(--font-serif); font-size: .88rem;
-  color: var(--text-dim); letter-spacing: .06em;
-  margin-top: 20px;
-  opacity: .45;
+  color: var(--text-dim); letter-spacing: .06em; margin-top: 20px; opacity: .45;
+}
+/* 移动端适配 */
+@media (max-width: 640px) {
+  .digest-raw .rab-pname-h-vert { width: 24px; padding: 11px 0; }
+  .digest-raw .rab-pname-h-char { font-size: .76rem; }
+  .digest-raw .rab-pname-h-content { padding: 11px 13px 11px 12px; }
+  .digest-raw .rab-opt-name { font-size: .88rem; }
+  .digest-raw .rab-opt-note { font-size: .84rem; }
+  .digest-raw .rab-branch { padding: 3px 8px; }
+  .digest-raw .rab-branch-text { font-size: .82rem; }
 }
 
 
