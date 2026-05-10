@@ -170,6 +170,29 @@ window.SGParser = (function () {
         _applyOneTroopOp(op, result.cityOwnership);
       });
     });
+
+    // 应用 productionOps（产出△ buff）到 cityOwnership
+    result.changes.forEach(ch => {
+      (ch.productionOps || []).forEach(op => {
+        const entry = result.cityOwnership[op.city];
+        if (!entry) return;
+        if (!entry.productionBuffs) entry.productionBuffs = {};
+        op.buffs.forEach(b => {
+          if (b.expired) {
+            // 到期：删除该 type 的 buff
+            delete entry.productionBuffs[b.type];
+          } else if (b.value != null) {
+            // 写入/覆盖
+            entry.productionBuffs[b.type] = {
+              type:     b.type,
+              value:    b.value,
+              resource: b.resource,
+              remain:   b.remain,
+            };
+          }
+        });
+      });
+    });
   }
 
   // ─────────────────────────────────────────
@@ -656,6 +679,42 @@ window.SGParser = (function () {
         continue;
       }
 
+      // 产出△城名:屯田+45粮/5,开市+30金/4
+      if (/^产出△/.test(line)) {
+        anchor = null;
+        const rest = line.replace(/^产出△\s*/, '').trim();
+        // 格式：城名:buff串  （冒号全半角均支持）
+        const colonPos = rest.search(/[:：]/);
+        if (colonPos > 0) {
+          const cityName = rest.slice(0, colonPos).trim();
+          const buffStr  = rest.slice(colonPos + 1).trim();
+          const buffs = [];
+          buffStr.split(/[,，]/).forEach(seg => {
+            seg = seg.trim();
+            if (!seg) return;
+            // 到期格式：屯田-到期  开市-到期
+            const expM = seg.match(/^([^+-]+)-到期$/);
+            if (expM) { buffs.push({ type: expM[1].trim(), expired: true }); return; }
+            // 增益格式：屯田+45粮/5  开市+30金/4
+            const bufM = seg.match(/^([^+\-]+)[+]([0-9]+)([^/]+)\/([0-9]+)$/);
+            if (bufM) {
+              buffs.push({
+                type:     bufM[1].trim(),
+                value:    parseInt(bufM[2]),
+                resource: bufM[3].trim(),
+                remain:   parseInt(bufM[4]),
+              });
+              return;
+            }
+            // 宽容：无法解析的 seg 仍以原始字符串保存
+            buffs.push({ type: seg, raw: seg });
+          });
+          if (!change.productionOps) change.productionOps = [];
+          change.productionOps.push({ city: cityName, buffs });
+        }
+        continue;
+      }
+
       // 情报△（旧格式兼容）
       if (/^情报△/.test(line)) {
         anchor = null;
@@ -683,7 +742,7 @@ window.SGParser = (function () {
       if (anchor === 'breakdown') {
         // 检查是否遇到了新锚点行 —— 若是，退出 breakdown，让该行在下方 Step2 重新处理
         // （收支△本身也算新块，虽然不常见但容错）
-        if (/^(收支|府库|暗账|驻军|兵种|季度|情报)△/.test(line)) {
+        if (/^(收支|府库|暗账|驻军|兵种|季度|情报|产出)△/.test(line)) {
           anchor = null;
           // 不 continue，让代码继续往下执行 Step2 处理本行
         } else {

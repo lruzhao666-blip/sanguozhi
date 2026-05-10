@@ -862,6 +862,26 @@ window.SGMap = (function () {
       }
     }
 
+    // ── 当前产业（productionBuffs）── 仅玩家城显示
+    let prodHtml = '';
+    if (isPlayer) {
+      const buffs = ow?.productionBuffs;
+      const buffList = buffs ? Object.values(buffs) : [];
+      if (buffList.length > 0) {
+        const PROD_ICON = { '屯田': '🌾', '开市': '💰' };
+        const rows = buffList.map(b => {
+          const icon = PROD_ICON[b.type] || '📌';
+          return `<div class="sgt-row sgt-prod-buff">
+            <span class="sgt-lbl">${icon} ${_esc(b.type)}</span>
+            <span class="sgt-prod-val">+${b.value} ${_esc(b.resource)}/回合</span>
+            <span class="sgt-prod-remain">剩 ${b.remain} 回合</span>
+          </div>`;
+        }).join('');
+        prodHtml = `<div class="sgt-divider"></div>
+          <div class="sgt-prod-title">当前产业</div>${rows}`;
+      }
+    }
+
     _tooltip.innerHTML = `
       <div class="sgt-header">
         <span class="sgt-name" style="color:${ownerClr}">${_esc(city.name)}</span>
@@ -874,7 +894,7 @@ window.SGMap = (function () {
       <div class="sgt-row sgt-bonus">${bonusIcon} <span>${_esc(city.bonusKey)}</span></div>
       <div class="sgt-row sgt-owner" style="color:${ownerClr}">⚑ ${_esc(ownerStr)}</div>
       <div class="sgt-divider"></div>
-      ${holderHtml}${troopHtml}`;
+      ${holderHtml}${troopHtml}${prodHtml}`;
 
     _tooltip.classList.add('visible');
     _moveTip(e);
