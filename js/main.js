@@ -232,20 +232,22 @@
     const raw = document.getElementById('gm-content').value.trim();
     if (!raw) { showToast('⚠️ 内容不能为空'); return; }
 
-    // 回合号 = 当前最大回合 + 1（自动递增）
+    // 回合号：优先使用解析到的剧情标题回合数，失败则自动递增
     const nextRound = state.rounds.length
       ? state.rounds[state.rounds.length - 1].round + 1
       : 1;
 
     const parsed = SGParser.parse(raw);
-    parsed.round = nextRound;
+    const detectedRound = Number.isInteger(parsed.round) ? parsed.round : parseInt(parsed.round, 10);
+    const roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
+    parsed.round = roundNum;
 
     state.publishing = true;
     const btn = document.getElementById('btn-publish');
     btn.disabled = true; btn.textContent = '⏳ 发布中…';
 
     try {
-      const rd = { round: nextRound, roundTitle: '', parsed, rawContent: raw };
+      const rd = { round: roundNum, roundTitle: '', parsed, rawContent: raw };
       await publishRound(rd);
       await fetchAllRounds();
       renderAll();
@@ -255,7 +257,7 @@
       document.getElementById('parse-preview').classList.add('hidden');
 
       updateUndoBtn();
-      showToast(`✅ 第 ${nextRound} 回合已发布！`);
+      showToast(`✅ 第 ${roundNum} 回合已发布！`);
     } catch (e) {
       console.error('[SG] 发布失败:', e);
       showToast('❌ 发布失败，请检查网络');
@@ -1863,11 +1865,13 @@
     const res = document.getElementById('parse-result');
     if (!box || !res) return;
     const lines = parsed ? SGParser.summarize(parsed) : ['❌ 无法解析，请检查格式'];
-    // 显示下一回合号提示
+    // 显示回合号提示（优先解析结果）
     const nextRound = state.rounds.length
       ? state.rounds[state.rounds.length - 1].round + 1
       : 1;
-    const header = `<div class="pp-item"><strong>🎴 发布后将成为：</strong><span class="pp-ok">第 ${nextRound} 回合</span></div>`;
+    const detectedRound = Number.isInteger(parsed?.round) ? parsed.round : parseInt(parsed?.round, 10);
+    const roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
+    const header = `<div class="pp-item"><strong>🎴 发布后将成为：</strong><span class="pp-ok">第 ${roundNum} 回合</span></div>`;
     res.innerHTML = header + lines.map(l => `<div class="pp-item">${l}</div>`).join('');
     box.classList.remove('hidden');
   }
