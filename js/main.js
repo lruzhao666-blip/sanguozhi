@@ -1301,36 +1301,26 @@
     var sc        = GEN_STATUS_STYLES[statusKey] || GEN_STATUS_STYLES.healthy;
     var isDead    = statusKey === 'dead';
 
-    // tooltip 悬停提示
-    var titleTip = esc(g.name) + ' · ' + esc(g.status || '健康');
+    // 状态文字映射（仅用于 title tooltip）
+    var STATUS_LABEL = { healthy:'健康', tired:'疲劳', injured:'受伤', sick:'患病', dead:'阵亡' };
+    var statusLabel  = STATUS_LABEL[statusKey] || (g.status || '健康');
 
-    // ── 容器样式（完全由状态色决定）──
+    // ── 容器样式：颜色表示状态，只显示名字 ──
     var wrapStyle = 'display:inline-flex!important;align-items:center!important;'
-      + 'border-radius:5px;padding:2px 8px 2px 7px;'
-      + 'font-size:.74rem;font-family:inherit;transition:transform .15s;cursor:pointer;'
+      + 'border-radius:5px;padding:2px 9px;'
+      + 'font-size:.74rem;font-family:inherit;transition:transform .15s;cursor:default;'
       + 'border:1px solid ' + sc.bd + '!important;'
       + 'background:' + sc.bg + '!important;'
       + (isDead ? 'text-decoration:line-through;opacity:.5;' : '');
 
     var nameStyle = 'font-weight:700;color:' + sc.c + '!important;letter-spacing:.02em;';
 
-    var divStyle = 'display:inline-block;width:1px;height:.9em;margin:0 5px;'
-      + 'background:' + sc.bd + ';flex-shrink:0;opacity:.6;';
-
-    var statusStyle = 'font-size:.6rem;color:' + sc.c + '!important;opacity:.85;white-space:nowrap;';
-
-    // 状态文字映射
-    var STATUS_SHORT = { healthy:'健康', tired:'疲劳', injured:'受伤', sick:'患病', dead:'阵亡' };
-    var statusShort = STATUS_SHORT[statusKey] || (g.status || '健康');
-
-    // 结构：[名字] | [状态]
+    // 结构：仅名字，状态通过颜色体现；title 保留完整信息供原生 tooltip
     return '<span class="gen-tag" data-status="' + statusKey
       + '" data-name="' + esc(g.name) + '"'
-      + ' onclick="openGeneralDuties(\'' + esc(g.name) + '\',\'' + esc(g.status || '') + '\')"'
-      + ' style="' + wrapStyle + '" title="' + titleTip + '">'
+      + ' style="' + wrapStyle + '"'
+      + ' title="' + esc(g.name) + ' · ' + statusLabel + '">'
       + '<span style="' + nameStyle + '">' + esc(g.name) + '</span>'
-      + '<span style="' + divStyle + '"></span>'
-      + '<span style="' + statusStyle + '">' + esc(statusShort) + '</span>'
       + '</span>';
   }
 
