@@ -1313,11 +1313,10 @@
 
     var nameStyle = 'font-weight:700;color:' + sc.c + '!important;letter-spacing:.02em;';
 
-    // 结构：仅名字，状态通过颜色体现；title 保留完整信息供原生 tooltip
+    // 结构：仅名字，状态通过颜色体现；title 已移除（使用自定义 tooltip）
     return '<span class="gen-tag" data-status="' + statusKey
       + '" data-name="' + esc(g.name) + '"'
-      + ' style="' + wrapStyle + '"'
-      + ' title="' + esc(g.name) + ' · ' + statusLabel + '">'
+      + ' style="' + wrapStyle + '"'>
       + '<span style="' + nameStyle + '">' + esc(g.name) + '</span>'
       + '</span>';
   }
