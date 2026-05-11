@@ -2775,3 +2775,150 @@ header, nav, main, footer { position: relative; z-index: 1; }
   font-size: .74rem; color: var(--text-dim);
   opacity: .6; padding: 2px 0;
 }
+
+/* ══════════════════════════════════════════
+   武将档案悬浮面板 (.gtp-*)
+   设计语言同城池弹框（sgt-*）
+══════════════════════════════════════════ */
+#gen-tooltip {
+  position: fixed;
+  z-index: 9999;
+  width: 320px;
+  max-width: min(90vw, 340px);
+  border-radius: var(--rl);
+  padding: 0;
+  box-sizing: border-box;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s, transform .12s;
+  transform: translateY(6px);
+  background: rgba(7,5,12,.97);
+  border: 1px solid rgba(200,160,70,.20);
+  box-shadow:
+    0 16px 48px rgba(0,0,0,.92),
+    inset 0 1px 0 rgba(255,255,255,.04),
+    inset 0 0 0 1px rgba(255,255,255,.02);
+  font-family: var(--font-serif);
+  overflow: hidden;
+}
+#gen-tooltip.gtp-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── 顶部色条（档次色） ── */
+.gtp-tier-bar {
+  height: 3px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* ── 主体内边距容器 ── */
+.gtp-body {
+  padding: 11px 14px 13px;
+}
+
+/* ── 标题行：姓名 + 字 ── */
+.gtp-header {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+.gtp-name {
+  font-family: var(--font-serif);
+  font-size: 1.0rem;
+  font-weight: 900;
+  letter-spacing: .07em;
+  color: var(--text-main);
+}
+.gtp-courtesy {
+  font-size: .70rem;
+  color: var(--gold-dim);
+  letter-spacing: .04em;
+}
+
+/* ── 外号行 ── */
+.gtp-nickname {
+  font-size: .68rem;
+  color: var(--text-dim);
+  font-style: italic;
+  letter-spacing: .03em;
+  margin-bottom: 7px;
+}
+
+/* ── 徽章行（归属 + 档次） ── */
+.gtp-badges {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 9px;
+}
+.gtp-badge {
+  font-size: .60rem;
+  border-radius: 9px;
+  padding: 2px 8px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: .04em;
+  border: 1px solid transparent;
+}
+
+/* ── 分割线 ── */
+.gtp-divider {
+  height: 1px;
+  background: rgba(180,148,68,.15);
+  margin: 0 0 9px;
+}
+
+/* ── 生平文字 ── */
+.gtp-bio {
+  font-size: .74rem;
+  color: var(--text-sub);
+  line-height: 1.72;
+  margin-bottom: 10px;
+  font-family: var(--font-serif);
+}
+
+/* ── 适配职务区 ── */
+.gtp-roles-label {
+  font-size: .58rem;
+  color: var(--text-dim);
+  letter-spacing: .10em;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+.gtp-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 5px;
+}
+.gtp-role {
+  font-size: .66rem;
+  border-radius: 5px;
+  padding: 2px 8px;
+  border: 1px solid transparent;
+  line-height: 1.5;
+}
+/* 普通职务：金色调 */
+.gtp-role-normal {
+  background: rgba(180,140,30,.14);
+  border-color: rgba(180,140,30,.32);
+  color: #c8a850;
+}
+/* 反向警示（不宜/不可/慎用/慎于/慎防）：红色警示 */
+.gtp-role-warn {
+  background: rgba(180,30,30,.20);
+  border-color: rgba(200,60,60,.42);
+  color: #e07070;
+}
+
+/* ── 兜底（无档案）── */
+.gtp-empty {
+  font-size: .74rem;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 6px 0 2px;
+  letter-spacing: .04em;
+}
