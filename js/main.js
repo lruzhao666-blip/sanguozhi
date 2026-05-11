@@ -1316,7 +1316,7 @@
     // 结构：仅名字，状态通过颜色体现；title 已移除（使用自定义 tooltip）
     return '<span class="gen-tag" data-status="' + statusKey
       + '" data-name="' + esc(g.name) + '"'
-      + ' style="' + wrapStyle + '"'>
+      + ' style="' + wrapStyle + '">'
       + '<span style="' + nameStyle + '">' + esc(g.name) + '</span>'
       + '</span>';
   }
