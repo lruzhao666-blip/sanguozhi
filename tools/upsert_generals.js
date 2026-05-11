@@ -27,11 +27,11 @@ const fs   = require('fs');
 const path = require('path');
 
 // ── Supabase 配置 ──
-const SUPABASE_URL = 'https://smiifcbmmtolimtaxpip.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaWlmY2JtbXRvbGltdGF4cGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTM4MzgsImV4cCI6MjA5Mzg4OTgzOH0.9pMRTaWDqXqWb_Ttti93dj8-FXgQMjAAbIZL5E-zN54';
-// ⚠️  正式入库需要 service_role key，请项目负责人替换上方 SUPABASE_KEY
-// anon key 只有读权限，写入会返回 403
-// service_role key 在 Supabase 后台 → Settings → API → service_role（保密，不要提交到 git）
+// 优先读取环境变量 SUPABASE_URL / SUPABASE_SERVICE_KEY，方便 CI 或命令行覆盖
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://smiifcbmmtolimtaxpip.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY
+  || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaWlmY2JtbXRvbGltdGF4cGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTM4MzgsImV4cCI6MjA5Mzg4OTgzOH0.9pMRTaWDqXqWb_Ttti93dj8-FXgQMjAAbIZL5E-zN54';
+// ⚠️  正式入库请通过环境变量传入 service_role key，anon key 只有读权限
 
 // ── 字段校验 ──
 const REQUIRED_FIELDS  = ['name', 'faction_hint', 'tier', 'biography', 'suitable_roles'];

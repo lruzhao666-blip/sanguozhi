@@ -1,0 +1,2626 @@
+[
+  {
+    "name": "孟优",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "孟获之弟。演义中随兄长参与南中叛乱，多次被诸葛亮擒获，最终随兄长一同归降蜀汉。",
+    "suitable_roles": [
+      "蛮兵副将",
+      "冲阵偏将",
+      "不宜单独统领大军"
+    ]
+  },
+  {
+    "name": "朵思大王",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "南蛮秃龙洞主。演义中助孟获抗击蜀军，利用毒泉阻挡诸葛亮，后死于乱军之中。",
+    "suitable_roles": [
+      "蛮兵头领",
+      "据险据守",
+      "不可用作中原正规战"
+    ]
+  },
+  {
+    "name": "木鹿大王",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "南蛮八纳洞主。演义中善驱使猛兽作战，助孟获抗蜀，后被诸葛亮以喷火假兽击败战死。",
+    "suitable_roles": [
+      "驱兽奇兵",
+      "蛮军偏将",
+      "奇袭副将"
+    ]
+  },
+  {
+    "name": "兀突骨",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "乌戈国主。演义中身长丈二，统帅藤甲兵刀箭不入，后被诸葛亮设计引入盘蛇谷火攻烧死。",
+    "suitable_roles": [
+      "藤甲统领",
+      "先锋冲阵",
+      "极惧火攻忌入狭谷"
+    ]
+  },
+  {
+    "name": "沙摩柯",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "五溪蛮王。夷陵之战受刘备招安助蜀伐吴，射杀东吴猛将甘宁，兵败后被周泰斩杀。",
+    "suitable_roles": [
+      "蛮族首领",
+      "弓弩偏将",
+      "不宜总领大军"
+    ]
+  },
+  {
+    "name": "邢道荣",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "零陵从事，刘备南征时领兵抗拒，为张飞所擒。史载寥寥，演义中渲染较多。",
+    "suitable_roles": [
+      "守城副将",
+      "剿匪小将",
+      "压阵协同"
+    ]
+  },
+  {
+    "name": "韩玄",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "长沙太守。刘备南征荆州时，韩玄见大势已去，开城投降。演义中被魏延所杀。",
+    "suitable_roles": [
+      "一郡太守",
+      "安抚地方",
+      "性急猜忌不宜统御骄将"
+    ]
+  },
+  {
+    "name": "金旋",
+    "courtesy_name": "元机",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "京兆人，武陵太守。刘备南征荆南四郡时，金旋兵败战死或投降。史载不详。",
+    "suitable_roles": [
+      "一郡太守",
+      "文官属吏"
+    ]
+  },
+  {
+    "name": "赵范",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "桂阳太守。刘备南征时投降赵云，欲将寡嫂樊氏配与赵云被拒。后逃亡不知所踪。",
+    "suitable_roles": [
+      "一郡太守",
+      "地方政务",
+      "首鼠两端慎用"
+    ]
+  },
+  {
+    "name": "刘度",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "零陵太守。刘备军至，刘度听从其子刘贤之言派兵抵抗，兵败后开城投降。",
+    "suitable_roles": [
+      "一郡太守",
+      "安抚地方",
+      "不宜领兵野战"
+    ]
+  },
+  {
+    "name": "蒯越",
+    "courtesy_name": "异度",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "襄阳人。初随何进，后辅佐刘表平定荆州。刘表死后劝刘琮降曹，官至光禄勋。",
+    "suitable_roles": [
+      "军师谋主",
+      "劝降说客",
+      "内政谋划",
+      "不宜临阵斗将"
+    ]
+  },
+  {
+    "name": "蒯良",
+    "courtesy_name": "子柔",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "襄阳人。为刘表定下安抚荆楚之策。孙坚跨江击刘表时，献计设伏射杀孙坚。",
+    "suitable_roles": [
+      "参谋划策",
+      "伏击参军",
+      "不宜前线冲阵"
+    ]
+  },
+  {
+    "name": "蔡瑁",
+    "courtesy_name": "德珪",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "襄阳人。荆州豪族，深得刘表信任。刘表死后拥立刘琮并降曹操，任水军大都督。",
+    "suitable_roles": [
+      "水军统帅",
+      "州郡大员",
+      "豪强领袖",
+      "权心过重慎防擅权"
+    ]
+  },
+  {
+    "name": "张允",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "刘表外甥。与蔡瑁交好，排挤刘琦。降曹操后参与统领水军。演义中遭周瑜反间计被斩。",
+    "suitable_roles": [
+      "水军副将",
+      "水军校尉",
+      "才能平庸不宜独当一面"
+    ]
+  },
+  {
+    "name": "文聘",
+    "courtesy_name": "仲业",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "南阳宛人。本刘表大将，荆州降后归曹操。镇守江夏数十年，威恩并济，屡拒关羽、孙权，名震敌国。",
+    "suitable_roles": [
+      "独当一面之大将",
+      "镇守要冲",
+      "宿将防守",
+      "忠臣不宜轻调"
+    ]
+  },
+  {
+    "name": "王粲",
+    "courtesy_name": "仲宣",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "山阳高平人。建安七子之一，博闻强记。初依刘表，后劝刘琮降曹。深受曹操赏识，著有《英雄记》。",
+    "suitable_roles": [
+      "记室参军",
+      "起草檄文",
+      "文廷清议",
+      "手无缚鸡之力不可用武"
+    ]
+  },
+  {
+    "name": "伊籍",
+    "courtesy_name": "机伯",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "精英",
+    "biography": "山阳人。初依刘表，暗中结交刘备。后随刘备入蜀，与诸葛亮、法正等共造《蜀科》，善于应对。",
+    "suitable_roles": [
+      "外交使节",
+      "舌战名士",
+      "律法编纂",
+      "不宜统兵"
+    ]
+  },
+  {
+    "name": "糜竺",
+    "courtesy_name": "子仲",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "精英",
+    "biography": "东海朐人。徐州巨富，散尽家财资助刘备，并将妹嫁与刘备。入蜀后拜安汉将军，班在诸葛亮之上。",
+    "suitable_roles": [
+      "筹集钱粮",
+      "安抚内政",
+      "外交使节",
+      "雍容儒雅不宜领军"
+    ]
+  },
+  {
+    "name": "糜芳",
+    "courtesy_name": "子方",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "东海朐人，糜竺之弟。随刘备征战多年。守南郡时因畏惧关羽责罚而献城降吴，致关羽败亡。",
+    "suitable_roles": [
+      "后勤辎重",
+      "守城副将",
+      "临危易惧不可独委重任"
+    ]
+  },
+  {
+    "name": "简雍",
+    "courtesy_name": "宪和",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "常规",
+    "biography": "涿郡人。刘备同乡，自幼相随。性情简傲跌宕，善于游说。入蜀时说降刘璋，拜昭德将军。",
+    "suitable_roles": [
+      "游说招降",
+      "使者外交",
+      "行事不羁不宜严军纪"
+    ]
+  },
+  {
+    "name": "孙乾",
+    "courtesy_name": "公祐",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "常规",
+    "biography": "北海人。经郑玄推荐出仕刘备，常作为使节往来于袁绍、刘表之间，应对得体。",
+    "suitable_roles": [
+      "外交使节",
+      "奔走联络",
+      "不宜统兵野战"
+    ]
+  },
+  {
+    "name": "陈到",
+    "courtesy_name": "叔至",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "精英",
+    "biography": "汝南人。随刘备身经百战，名位亚于赵云，统帅精锐白毦兵。后督永安，严密防守东吴。",
+    "suitable_roles": [
+      "护卫亲卫",
+      "精锐统领",
+      "镇守要冲",
+      "死战断后"
+    ]
+  },
+  {
+    "name": "张翼",
+    "courtesy_name": "伯恭",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "精英",
+    "biography": "犍为武阳人。历任庲降都督、左车骑将军。随姜维北伐，常进直言劝其缓兵。蜀亡后死于钟会之乱。",
+    "suitable_roles": [
+      "一州都督",
+      "大军副将",
+      "绥靖边疆",
+      "执法严苛易生民怨"
+    ]
+  },
+  {
+    "name": "张嶷",
+    "courtesy_name": "伯岐",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "精英",
+    "biography": "巴郡南充人。平定南中多次叛乱，恩威并施，深得蛮人拥戴。后随姜维北伐，力战徐质，阵亡殉国。",
+    "suitable_roles": [
+      "安南都督",
+      "抚慰异族",
+      "死战先锋",
+      "死节之将"
+    ]
+  },
+  {
+    "name": "句扶",
+    "courtesy_name": "孝兴",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "常规",
+    "biography": "巴西汉昌人。随蜀汉征战屡建战功，官至左将军，时人称前有王、句，后有张、廖。",
+    "suitable_roles": [
+      "统兵大将",
+      "副将协同",
+      "守城宿将"
+    ]
+  },
+  {
+    "name": "傅佥",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "常规",
+    "biography": "义阳人，傅肜之子。姜维赞其胆勇过人。魏灭蜀之战时坚守阳安关，遭部将出卖，力战而死。",
+    "suitable_roles": [
+      "险关守将",
+      "死战先锋",
+      "忠烈赴死"
+    ]
+  },
+  {
+    "name": "罗宪",
+    "courtesy_name": "令则",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "精英",
+    "biography": "襄阳人。蜀亡后，以孤军在永安拒守东吴陆抗长达半年，保全巴东。后仕晋，镇守边陲。",
+    "suitable_roles": [
+      "死守孤城之将",
+      "镇守要冲",
+      "防御大将",
+      "不屈良将"
+    ]
+  },
+  {
+    "name": "霍峻",
+    "courtesy_name": "仲邈",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "精英",
+    "biography": "南郡枝江人。刘备入蜀时，以数百人坚守葭萌关一年，击退刘璋军万余人并乘机斩首，以善守闻名。",
+    "suitable_roles": [
+      "死守孤城之将",
+      "险关宿将",
+      "奇袭副将",
+      "不宜大兵团野战统帅"
+    ]
+  },
+  {
+    "name": "吴懿",
+    "courtesy_name": "子远",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "精英",
+    "biography": "陈留人，刘璋旧将，降刘备后因妹为蜀汉皇后而受重用。历次北伐多有战功，官至车骑将军、督汉中。",
+    "suitable_roles": [
+      "独当一面之大将",
+      "统领后军",
+      "镇守要冲",
+      "外戚重臣"
+    ]
+  },
+  {
+    "name": "吴班",
+    "courtesy_name": "元雄",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "常规",
+    "biography": "陈留人，吴懿族弟。性情豪快，随刘备伐吴及诸葛亮北伐，屡有战功，官至骠骑将军。",
+    "suitable_roles": [
+      "冲锋骁将",
+      "大军副将",
+      "猛将先锋"
+    ]
+  },
+  {
+    "name": "雷铜",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "常规",
+    "biography": "刘璋旧将。刘备入蜀时战败归降。汉中之战随张飞击退张郃，后在下辩被张郃击杀。",
+    "suitable_roles": [
+      "川军偏将",
+      "协同冲阵",
+      "不宜单挑名将"
+    ]
+  },
+  {
+    "name": "吴兰",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "蜀",
+    "tier": "常规",
+    "biography": "刘璋旧将。随雷铜降刘备。汉中之战时屯兵下辩，被曹洪、曹休大败，战死乱军中。",
+    "suitable_roles": [
+      "步军副将",
+      "营寨守将",
+      "不宜统帅重兵"
+    ]
+  },
+  {
+    "name": "杨任",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "张鲁部将。曹操攻汉中时，与杨昂固守阳平关，多次击退曹军。后遭曹操奇袭，战死。",
+    "suitable_roles": [
+      "险关守将",
+      "统兵副将",
+      "坚守要冲"
+    ]
+  },
+  {
+    "name": "杨昂",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "张鲁部将。随张卫拒曹操于阳平关，出关劫营反遭大败。演义中被张郃所斩。",
+    "suitable_roles": [
+      "劫营偏将",
+      "关卡副将",
+      "轻率出击易中伏"
+    ]
+  },
+  {
+    "name": "杨松",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "张鲁部下谋士。演义中极度贪财，先后收受刘备、曹操贿赂，进谗言陷害马超、庞德，后被曹操以卖主求荣处斩。",
+    "suitable_roles": [
+      "内廷进谗",
+      "收受金帛",
+      "贪财小人绝不可委以重任"
+    ]
+  },
+  {
+    "name": "张鲁",
+    "courtesy_name": "公祺",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "沛国丰人。割据汉中近三十年，以五斗米道教化政教合一，民心安定。后降曹操，得封万户侯。",
+    "suitable_roles": [
+      "一方割据",
+      "教化民众",
+      "安抚内政",
+      "不宜亲自督军交战"
+    ]
+  },
+  {
+    "name": "阎圃",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "张鲁功曹。极力劝阻张鲁称王。曹操攻汉中时，劝张鲁避其锋芒，后随主降曹，封列侯。",
+    "suitable_roles": [
+      "州府谋士",
+      "明辨时局",
+      "安抚内政"
+    ]
+  },
+  {
+    "name": "庞德",
+    "courtesy_name": "令明",
+    "nickname": "白马将军",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "南安豲道人。初从马腾、马超，勇冠凉州。归曹操后参加樊城之战，抬棺决死，射中关羽前额，被擒拒降而死。",
+    "suitable_roles": [
+      "死战先锋",
+      "骑兵锐将",
+      "单挑斩将",
+      "性烈拒降不宜和谈"
+    ]
+  },
+  {
+    "name": "马腾",
+    "courtesy_name": "寿成",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "扶风茂陵人，伏波将军马援之后。据守凉州，与韩遂结义后反目。入朝任卫尉，因马超起兵反曹，被诛灭三族。",
+    "suitable_roles": [
+      "一方诸侯",
+      "镇守边陲",
+      "骑兵统帅",
+      "易遭暗算算计"
+    ]
+  },
+  {
+    "name": "韩遂",
+    "courtesy_name": "文约",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "金城人。拥兵割据凉州三十年，九曲黄河。与马超联合反曹，中曹操离间计而败。后病死或遇刺身亡。",
+    "suitable_roles": [
+      "一方诸侯",
+      "联合结盟",
+      "安抚羌氐",
+      "性多疑忌易中反间计"
+    ]
+  },
+  {
+    "name": "马铁",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "马腾之子。随父入京，因其兄马超在关中起兵反曹，与父亲及全家百口一同被曹操诛杀。",
+    "suitable_roles": [
+      "家族从属",
+      "副将偏将",
+      "无将才"
+    ]
+  },
+  {
+    "name": "马休",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "马腾之子。奉车都尉。随父入朝，因马超起兵反叛，被曹操坐诛于邺城。",
+    "suitable_roles": [
+      "家族从属",
+      "文职属官"
+    ]
+  },
+  {
+    "name": "韩德",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "西凉大将。演义中领四子迎战诸葛亮北伐大军，被老将赵云连斩四子后，自己亦被刺落马下。",
+    "suitable_roles": [
+      "莽汉斗将",
+      "边陲偏将",
+      "武勇虚浮极易被斩"
+    ]
+  },
+  {
+    "name": "程银",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "关中军阀之一。与马超、韩遂等十部联合起兵抗拒曹操。渭南之战大败后逃入汉中，后降曹。",
+    "suitable_roles": [
+      "统兵将领",
+      "一方豪强",
+      "不宜独当一面"
+    ]
+  },
+  {
+    "name": "侯选",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "关中十将之一。随马超抗曹，兵败后逃往汉中依附张鲁。曹操平汉中后归降。",
+    "suitable_roles": [
+      "副将偏将",
+      "一方豪强",
+      "随波逐流"
+    ]
+  },
+  {
+    "name": "杨秋",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "关中十将之一。渭南兵败后降曹操。后随张郃平定西北叛乱，累功封讨寇将军。",
+    "suitable_roles": [
+      "边陲守将",
+      "讨叛偏将",
+      "协同作战"
+    ]
+  },
+  {
+    "name": "梁兴",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "关中十将之一。渭南兵败后逃回蓝田劫掠。夏侯渊与徐晃率军将其讨灭斩杀。",
+    "suitable_roles": [
+      "流寇首领",
+      "骑兵偏将",
+      "不宜正面决战"
+    ]
+  },
+  {
+    "name": "成宜",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "关中军阀之一。随马超抗曹，于渭水之战中战死乱军。",
+    "suitable_roles": [
+      "冲阵偏将",
+      "关中军阀",
+      "有勇无谋"
+    ]
+  },
+  {
+    "name": "李堪",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "关中军阀之一。随马超等反曹，渭南之战兵败，乱军之中被杀。",
+    "suitable_roles": [
+      "西凉骑将",
+      "随军偏将",
+      "庸将不宜重用"
+    ]
+  },
+  {
+    "name": "张横",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "关中十将之一。与马超合兵抗击曹操，渭南大败后战死。",
+    "suitable_roles": [
+      "关中豪强",
+      "统兵副将"
+    ]
+  },
+  {
+    "name": "张既",
+    "courtesy_name": "德容",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "冯翊高陵人。镇守雍凉十余年，施政安民，平定叛乱，威恩并济，使西北安定，为一代名臣。",
+    "suitable_roles": [
+      "一州刺史",
+      "安抚西北",
+      "平定叛乱",
+      "文臣谋士不宜前线斗将"
+    ]
+  },
+  {
+    "name": "郝昭",
+    "courtesy_name": "伯道",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "太原人。镇守陈仓，以三千兵力抵挡诸葛亮数万大军昼夜猛攻二十余日，令其无功而返，终劳疾而死。",
+    "suitable_roles": [
+      "死守孤城之将",
+      "器械防御",
+      "镇守要冲",
+      "不可出城浪战"
+    ]
+  },
+  {
+    "name": "王双",
+    "courtesy_name": "子全",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "陇西大将。使六十斤大刀，勇猛非常。诸葛亮出祁山时，被魏延设伏斩杀。",
+    "suitable_roles": [
+      "先锋斗将",
+      "猛将冲阵",
+      "有勇无谋极易中伏"
+    ]
+  },
+  {
+    "name": "曹真",
+    "courtesy_name": "子丹",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "传奇",
+    "biography": "沛国谯人，曹操养子。历任大都督、大司马。多次统兵抗击诸葛亮北伐，保全陇右。病逝洛阳。",
+    "suitable_roles": [
+      "三军大都督",
+      "镇西统帅",
+      "宗室亲信",
+      "不宜单骑斗将"
+    ]
+  },
+  {
+    "name": "曹休",
+    "courtesy_name": "文烈",
+    "nickname": "千里驹",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "沛国谯人。曹操赞为千里驹。统帅虎豹骑，镇守扬州抗吴。石亭之战中周鲂诈降计大败，惭恨发病而死。",
+    "suitable_roles": [
+      "统镇东南之将",
+      "宗室宿将",
+      "大都督",
+      "轻敌寡谋易中连环诈降计"
+    ]
+  },
+  {
+    "name": "曹爽",
+    "courtesy_name": "昭伯",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "曹真之子。明帝托孤重臣，大权独揽，骄奢淫逸。高平陵之变被司马懿以计夺权，终被灭三族。",
+    "suitable_roles": [
+      "权臣宗室",
+      "托孤辅政",
+      "志大才疏极易倾覆"
+    ]
+  },
+  {
+    "name": "司马师",
+    "courtesy_name": "子元",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "传奇",
+    "biography": "河内温县人。沉着坚毅。高平陵之变助父夺权。掌权后废魏帝曹芳，平毌丘俭叛乱。因眼疾发作病死。",
+    "suitable_roles": [
+      "独揽朝纲之权臣",
+      "内争政变",
+      "平叛统帅",
+      "冷酷无情不宜怀柔"
+    ]
+  },
+  {
+    "name": "司马昭",
+    "courtesy_name": "子上",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "传奇",
+    "biography": "司马师之弟。弑魏帝曹髦，独揽大权，路人皆知其心。遣钟会、邓艾灭蜀，受封晋王，不久病死。",
+    "suitable_roles": [
+      "独揽朝纲之权臣",
+      "统筹灭国战",
+      "平定内乱",
+      "弑君篡权惹人非议"
+    ]
+  },
+  {
+    "name": "司马炎",
+    "courtesy_name": "安世",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "司马昭之子。代魏称帝建立西晋。命王濬等南下灭吴，结束三国乱世，建立太康之治，晚年怠政。",
+    "suitable_roles": [
+      "开国之君",
+      "一统天下",
+      "收揽人心",
+      "贪图享乐易致衰败"
+    ]
+  },
+  {
+    "name": "钟会",
+    "courtesy_name": "士季",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "颍川长社人。智谋过人，助司马昭平诸葛诞。与邓艾分兵灭蜀，蜀亡后与姜维谋反，兵变被杀。",
+    "suitable_roles": [
+      "军师谋主",
+      "统兵主帅",
+      "书法名家",
+      "野心极大极易反叛"
+    ]
+  },
+  {
+    "name": "邓艾",
+    "courtesy_name": "士载",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "传奇",
+    "biography": "义阳棘阳人。屯田水利皆通，常与姜维交锋。偷渡阴平，翻山越岭直取成都，迫降刘禅。后遭钟会陷害被杀。",
+    "suitable_roles": [
+      "奇袭统帅",
+      "屯田能臣",
+      "独当一面之大将",
+      "口吃木讷不善结交权贵"
+    ]
+  },
+  {
+    "name": "邓忠",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "邓艾之子。随父征战，偷渡阴平攻绵竹，力战诸葛瞻。后与父亲同遭陷害被杀。",
+    "suitable_roles": [
+      "冲阵先锋",
+      "死战勇将",
+      "不宜单独统帅"
+    ]
+  },
+  {
+    "name": "师纂",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "司马昭亲信，任邓艾司马。随邓艾偷渡阴平，后参与陷害邓艾，终在兵变中被卫瓘所杀。",
+    "suitable_roles": [
+      "监军司马",
+      "暗中谋划",
+      "背主小人慎防生变"
+    ]
+  },
+  {
+    "name": "杜预",
+    "courtesy_name": "元凯",
+    "nickname": "杜武库",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "京兆杜陵人。博学多才，不长弓马。继羊祜统兵平吴，势如破竹灭亡东吴。精通历法并注《左传》。",
+    "suitable_roles": [
+      "灭国统帅",
+      "运筹帷幄",
+      "安抚内政",
+      "不通武艺绝不可临阵单挑"
+    ]
+  },
+  {
+    "name": "羊祜",
+    "courtesy_name": "叔子",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "泰山南城人。镇守荆州，宽以待吴，德化远播，与陆抗结交传为佳话。定下灭吴大计，病笃前举荐杜预。",
+    "suitable_roles": [
+      "镇南大都督",
+      "结好邻邦",
+      "深谋远虑",
+      "君子儒将不宜行阴险暗杀"
+    ]
+  },
+  {
+    "name": "王濬",
+    "courtesy_name": "士治",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "弘农湖县人。在益州大造舟舰。伐吴时统帅水军顺流而下，熔断铁锁破防，直捣建业迫降孙皓。",
+    "suitable_roles": [
+      "水军大都督",
+      "造船督造",
+      "顺流破敌",
+      "不宜参与朝堂党争"
+    ]
+  },
+  {
+    "name": "文鸯",
+    "courtesy_name": "次骞",
+    "nickname": "小赵云",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "文钦之子。骁勇绝伦。淮南叛乱时单骑冲阵，令司马师惊恐眼疾加剧。后降晋，破鲜卑，八王之乱时被夷三族。",
+    "suitable_roles": [
+      "万人敌之先锋",
+      "单骑冲阵",
+      "猛将无双",
+      "政治斗争中极易陨落"
+    ]
+  },
+  {
+    "name": "文钦",
+    "courtesy_name": "仲若",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "曹魏扬州刺史。与毌丘俭起兵反司马氏兵败奔吴。诸葛诞起兵时随吴军往救，因战术分歧被诸葛诞杀害。",
+    "suitable_roles": [
+      "州郡大员",
+      "统兵偏将",
+      "性情暴躁不宜联军共事"
+    ]
+  },
+  {
+    "name": "诸葛诞",
+    "courtesy_name": "公休",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "琅琊阳都人。魏国重臣。起兵据寿春反抗司马昭，兵败被杀。麾下数百人拒降死节，称诸葛公。",
+    "suitable_roles": [
+      "一镇诸侯",
+      "收揽死士",
+      "名士风度",
+      "猜忌同僚不宜坚守孤城"
+    ]
+  },
+  {
+    "name": "毌丘俭",
+    "courtesy_name": "仲恭",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "河东闻喜人。两次远征高句丽刻石纪功。因不满司马师专权，与文钦据淮南起兵，兵败逃亡被平民射杀。",
+    "suitable_roles": [
+      "镇守边关",
+      "远征异族",
+      "起兵勤王",
+      "不宜孤军深入腹地"
+    ]
+  },
+  {
+    "name": "王凌",
+    "courtesy_name": "彦云",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "太原祁人，王允之侄。历任州牧，石亭之战力战突围。晚年谋立楚王曹彪以推翻司马懿，事泄被迫自杀。",
+    "suitable_roles": [
+      "一州大都督",
+      "举事谋划",
+      "朝廷元老",
+      "行事不密极易败露"
+    ]
+  },
+  {
+    "name": "王基",
+    "courtesy_name": "伯舆",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "东莱曲城人。历任州刺史，平定毌丘俭、诸葛诞叛乱中屡献奇谋并坚守要冲。文武兼备。",
+    "suitable_roles": [
+      "统兵州将",
+      "谋略定策",
+      "安抚一方",
+      "不宜单挑"
+    ]
+  },
+  {
+    "name": "陈泰",
+    "courtesy_name": "玄伯",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "颍川许昌人，陈群之子。督雍凉兵马，多次抗击姜维，解狄道之围。因魏帝被弑悲愤吐血而亡。",
+    "suitable_roles": [
+      "镇西大将",
+      "雍凉统帅",
+      "忠臣良将",
+      "不屈名节忌陷篡权泥潭"
+    ]
+  },
+  {
+    "name": "郭淮",
+    "courtesy_name": "伯济",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "太原阳曲人。长期镇守雍凉，与诸葛亮、姜维屡次交锋，深通边防，威镇羌胡，官至车骑将军。",
+    "suitable_roles": [
+      "镇西宿将",
+      "防御反击",
+      "绥靖羌胡",
+      "不宜涉入中央党争"
+    ]
+  },
+  {
+    "name": "满宠",
+    "courtesy_name": "伯宁",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "山阳昌邑人。酷吏出身。长期镇守合肥，修筑合肥新城，多次击退孙权大军，使东吴无功而返。",
+    "suitable_roles": [
+      "修筑坚城",
+      "镇守东南",
+      "酷吏执法",
+      "不宜安抚柔弱降兵"
+    ]
+  },
+  {
+    "name": "田豫",
+    "courtesy_name": "国让",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "渔阳雍奴人。初从刘备，后归曹操。长年镇守北疆，击破鲜卑乌桓，威震塞外；南面亦曾击败孙权。",
+    "suitable_roles": [
+      "威震塞外之大将",
+      "镇守边疆",
+      "破胡骑将",
+      "淡泊名利不宜内争"
+    ]
+  },
+  {
+    "name": "牵招",
+    "courtesy_name": "子经",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "安平观津人。与刘备刎颈之交，后仕曹魏。镇守边关，威服鲜卑，使胡人不敢南下，深得边民爱戴。",
+    "suitable_roles": [
+      "镇守边关",
+      "安抚胡汉",
+      "北地宿将",
+      "不宜入朝卷入倾轧"
+    ]
+  },
+  {
+    "name": "臧霸",
+    "courtesy_name": "宣高",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "泰山华人。泰山群寇首领，归降曹操后委以青徐二州，镇守东方数十载，屡挫吴军，官至镇东将军。",
+    "suitable_roles": [
+      "泰山豪强首领",
+      "一州都督",
+      "镇守东南",
+      "半独立军阀慎防拥兵自重"
+    ]
+  },
+  {
+    "name": "李典",
+    "courtesy_name": "曼成",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "山阳巨野人。深明大义，好学问。合肥之战不计前嫌，与张辽击破孙权。多于阵后运粮统筹。",
+    "suitable_roles": [
+      "后勤辎重",
+      "深明大义副将",
+      "协同固守",
+      "不尚争功不宜冲阵斗狠"
+    ]
+  },
+  {
+    "name": "朱灵",
+    "courtesy_name": "文威",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "清河人。本袁绍部将，后归曹操，随征四方有功。因遭曹操猜忌曾被褫夺兵权，官至后将军。",
+    "suitable_roles": [
+      "统兵宿将",
+      "冲阵大将",
+      "副将协同",
+      "遭主君猜忌易遭夺权"
+    ]
+  },
+  {
+    "name": "路昭",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "曹操麾下将领。曾与朱灵奉命随刘备往徐州截击袁术。刘备叛变后，路昭等还都。",
+    "suitable_roles": [
+      "统兵偏将",
+      "监军同行",
+      "能力平庸镇不住豪强"
+    ]
+  },
+  {
+    "name": "王朗",
+    "courtesy_name": "景及",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "东海郯人。初为会稽太守拒孙策兵败。后仕魏，官至司徒，名儒巨笔。演义中被诸葛亮阵前骂死。",
+    "suitable_roles": [
+      "朝中元老",
+      "太守政务",
+      "起草典章",
+      "临阵舌战极易心碎而死"
+    ]
+  },
+  {
+    "name": "华歆",
+    "courtesy_name": "子鱼",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "平原高唐人。管宁割席之交。后为曹魏重臣，官至太尉。演义中逼汉献帝禅让，强搜伏皇后。",
+    "suitable_roles": [
+      "朝中重臣",
+      "起草文书",
+      "逼宫谋划",
+      "儒臣不宜涉险前线"
+    ]
+  },
+  {
+    "name": "钟繇",
+    "courtesy_name": "元常",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "颍川长社人。镇守关中，拉拢马腾，保障曹操后方。开创楷书，书法造诣极高，官至太傅。",
+    "suitable_roles": [
+      "镇西文臣",
+      "安抚关中诸将",
+      "内政能臣",
+      "书法大家不宜领兵肉搏"
+    ]
+  },
+  {
+    "name": "陈群",
+    "courtesy_name": "长文",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "颍川许昌人。创立九品中正制，制定《魏律》，影响深远。曹丕托孤大臣之一，官至司空。",
+    "suitable_roles": [
+      "朝堂宰辅",
+      "制定律法典章",
+      "提拔士族",
+      "不宜外调领军"
+    ]
+  },
+  {
+    "name": "程昱",
+    "courtesy_name": "仲德",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "东郡东阿人。智谋刚戾，随曹操征战献计无数。缺粮时曾掺人肉为军粮。刚直多结怨，官至卫尉。",
+    "suitable_roles": [
+      "军师谋主",
+      "奇谋毒计",
+      "死守城池",
+      "手段残忍极易丧失民心"
+    ]
+  },
+  {
+    "name": "刘晔",
+    "courtesy_name": "子扬",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "淮南成德人，汉室宗亲。屡献妙计，造发石车破袁绍营寨。预判极其精准，历仕三朝，晚年发狂而死。",
+    "suitable_roles": [
+      "军机参谋",
+      "器械督造",
+      "战略预判",
+      "多疑猜忌不宜和睦同僚"
+    ]
+  },
+  {
+    "name": "蒋济",
+    "courtesy_name": "子通",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "楚国平阿人。深通谋略，合肥之战献计保城。高平陵之变中劝曹爽投降，后见曹爽被灭族，惭愤而死。",
+    "suitable_roles": [
+      "战略参谋",
+      "外交通信",
+      "朝堂重臣",
+      "晚节受损易生内疚"
+    ]
+  },
+  {
+    "name": "司马朗",
+    "courtesy_name": "伯达",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "河内温县人，司马懿之兄。历任地方官，政绩卓著。随夏侯惇出征时军中瘟疫，亲自巡视染病而死。",
+    "suitable_roles": [
+      "一郡太守",
+      "治政安民",
+      "巡抚军医",
+      "不宜独领大军"
+    ]
+  },
+  {
+    "name": "司马孚",
+    "courtesy_name": "叔达",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "河内温县人，司马懿之弟。忠于魏室，历仕多朝不参与篡位，魏帝被弑时枕其尸痛哭，以魏臣自居。",
+    "suitable_roles": [
+      "朝廷元老",
+      "后勤度支",
+      "忠义文臣",
+      "不肯篡位夺权"
+    ]
+  },
+  {
+    "name": "杨修",
+    "courtesy_name": "德祖",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "弘农华阴人。才思敏捷，屡破曹操心意。因卷入夺嫡之争及鸡肋事件，被曹操以乱军心之名处死。",
+    "suitable_roles": [
+      "文秘书记",
+      "才思辩论",
+      "破解暗语",
+      "恃才傲物极易招致杀身"
+    ]
+  },
+  {
+    "name": "孔融",
+    "courtesy_name": "文举",
+    "nickname": "",
+    "faction_hint": "汉室",
+    "tier": "精英",
+    "biography": "鲁国人，孔子后裔。建安七子之一，曾任北海相。名重天下，性格狷介，屡次触怒曹操，终被弃市。",
+    "suitable_roles": [
+      "清流名士",
+      "举荐人才",
+      "文章辞赋",
+      "口无遮拦忌留于权臣身边"
+    ]
+  },
+  {
+    "name": "祢衡",
+    "courtesy_name": "正平",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "平原般人。才华横溢而性情刚傲，击鼓骂曹。被送至刘表处亦不合，后至黄祖处，因言语冒犯被斩。",
+    "suitable_roles": [
+      "击鼓骂敌",
+      "作赋属文",
+      "狂生舌战",
+      "惹是生非见谁骂谁"
+    ]
+  },
+  {
+    "name": "许攸",
+    "courtesy_name": "子远",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "南阳人。本袁绍谋士，官渡时因家属犯法叛逃曹操，献计火烧乌巢定鼎胜局。后居功自傲被曹操斩杀。",
+    "suitable_roles": [
+      "奇袭谋士",
+      "内应细作",
+      "倒戈献计",
+      "居功自傲必遭诛杀"
+    ]
+  },
+  {
+    "name": "田丰",
+    "courtesy_name": "元皓",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "钜鹿人。袁绍谋主。官渡之战极力反对应战被囚。袁绍败后，逢纪进谗，袁绍羞惭之下将田丰杀害。",
+    "suitable_roles": [
+      "军师谋主",
+      "战略定策",
+      "死谏直臣",
+      "性情刚直易遭谗言诬陷"
+    ]
+  },
+  {
+    "name": "沮授",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "广平人。袁绍谋主，定鼎河北之谋。官渡之战屡献奇谋皆不被纳。袁绍败退时被俘，拒降曹操，密谋逃跑被杀。",
+    "suitable_roles": [
+      "全军军师",
+      "战略长远划策",
+      "忠烈之士",
+      "主暗不用终遭倾覆"
+    ]
+  },
+  {
+    "name": "审配",
+    "courtesy_name": "正南",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "魏郡阴安人。袁绍重臣，刚正不可犯。死守邺城数月，城破被擒，面向北方引颈受刃，死节壮烈。",
+    "suitable_roles": [
+      "死守孤城之将",
+      "内政法度",
+      "刚烈名士",
+      "不可受降折节"
+    ]
+  },
+  {
+    "name": "逢纪",
+    "courtesy_name": "元图",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "南阳人。袁绍谋士，助夺冀州。排挤田丰。袁绍死后拥立袁尚，后出使袁谭军中，因袁尚拒发救兵被袁谭斩杀。",
+    "suitable_roles": [
+      "出谋夺权",
+      "进谗谋士",
+      "内斗党争",
+      "不顾大局极易败坏基业"
+    ]
+  },
+  {
+    "name": "郭图",
+    "courtesy_name": "公则",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "颍川人。袁绍谋士。官渡之战献计劫曹营失败，反诬张郃。后拥立袁谭，终与袁谭一同被曹操诛杀。",
+    "suitable_roles": [
+      "党争进谗",
+      "争储夺嫡",
+      "庸臣短视",
+      "出谋必败不可信其计策"
+    ]
+  },
+  {
+    "name": "辛评",
+    "courtesy_name": "仲治",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "颍川阳翟人。袁绍谋士。袁绍死后拥立袁谭，与袁尚对立。曹操破邺城时，其家属被审配尽数诛杀。",
+    "suitable_roles": [
+      "文臣谋士",
+      "内争从属",
+      "不能和衷共济"
+    ]
+  },
+  {
+    "name": "辛毗",
+    "courtesy_name": "佐治",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "辛评之弟。引曹操攻袁尚，家人被审配尽杀。城破以马鞭击审配首。后仕魏极陈利害，五丈原持节阻司马懿出战。",
+    "suitable_roles": [
+      "使节外交",
+      "持节监军",
+      "直言极谏",
+      "报私仇易生血光"
+    ]
+  },
+  {
+    "name": "颜良",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "袁绍麾下猛将。勇冠三军，白马之战中接连斩将，后被关羽突袭，万军之中刺死。",
+    "suitable_roles": [
+      "先锋猛将",
+      "冲阵斩将",
+      "河北名将",
+      "恃勇无备极易遇刺"
+    ]
+  },
+  {
+    "name": "文丑",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "袁绍麾下猛将，与颜良齐名。延津之战中曹操辎重诱敌，大败，乱军中阵亡（演义中被关羽所斩）。",
+    "suitable_roles": [
+      "先锋猛将",
+      "骑兵统率",
+      "河北名将",
+      "贪恋财物易中辎重诱敌计"
+    ]
+  },
+  {
+    "name": "张郃",
+    "courtesy_name": "儁乂",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "传奇",
+    "biography": "河间鄚人。本袁绍将，官渡降曹。戎马一生，巧变善阵，街亭大破马谡，诸葛亮亦惮之。后于木门道中伏箭死。",
+    "suitable_roles": [
+      "独当一面之大将",
+      "破阵统帅",
+      "宿将定军",
+      "不可强令追击"
+    ]
+  },
+  {
+    "name": "高览",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "河北四庭柱之一。官渡之战中遭郭图陷害，与张郃一同降曹。演义中汝南之战被赵云一枪刺落马下。",
+    "suitable_roles": [
+      "统兵大将",
+      "阵前勇将",
+      "随军冲阵",
+      "遇神将极易速死"
+    ]
+  },
+  {
+    "name": "淳于琼",
+    "courtesy_name": "仲简",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "颍川人。西园八校尉之一。官渡之战督运粮草屯乌巢，遭曹操奇袭大败被擒，割去耳鼻后斩杀。",
+    "suitable_roles": [
+      "后勤运粮",
+      "营寨守将",
+      "嗜酒误事绝不可委以咽喉重地"
+    ]
+  },
+  {
+    "name": "蒋义渠",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "袁绍部将。官渡兵败后，袁绍单骑退至黎阳北岸，蒋义渠将其迎入营中，收拢溃兵，使军势复振。",
+    "suitable_roles": [
+      "后方收拢残兵",
+      "营寨守将",
+      "忠节守固"
+    ]
+  },
+  {
+    "name": "韩猛",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "袁绍部将。官渡之战运送粮草，被徐晃截击大败，辎重尽毁。史书中称韩若，演义称韩猛。",
+    "suitable_roles": [
+      "粮草押运",
+      "匹夫之勇",
+      "不可委以护粮重任"
+    ]
+  },
+  {
+    "name": "鞠义",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "即麴义，凉州人。界桥之战统领先登死士，大破公孙瓒白马义从。居功自傲，后被袁绍所杀。",
+    "suitable_roles": [
+      "先锋破阵",
+      "步卒统帅",
+      "专克轻骑",
+      "恃才傲物慎防生变"
+    ]
+  },
+  {
+    "name": "田楷",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "公孙瓒任命的青州刺史。与刘备共抗袁绍，后随公孙瓒兵败，于易京之战中战死。",
+    "suitable_roles": [
+      "一州刺史",
+      "联军偏将",
+      "抵御牵制"
+    ]
+  },
+  {
+    "name": "严纲",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "公孙瓒部下大将。任冀州刺史。界桥之战时统帅骑兵，被麴义大破，阵亡。",
+    "suitable_roles": [
+      "骑兵偏将",
+      "先锋冲阵",
+      "轻骑突进易中弩阵伏击"
+    ]
+  },
+  {
+    "name": "单经",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "公孙瓒任命的兖州刺史。驻守平原，与刘备、陶谦共同牵制袁绍、曹操，后不知所踪。",
+    "suitable_roles": [
+      "外放州将",
+      "结盟牵制",
+      "不宜独当一面临阵大敌"
+    ]
+  },
+  {
+    "name": "邹丹",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "公孙瓒部将，任渔阳太守。与袁绍军交战于潞北，兵败被杀。",
+    "suitable_roles": [
+      "一郡太守",
+      "镇守北疆",
+      "偏将领兵"
+    ]
+  },
+  {
+    "name": "关靖",
+    "courtesy_name": "士起",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "太原人。公孙瓒长史，常进献阿谀逢迎之言，劝瓒筑易京坚守。瓒败死，关靖悔恨冲入袁军战死。",
+    "suitable_roles": [
+      "长史内政",
+      "死节之臣",
+      "逢迎进谗误国误民"
+    ]
+  },
+  {
+    "name": "田畴",
+    "courtesy_name": "子泰",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "右北平无终人。好读书，曾出使长安。隐居徐无山聚众保境。后为曹操北征乌桓引路破险，坚辞不受封赏。",
+    "suitable_roles": [
+      "向导奇兵",
+      "隐士安民",
+      "出使结交",
+      "淡泊名利不可强行封官"
+    ]
+  },
+  {
+    "name": "阎柔",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "燕国广阳人。自幼在乌桓、鲜卑中长大，得异族信任。率鲜卑攻灭公孙瓒，后降曹操，镇守北疆。",
+    "suitable_roles": [
+      "安抚异族",
+      "统领胡骑",
+      "边陲大将",
+      "不宜调离北境"
+    ]
+  },
+  {
+    "name": "阎志",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "阎柔之弟。官至上谷太守。随兄长常年镇守北疆，深受鲜卑信服。",
+    "suitable_roles": [
+      "一郡太守",
+      "安抚北地异族"
+    ]
+  },
+  {
+    "name": "苏由",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "袁尚部将。镇守邺城，曹操来攻时，苏由欲为内应，事泄逃奔曹操。",
+    "suitable_roles": [
+      "守城偏将",
+      "内应倒戈",
+      "行事不密易败露"
+    ]
+  },
+  {
+    "name": "审荣",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "审配之侄。邺城守将之一，见大势已去，暗开东门迎曹军入城，致审配兵败被擒。",
+    "suitable_roles": [
+      "守城偏将",
+      "暗通款曲开门献城",
+      "背叛亲族慎用"
+    ]
+  },
+  {
+    "name": "袁谭",
+    "courtesy_name": "显思",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "袁绍长子。因废长立幼与袁尚不和，袁绍死后兄弟火并。引曹操攻袁尚，后反叛曹操，于南皮被斩。",
+    "suitable_roles": [
+      "一州都督",
+      "内斗夺权",
+      "短视之将引狼入室"
+    ]
+  },
+  {
+    "name": "袁熙",
+    "courtesy_name": "显奕",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "袁绍次子。镇守幽州。袁谭袁尚兵败后逃往依附，因部将兵变逃往辽东，遭公孙康斩首送与曹操。",
+    "suitable_roles": [
+      "一州牧守",
+      "柔弱无谋极易生变"
+    ]
+  },
+  {
+    "name": "袁尚",
+    "courtesy_name": "显甫",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "袁绍幼子。深受袁绍喜爱并继位。与袁谭争斗兵败逃亡幽州、辽东，终被公孙康斩杀。",
+    "suitable_roles": [
+      "主君后嗣",
+      "内斗争权",
+      "才德不足难当大任"
+    ]
+  },
+  {
+    "name": "高干",
+    "courtesy_name": "元才",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "袁绍外甥，并州刺史。袁绍死后据并州降曹，不久复叛。壶关兵败后欲奔匈奴，途中被杀。",
+    "suitable_roles": [
+      "一州刺史",
+      "镇守并州",
+      "反复无常绝不可托付要害"
+    ]
+  },
+  {
+    "name": "蹋顿",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "辽西乌桓单于。骁武善战。收容袁尚，率众侵扰汉境。白狼山之战被张辽大破并斩杀。",
+    "suitable_roles": [
+      "异族单于",
+      "骑兵突击",
+      "蛮勇无谋易被斩首"
+    ]
+  },
+  {
+    "name": "楼班",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "乌桓单于丘力居之子。蹋顿死后随袁尚奔辽东，遭公孙康斩杀。",
+    "suitable_roles": [
+      "异族首领",
+      "统领胡骑"
+    ]
+  },
+  {
+    "name": "速仆丸",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "辽东乌桓大人。白狼山兵败后，随袁尚逃奔辽东，被公孙康斩首。",
+    "suitable_roles": [
+      "乌桓大人",
+      "胡骑偏将"
+    ]
+  },
+  {
+    "name": "轲比能",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "精英",
+    "biography": "鲜卑部落大人。一统鲜卑各部，数次进犯魏国边境，又曾与蜀汉相呼应。后遭曹魏刺客韩龙暗杀，部落随之瓦解。",
+    "suitable_roles": [
+      "鲜卑大单于",
+      "统帅异族联军",
+      "威慑边塞",
+      "需严防刺客暗杀"
+    ]
+  },
+  {
+    "name": "步度根",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "鲜卑单于。与轲比能长期不和，曾依附曹魏抗击轲比能，后被轲比能诱杀吞并。",
+    "suitable_roles": [
+      "鲜卑单于",
+      "边境结盟牵制",
+      "不宜单刀赴会"
+    ]
+  },
+  {
+    "name": "蒲头",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "鲜卑大人和连之子。和连死后继任单于，史载寥寥，不久部众离散。",
+    "suitable_roles": [
+      "鲜卑首领",
+      "边地胡人"
+    ]
+  },
+  {
+    "name": "弥加",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "东部鲜卑大人。曾随素利等抵抗曹魏，后被田豫击败。降魏后受封王爵。",
+    "suitable_roles": [
+      "鲜卑大人",
+      "胡人头领"
+    ]
+  },
+  {
+    "name": "苏仆延",
+    "courtesy_name": "",
+    "nickname": "峭王",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "乌桓大人，自称峭王。聚众数万。白狼山兵败后随袁尚逃至辽东，被公孙康处斩。",
+    "suitable_roles": [
+      "乌桓大人",
+      "统帅胡骑"
+    ]
+  },
+  {
+    "name": "沮鹄",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "沮授之子。守邯郸抵抗曹操，城破阵亡。演义中被张辽射死。",
+    "suitable_roles": [
+      "守城偏将",
+      "忠烈赴死"
+    ]
+  },
+  {
+    "name": "沮宗",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "沮授之弟。袁绍出兵讨曹操前，曾劝阻沮授勿进谏，免遭祸患，但未被采纳。",
+    "suitable_roles": [
+      "文官属吏",
+      "明哲保身"
+    ]
+  },
+  {
+    "name": "孙坚",
+    "courtesy_name": "文台",
+    "nickname": "江东猛虎",
+    "faction_hint": "吴",
+    "tier": "传奇",
+    "biography": "吴郡富春人。平黄巾、讨董卓，斩华雄击吕布，率先入洛阳获传国玉玺。跨江击刘表时中埋伏中箭身亡。",
+    "suitable_roles": [
+      "讨逆先锋大将",
+      "统兵主帅",
+      "江东基业奠基人",
+      "孤身轻出极易中伏身亡"
+    ]
+  },
+  {
+    "name": "孙翊",
+    "courtesy_name": "叔弼",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙坚三子，孙权之弟。骁勇悍果有孙策之风。任丹阳太守，因苛待部属，被左右亲信妫览、戴员暗杀。",
+    "suitable_roles": [
+      "冲锋骁将",
+      "一郡太守",
+      "暴躁苛刻极易遭暗杀"
+    ]
+  },
+  {
+    "name": "孙匡",
+    "courtesy_name": "季佐",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙坚四子。举茂才，未任官而早逝。娶曹操弟曹仁之女为妻。演义中被误写为定计放火之人。",
+    "suitable_roles": [
+      "联姻宗室",
+      "英年早逝"
+    ]
+  },
+  {
+    "name": "孙朗",
+    "courtesy_name": "早安",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙坚庶子。曾随吕范抵御曹休，因违令放火致军器尽毁，被孙权囚禁终生并改姓丁。",
+    "suitable_roles": [
+      "宗室从属",
+      "违令酿祸绝不可委派独当一面"
+    ]
+  },
+  {
+    "name": "孙静",
+    "courtesy_name": "幼平",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙坚之弟。孙策平江东时献计奇袭王朗后方。事定后辞官不就，留家终老。",
+    "suitable_roles": [
+      "宗族长老",
+      "出谋献策",
+      "淡泊名利"
+    ]
+  },
+  {
+    "name": "孙暠",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙静长子。孙策遇刺亡后，趁虚欲袭取会稽夺权，被虞翻以大义责退。",
+    "suitable_roles": [
+      "宗室夺权",
+      "图谋不轨慎防内乱"
+    ]
+  },
+  {
+    "name": "孙瑜",
+    "courtesy_name": "仲异",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "孙静次子。文武双全，抚恤部下，尤好读书。随周瑜征讨，多有战功。",
+    "suitable_roles": [
+      "宗室名将",
+      "统兵偏将",
+      "儒将风范"
+    ]
+  },
+  {
+    "name": "孙皎",
+    "courtesy_name": "叔朗",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "孙静三子。轻财善施。擒关羽时与吕蒙分统左右部，有战功。早卒。",
+    "suitable_roles": [
+      "大军副都督",
+      "宗室锐将",
+      "轻财好施"
+    ]
+  },
+  {
+    "name": "孙桓",
+    "courtesy_name": "叔武",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙河之子。夷陵之战坚守夷道抗拒刘备，闭门不战，待陆逊破敌后出击痛打落水狗。",
+    "suitable_roles": [
+      "死守城池",
+      "宗室后进",
+      "不宜单挑"
+    ]
+  },
+  {
+    "name": "孙韶",
+    "courtesy_name": "公礼",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "本姓俞，孙策赐姓孙。镇守广陵数十年，数退魏军。演义中不服徐盛，强行出战而胜。",
+    "suitable_roles": [
+      "镇守边地",
+      "宗室边将",
+      "恃勇骄狂"
+    ]
+  },
+  {
+    "name": "孙峻",
+    "courtesy_name": "子远",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙静曾孙。杀诸葛恪夺权，独揽朝政，骄奢淫逸，残害宗室名臣，病死。",
+    "suitable_roles": [
+      "宗室权臣",
+      "政变谋划",
+      "残暴专权易遭反噬"
+    ]
+  },
+  {
+    "name": "孙綝",
+    "courtesy_name": "子明",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙峻堂弟。继掌大权，废孙亮，立孙休。权倾朝野，终被孙休联合丁奉诛杀。",
+    "suitable_roles": [
+      "宗室权臣",
+      "废立君主",
+      "志大才疏必死于密谋"
+    ]
+  },
+  {
+    "name": "孙休",
+    "courtesy_name": "子烈",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "孙权六子。吴国第三任皇帝。登基后联合丁奉诛杀权臣孙綝，注重教化，建国学，惜英年早逝。",
+    "suitable_roles": [
+      "治国明君",
+      "暗中谋划夺权",
+      "推行文治",
+      "文弱帝王"
+    ]
+  },
+  {
+    "name": "孙皓",
+    "courtesy_name": "元宗",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙和之子，东吴末帝。初政明断，后暴虐无道，杀戮功臣。晋军伐吴时出降，封归命侯。",
+    "suitable_roles": [
+      "亡国之君",
+      "暴君酷虐",
+      "剥皮剖目致民心尽失"
+    ]
+  },
+  {
+    "name": "孙登",
+    "courtesy_name": "子高",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "孙权长子，吴国太子。贤明仁孝，结交多俊杰。英年早逝，临终上疏举荐诸臣，孙权悲痛不已。",
+    "suitable_roles": [
+      "储君太子",
+      "结交名士贤才",
+      "仁德之主",
+      "英年早逝"
+    ]
+  },
+  {
+    "name": "孙和",
+    "courtesy_name": "子孝",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙权三子。孙登死后立为太子，卷入南鲁党争，被废黜。孙皓即位后追尊为文皇帝。",
+    "suitable_roles": [
+      "储君争夺",
+      "党争中心",
+      "柔弱失宠"
+    ]
+  },
+  {
+    "name": "孙亮",
+    "courtesy_name": "子明",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙权幼子，东吴次帝。聪慧早熟，欲诛杀权臣孙綝事泄，被废为会稽王，后被逼自杀。",
+    "suitable_roles": [
+      "聪慧幼主",
+      "密谋除权臣",
+      "年幼无权易遭废黜"
+    ]
+  },
+  {
+    "name": "朱桓",
+    "courtesy_name": "休穆",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "吴郡人。濡须口抗魏，以少胜多大败曹仁。性情高傲狂妄，受不得委屈，曾因愤欲杀孙权使者。",
+    "suitable_roles": [
+      "独当一面之大将",
+      "镇守要冲",
+      "破敌统帅",
+      "性情暴戾不容置疑极易犯上"
+    ]
+  },
+  {
+    "name": "朱据",
+    "courtesy_name": "子范",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "吴郡人，孙权女婿。文武双全。卷入南鲁党争，遭孙弘陷害赐死。",
+    "suitable_roles": [
+      "宗室外戚",
+      "统兵将领",
+      "卷入党争易致杀身"
+    ]
+  },
+  {
+    "name": "全琮",
+    "courtesy_name": "子璜",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "吴郡钱塘人，尚孙鲁班。石亭之战统领偏军。为东吴外戚重臣，参与南鲁党争陷害太子。",
+    "suitable_roles": [
+      "外戚重臣",
+      "大都督",
+      "统兵将领",
+      "党争乱政祸及国本"
+    ]
+  },
+  {
+    "name": "吕岱",
+    "courtesy_name": "定公",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "广陵海陵人。长年镇守交州，平定叛乱，威震百越，高寿过百岁。晚年与陆逊同为东吴柱石。",
+    "suitable_roles": [
+      "镇南大将军",
+      "交州刺史",
+      "安抚平叛异族",
+      "高龄老将"
+    ]
+  },
+  {
+    "name": "步骘",
+    "courtesy_name": "子山",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "临淮淮阴人。交州刺史，平定交广。后代陆逊都督西陵，官至丞相，名重吴楚。",
+    "suitable_roles": [
+      "安南大都督",
+      "东吴丞相",
+      "镇守西陵",
+      "不涉险阵战"
+    ]
+  },
+  {
+    "name": "顾雍",
+    "courtesy_name": "元叹",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "吴郡吴人，蔡邕之徒。任东吴丞相十九年，寡言少语，处事公正，深得孙权倚重。",
+    "suitable_roles": [
+      "东吴丞相",
+      "治国理政",
+      "朝堂持重",
+      "不宜领兵打仗"
+    ]
+  },
+  {
+    "name": "顾邵",
+    "courtesy_name": "孝则",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "顾雍之子。博览群书，名重江东，与庞统相友善。出任豫章太守，政绩斐然，英年早逝。",
+    "suitable_roles": [
+      "一郡太守",
+      "结交名士",
+      "英年早逝"
+    ]
+  },
+  {
+    "name": "陆抗",
+    "courtesy_name": "幼节",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "传奇",
+    "biography": "陆逊之子。东吴最后的柱石。西陵之战大破步阐与晋将羊祜，保全东吴国门。与羊祜结交互通遗范。",
+    "suitable_roles": [
+      "大都督",
+      "独当一面之统帅",
+      "镇守西陵",
+      "明哲良将不救必亡之国"
+    ]
+  },
+  {
+    "name": "陆凯",
+    "courtesy_name": "敬风",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "陆逊族子。屡立战功，官至左丞相。孙皓暴政时，多次犯颜直谏，保全众多忠良。",
+    "suitable_roles": [
+      "东吴丞相",
+      "直言极谏",
+      "朝堂元老",
+      "忠烈直臣"
+    ]
+  },
+  {
+    "name": "陆绩",
+    "courtesy_name": "公纪",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "吴郡吴人。幼有怀橘之孝。通晓天文历法，在东吴舌战群儒时曾遭诸葛亮反驳。英年早逝。",
+    "suitable_roles": [
+      "天文历算",
+      "清议名士",
+      "舌战群儒",
+      "不通武略"
+    ]
+  },
+  {
+    "name": "陆瑁",
+    "courtesy_name": "子璋",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "陆逊之弟。极力劝阻孙权遣使前往公孙渊处，多进忠言。官至吏部尚书。",
+    "suitable_roles": [
+      "尚书选官",
+      "直言劝谏",
+      "文官属吏"
+    ]
+  },
+  {
+    "name": "张昭",
+    "courtesy_name": "子布",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "彭城人。孙策托孤重臣，主持江东内政。赤壁之战时主降，后遭孙权数次冷落，然依然直言极谏。",
+    "suitable_roles": [
+      "内政宰辅",
+      "托孤之臣",
+      "直谏朝臣",
+      "主和畏敌不宜决断征伐"
+    ]
+  },
+  {
+    "name": "张紘",
+    "courtesy_name": "子纲",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "广陵人。与张昭并称二张。为孙策制定立足江东之策。劝孙权迁都建业，文章传世。",
+    "suitable_roles": [
+      "战略规划",
+      "谋主文臣",
+      "起草典制",
+      "手无缚鸡之力"
+    ]
+  },
+  {
+    "name": "诸葛瑾",
+    "courtesy_name": "子瑜",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "琅琊阳都人，诸葛亮之兄。深受孙权信任，长年往来于吴蜀之间修复联盟，官至大将军。",
+    "suitable_roles": [
+      "联盟使节",
+      "大将军统兵",
+      "温厚长者",
+      "军事才能平庸数次兵败"
+    ]
+  },
+  {
+    "name": "诸葛恪",
+    "courtesy_name": "元逊",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "诸葛瑾之子。才思敏捷，平定丹阳山越。孙权托孤首辅，东兴大捷击败魏军。后大举伐魏新城兵败，被孙峻政变诛杀。",
+    "suitable_roles": [
+      "托孤权臣",
+      "统兵大元帅",
+      "平定山越",
+      "刚愎自用穷兵黩武必招奇祸"
+    ]
+  },
+  {
+    "name": "诸葛融",
+    "courtesy_name": "叔长",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "诸葛瑾幼子。承父风宽和。诸葛恪被诛时，遭孙峻派兵围捕，饮药自杀。",
+    "suitable_roles": [
+      "宗族从属",
+      "文职属官",
+      "卷入政变牵连致死"
+    ]
+  },
+  {
+    "name": "阚泽",
+    "courtesy_name": "德润",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "会稽山阴人。博学多才。演义中敢于单身前往曹营替黄盖献诈降书，临危不乱。官至太子太傅。",
+    "suitable_roles": [
+      "奉命诈降使节",
+      "儒学大师",
+      "太子太傅",
+      "不通武艺"
+    ]
+  },
+  {
+    "name": "严畯",
+    "courtesy_name": "曼才",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "彭城人。东吴大儒，性情淳厚。孙权欲以其代鲁肃督军，严畯坚辞不受，传为美谈。",
+    "suitable_roles": [
+      "大儒讲学",
+      "起草文书",
+      "自知之明不领军"
+    ]
+  },
+  {
+    "name": "薛综",
+    "courtesy_name": "敬文",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "沛郡竹邑人。东吴名臣，文章冠世。赤壁舌战群儒被诸葛亮驳斥。历任太子少傅。",
+    "suitable_roles": [
+      "文学辞赋",
+      "辅导储君",
+      "不涉军事"
+    ]
+  },
+  {
+    "name": "是仪",
+    "courtesy_name": "子羽",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "北海营陵人。东吴老臣，清廉正直。南鲁党争中不阿附权贵，孙权甚重之。",
+    "suitable_roles": [
+      "朝廷谏臣",
+      "尚书机要",
+      "清廉治世"
+    ]
+  },
+  {
+    "name": "胡综",
+    "courtesy_name": "伟则",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "汝南固始人。孙权少时玩伴。长年掌管诏命机密，作赋称美。东吴机要文章多出其手。",
+    "suitable_roles": [
+      "机要秘书",
+      "起草诏令",
+      "不统兵马"
+    ]
+  },
+  {
+    "name": "滕胤",
+    "courtesy_name": "承渊",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "北海剧人。东吴重臣。孙权临终受遗诏辅政。与吕据合谋讨伐专权的孙綝，事败被杀。",
+    "suitable_roles": [
+      "托孤重臣",
+      "尚书治事",
+      "密谋政变易遭反噬"
+    ]
+  },
+  {
+    "name": "吕范",
+    "courtesy_name": "子衡",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "汝南细阳人。孙策起兵时倾家相助。随主平定江东，洞口之战大破魏军，官至大司马，极尽荣华。",
+    "suitable_roles": [
+      "江东元勋大将",
+      "统兵大都督",
+      "内政谋划",
+      "奢靡过度好摆排场"
+    ]
+  },
+  {
+    "name": "张温",
+    "courtesy_name": "惠恕",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "吴郡人。出使蜀汉应对极佳。后遭孙权猜忌，借口其赞赏蜀政而遭废黜发配。",
+    "suitable_roles": [
+      "出使结盟",
+      "清议名士",
+      "才华外露易遭猜忌"
+    ]
+  },
+  {
+    "name": "骆统",
+    "courtesy_name": "公绪",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "会稽乌伤人。随陆逊破刘备于夷陵有功。常上疏言政，切中时弊。早卒。",
+    "suitable_roles": [
+      "副将统兵",
+      "直言上疏",
+      "英年早逝"
+    ]
+  },
+  {
+    "name": "虞翻",
+    "courtesy_name": "仲翔",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "会稽余姚人。善持矛，精通易学。骂退孙暠。因屡次醉酒犯上直言，数次被孙权发配流放交州。",
+    "suitable_roles": [
+      "狂士舌战",
+      "通晓易理",
+      "招降说客",
+      "狂傲无忌屡遭流放"
+    ]
+  },
+  {
+    "name": "陈武",
+    "courtesy_name": "子烈",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "庐江松滋人。身长七尺，统领精锐庐江上甲。合肥之战中，为掩护孙权撤退，奋力死战遇害。",
+    "suitable_roles": [
+      "近卫统领",
+      "精锐陷阵",
+      "死战断后",
+      "不可作为主帅调度全局"
+    ]
+  },
+  {
+    "name": "董袭",
+    "courtesy_name": "元代",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "会稽余姚人。勇猛刚烈。濡须之战率楼船拒曹操，遇暴风，坚不弃船弃职，终与船同沉遇难。",
+    "suitable_roles": [
+      "水军猛将",
+      "楼船统领",
+      "断后先锋",
+      "刚烈死节死不退缩"
+    ]
+  },
+  {
+    "name": "蒋钦",
+    "courtesy_name": "公奕",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "九江寿春人。早年随孙策平江东。讨平山越，征讨关羽时立功，返军途中病逝。生性俭约，折节下士。",
+    "suitable_roles": [
+      "水军大将",
+      "剿灭山越",
+      "清廉宿将",
+      "不可用于奇诡毒计"
+    ]
+  },
+  {
+    "name": "周鲂",
+    "courtesy_name": "子鱼",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "吴郡阳羡人。任鄱阳太守，断发赚曹休，于石亭之战大破魏军十万，威震江东。后在任上病逝。",
+    "suitable_roles": [
+      "诈降奇谋",
+      "一郡太守",
+      "平定山越",
+      "不宜刚猛斗将"
+    ]
+  },
+  {
+    "name": "朱异",
+    "courtesy_name": "季文",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "朱桓之子。随丁奉雪中奋短兵大破魏军。诸葛诞反叛时领兵往救，因战不利，被专权的孙綝枉杀。",
+    "suitable_roles": [
+      "统兵将领",
+      "承袭父风",
+      "常遭冤杀"
+    ]
+  },
+  {
+    "name": "留赞",
+    "courtesy_name": "正明",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "会稽长山人。东兴之战破魏军。临阵必披发奋臂高歌而战。随诸葛恪征淮南，遇伏高歌力战而死。",
+    "suitable_roles": [
+      "冲锋陷阵猛将",
+      "阵前高歌激励",
+      "死战先锋",
+      "无谋断后易全军覆没"
+    ]
+  },
+  {
+    "name": "钟离牧",
+    "courtesy_name": "子干",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "会稽山阴人。历任边郡太守，平定山越交趾叛乱，恩威并施，政绩颇佳，官至平魏大将军。",
+    "suitable_roles": [
+      "平叛边将",
+      "一郡太守",
+      "安抚百姓"
+    ]
+  },
+  {
+    "name": "贺齐",
+    "courtesy_name": "公苗",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "会稽山阴人。平定江南各路山越叛乱的头号功臣。生性奢靡，铠甲兵器极尽精美华丽。",
+    "suitable_roles": [
+      "平定山越统帅",
+      "威慑百越",
+      "整备华丽军容",
+      "极度奢靡耗费府库"
+    ]
+  },
+  {
+    "name": "士燮",
+    "courtesy_name": "威彦",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "精英",
+    "biography": "交趾广信人。割据交州四十余年，保境安民，尊奉东吴。治下学术繁荣，深受交州百姓爱戴。",
+    "suitable_roles": [
+      "割据南疆",
+      "保境安民",
+      "文化教化",
+      "不宜北伐用兵"
+    ]
+  },
+  {
+    "name": "士壹",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "士燮之弟，任合浦太守。士燮死后，其子士徽谋反，士壹受牵连被孙权流放免死，数年后病死。",
+    "suitable_roles": [
+      "边郡太守",
+      "宗族从属"
+    ]
+  },
+  {
+    "name": "张昌",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "东吴将领或小吏。史载寥寥。晋代另有同名者造反。",
+    "suitable_roles": [
+      "末流守将",
+      "处理杂务"
+    ]
+  },
+  {
+    "name": "黄祖",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "江夏太守。伏击射杀孙坚。长期抵御东吴，虽屡战屡败却能固守。终被孙权攻破江夏斩杀。",
+    "suitable_roles": [
+      "据守城池",
+      "伏击暗箭",
+      "屡败之将"
+    ]
+  },
+  {
+    "name": "苏飞",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "黄祖部将，任江夏都督。与甘宁交好，助其逃往东吴。黄祖败亡后被擒，甘宁叩头流血求免其一死。",
+    "suitable_roles": [
+      "结交豪杰",
+      "副将统领",
+      "难敌江东名将"
+    ]
+  },
+  {
+    "name": "陈就",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "黄祖部将。水军都督。孙权攻江夏时率水军迎战，被吕蒙单人劈将夺旗斩杀。",
+    "suitable_roles": [
+      "水军偏将",
+      "不堪一击易遭秒杀"
+    ]
+  },
+  {
+    "name": "邓龙",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "群雄",
+    "tier": "常规",
+    "biography": "黄祖部将。曾受命引舟师击孙权，被周瑜击败生擒。",
+    "suitable_roles": [
+      "水军偏将",
+      "抵御牵制"
+    ]
+  },
+  {
+    "name": "凌操",
+    "courtesy_name": "",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "吴郡余杭人，凌统之父。随孙策平江东。攻黄祖时作为先锋破敌，被甘宁射杀。",
+    "suitable_roles": [
+      "水战先锋",
+      "勇猛冲阵",
+      "轻敌突进极易中箭"
+    ]
+  },
+  {
+    "name": "祖茂",
+    "courtesy_name": "大荣",
+    "nickname": "",
+    "faction_hint": "吴",
+    "tier": "常规",
+    "biography": "孙坚部将。孙坚被徐荣击败时，祖茂戴上孙坚的赤帻引开追兵。演义中被华雄斩杀。",
+    "suitable_roles": [
+      "替身诱敌",
+      "护卫主将",
+      "忠烈死士"
+    ]
+  },
+  {
+    "name": "韩浩",
+    "courtesy_name": "元嗣",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "河内人。极力推动曹魏实行屯田制，富国强兵。长年担任护军将军，统领禁兵，忠勇可靠。",
+    "suitable_roles": [
+      "屯田校尉",
+      "中军护军",
+      "保障后勤",
+      "不宜单挑名将"
+    ]
+  },
+  {
+    "name": "史涣",
+    "courtesy_name": "公刘",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "沛国人。常与韩浩同管曹操禁军。官渡之战中随徐晃截击韩猛粮草有功。早卒。",
+    "suitable_roles": [
+      "禁军中护军",
+      "截粮偏将",
+      "营防宿卫"
+    ]
+  },
+  {
+    "name": "吕虔",
+    "courtesy_name": "子恪",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "精英",
+    "biography": "任城人。镇守泰山郡数十年，平定群寇，使海岱清平，深得曹操倚重。有佩剑赠予徐州刺史王祥之典故。",
+    "suitable_roles": [
+      "镇抚地方",
+      "剿匪平叛太守",
+      "安抚一郡",
+      "非破军大将"
+    ]
+  }
+]
