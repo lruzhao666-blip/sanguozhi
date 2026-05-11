@@ -1271,11 +1271,9 @@
     if (!listEl) return;
     if (!generals || !generals.length) {
       listEl.innerHTML = '<span class="gen-empty">——</span>';
-      if (window.initGenFilter) window.initGenFilter(idx);
       return;
     }
     listEl.innerHTML = generals.map(g => buildGenTag(g)).join('');
-    if (window.initGenFilter) window.initGenFilter(idx);
   }
 
   // ── 武将状态颜色（按钮颜色完全由状态决定，不区分稀有度）
