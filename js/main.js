@@ -1578,8 +1578,8 @@
       });
     }
     // 情报△（合并进 anchorGroups）
-    if (ch.intel && ch.intel.length) {
-      if (!groups['情报']) groups['情报'] = [];
+    if (ch.intel && ch.intel.length && !groups['情报']) {
+      groups['情报'] = [];
       ch.intel.forEach(s => groups['情报'].push({ label: s, deltas: [], text: s }));
     }
     // 兵种变动 ── res 字段用 type（步/弓/骑/水/蛮），val 保持原值供 valCls 正确配色
