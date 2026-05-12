@@ -3,22 +3,10 @@
  * upsert_generals.js — 武将数据批量入库脚本
  *
  * 用法：
+ *   export SUPABASE_URL="你的URL"
+ *   export SUPABASE_SERVICE_ROLE_KEY="你的SERVICE_ROLE_KEY"
  *   node upsert_generals.js <json文件路径>
- *   node upsert_generals.js generals_batch01.json
  *
- * JSON 格式（数组）：
- * [
- *   {
- *     "name": "关羽",
- *     "courtesy_name": "云长",
- *     "nickname": "美髯公",
- *     "faction_hint": "蜀",
- *     "tier": "传奇",
- *     "biography": "河东解县人...",
- *     "suitable_roles": ["独当一面之大将", "不宜外交,尤忌对吴事务"]
- *   },
- *   ...
- * ]
  */
 
 'use strict';
@@ -27,11 +15,15 @@ const fs   = require('fs');
 const path = require('path');
 
 // ── Supabase 配置 ──
-// 优先读取环境变量 SUPABASE_URL / SUPABASE_SERVICE_KEY，方便 CI 或命令行覆盖
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://smiifcbmmtolimtaxpip.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY
-  || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaWlmY2JtbXRvbGltdGF4cGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTM4MzgsImV4cCI6MjA5Mzg4OTgzOH0.9pMRTaWDqXqWb_Ttti93dj8-FXgQMjAAbIZL5E-zN54';
-// ⚠️  正式入库请通过环境变量传入 service_role key，anon key 只有读权限
+// 仅读取环境变量 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('❌ 缺少必要的环境变量：请设置 SUPABASE_URL 和 SUPABASE_SERVICE_ROLE_KEY');
+  process.exitCode = 1;
+  return;
+}
 
 // ── 字段校验 ──
 const REQUIRED_FIELDS  = ['name', 'faction_hint', 'tier', 'biography', 'suitable_roles'];
@@ -96,13 +88,15 @@ async function main() {
   const filePath = process.argv[2];
   if (!filePath) {
     console.error('用法: node upsert_generals.js <json文件路径>');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const absPath = path.resolve(filePath);
   if (!fs.existsSync(absPath)) {
     console.error(`文件不存在: ${absPath}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   let rows;
@@ -110,12 +104,14 @@ async function main() {
     rows = JSON.parse(fs.readFileSync(absPath, 'utf8'));
   } catch (e) {
     console.error(`JSON 解析失败: ${e.message}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   if (!Array.isArray(rows)) {
     console.error('JSON 根节点必须是数组');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   console.log(`\n📂 读取文件: ${absPath}`);
@@ -128,7 +124,8 @@ async function main() {
   });
   if (hasError) {
     console.error('\n⛔ 存在校验错误，已中止入库。请修正后重试。');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   console.log(`✅ 校验通过，准备入库...\n`);
 
@@ -147,7 +144,8 @@ async function main() {
     } catch (e) {
       console.error(`\n❌ 批次 ${Math.floor(i / BATCH_SIZE) + 1} 入库失败: ${e.message}`);
       console.error('⛔ 已中止，请检查错误后重试。');
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   }
 
