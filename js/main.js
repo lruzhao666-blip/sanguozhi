@@ -223,6 +223,22 @@
   function onPreview() {
     const raw = document.getElementById('gm-content').value.trim();
     if (!raw) { showToast('⚠️ 请先粘贴内容'); return; }
+
+    // Attempt compliance check if data exists from Action Summary
+    if (window.SentenceCompliance) {
+        // Here we ideally pull expectedPackage and preRolledDice from global state saved by ActionSummary
+        // For demonstration, we just simulate or leave empty if not available
+        const expectedPackage = window.lastSentencePack || null;
+        const preRolledDice = window.lastDiceRolls || null;
+
+        const warnings = window.SentenceCompliance.checkCompliance(raw, expectedPackage, preRolledDice);
+        if (warnings && warnings.length > 0) {
+            // Display warnings but don't block
+            warnings.forEach(w => showToast(w));
+            console.warn("Compliance Warnings:", warnings);
+        }
+    }
+
     const parsed = SGParser.parse(raw);
     showParsePreview(parsed);
   }
