@@ -821,6 +821,10 @@
         if (bracket) {
           return { name: bracket[1], title: bracket[2].trim() };
         }
+        const m = text.match(/^([^\s:：·\u30fb\u2022]{1,12})\s*[·\u30fb\u2022:：]\s*(.*)$/);
+        if (m) {
+          return { name: m[1], title: m[2].trim() };
+        }
         return { name: text.replace(/^👤\s*/, ''), title: '' };
       };
       const hasSubPlayer = cardLines.some(l => {
