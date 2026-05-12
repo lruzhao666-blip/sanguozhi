@@ -203,12 +203,12 @@
     );
   }
 
-  function switchTab(name) {
+function switchTab(name) {
     document.querySelectorAll('.nav-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.tab === name));
     document.querySelectorAll('.tab-panel').forEach(p =>
       p.classList.toggle('active', p.id === `tab-${name}`));
-  }
+        }
 
   // ══════════════════════════════════════════
   //  GM 面板
@@ -2032,51 +2032,7 @@
       requestAnimationFrame(draw);
 
 
-  async function onWipeGame() {
-      const password = document.getElementById('wipe-password').value;
-      if (!password) {
-          showToast('⚠️ 请输入口令');
-          return;
-      }
 
-      if (!confirm('确定清空本局所有数据？\n此操作不可恢复。')) {
-          return;
-      }
-
-      const gameId = window.currentGameId || '00000000-0000-0000-0000-000000000000';
-
-      if (window.supabase) {
-          try {
-              const { error } = await window.supabase.rpc('wipe_current_game', {
-                  p_game_id: gameId,
-                  p_password: password
-              });
-
-              if (error) {
-                  console.error('Wipe failed:', error);
-                  showToast('❌ 清空失败，口令错误或网络异常');
-              } else {
-                  showToast('✅ 本局已清空');
-
-                  // Reset local state
-                  state.rounds = [];
-                  state.players = defaultPlayers();
-
-                  // Switch to arena tab and show empty state
-                  switchTab('arena');
-                  document.getElementById('wipe-password').value = '';
-              }
-          } catch (e) {
-              console.error(e);
-              showToast('❌ 清空失败');
-          }
-      } else {
-          showToast('⚠️ 未连接云端，本地状态已重置');
-          state.rounds = [];
-          state.players = defaultPlayers();
-          switchTab('arena');
-      }
-  }
 
 })();
   }
