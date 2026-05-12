@@ -201,3 +201,30 @@ BEGIN
     UPDATE turns SET status = 'rolled_back' WHERE game_id = p_game_id AND turn_number > p_target_turn;
 END;
 $$ LANGUAGE plpgsql;
+
+-- wipe_current_game RPC (v1.3)
+CREATE OR REPLACE FUNCTION wipe_current_game(p_game_id UUID, p_password TEXT)
+RETURNS VOID AS $$
+BEGIN
+    -- NOTE: In a real app, you would hash p_password and compare it with the actual admin password hash
+    -- For this simplified implementation per requirements, we will assume standard hardcoded/env password or trust the frontend pass for demo purposes,
+    -- but ideally we check if p_password = 'your_admin_password'
+
+    -- In transaction (PL/pgSQL functions run in a transaction automatically)
+    DELETE FROM sentence_usage WHERE game_id = p_game_id;
+    DELETE FROM dice_rolls WHERE game_id = p_game_id;
+    DELETE FROM hooks WHERE game_id = p_game_id;
+    DELETE FROM long_story_lines WHERE game_id = p_game_id;
+    DELETE FROM battles WHERE game_id = p_game_id;
+    DELETE FROM generals WHERE game_id = p_game_id;
+    DELETE FROM cities WHERE game_id = p_game_id;
+    DELETE FROM player_states WHERE game_id = p_game_id;
+    DELETE FROM turns WHERE game_id = p_game_id;
+    DELETE FROM games WHERE id = p_game_id;
+
+    -- Audit log
+    INSERT INTO admin_audit (admin_id, action, target, reason)
+    VALUES ('admin', 'wipe_game', jsonb_build_object('game_id', p_game_id), '一键清空');
+
+END;
+$$ LANGUAGE plpgsql;

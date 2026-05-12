@@ -76,6 +76,7 @@ window.ActionSummary = (function() {
             diceBlock.classList.add('hidden');
             diceContent.innerHTML = '';
         }
+    }
 
     return {
         generatePrompt
