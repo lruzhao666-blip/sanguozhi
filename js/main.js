@@ -1579,8 +1579,14 @@
     }
     // 情报△（合并进 anchorGroups）
     if (ch.intel && ch.intel.length) {
-      if (!groups['情报']) groups['情报'] = [];
-      ch.intel.forEach(s => groups['情报'].push({ label: s, deltas: [], text: s }));
+      // 浅拷贝数组避免污染原始数据
+      groups['情报'] = [...(groups['情报'] || [])];
+      ch.intel.forEach(s => {
+        // 去重：避免 parser 已写入 anchorGroups 的情报被重复添加
+        if (!groups['情报'].some(it => it.text === s || it.label === s)) {
+          groups['情报'].push({ label: s, deltas: [], text: s });
+        }
+      });
     }
     // 兵种变动 ── res 字段用 type（步/弓/骑/水/蛮），val 保持原值供 valCls 正确配色
     if (ch.troopChanges && ch.troopChanges.length && !groups['兵种']) {
