@@ -206,9 +206,9 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION wipe_current_game(p_game_id UUID, p_password TEXT)
 RETURNS VOID AS $$
 BEGIN
-    -- NOTE: In a real app, you would hash p_password and compare it with the actual admin password hash
-    -- For this simplified implementation per requirements, we will assume standard hardcoded/env password or trust the frontend pass for demo purposes,
-    -- but ideally we check if p_password = 'your_admin_password'
+    IF p_password != '0727' THEN
+        RAISE EXCEPTION '口令错误';
+    END IF;
 
     -- In transaction (PL/pgSQL functions run in a transaction automatically)
     DELETE FROM sentence_usage WHERE game_id = p_game_id;
