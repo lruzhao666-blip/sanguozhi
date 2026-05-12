@@ -561,10 +561,6 @@ window.SGParser = (function () {
       intel:        [],
       anchorGroups: {},
       warnings:     [],
-      sentences:    [],
-      hooks:        [],
-      storylines:   [],
-      reputations:  [],
     };
 
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
@@ -598,43 +594,9 @@ window.SGParser = (function () {
         }
       }
 
-// ══════════════════════════════════════
-      //  Step 2：专项锚点识别 (包含新增锚点)
       // ══════════════════════════════════════
-
-      const parserRegistry = {
-          '句式△': (line) => {
-              const m = line.match(/^句式△([A-Z]\d{2,3})/);
-              if (m) change.sentences.push(m[1]);
-          },
-          '剧情△': (line) => {
-              const m = line.match(/^剧情△(.+?):(.+?)(?=\n|$)/);
-              if (m) change.storylines.push({ title: m[1], stage: m[2] });
-          },
-          '钩子△': (line) => {
-              const m = line.match(/^钩子△(.+?):(.+?)(?=\n|$)/);
-              if (m) change.hooks.push({ content: m[1], window: m[2] });
-          },
-          '声望△': (line) => {
-              const m = line.match(/^声望△([甲乙丙]):([+-]?\d+)(?:\((.+?)\))?/);
-              if (m) change.reputations.push({ slot: m[1], delta: parseInt(m[2]), reason: m[3] });
-          }
-      };
-
-      let matchedRegistry = false;
-      for (const [prefix, handler] of Object.entries(parserRegistry)) {
-          if (line.startsWith(prefix)) {
-              handler(line);
-              matchedRegistry = true;
-              break;
-          }
-      }
-
-      if (matchedRegistry) {
-          anchor = null;
-          continue;
-      }
-
+      //  Step 2：专项锚点识别
+      // ══════════════════════════════════════
 
       // 收支△（开启明细块）
       if (/^收支△/.test(line)) {

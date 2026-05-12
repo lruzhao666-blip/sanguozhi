@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css?v=20260511d" />
-  <link rel="stylesheet" href="css/style-v2.css?v=1" />
 </head>
 <body>
 
@@ -33,35 +32,16 @@
 <!-- ===== Nav ===== -->
 <nav id="main-nav">
   <button class="nav-btn active" data-tab="arena">⚔️ 战局总览</button>
-  <button class="nav-btn" data-tab="actions">🎯 行动汇总</button>
   <button class="nav-btn gm-nav-btn" data-tab="gm">🎴 GM 录入</button>
-  <button class="nav-btn" data-tab="history">📚 回合历史</button>
-  <button class="nav-btn" data-tab="sentence-admin" style="display:none;" id="nav-sentence-admin">⚙️ 句式管理</button>
-  <button class="nav-btn" data-tab="admin" style="display:none;" id="nav-admin">🔧 管理员</button>
 </nav>
 
-
 <main id="main-content">
-
-
 
 <!-- ══════════════════════════════════════════
      TAB 1：战局总览
 ══════════════════════════════════════════ -->
 <section id="tab-arena" class="tab-panel active">
   <div class="arena-wrap">
-
-
-    <!-- 骰子展示模块 -->
-    <div class="info-block dice-roller-block hidden" id="dice-roller-block">
-        <div class="ib-header">
-            <div class="ib-icon">🎲</div>
-            <div class="ib-title">本回合骰点</div>
-        </div>
-        <div class="ib-body" id="dice-roller-content">
-            <!-- 动态填充 -->
-        </div>
-    </div>
 
     <!-- 空状态 -->
     <div id="arena-empty" class="arena-empty">
@@ -246,7 +226,7 @@
 ══════════════════════════════════════════ -->
 <section id="tab-gm" class="tab-panel">
   <div class="gm-page">
-        <div class="gm-panel">
+    <div class="gm-panel">
 
       <div class="gm-ph">
         <h2 class="gm-title">🎴 GM 录入台</h2>
@@ -278,131 +258,7 @@
 
     </div>
   </div>
-      <!-- V1.3: 一键清空本局 -->
-      <div class="info-block" style="margin-top: 20px; border-color: var(--red-bright);">
-        <div class="ib-header" style="background: rgba(231,76,60,0.1);">
-            <div class="ib-icon">🧹</div>
-            <div class="ib-title" style="color: var(--red-bright);">清空本局数据</div>
-        </div>
-        <div class="ib-body">
-            <p class="gm-hint">说明: 清空当前对局所有数据，不可恢复。</p>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <label style="color: var(--text-sub);">口令:</label>
-                <input type="password" id="wipe-password" placeholder="输入管理员口令" style="background: rgba(10,5,5,0.6); border: 1px solid var(--border-gold); color: var(--text-main); padding: 5px 10px; border-radius: 4px;">
-                <button class="nav-btn gm-nav-btn" id="btn-wipe-game" style="padding: 5px 15px;">🧹 一键清空</button>
-            </div>
-        </div>
-      </div>
-
-
-    </div>
-  </div>
 </section>
-
-
-<!-- ══════════════════════════════════════════
-     TAB 3：行动汇总 (新增)
-══════════════════════════════════════════ -->
-<section id="tab-actions" class="tab-panel">
-  <div class="gm-page">
-        <div class="info-block" style="max-width:800px; margin: 0 auto;">
-      <div class="ib-header">
-        <div class="ib-icon">📋</div>
-        <div class="ib-title">本回合行动汇总 · 第 <span id="current-turn-number">1</span> 回合</div>
-      </div>
-      <div class="ib-body actions-panel">
-
-        <div class="action-row">
-          <div class="p0-strip" style="height: 4px; border-radius: 2px; margin-bottom: 5px;"></div><div class="gm-hint p0-color" style="margin-bottom:5px;font-weight:bold;">甲·刘玄之后</div>
-          <textarea id="action-p0" placeholder="填写甲方的行动..."></textarea>
-        </div>
-
-        <div class="action-row">
-          <div class="p1-strip" style="height: 4px; border-radius: 2px; margin-bottom: 5px;"></div><div class="gm-hint p1-color" style="margin-bottom:5px;font-weight:bold;">乙·江东小霸</div>
-          <textarea id="action-p1" placeholder="填写乙方的行动..."></textarea>
-        </div>
-
-        <div class="action-row">
-          <div class="p2-strip" style="height: 4px; border-radius: 2px; margin-bottom: 5px;"></div><div class="gm-hint p2-color" style="margin-bottom:5px;font-weight:bold;">丙·并州狼骑</div>
-          <textarea id="action-p2" placeholder="填写丙方的行动..."></textarea>
-        </div>
-
-        <button class="generate-btn" id="btn-generate-prompt" onclick="window.ActionSummary.generatePrompt()">📋 生成本回合输入包</button>
-
-      </div>
-    </div>
-
-    <div class="info-block hidden" id="prompt-output-container" style="max-width:800px; margin: 20px auto 0;">
-        <div class="ib-header">
-            <div class="ib-icon">📦</div>
-            <div class="ib-title">本回合 GPT 输入包(已含句式包与预摇骰点)</div>
-        </div>
-        <div class="ib-body">
-            <div id="prompt-output" class="prompt-output-box"></div>
-            <div style="display:flex; gap: 10px;">
-                <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('prompt-output').innerText)">📋 复制全部</button>
-            </div>
-        </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════
-     TAB 4：历史回合 (由隐式提升为正式)
-══════════════════════════════════════════ -->
-<section id="tab-history" class="tab-panel">
-  <div class="gm-page" id="history-content-tab">
-     <!-- 将原有的历史回合内容挂载到这里或者保留原有逻辑并在此渲染 -->
-     <p class="gm-hint">历史回合记录加载中...</p>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════
-     TAB 5：句式管理 (仅管理员)
-══════════════════════════════════════════ -->
-<section id="tab-sentence-admin" class="tab-panel">
-  <div class="gm-page">
-        <div class="info-block">
-        <div class="ib-header">
-            <div class="ib-icon">⚙️</div>
-            <div class="ib-title">句式管理后台</div>
-        </div>
-        <div class="ib-body" style="overflow-x:auto;">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>分类</th>
-                        <th>模板</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="sentence-admin-tbody">
-                    <tr><td colspan="4">加载中...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════
-     TAB 6：管理员后台 (仅管理员)
-══════════════════════════════════════════ -->
-<section id="tab-admin" class="tab-panel">
-  <div class="gm-page">
-        <div class="info-block">
-        <div class="ib-header">
-            <div class="ib-icon">🔧</div>
-            <div class="ib-title">管理员操作面板</div>
-        </div>
-        <div class="ib-body">
-            <p class="gm-hint">功能开发中...</p>
-        </div>
-    </div>
-  </div>
-</section>
-
 
 </main>
 
@@ -431,9 +287,6 @@
   </div>
 </div>
 
-<script type="module" src="js/supabase-client.js?v=1"></script>
-<script src="js/sentence-compliance.js?v=1"></script>
-<script type="module" src="js/action-summary.js?v=1"></script>
 <script src="js/parser.js?v=20260511b"></script>
 <script src="js/map.js?v=20260511b"></script>
 <script src="js/tips.js?v=20260511b"></script>
