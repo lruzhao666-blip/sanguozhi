@@ -1,0 +1,39 @@
+-- B. SQL to check total records
+SELECT COUNT(*) FROM public.generals_static;
+
+-- C. SQL to sample first 20 records
+SELECT * FROM public.generals_static LIMIT 20;
+
+-- D. SQL to check for duplicate names
+SELECT name, count(*)
+FROM public.generals_static
+GROUP BY name
+HAVING count(*) > 1
+ORDER BY count(*) DESC, name;
+
+-- E. SQL to view full records of duplicate generals
+SELECT *
+FROM public.generals_static
+WHERE name IN (
+  SELECT name
+  FROM public.generals_static
+  GROUP BY name
+  HAVING count(*) > 1
+)
+ORDER BY name;
+
+-- G. SQL to create or fix generals_static table
+CREATE TABLE IF NOT EXISTS public.generals_static (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    courtesy_name VARCHAR(255),
+    nickname VARCHAR(255),
+    faction_hint VARCHAR(50),
+    tier VARCHAR(50),
+    biography TEXT,
+    suitable_roles TEXT[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- H. SQL to add unique constraint on name if it doesn't exist
+ALTER TABLE public.generals_static ADD CONSTRAINT unique_name UNIQUE (name);
