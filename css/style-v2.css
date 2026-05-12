@@ -1,0 +1,126 @@
+/* style-v2.css - 新增UI模块样式追加，不覆盖现有类 */
+
+/* 1. 行动汇总面板 */
+.actions-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.action-row {
+    margin-bottom: 15px;
+}
+
+.action-row textarea {
+    width: 100%;
+    min-height: 80px;
+    background: rgba(10, 5, 5, 0.6);
+    border: 1px solid var(--border-gold);
+    color: var(--text-main);
+    padding: 10px;
+    font-family: var(--font-sans);
+    border-radius: var(--r);
+    resize: vertical;
+}
+
+.action-row textarea:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 8px rgba(212,168,67,.2);
+}
+
+.generate-btn {
+    align-self: center;
+    background: var(--red-deep);
+    color: var(--gold-light);
+    border: 1px solid var(--border-gold);
+    padding: 10px 20px;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: var(--r);
+    transition: all 0.2s;
+}
+
+.generate-btn:hover {
+    background: var(--red-mid);
+    box-shadow: 0 0 10px rgba(212,168,67,.3);
+}
+
+/* 2. 骰子展示模块 */
+.dice-roller-block {
+    margin-bottom: 20px;
+}
+
+.dice-group {
+    margin-bottom: 10px;
+}
+
+.dice-title {
+    color: var(--text-sub);
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.dice-result {
+    font-family: var(--font-serif);
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--gold);
+    background: rgba(0,0,0,0.3);
+    padding: 5px 10px;
+    border-radius: var(--r);
+    display: inline-block;
+}
+
+/* 发亮效果 */
+@keyframes dice-flash {
+    0% { box-shadow: 0 0 0 rgba(212,168,67,0); }
+    50% { box-shadow: 0 0 15px rgba(212,168,67,0.8); }
+    100% { box-shadow: 0 0 0 rgba(212,168,67,0); }
+}
+.dice-result.flashing {
+    animation: dice-flash 0.5s ease-in-out;
+}
+
+/* 3. 后台表格 */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+.admin-table th, .admin-table td {
+    padding: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    text-align: left;
+}
+.admin-table th {
+    background: rgba(255,255,255,0.05);
+    color: var(--gold-light);
+    font-family: var(--font-serif);
+}
+
+/* 4. 打包的Prompt框 */
+.prompt-output-box {
+    width: 100%;
+    min-height: 200px;
+    background: rgba(0,0,0,0.5);
+    color: #ccc;
+    font-family: monospace;
+    border: 1px dashed var(--border-gold);
+    padding: 10px;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+}
+
+.copy-btn {
+    background: #333;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 0.8rem;
+}
+.copy-btn:hover { background: #444; }
