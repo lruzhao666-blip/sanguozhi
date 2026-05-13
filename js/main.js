@@ -813,7 +813,7 @@
     // ── 👤 各城主行动结果：子玩家分组 ──
     // 与 🎯 行动建议 完全相同的 action-item 排版
     const _groupPlayerResultLines = (cardLines) => {
-      const SUB_PLAYER_RE = /^([^\s:：·\u30fb\u2022]{1,6})\s*[·\u30fb\u2022:：]\s*(.*)$/;
+      const SUB_PLAYER_RE = /^([^\s:：·\u30fb\u2022]{1,6})\s*[·\u30fb\u2022]\s*(.*)$/;
       const SUB_PLAYER_BRACKET_RE = /^[【\[]([^】\]]{1,12})[】\]]\s*(.*)$/;
       const parseRawPlayer = (html) => {
         const text = html.replace(/<[^>]+>/g, '').trim();
