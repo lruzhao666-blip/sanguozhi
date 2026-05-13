@@ -784,7 +784,7 @@
     const SECTION_EMOJI_RE = /^(🎴|📢|🌍|⚡|🔥|👤|⏳|📜|🌐|⚔️|🏯|🌅|🌙)\s*/;
     const SECTION_RE   = /^(🌍|⚡|📢|🔥|📜|🎴|🌐|⚔️|🏯|🌅|🌙)\s*[【\[]?\s*[\u4e00-\u9fa5]{2,}/;
     const PLAYER_RE    = /^👤\s*[【\[]/;
-    const RESULT_PLAYER_LINE_RE = /^\s*(?:[【\[][^】\]]+[】\]]|[^\s:：·\u30fb\u2022]{1,12}\s*[：:·\u30fb\u2022]).*/;
+    const RESULT_PLAYER_LINE_RE = /^\s*(?:[【\[][^】\]]+[】\]]|[^\s:：·\u30fb\u2022]{1,6}\s*[：:·\u30fb\u2022]).*/;
     const NOTE_RE      = /^[📍🔖💡]/;
     const BATTLE_RE    = /^🎲/;
     // ▸ 影响行：行首 ▸（含全角/半角变体）
@@ -813,7 +813,7 @@
     // ── 👤 各城主行动结果：子玩家分组 ──
     // 与 🎯 行动建议 完全相同的 action-item 排版
     const _groupPlayerResultLines = (cardLines) => {
-      const SUB_PLAYER_RE = /^([^\s:：·\u30fb\u2022]{1,12})\s*[·\u30fb\u2022:：]\s*(.*)$/;
+      const SUB_PLAYER_RE = /^([^\s:：·\u30fb\u2022]{1,6})\s*[·\u30fb\u2022:：]\s*(.*)$/;
       const SUB_PLAYER_BRACKET_RE = /^[【\[]([^】\]]{1,12})[】\]]\s*(.*)$/;
       const parseRawPlayer = (html) => {
         const text = html.replace(/<[^>]+>/g, '').trim();
