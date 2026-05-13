@@ -287,12 +287,13 @@ window.SGParser = (function () {
       console.warn('[SGParser] 城池行含全角括号: ' + raw.slice(0, 60));
     }
     const result = [];
-    // 匹配 城名(内容)，内容可含嵌套括号（不含顶层括号）
-    const re = /([^,，、(（\s]+)[（(]([^）)]*)[）)]/g;
+    // 匹配 城名(内容)，内容可含内嵌的半角括号，直到遇到最外层右括号（跟在逗号前或行尾），允许右侧有空白字符
+    const re = /([^,，、(（\s]+)(?:[（(](.*?)[）)])?(?=\s*(?:$|[,，、]))/g;
     let m;
     while ((m = re.exec(raw)) !== null) {
+      if (m[0] === '') continue;
       const name  = m[1].trim();
-      const inner = m[2].trim();
+      const inner = m[2] !== undefined ? m[2].trim() : '';
       if (!name) continue;
 
       const pipeIdx = inner.indexOf('|');
@@ -305,7 +306,13 @@ window.SGParser = (function () {
         troopsRaw = null;
       }
 
-      const holders = (holderRaw === '无') ? [] : holderRaw.split('/').map(s => s.trim()).filter(Boolean);
+      const holders = (!holderRaw || holderRaw === '无') ? [] : holderRaw.split('/').map(s => {
+        let ts = s.trim();
+        if (ts.endsWith('()')) {
+          ts = ts.replace(/\(\)$/, '(健康)');
+        }
+        return ts;
+      }).filter(Boolean);
       result.push({
         name,
         holder:  holders.join('/') || '无',
@@ -362,24 +369,36 @@ window.SGParser = (function () {
   function _parseGeneralList(raw) {
     if (!raw || !raw.trim()) return [];
     const result = [];
-    // 同时匹配半角 () 和全角（）括号 — BUG#4 修复
-    const re = /([^,，、(（\s]+)[（(]([^）)]*)[）)]/g;
+    // 匹配 武将名(状态)，支持半角()和全角（）以及无括号，允许右侧有空白字符
+    const re = /([^,，、(（\s]+)(?:[（(](.*?)[）)])?(?=\s*(?:$|[,，、]))/g;
     let m;
     while ((m = re.exec(raw)) !== null) {
-      const name   = m[1].trim();
-      // 状态字段去除括号内多余空格，再查白名单
-      let   status = m[2].trim();
-      if (!VALID_STATUS.includes(status)) {
-        // 白名单外状态：记录警告但不丢失武将，默认健康
-        console.warn(`[SGParser] 武将"${name}"状态"${status}"不在白名单，视为健康`);
+      const fullMatch = m[0].trim();
+      if (!fullMatch) continue;
+
+      const name = m[1].trim();
+      let status = m[2] !== undefined ? m[2].trim() : '';
+
+      // 仅半角空括号 () 或者完全没有括号，默认健康，不告警
+      const isHalfWidthEmpty = fullMatch.endsWith('()');
+      const isNoParens = !fullMatch.includes('(') && !fullMatch.includes('（');
+
+      if (isHalfWidthEmpty || isNoParens) {
         status = '健康';
+      } else {
+        if (!VALID_STATUS.includes(status)) {
+          // 白名单外状态（含全角空括号）：记录警告但不丢失武将，默认健康
+          console.warn(`[SGParser] 武将"${name}"状态"${status}"不在白名单，视为健康`);
+          status = '健康';
+        }
       }
+
       // 武将名：2-8 汉字（过滤拼音、英文、残余标点）
       if (name && name.length >= 2 && name.length <= 8 && /[\u4e00-\u9fa5]/.test(name)) {
         result.push({ name, status });
       }
     }
-    // 兜底：无括号格式（如 "马超,庞德"）
+    // 兜底：如果完全没有提取出任何有效武将
     if (!result.length) {
       raw.split(/[,，、\s]+/).forEach(s => {
         const n = s.trim();
