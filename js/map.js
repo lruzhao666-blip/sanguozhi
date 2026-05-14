@@ -879,17 +879,30 @@ window.SGMap = (function () {
     if (isPlayer) {
       const buffs = ow?.productionBuffs;
       const buffList = buffs ? Object.values(buffs) : [];
-      const dutyList = buffList.filter(b => b.general && b.action);
+      // 过滤掉到期的
+      const dutyList = buffList.filter(b => !b.expired);
       if (dutyList.length > 0) {
         const rows = dutyList.map(b => {
-          return `<div class="sgt-row sgt-prod-buff">
-            <span class="sgt-lbl" style="color:var(--text-main)">${_esc(b.general)}</span>
-            <span class="sgt-prod-val" style="margin-left:0.5rem;color:var(--text-main)">${_esc(b.action)}</span>
-            <span class="sgt-prod-remain" style="margin-left:auto">/${b.remain}</span>
-          </div>`;
+          const icon = b.emoji || '✦';
+          if (b.general && b.action) {
+            // 新格式：武将名 动作短语 /剩余回合 (武将名金色加粗)
+            return `<div class="sgt-row sgt-prod-buff">
+              <span class="sgt-lbl">${icon}</span>
+              <b style="color:${ownerClr};font-weight:700">${_esc(b.general)}</b>
+              <span class="sgt-prod-val" style="margin-left:0.5rem;color:var(--gold-light)">${_esc(b.action)}</span>
+              <span class="sgt-prod-remain" style="font-size:50%;color:var(--text-dim);margin-left:0.3rem"> 剩余 ${b.remain} 回合</span>
+            </div>`;
+          } else {
+            // 旧格式/兜底：显示类型和剩余回合
+            return `<div class="sgt-row sgt-prod-buff">
+              <span class="sgt-lbl">${icon}</span>
+              <span class="sgt-prod-val" style="color:var(--gold-light)">${_esc(b.type)}</span>
+              <span class="sgt-prod-remain" style="font-size:50%;color:var(--text-dim);margin-left:0.3rem"> 剩余 ${b.remain} 回合</span>
+            </div>`;
+          }
         }).join('');
         dutyHtml = `<div class="sgt-divider"></div>
-          <div class="sgt-prod-title">任事</div>${rows}`;
+          <div class="sgt-prod-title" style="font-size:0.7rem;color:var(--text-dim);margin-bottom:0.3rem;letter-spacing:0.1rem">任事</div>${rows}`;
       }
     }
 

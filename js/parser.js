@@ -699,30 +699,44 @@ window.SGParser = (function () {
           buffStr.split(/[,，]/).forEach(seg => {
             seg = seg.trim();
             if (!seg) return;
-            // 1. 新格式：emoji 武将 动作短语/剩余回合
-            const newM = seg.match(/^([^\s]+)\s+([^\s]+)\s+([^/]+)\/(\d+)$/);
-            if (newM && EMOJI_MAP[newM[1]]) {
-              const emoji = newM[1];
-              buffs.push({
-                type:    EMOJI_MAP[emoji],
-                emoji:   emoji,
-                general: newM[2].trim(),
-                action:  newM[3].trim(),
-                remain:  parseInt(newM[4])
-              });
-              return;
+
+            // 1. 识别 Emoji 前缀（兼容全角空格与变体选择符）
+            let foundEmoji = null;
+            for (const emoji of Object.keys(EMOJI_MAP)) {
+              if (seg.startsWith(emoji)) { foundEmoji = emoji; break; }
             }
-            // 2. 到期格式：emoji-到期
-            const expM = seg.match(/^([^\s\-]+)-到期$/);
-            if (expM && EMOJI_MAP[expM[1]]) {
-              const emoji = expM[1];
-              buffs.push({ type: EMOJI_MAP[emoji], emoji, expired: true });
-              return;
+
+            if (foundEmoji) {
+              const body = seg.slice(foundEmoji.length).trim();
+              if (body === '-到期') {
+                buffs.push({ type: EMOJI_MAP[foundEmoji], emoji: foundEmoji, expired: true });
+                return;
+              }
+              // 新格式解析：武将 动作/回合 (支持全角空格)
+              const newM = body.match(/^([^\s　]{2,8})[\s　]+([^/]+)\/(\d+)$/);
+              if (newM) {
+                buffs.push({
+                  type:    EMOJI_MAP[foundEmoji],
+                  emoji:   foundEmoji,
+                  general: newM[1].trim(),
+                  action:  newM[2].trim(),
+                  remain:  parseInt(newM[3])
+                });
+                return;
+              }
             }
-            // 3. 旧格式兼容：屯田-到期
+
+            // 2. 旧格式与到期兼容
             const oldExpM = seg.match(/^([^+-]+)-到期$/);
-            if (oldExpM) { buffs.push({ type: oldExpM[1].trim(), expired: true }); return; }
-            // 4. 旧格式：屯田+45粮/5
+            if (oldExpM) {
+              const t = oldExpM[1].trim();
+              let em = '';
+              for(const [k,v] of Object.entries(EMOJI_MAP)) if(v===t) em=k;
+              buffs.push({ type: t, emoji: em, expired: true });
+              return;
+            }
+
+            // 3. 旧格式：屯田+45粮/5
             const oldBufM = seg.match(/^([^+\-]+)[+]([0-9]+)([^/]+)\/([0-9]+)$/);
             if (oldBufM) {
               buffs.push({
@@ -733,7 +747,8 @@ window.SGParser = (function () {
               });
               return;
             }
-            // 5. 兜底
+
+            // 4. 兜底
             buffs.push({ type: seg, raw: seg });
           });
           if (!change.productionOps) change.productionOps = [];
