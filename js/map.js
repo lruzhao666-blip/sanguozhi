@@ -874,23 +874,32 @@ window.SGMap = (function () {
       }
     }
 
-    // ── 当前产业（productionBuffs）── 仅玩家城显示
-    let prodHtml = '';
-    if (isPlayer) {
-      const buffs = ow?.productionBuffs;
-      const buffList = buffs ? Object.values(buffs) : [];
-      if (buffList.length > 0) {
-        const PROD_ICON = { '屯田': '🌾', '开市': '💰' };
+    // 任事区块（v3.9.2：暗箱铁律，不显示数值）
+    let dutiesHTML = '';
+    if (isPlayer && ow && ow.productionBuffs) {
+      const buffList = Object.values(ow.productionBuffs);
+      if (buffList.length) {
         const rows = buffList.map(b => {
-          const icon = PROD_ICON[b.type] || '📌';
-          return `<div class="sgt-row sgt-prod-buff">
-            <span class="sgt-lbl">${icon} ${_esc(b.type)}</span>
-            <span class="sgt-prod-val">+${b.value} ${_esc(b.resource)}/回合</span>
-            <span class="sgt-prod-remain">剩 ${b.remain} 回合</span>
+          // 新格式 v3.9.2
+          if (b.general) {
+            return `<div class="sgmap-duty-row">
+              <span class="sgmap-duty-emoji">${_esc(b.emoji || '')}</span>
+              <span class="sgmap-duty-general">${_esc(b.general)}</span>
+              <span class="sgmap-duty-action">${_esc(b.action)}</span>
+              <span class="sgmap-duty-remain">/${b.remain}</span>
+            </div>`;
+          }
+          // 旧格式兼容（不再显示数值，只显示类型与剩余回合）
+          return `<div class="sgmap-duty-row">
+            <span class="sgmap-duty-type">${_esc(b.type)}</span>
+            <span class="sgmap-duty-remain">/${b.remain}</span>
           </div>`;
         }).join('');
-        prodHtml = `<div class="sgt-divider"></div>
-          <div class="sgt-prod-title">当前产业</div>${rows}`;
+        dutiesHTML = `
+          <div class="sgmap-section sgmap-duties">
+            <div class="sgmap-section-title">任事</div>
+            ${rows}
+          </div>`;
       }
     }
 
@@ -906,7 +915,7 @@ window.SGMap = (function () {
       <div class="sgt-row sgt-bonus">${bonusHtml}</div>
       <div class="sgt-row sgt-owner" style="color:${ownerClr}">⚑ ${_esc(ownerStr)}</div>
       <div class="sgt-divider"></div>
-      ${holderHtml}${troopHtml}${prodHtml}`;
+      ${holderHtml}${troopHtml}${dutiesHTML}`;
 
     _tooltip.classList.add('visible');
     _moveTip(e);

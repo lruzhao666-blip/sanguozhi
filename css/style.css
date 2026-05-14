@@ -2922,3 +2922,45 @@ header, nav, main, footer { position: relative; z-index: 1; }
   padding: 6px 0 2px;
   letter-spacing: .04em;
 }
+
+/* 城池弹窗 · 任事行（v3.9.2） */
+.sgmap-duties {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(212,168,67,.22);
+}
+.sgmap-section-title {
+  font-size: .72rem;
+  color: var(--gold-light, #f0c060);
+  letter-spacing: .08em;
+  margin-bottom: 4px;
+}
+.sgmap-duty-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  line-height: 1.6;
+  color: #e8dcc4;
+}
+.sgmap-duty-emoji {
+  font-size: .9rem;
+  flex-shrink: 0;
+}
+.sgmap-duty-general {
+  color: var(--gold-light, #f0c060);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.sgmap-duty-action {
+  color: #c8b89a;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sgmap-duty-remain {
+  color: var(--text-dim, #7a6a5a);
+  font-size: .72rem;
+  flex-shrink: 0;
+}
