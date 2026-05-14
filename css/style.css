@@ -2923,7 +2923,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   letter-spacing: .04em;
 }
 
-/* 城池弹窗 · 任事行（v3.9.2） */
+/* 城池弹窗 · 任事行 v3.9.2 */
 .sgmap-duties {
   margin-top: 6px;
   padding-top: 6px;
@@ -2943,10 +2943,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   line-height: 1.6;
   color: #e8dcc4;
 }
-.sgmap-duty-emoji {
-  font-size: .9rem;
-  flex-shrink: 0;
-}
+.sgmap-duty-emoji { font-size: .9rem; flex-shrink: 0; }
 .sgmap-duty-general {
   color: var(--gold-light, #f0c060);
   font-weight: 600;

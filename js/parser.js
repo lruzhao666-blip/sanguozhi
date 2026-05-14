@@ -179,10 +179,9 @@ window.SGParser = (function () {
         if (!entry.productionBuffs) entry.productionBuffs = {};
         op.buffs.forEach(b => {
           if (b.expired) {
-            // 到期：删除该 type 的 buff
             delete entry.productionBuffs[b.type];
           } else if (b.general) {
-            // ★ 新格式 v3.9.2：emoji + 武将 + 动作 + 回合（暗箱，无数值）
+            // 新格式 v3.9.2
             entry.productionBuffs[b.type] = {
               type:    b.type,
               emoji:   b.emoji,
@@ -191,7 +190,7 @@ window.SGParser = (function () {
               remain:  b.remain,
             };
           } else if (b.value != null) {
-            // 旧格式兼容：写入数值版
+            // 旧格式
             entry.productionBuffs[b.type] = {
               type:     b.type,
               value:    b.value,
@@ -689,7 +688,8 @@ window.SGParser = (function () {
       }
 
       // 产出△城名:🌾 任峻 督民筑渠/4
-      // v3.9.2：emoji + 武将 + 动作短语 + 剩余回合（暗箱铁律，无数值）
+      // v3.9.2 新格式: emoji + 武将 + 动作 + 剩余回合(暗箱，无数值)
+      // 旧格式继续兼容: 屯田+45粮/5
       if (/^产出△/.test(line)) {
         anchor = null;
         const rest = line.replace(/^产出△\s*/, '').trim();
@@ -699,47 +699,41 @@ window.SGParser = (function () {
           const buffStr  = rest.slice(colonPos + 1).trim();
           const buffs = [];
 
-          // 九大任事 emoji → 类型名映射
           const DUTY_EMOJI_MAP = {
             '🌾': '屯田', '💰': '开市', '🐫': '通商', '🤝': '人才',
             '🔨': '工造', '📚': '教化', '⚔️': '军训', '🕊️': '情报', '🎁': '特产',
           };
-          // ⚔️ 带变体选择符 ️，做容错
-          const DUTY_EMOJI_MAP_LOOSE = {};
+          const DUTY_EMOJI_LOOSE = {};
           Object.keys(DUTY_EMOJI_MAP).forEach(k => {
-            DUTY_EMOJI_MAP_LOOSE[k] = DUTY_EMOJI_MAP[k];
-            DUTY_EMOJI_MAP_LOOSE[k.replace(/️/g, '')] = DUTY_EMOJI_MAP[k];
+            DUTY_EMOJI_LOOSE[k] = DUTY_EMOJI_MAP[k];
+            DUTY_EMOJI_LOOSE[k.replace(/\uFE0F/g, '')] = DUTY_EMOJI_MAP[k];
           });
 
           buffStr.split(/[,，]/).forEach(seg => {
             seg = seg.trim();
             if (!seg) return;
 
-            // 到期格式：屯田-到期（保留兼容）
+            // 到期格式: 屯田-到期
             const expM = seg.match(/^([^+\-]+)-到期$/);
             if (expM) { buffs.push({ type: expM[1].trim(), expired: true }); return; }
 
-            // ★ 新格式 v3.9.2：emoji + 空格 + 武将名 + 空格 + 动作短语/剩余回合
-            // 例：🌾 任峻 督民筑渠/4
+            // 新格式 v3.9.2: emoji 空格 武将 空格 动作/回合
             const newM = seg.match(/^(\S+)\s+(\S+)\s+(.+)\/(\d+)$/);
             if (newM) {
-              const emojiRaw   = newM[1].trim();
-              const generalNm  = newM[2].trim();
-              const action     = newM[3].trim();
-              const remain     = parseInt(newM[4]);
-              const emojiKey   = emojiRaw.replace(/️/g, '');
-              const dutyType   = DUTY_EMOJI_MAP_LOOSE[emojiKey] || DUTY_EMOJI_MAP_LOOSE[emojiRaw] || '任事';
+              const emojiRaw  = newM[1].trim();
+              const emojiKey  = emojiRaw.replace(/\uFE0F/g, '');
+              const dutyType  = DUTY_EMOJI_LOOSE[emojiKey] || DUTY_EMOJI_LOOSE[emojiRaw] || '任事';
               buffs.push({
                 type:    dutyType,
                 emoji:   emojiRaw,
-                general: generalNm,
-                action:  action,
-                remain:  remain,
+                general: newM[2].trim(),
+                action:  newM[3].trim(),
+                remain:  parseInt(newM[4]),
               });
               return;
             }
 
-            // 旧格式兼容：屯田+45粮/5  开市+30金/4
+            // 旧格式兼容: 屯田+45粮/5
             const oldM = seg.match(/^([^+\-]+)[+]([0-9]+)([^/]+)\/([0-9]+)$/);
             if (oldM) {
               buffs.push({
@@ -751,7 +745,6 @@ window.SGParser = (function () {
               return;
             }
 
-            // 兜底
             buffs.push({ type: seg, raw: seg });
           });
 
