@@ -697,32 +697,67 @@ window.SGParser = (function () {
             '📚': '教化', '⚔️': '军训', '🕊️': '情报', '🎁': '特产'
           };
           buffStr.split(/[,，]/).forEach(seg => {
-            seg = seg.trim();
+            seg = seg.trim().replace(/\uFE0F/g, '');
             if (!seg) return;
-            // 1. 新格式：emoji 武将 动作短语/剩余回合
-            const newM = seg.match(/^([^\s]+)\s+([^\s]+)\s+([^/]+)\/(\d+)$/);
-            if (newM && EMOJI_MAP[newM[1]]) {
-              const emoji = newM[1];
-              buffs.push({
-                type:    EMOJI_MAP[emoji],
-                emoji:   emoji,
-                general: newM[2].trim(),
-                action:  newM[3].trim(),
-                remain:  parseInt(newM[4])
-              });
-              return;
+
+            // Emoji 匹配 (使用归一化进行匹配以兼容变体选择符)
+            let emojiMatch = null;
+            let matchLength = 0;
+            for (const key in EMOJI_MAP) {
+              const keyNorm = key.replace(/\uFE0F/g, '');
+              if (seg.startsWith(keyNorm)) {
+                emojiMatch = key;
+                matchLength = keyNorm.length;
+                break;
+              }
             }
-            // 2. 到期格式：emoji-到期
-            const expM = seg.match(/^([^\s\-]+)-到期$/);
-            if (expM && EMOJI_MAP[expM[1]]) {
-              const emoji = expM[1];
-              buffs.push({ type: EMOJI_MAP[emoji], emoji, expired: true });
-              return;
+
+            if (emojiMatch) {
+              let rest = seg.slice(matchLength).trim().replace(/^[\s\u3000]+/, '');
+
+              // 1. & 2. 新格式 / 放宽的格式 (emoji 武将 动作/剩余)
+              const slashIdx = rest.lastIndexOf('/');
+              if (slashIdx !== -1) {
+                let remainStr = rest.slice(slashIdx + 1).trim();
+                let body = rest.slice(0, slashIdx).trim().replace(/[\s\u3000]+$/, '');
+
+                let name, action;
+                let spaceMatch = body.match(/^([\u4e00-\u9fa5]{2,8})[\s\u3000]+(.+)$/);
+                if (spaceMatch) {
+                  name = spaceMatch[1];
+                  action = spaceMatch[2];
+                } else {
+                  const compoundSurnames = ['诸葛', '夏侯', '司马', '皇甫', '公孙', '慕容', '尉迟', '太史', '独孤', '令狐', '万俟', '宇文', '贺拔', '东门', '西门', '南门', '北门', '上官', '欧阳', '呼延'];
+                  let nameLen = 2;
+                  if (body.length >= 4 && compoundSurnames.includes(body.slice(0, 2))) {
+                    nameLen = 3;
+                  }
+                  name = body.slice(0, nameLen);
+                  action = body.slice(nameLen);
+                }
+
+                buffs.push({
+                  type:    EMOJI_MAP[emojiMatch],
+                  emoji:   emojiMatch,
+                  general: name,
+                  action:  action,
+                  remain:  parseInt(remainStr, 10)
+                });
+                return;
+              }
+
+              // 3. 到期格式：emoji-到期
+              if (rest === '-到期') {
+                buffs.push({ type: EMOJI_MAP[emojiMatch], emoji: emojiMatch, expired: true });
+                return;
+              }
             }
-            // 3. 旧格式兼容：屯田-到期
+
+            // 4. 旧格式兼容：屯田-到期
             const oldExpM = seg.match(/^([^+-]+)-到期$/);
             if (oldExpM) { buffs.push({ type: oldExpM[1].trim(), expired: true }); return; }
-            // 4. 旧格式：屯田+45粮/5
+
+            // 5. 旧格式：屯田+45粮/5
             const oldBufM = seg.match(/^([^+\-]+)[+]([0-9]+)([^/]+)\/([0-9]+)$/);
             if (oldBufM) {
               buffs.push({
@@ -733,7 +768,8 @@ window.SGParser = (function () {
               });
               return;
             }
-            // 5. 兜底
+
+            // 6. 兜底
             buffs.push({ type: seg, raw: seg });
           });
           if (!change.productionOps) change.productionOps = [];
