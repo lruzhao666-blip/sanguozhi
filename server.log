@@ -1,0 +1,10 @@
+127.0.0.1 - - [14/May/2026 15:53:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 15:53:45] "GET /css/style.css?v=20260511d HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 15:53:45] "GET /js/tips.js?v=20260511b HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 15:53:45] "GET /js/map.js?v=20260514c HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 15:53:45] "GET /js/general-duties.js?v=20260510b HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 15:53:45] "GET /js/parser.js?v=20260514c HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 15:53:45] "GET /js/generals-tooltip.js?v=20260511d HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 15:53:45] "GET /js/main.js?v=20260513b HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 15:53:45] "GET /images/bg-main.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 15:53:48] "GET /images/map-bg2.jpg HTTP/1.1" 200 -

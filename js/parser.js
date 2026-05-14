@@ -714,11 +714,12 @@ window.SGParser = (function () {
                 buffs.push({ type: EMOJI_MAP[foundEmoji], emoji: foundEmoji, expired: true });
                 return;
               }
-              // 新格式解析：武将 动作/回合 (支持全角/半角空格可选)
-              // 1. 优先匹配带空格的：[武将] [动作]/[回合]
-              // 2. 兜底匹配无空格的：[武将(取前2字)][动作]/[回合]
-              const newM = body.match(/^([^\s　]{2,8})[\s　]+([^/]+)\/(\d+)$/) ||
-                           body.match(/^([^\s　]{2})([^/]+)\/(\d+)$/);
+              // 新格式解析：武将 动作/回合 (支持全角/半角空格、Tab 可选, 兼容全角 U+3000)
+              // 规则：
+              // - 优先尝试带空格分隔：[武将(2-8汉字)] [动作]/[回合]
+              // - 兜底尝试无空格连写：[武将(2-3汉字)][动作]/[回合]
+              const newM = body.match(/^([\u4e00-\u9fa5]{2,8})[\s　\t]+([^/]+)\/(\d+)$/) ||
+                           body.match(/^([\u4e00-\u9fa5]{2,3})([^/]+)\/(\d+)$/);
               if (newM) {
                 buffs.push({
                   type:    EMOJI_MAP[foundEmoji],
