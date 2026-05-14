@@ -181,17 +181,13 @@ window.SGParser = (function () {
           if (b.expired) {
             // 到期：删除该 type 的 buff
             delete entry.productionBuffs[b.type];
-          } else if (b.remain != null) {
+          } else if (b.value != null) {
             // 写入/覆盖
             entry.productionBuffs[b.type] = {
               type:     b.type,
-              emoji:    b.emoji,
-              general:  b.general,
-              action:   b.action,
-              remain:   b.remain,
-              // 保留旧版字段
               value:    b.value,
               resource: b.resource,
+              remain:   b.remain,
             };
           }
         });
@@ -683,57 +679,34 @@ window.SGParser = (function () {
         continue;
       }
 
-      // 产出△城名:🌾 任峻 督民筑渠/4,🔨 韩浩 督造箭楼/3
+      // 产出△城名:屯田+45粮/5,开市+30金/4
       if (/^产出△/.test(line)) {
         anchor = null;
         const rest = line.replace(/^产出△\s*/, '').trim();
+        // 格式：城名:buff串  （冒号全半角均支持）
         const colonPos = rest.search(/[:：]/);
         if (colonPos > 0) {
           const cityName = rest.slice(0, colonPos).trim();
           const buffStr  = rest.slice(colonPos + 1).trim();
           const buffs = [];
-          const EMOJI_MAP = {
-            '🌾': '屯田', '💰': '开市', '🐫': '通商', '🤝': '人才', '🔨': '工造',
-            '📚': '教化', '⚔️': '军训', '🕊️': '情报', '🎁': '特产'
-          };
           buffStr.split(/[,，]/).forEach(seg => {
             seg = seg.trim();
             if (!seg) return;
-            // 1. 新格式：emoji 武将 动作短语/剩余回合
-            const newM = seg.match(/^([^\s]+)\s+([^\s]+)\s+([^/]+)\/(\d+)$/);
-            if (newM && EMOJI_MAP[newM[1]]) {
-              const emoji = newM[1];
+            // 到期格式：屯田-到期  开市-到期
+            const expM = seg.match(/^([^+-]+)-到期$/);
+            if (expM) { buffs.push({ type: expM[1].trim(), expired: true }); return; }
+            // 增益格式：屯田+45粮/5  开市+30金/4
+            const bufM = seg.match(/^([^+\-]+)[+]([0-9]+)([^/]+)\/([0-9]+)$/);
+            if (bufM) {
               buffs.push({
-                type:    EMOJI_MAP[emoji],
-                emoji:   emoji,
-                general: newM[2].trim(),
-                action:  newM[3].trim(),
-                remain:  parseInt(newM[4])
+                type:     bufM[1].trim(),
+                value:    parseInt(bufM[2]),
+                resource: bufM[3].trim(),
+                remain:   parseInt(bufM[4]),
               });
               return;
             }
-            // 2. 到期格式：emoji-到期
-            const expM = seg.match(/^([^\s\-]+)-到期$/);
-            if (expM && EMOJI_MAP[expM[1]]) {
-              const emoji = expM[1];
-              buffs.push({ type: EMOJI_MAP[emoji], emoji, expired: true });
-              return;
-            }
-            // 3. 旧格式兼容：屯田-到期
-            const oldExpM = seg.match(/^([^+-]+)-到期$/);
-            if (oldExpM) { buffs.push({ type: oldExpM[1].trim(), expired: true }); return; }
-            // 4. 旧格式：屯田+45粮/5
-            const oldBufM = seg.match(/^([^+\-]+)[+]([0-9]+)([^/]+)\/([0-9]+)$/);
-            if (oldBufM) {
-              buffs.push({
-                type:     oldBufM[1].trim(),
-                value:    parseInt(oldBufM[2]),
-                resource: oldBufM[3].trim(),
-                remain:   parseInt(oldBufM[4]),
-              });
-              return;
-            }
-            // 5. 兜底
+            // 宽容：无法解析的 seg 仍以原始字符串保存
             buffs.push({ type: seg, raw: seg });
           });
           if (!change.productionOps) change.productionOps = [];
