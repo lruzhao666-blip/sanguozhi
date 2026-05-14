@@ -885,18 +885,18 @@ window.SGMap = (function () {
         const rows = dutyList.map(b => {
           const icon = b.emoji || '✦';
           if (b.general && b.action) {
-            // 新格式：武将名 动作短语 /剩余回合 (武将名金色加粗)
+            // 新格式：武将名 动作短语 剩余 N 回合 (武将名使用玩家主题色并加粗)
             return `<div class="sgt-row sgt-prod-buff">
-              <span class="sgt-lbl">${icon}</span>
+              <span class="sgt-lbl" style="margin-right:0.3rem">${icon}</span>
               <b style="color:${ownerClr};font-weight:700">${_esc(b.general)}</b>
-              <span class="sgt-prod-val" style="margin-left:0.5rem;color:var(--gold-light)">${_esc(b.action)}</span>
+              <span class="sgt-prod-val" style="margin-left:0.5rem;color:var(--text-sub)">${_esc(b.action)}</span>
               <span class="sgt-prod-remain" style="font-size:50%;color:var(--text-dim);margin-left:0.3rem"> 剩余 ${b.remain} 回合</span>
             </div>`;
           } else {
             // 旧格式/兜底：显示类型和剩余回合
             return `<div class="sgt-row sgt-prod-buff">
-              <span class="sgt-lbl">${icon}</span>
-              <span class="sgt-prod-val" style="color:var(--gold-light)">${_esc(b.type)}</span>
+              <span class="sgt-lbl" style="margin-right:0.3rem">${icon}</span>
+              <span class="sgt-prod-val" style="color:var(--text-sub)">${_esc(b.type)}</span>
               <span class="sgt-prod-remain" style="font-size:50%;color:var(--text-dim);margin-left:0.3rem"> 剩余 ${b.remain} 回合</span>
             </div>`;
           }

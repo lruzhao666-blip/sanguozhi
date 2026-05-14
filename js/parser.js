@@ -48,6 +48,12 @@ window.SGParser = (function () {
   // 武将合法状态
   const VALID_STATUS = ['健康', '疲劳', '受伤', '患病', '阵亡'];
 
+  // 任事类型对应 Emoji
+  const EMOJI_MAP = {
+    '🌾': '屯田', '💰': '开市', '🐫': '通商', '🤝': '人才', '🔨': '工造',
+    '📚': '教化', '⚔️': '军训', '🕊️': '情报', '🎁': '特产'
+  };
+
   // ─────────────────────────────────────────
   //  主入口：格式探针 → 路由到对应解析器
   // ─────────────────────────────────────────
@@ -692,10 +698,6 @@ window.SGParser = (function () {
           const cityName = rest.slice(0, colonPos).trim();
           const buffStr  = rest.slice(colonPos + 1).trim();
           const buffs = [];
-          const EMOJI_MAP = {
-            '🌾': '屯田', '💰': '开市', '🐫': '通商', '🤝': '人才', '🔨': '工造',
-            '📚': '教化', '⚔️': '军训', '🕊️': '情报', '🎁': '特产'
-          };
           buffStr.split(/[,，]/).forEach(seg => {
             seg = seg.trim();
             if (!seg) return;
@@ -712,8 +714,11 @@ window.SGParser = (function () {
                 buffs.push({ type: EMOJI_MAP[foundEmoji], emoji: foundEmoji, expired: true });
                 return;
               }
-              // 新格式解析：武将 动作/回合 (支持全角空格)
-              const newM = body.match(/^([^\s　]{2,8})[\s　]+([^/]+)\/(\d+)$/);
+              // 新格式解析：武将 动作/回合 (支持全角/半角空格可选)
+              // 1. 优先匹配带空格的：[武将] [动作]/[回合]
+              // 2. 兜底匹配无空格的：[武将(取前2字)][动作]/[回合]
+              const newM = body.match(/^([^\s　]{2,8})[\s　]+([^/]+)\/(\d+)$/) ||
+                           body.match(/^([^\s　]{2})([^/]+)\/(\d+)$/);
               if (newM) {
                 buffs.push({
                   type:    EMOJI_MAP[foundEmoji],
@@ -739,8 +744,12 @@ window.SGParser = (function () {
             // 3. 旧格式：屯田+45粮/5
             const oldBufM = seg.match(/^([^+\-]+)[+]([0-9]+)([^/]+)\/([0-9]+)$/);
             if (oldBufM) {
+              const type = oldBufM[1].trim();
+              let em = '';
+              for(const [k,v] of Object.entries(EMOJI_MAP)) if(v===type) em=k;
               buffs.push({
-                type:     oldBufM[1].trim(),
+                type:     type,
+                emoji:    em,
                 value:    parseInt(oldBufM[2]),
                 resource: oldBufM[3].trim(),
                 remain:   parseInt(oldBufM[4]),
