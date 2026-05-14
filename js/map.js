@@ -885,19 +885,19 @@ window.SGMap = (function () {
         const rows = dutyList.map(b => {
           const icon = b.emoji || '✦';
           if (b.general && b.action) {
-            // 新格式：emoji 武将名 动作短语 剩余 N 回合 (武将名使用玩家主题色并加粗)
+            // 建议 DOM 结构: duty-row > duty-emoji, duty-general, duty-action, duty-remain
             return `<div class="duty-row" style="display:flex;align-items:baseline;font-size:0.78rem;line-height:1.8;margin-bottom:2px">
               <span class="duty-emoji" style="margin-right:0.4rem;font-size:0.8rem">${icon}</span>
               <span class="duty-general" style="color:${ownerClr};font-weight:700;margin-right:0.5rem">${_esc(b.general)}</span>
               <span class="duty-action" style="color:var(--text-sub);flex:1">${_esc(b.action)}</span>
-              <span class="duty-remain" style="font-size:50%;color:var(--text-dim);margin-left:0.4rem">剩余 ${b.remain} 回合</span>
+              <span class="duty-remain" style="font-size:50%;color:var(--text-dim);margin-left:0.4rem;white-space:nowrap">剩余 ${b.remain} 回合</span>
             </div>`;
           } else {
             // 旧格式/兜底：显示类型和剩余回合
             return `<div class="duty-row" style="display:flex;align-items:baseline;font-size:0.78rem;line-height:1.8;margin-bottom:2px">
               <span class="duty-emoji" style="margin-right:0.4rem;font-size:0.8rem">${icon}</span>
               <span class="duty-action" style="color:var(--text-sub);flex:1">${_esc(b.type)}</span>
-              <span class="duty-remain" style="font-size:50%;color:var(--text-dim);margin-left:0.4rem">剩余 ${b.remain} 回合</span>
+              <span class="duty-remain" style="font-size:50%;color:var(--text-dim);margin-left:0.4rem;white-space:nowrap">剩余 ${b.remain} 回合</span>
             </div>`;
           }
         }).join('');

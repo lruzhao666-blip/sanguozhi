@@ -155,7 +155,7 @@ window.SGParser = (function () {
 
     // [变动]
     if (blocks['变动']) {
-      const { changes, npcStatus, wildEvents } = _parseChangesBlock(blocks['变动']);
+      const { changes, npcStatus, wildEvents } = _parseChangesBlock(blocks['变动'], result.players);
       result.changes    = changes;
       result.npcStatus  = npcStatus;
       result.wildEvents = wildEvents;
@@ -444,7 +444,7 @@ window.SGParser = (function () {
   //  └ 全局锚点   NPC状态△虎牢关:吕布更换西门巡夜
   //               野外△:高定再送山盐但仍未归附
   // ═══════════════════════════════════════════════════════
-  function _parseChangesBlock(raw) {
+  function _parseChangesBlock(raw, players) {
     const npcStatus  = [];
     const wildEvents = [];
     const changes    = [];
@@ -456,7 +456,8 @@ window.SGParser = (function () {
 
     const flush = () => {
       if (!curSlot) return;
-      const ch = _parseOneChange(curSlot, curLines.join('\n'));
+      const player = (players || []).find(p => p.slot === curSlot);
+      const ch = _parseOneChange(curSlot, curLines.join('\n'), player);
       if (ch) changes.push(ch);
     };
 
@@ -552,7 +553,7 @@ window.SGParser = (function () {
   //  解析单槽变动内容
   //  输入 raw 已剥去 "甲 " 前缀
   // ─────────────────────────────────────────
-  function _parseOneChange(slot, raw) {
+  function _parseOneChange(slot, raw, player) {
     const change = {
       slot,
       raw,
@@ -702,31 +703,71 @@ window.SGParser = (function () {
             seg = seg.trim();
             if (!seg) return;
 
-            // 1. 识别 Emoji 前缀（兼容全角空格与变体选择符）
+            // 1. 识别 Emoji 前缀（归一化处理变体选择符 U+FE0F）
             let foundEmoji = null;
+            let emojiRawLen = 0;
+            const normSeg = seg.replace(/\uFE0F/g, '');
             for (const emoji of Object.keys(EMOJI_MAP)) {
-              if (seg.startsWith(emoji)) { foundEmoji = emoji; break; }
+              const normEmoji = emoji.replace(/\uFE0F/g, '');
+              if (normSeg.startsWith(normEmoji)) {
+                foundEmoji = emoji;
+                // 查找原始 seg 中该 emoji 所占的长度
+                const m = seg.match(new RegExp('^' + emoji.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\uFE0F/g, '\\uFE0F?')));
+                emojiRawLen = m ? m[0].length : emoji.length;
+                break;
+              }
             }
 
             if (foundEmoji) {
-              const body = seg.slice(foundEmoji.length).trim();
+              const body = seg.slice(emojiRawLen).trim();
               if (body === '-到期') {
                 buffs.push({ type: EMOJI_MAP[foundEmoji], emoji: foundEmoji, expired: true });
                 return;
               }
-              // 新格式解析：武将 动作/回合 (支持全角/半角空格、Tab 可选, 兼容全角 U+3000)
-              // 规则：
-              // - 优先尝试带空格分隔：[武将(2-8汉字)] [动作]/[回合]
-              // - 兜底尝试无空格连写：[武将(2-3汉字)][动作]/[回合]
-              const newM = body.match(/^([\u4e00-\u9fa5]{2,8})[\s　\t]+([^/]+)\/(\d+)$/) ||
-                           body.match(/^([\u4e00-\u9fa5]{2,3})([^/]+)\/(\d+)$/);
-              if (newM) {
+              // 新格式解析：武将 动作/回合 (支持全角 U+3000、半角空格、Tab 可选)
+              // 策略：
+              // A. 优先尝试从武将名单匹配（如果存在）
+              // B. 若无名单或未匹配，正则提取
+
+              let general = '', action = '', remain = 0;
+              const gNames = (player?.generals || []).map(g => g.name);
+
+              // 尝试从 body 头部匹配已知武将名 (最长优先)
+              const sortedG = [...gNames].sort((a,b) => b.length - a.length);
+              for (const name of sortedG) {
+                if (body.startsWith(name)) {
+                  const rest = body.slice(name.length).trim();
+                  const m = rest.match(/^([^/]+)\/(\d+)$/);
+                  if (m) {
+                    general = name;
+                    action  = m[1].trim();
+                    remain  = parseInt(m[2]);
+                    break;
+                  }
+                }
+              }
+
+              // 若名单匹配失败，使用正则
+              if (!general) {
+                // 规则：武将名 2-8 汉字。
+                // 1. 优先匹配带空格分隔的 (武将名 动作/回合)
+                // 2. 兜底匹配无空格的 (由于无法区分名与动作，暂取前 2-3 字尝试)
+                const m = body.match(/^([\u4e00-\u9fa5]{2,8})[\s　\t]+([^/]+)\/(\d+)$/) ||
+                          body.match(/^([\u4e00-\u9fa5]{2,3})([^/]+)\/(\d+)$/);
+                if (m) {
+                  general = m[1].trim();
+                  action  = m[2].trim();
+                  remain  = parseInt(m[3]);
+                }
+              }
+
+              if (general) {
                 buffs.push({
                   type:    EMOJI_MAP[foundEmoji],
                   emoji:   foundEmoji,
-                  general: newM[1].trim(),
-                  action:  newM[2].trim(),
-                  remain:  parseInt(newM[3])
+                  general: general,
+                  action:  action,
+                  remain:  remain
                 });
                 return;
               }
