@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260515a" />
+  <link rel="stylesheet" href="css/style.css?v=20260511d" />
 </head>
 <body>
 
@@ -256,40 +256,6 @@
         <div id="parse-result" class="pp-result"></div>
       </div>
 
-      <!-- 下回合 Prompt 生成器 -->
-      <div class="prompt-gen-card">
-        <div class="pg-header">
-          <span class="pg-icon">✍️</span>
-          <span class="pg-title">下回合 Prompt 生成器</span>
-        </div>
-
-        <div class="pg-hint">
-          粘贴本回合三位玩家的所有行动指令,点击"生成"
-          后会自动拼接状态快照与随机数池,可一键复制
-          发给 Claude 主持人。
-        </div>
-
-        <label class="pg-lbl">📥 玩家本回合行动(格式不限,原文粘贴)</label>
-        <textarea id="pg-actions" rows="10" class="pg-ta"
-          placeholder="例:&#10;甲选①,派典韦驻许昌主持访贤...&#10;乙选②A,蔡瑁督造艨艟楼船...&#10;丙选④自定义,令魏延校场整训..."></textarea>
-
-        <div class="pg-actions-bar">
-          <button id="pg-btn-generate" class="btn-primary">
-            🎲 生成下回合 Prompt
-          </button>
-        </div>
-
-        <label class="pg-lbl">📤 生成结果(只读,点复制按钮即可)</label>
-        <textarea id="pg-output" rows="20" class="pg-ta" readonly
-          placeholder="点击上方'生成'按钮后,此处会显示完整 Prompt..."></textarea>
-
-        <div class="pg-actions-bar">
-          <button id="pg-btn-copy" class="btn-primary" disabled>
-            📋 复制到剪贴板
-          </button>
-        </div>
-      </div>
-
     </div>
   </div>
 </section>
@@ -326,6 +292,6 @@
 <script src="js/tips.js?v=20260511b"></script>
 <script src="js/general-duties.js?v=20260510b"></script>
 <script src="js/generals-tooltip.js?v=20260511d"></script>
-<script src="js/main.js?v=20260515a"></script>
+<script src="js/main.js?v=20260513b"></script>
 </body>
 </html>
