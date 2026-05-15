@@ -886,7 +886,7 @@ window.SGMap = (function () {
             <span class="duty-emoji" style="margin-right:2px">${_esc(b.emoji || '')}</span>
             <span class="duty-general" style="color:${ownerClr};font-weight:700">${_esc(b.general)}</span>
             <span class="duty-action" style="margin-left:0.5rem;color:var(--text-sub)">${_esc(b.action)}</span>
-            <span class="duty-remain" style="margin-left:auto;color:var(--text-dim);font-size:50%">剩余 ${_esc(b.remain)} 回合</span>
+            <span class="duty-remain" style="margin-left:auto;color:#aaa;font-size:75%;padding-right:8px">剩余 ${_esc(b.remain)} 回合</span>
           </div>`;
         }).join('');
         dutyHtml = `<div class="sgt-divider"></div>
