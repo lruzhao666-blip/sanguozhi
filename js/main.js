@@ -1,5 +1,5 @@
 /**
- * main.js — 三国志文字版 v10 (v2.5)
+ * main.js — 三国志文字版 v11 (v2.5)
  * 对接规范 v2.0：
  *  - 剧情区 / 数据区分离（36个=号分隔）
  *  - [甲][乙][丙] 含 cities_list（城名+守将）
@@ -2310,19 +2310,102 @@
   //  解析预览
   // ══════════════════════════════════════════
   function showParsePreview(parsed) {
-    const box = document.getElementById('parse-preview');
-    const res = document.getElementById('parse-result');
-    if (!box || !res) return;
-    const lines = parsed ? SGParser.summarize(parsed) : ['❌ 无法解析，请检查格式'];
-    // 显示回合号提示（优先解析结果）
-    const nextRound = state.rounds.length
-      ? state.rounds[state.rounds.length - 1].round + 1
-      : 1;
-    const detectedRound = Number.isInteger(parsed?.round) ? parsed.round : parseInt(parsed?.round, 10);
-    const roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
-    const header = `<div class="pp-item"><strong>🎴 发布后将成为：</strong><span class="pp-ok">第 ${roundNum} 回合</span></div>`;
-    res.innerHTML = header + lines.map(l => `<div class="pp-item">${l}</div>`).join('');
-    box.classList.remove('hidden');
+    var el = document.getElementById('parse-result');
+    if (!el) return;
+    if (!parsed) {
+      el.innerHTML = '<div class="pp-row"><span class="pp-fail">❌ 无法解析，请检查格式</span></div>';
+      document.getElementById('parse-preview').classList.remove('hidden');
+      return;
+    }
+    var html = '';
+
+    // 回合号
+    html += '<div class="pp-row">';
+    html += parsed.round
+      ? '<span class="pp-ok">✅ 回合: 第' + parsed.round + '回合</span>'
+      : '<span class="pp-fail">❌ 回合号未识别</span>';
+    html += '</div>';
+
+    // 速递
+    html += '<div class="pp-row">';
+    html += parsed.digest
+      ? '<span class="pp-ok">✅ 速递: ' + esc(parsed.digest.slice(0,50)) + '</span>'
+      : '<span class="pp-warn">⚠️ 速递未识别</span>';
+    html += '</div>';
+
+    // 三位玩家
+    parsed.players.forEach(function (p, i) {
+      html += '<div class="pp-row">';
+      var fields = [];
+      if (p.name) fields.push('名号:' + p.name);
+      if (p.gold !== null) fields.push('金:' + p.gold);
+      if (p.food !== null) fields.push('粮:' + p.food);
+      if (p.troop !== null) fields.push('兵:' + p.troop);
+      if (p.morale !== null) fields.push('民心:' + p.morale);
+      if (p.cities !== null) fields.push('城:' + p.cities);
+      if (p.cities_list.length) fields.push('城池明细:' + p.cities_list.length + '座');
+      if (p.generals.length) fields.push('武将:' + p.generals.length + '人');
+
+      var missing = [];
+      if (p.gold === null) missing.push('金');
+      if (p.food === null) missing.push('粮');
+      if (p.troop === null) missing.push('兵');
+      if (!p.cities_list.length) missing.push('城池明细');
+      if (!p.generals.length) missing.push('武将');
+
+      if (fields.length >= 5) {
+        html += '<span class="pp-ok">✅ ' + '甲乙丙'[i] + ': '
+          + fields.join(' · ') + '</span>';
+      } else if (fields.length >= 2) {
+        html += '<span class="pp-warn">⚠️ ' + '甲乙丙'[i] + ': '
+          + fields.join(' · ');
+        if (missing.length) html += ' (缺失: ' + missing.join(',') + ')';
+        html += '</span>';
+      } else {
+        html += '<span class="pp-fail">❌ ' + '甲乙丙'[i]
+          + ': 数据严重不足</span>';
+      }
+      html += '</div>';
+    });
+
+    // 如果玩家数量不足3
+    if (parsed.players.length < 3) {
+      html += '<div class="pp-row"><span class="pp-fail">❌ 只识别到 '
+        + parsed.players.length + '/3 位玩家</span></div>';
+    }
+
+    // NPC
+    html += '<div class="pp-row">';
+    html += parsed.npcCities.length
+      ? '<span class="pp-ok">✅ NPC: ' + parsed.npcCities.length + '座城</span>'
+      : '<span class="pp-warn">⚠️ NPC城池未识别</span>';
+    html += '</div>';
+
+    // 战报
+    html += '<div class="pp-row">';
+    html += parsed.battles.length
+      ? '<span class="pp-ok">✅ 战报: ' + parsed.battles.length + '条</span>'
+      : '<span class="pp-ok">✅ 战报: 无战事</span>';
+    html += '</div>';
+
+    // 变动
+    html += '<div class="pp-row">';
+    html += parsed.changes.length
+      ? '<span class="pp-ok">✅ 变动: ' + parsed.changes.length + '条</span>'
+      : '<span class="pp-warn">⚠️ 变动块未识别</span>';
+    html += '</div>';
+
+    // 剧情区
+    html += '<div class="pp-row">';
+    html += parsed.rawDigest
+      ? '<span class="pp-ok">✅ 剧情区: '
+        + parsed.rawDigest.length + '字</span>'
+      : '<span class="pp-fail">❌ 剧情区为空</span>';
+    html += '</div>';
+
+    el.innerHTML = html;
+    var previewBox = document.getElementById('parse-preview');
+    if (previewBox) previewBox.classList.remove('hidden');
   }
 
   // ══════════════════════════════════════════
