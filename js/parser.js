@@ -1,5 +1,5 @@
 /**
- * parser.js — 三国志文字版 · AI内容解析器 v12
+ * parser.js — 三国志文字版 · AI内容解析器 v13
  *
  * 规则基准：《三国志文字版 AI主持人系统提示词》v2.7.9
  *
@@ -49,36 +49,130 @@ window.SGParser = (function () {
   const VALID_STATUS = ['健康', '疲劳', '受伤', '患病', '阵亡'];
 
   // ─────────────────────────────────────────
+  //  文本预处理器
+  // ─────────────────────────────────────────
+  function _normalize(text) {
+    var s = text;
+
+    // ── 1. 代码块提取 ──
+    var firstTick = s.indexOf('```');
+    if (firstTick !== -1) {
+      var lastTick = s.lastIndexOf('```');
+      if (lastTick !== -1 && lastTick !== firstTick) {
+        var startContent = s.indexOf('\n', firstTick);
+        if (startContent !== -1 && startContent < lastTick) {
+           s = s.slice(startContent + 1, lastTick);
+        } else {
+           // Fallback to match after ```xxx
+           var tmp = s.slice(firstTick + 3, lastTick);
+           s = tmp.replace(/^[\w]*\s*\n?/, '');
+        }
+      }
+    }
+    // Check inner Match
+    var firstTickInner = s.indexOf('```');
+    if (firstTickInner !== -1) {
+      var lastTickInner = s.lastIndexOf('```');
+      if (lastTickInner !== -1 && lastTickInner !== firstTickInner) {
+        var startContentInner = s.indexOf('\n', firstTickInner);
+        if (startContentInner !== -1 && startContentInner < lastTickInner) {
+           s = s.slice(startContentInner + 1, lastTickInner);
+        } else {
+           var tmp2 = s.slice(firstTickInner + 3, lastTickInner);
+           s = tmp2.replace(/^[\w]*\s*\n?/, '');
+        }
+      }
+    }
+
+    // ── 2. 全角→半角符号修正 ──
+    s = s.replace(/（/g, '(');
+    s = s.replace(/）/g, ')');
+    s = s.replace(/，/g, ',');
+    s = s.replace(/：/g, ':');
+
+    // ── 3. Markdown 格式清理 ──
+    s = s.replace(/\*\*([^*]+)\*\*/g, '$1');
+    s = s.replace(/__([^_]+)__/g, '$1');
+    s = s.replace(/^#{1,6}\s+/gm, '');
+    s = s.replace(/^>\s+/gm, '');
+    s = s.replace(/^---+$/gm, '');
+    s = s.replace(/^\|.*\|$/gm, '');
+    s = s.replace(/^-\s+/gm, '');
+
+    // ── 4. 分隔线标准化 ──
+    s = s.replace(/^[\s]*={30,}[\s]*$/gm, '====================================');
+
+    // ── 5. 字段标签标准化 ──
+    s = s.replace(/[【\[]\s*(回合|节气|速递|甲|乙|丙|NPC|npc|战报|变动|驻城)\s*[】\]]\s*[:：]?\s*/gm,
+      function (match, tag) {
+        return '[' + tag + '] ';
+      });
+
+    // ── 6. 名号标签标准化 ──
+    s = s.replace(/^名号\s*[:：]\s*/gm, '名号:');
+
+    // ── 7. 资源行标准化 ──
+    s = s.replace(/(金|粮|兵|民心|城)\s*:\s*/g, '$1:');
+
+    // ── 9. 武将状态标准化 ──
+    s = s.replace(/\(健康\)/g, '()');
+    s = s.replace(/\(\s+/g, '(');
+    s = s.replace(/\s+\)/g, ')');
+
+    // ── 10. △符号标准化 ──
+    s = s.replace(/[▲Δ▽]/g, '△');
+
+    // ── 11. emoji 周围空格清理 ──
+    s = s.replace(/([\u{1F300}-\u{1FAFF}])\s{2,}/gu, '$1 ');
+
+    // ── 12. 空行清理 ──
+    s = s.replace(/\n{4,}/g, '\n\n\n');
+
+    // ── 13. 行首行尾空白清理 ──
+    s = s.split('\n').map(function (line) {
+      return line.trimRight();
+    }).join('\n');
+
+    return s;
+  }
+
+
+  // ─────────────────────────────────────────
   //  主入口：格式探针 → 路由到对应解析器
   // ─────────────────────────────────────────
   function parse(rawText) {
     if (!rawText || !rawText.trim()) return _empty();
 
-    // ── 格式 B：简化新格式 v3（含【结构化数据】或 △| 管道行）──
-    if (/【结构化数据】/.test(rawText) || /[△▽]\|/.test(rawText)) {
-      return _parseSimplified(rawText);
-    }
+    // ★ 新增: 预处理标准化
+    var normalized = _normalize(rawText);
 
-    // ── 格式 A / C：提取代码块 ──
-    const codeM = rawText.match(/```[\w]*\n?([\s\S]*?)```/);
-    const codeBlock = codeM ? codeM[1] : rawText;
+    // ── 格式 B：简化新格式 v3（含【结构化数据】或 △| 管道行）──
+    if (/【结构化数据】/.test(normalized) || /[△▽]\|/.test(normalized)) {
+      return _parseSimplified(normalized);
+    }
 
     // 按 36 个 = 切分
-    const sepIdx = codeBlock.indexOf(SEP);
+    var sepIdx = normalized.indexOf(SEP);
     let storyZone, dataZone;
+    const result = _empty();
+
     if (sepIdx !== -1) {
-      storyZone = codeBlock.slice(0, sepIdx).trim();
-      dataZone  = codeBlock.slice(sepIdx + SEP.length).trim();
+      // 从原文中找到大致相同位置的分隔线
+      var origSepIdx = rawText.indexOf('='.repeat(30));
+      if (origSepIdx === -1) origSepIdx = sepIdx;
+
+      storyZone = normalized.slice(0, sepIdx).trim();
+      result.rawDigest = rawText.slice(0, origSepIdx).trim();
+      dataZone = normalized.slice(sepIdx + SEP.length).trim();
     } else {
-      storyZone = codeBlock.trim();
-      dataZone  = '';
+      storyZone = normalized.trim();
+      result.rawDigest = rawText.trim();
+      dataZone = '';
     }
 
-    const result = _empty();
-    result.rawDigest = storyZone;
-
     if (dataZone) {
-      _parseDataZone(dataZone, result);
+      // 传递 storyZone 供降级兜底使用
+      _parseDataZone(dataZone, result, storyZone);
     } else {
       _parseLegacy(storyZone, result);
     }
@@ -111,7 +205,7 @@ window.SGParser = (function () {
   // ─────────────────────────────────────────
   //  数据区总调度
   // ─────────────────────────────────────────
-  function _parseDataZone(text, result) {
+  function _parseDataZone(text, result, storyZone) {
     const blocks = _splitBlocks(text);
 
     // [回合]
@@ -197,6 +291,68 @@ window.SGParser = (function () {
         });
       });
     });
+
+    // ★ 兜底: 如果玩家数据未解析到,尝试从全文暴力提取
+    if (result.players.length === 0) {
+      var fullText = storyZone + '\n' + text;
+      // 找 "金:数字 粮:数字" 这样的行, 附近提取名号
+      var lines = fullText.split('\n').map(function(l) { return l.trim(); });
+      var p = null;
+      var slotMap = ['甲', '乙', '丙'];
+      var slotIdx = 0;
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        if (!line) continue;
+
+        var nameMatch = line.match(/^名号\s*[:：]\s*(.+)/);
+        if (nameMatch && !p) {
+          p = { slot: slotMap[slotIdx] || '未知', name: nameMatch[1].trim(), city: '', gold: null, food: null, troop: null, morale: null, cities: null, generals: [], cities_list: [], ownedCities: [], situation_note: '', suggestions: [] };
+        }
+
+        var goldM = line.match(/(?:^|\s)金\s*[:：]?\s*(-?\d+)/);
+        var foodM = line.match(/(?:^|\s)粮\s*[:：]?\s*(-?\d+)/);
+        if (goldM && foodM) {
+          if (!p) {
+             p = { slot: slotMap[slotIdx] || '未知', name: '未知', city: '', gold: null, food: null, troop: null, morale: null, cities: null, generals: [], cities_list: [], ownedCities: [], situation_note: '', suggestions: [] };
+          }
+          p.gold = parseInt(goldM[1]);
+          p.food = parseInt(foodM[1]);
+          var troopM = line.match(/(?:^|\s)兵\s*[:：]?\s*(-?\d+)/);
+          if (troopM) p.troop = parseInt(troopM[1]);
+          var moraleM = line.match(/(?:^|\s)民心\s*[:：]?\s*(-?\d+)/);
+          if (moraleM) p.morale = parseInt(moraleM[1]);
+          var cityM = line.match(/(?:^|\s)城\s*[:：]?\s*(\d+)/);
+          if (cityM) p.cities = parseInt(cityM[1]);
+        }
+
+        if (line.match(/^城池\s*[:：]/) && p) {
+           p.cities_list = _parseCityList(line.replace(/^城池\s*[:：]\s*/, ''));
+        }
+
+        if (line.match(/^武将\s*[:：]/) && p) {
+           p.generals = _parseGeneralList(line.replace(/^武将\s*[:：]\s*/, ''));
+           // End of player block
+           result.players.push(p);
+           p = null;
+           slotIdx++;
+        }
+      }
+      if (p && slotIdx < 3 && result.players.indexOf(p) === -1) {
+         result.players.push(p);
+      }
+    }
+
+    // ★ 兜底: 如果回合号未解析到,从剧情区标题提取
+    if (!result.round) {
+      var roundM = storyZone.match(/第\s*(\d+)\s*回合/);
+      if (roundM) result.round = parseInt(roundM[1]);
+    }
+
+    // ★ 兜底: 如果 digest 为空,取剧情区前 100 字
+    if (!result.digest && storyZone) {
+      result.digest = storyZone.slice(0, 100).replace(/\n/g, ' ').trim() + '...';
+    }
   }
 
   // ─────────────────────────────────────────
@@ -204,18 +360,28 @@ window.SGParser = (function () {
   // ─────────────────────────────────────────
   function _splitBlocks(text) {
     const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','变动','驻城']);
+    // ★ 新增: 别名映射
+    var ALIASES = {
+      '甲方': '甲', '玩家甲': '甲', '城主甲': '甲',
+      '乙方': '乙', '玩家乙': '乙', '城主乙': '乙',
+      '丙方': '丙', '玩家丙': '丙', '城主丙': '丙',
+      'NPC势力': 'NPC', 'NPC城池': 'NPC', 'npc': 'NPC',
+      '战斗': '战报', '战况': '战报',
+      '收支': '变动', '结算': '变动', '变化': '变动',
+    };
     const lines  = text.split('\n');
     const blocks = {};
     let curKey = null, curBuf = [];
 
     for (const line of lines) {
-      const m = line.match(/^[\[【]([^\]】\n]{1,10})[\]】]/);
+      const m = line.match(/^[\[【]([^\]】\n]{1,16})[\]】]/); // 放宽到 16
       if (m) {
-        const key = m[1].trim();
+        const rawKey = m[1].trim();
+        const key = ALIASES[rawKey] || rawKey;
         if (KNOWN.has(key)) {
           if (curKey !== null) blocks[curKey] = curBuf.join('\n');
           curKey = key;
-          const rest = line.replace(/^[\[【][^\]】\n]{1,10}[\]】]\s*/, '').trim();
+          const rest = line.replace(/^[\[【][^\]】\n]{1,16}[\]】]\s*/, '').trim();
           curBuf = rest ? [rest] : [];
           continue;
         }
@@ -254,13 +420,40 @@ window.SGParser = (function () {
         continue;
       }
       // 资源行：金:54 粮:281 兵:680 民心:65 城:2
-      const resM = line.match(/金[:：](\d+)\s+粮[:：](\d+)\s+兵[:：](\d+)\s+民心[:：](\d+)\s+城[:：](\d+)/);
+      const resM = line.match(/金[:：]?\s*(-?\d+)\s+粮[:：]?\s*(-?\d+)\s+兵[:：]?\s*(-?\d+)\s+民心[:：]?\s*(-?\d+)\s+城[:：]?\s*(\d+)/);
       if (resM) {
         p.gold   = parseInt(resM[1]);
         p.food   = parseInt(resM[2]);
         p.troop  = parseInt(resM[3]);
         p.morale = parseInt(resM[4]);
         p.cities = parseInt(resM[5]);
+        continue;
+      }
+
+      // ★ 新增: 逐字段扫描(容错)
+      var goldM = line.match(/(?:^|\s)金\s*[:：]?\s*(-?\d+)/);
+      var foodM = line.match(/(?:^|\s)粮\s*[:：]?\s*(-?\d+)/);
+      var troopM = line.match(/(?:^|\s)兵\s*[:：]?\s*(-?\d+)/);
+      var moraleM = line.match(/(?:^|\s)民心\s*[:：]?\s*(-?\d+)/);
+      var cityM = line.match(/(?:^|\s)城\s*[:：]?\s*(\d+)/);
+
+      var matchCount = [goldM, foodM, troopM, moraleM, cityM].filter(Boolean).length;
+      if (matchCount >= 2) {
+        if (goldM) p.gold = parseInt(goldM[1]);
+        if (foodM) p.food = parseInt(foodM[1]);
+        if (troopM) p.troop = parseInt(troopM[1]);
+        if (moraleM) p.morale = parseInt(moraleM[1]);
+        if (cityM) p.cities = parseInt(cityM[1]);
+        continue;
+      }
+
+      // ★ 新增: 跨行资源读取
+      if (matchCount === 1) {
+        if (goldM && p.gold === null) p.gold = parseInt(goldM[1]);
+        if (foodM && p.food === null) p.food = parseInt(foodM[1]);
+        if (troopM && p.troop === null) p.troop = parseInt(troopM[1]);
+        if (moraleM && p.morale === null) p.morale = parseInt(moraleM[1]);
+        if (cityM && p.cities === null) p.cities = parseInt(cityM[1]);
         continue;
       }
       // 城池行
@@ -287,14 +480,37 @@ window.SGParser = (function () {
   // ─────────────────────────────────────────
   function _parseCityList(raw) {
     if (!raw || !raw.trim()) return [];
-    if (/[（）]/.test(raw)) {
-      console.warn('[SGParser] 城池行含全角括号: ' + raw.slice(0, 60));
-    }
+
+    var s = raw;
+
+    // 预处理: 顿号→逗号, 中文逗号→英文逗号(数据区专用)
+    s = s.replace(/、/g, ',');
+    s = s.replace(/，/g, ',');
+
+    // 预处理: 武将分隔 顿号→斜杠
+    s = s.replace(/\(([^)]*)\)/g, function (match, inner) {
+      return '(' + inner.replace(/、/g, '/') + ')';
+    });
+
+    // 预处理: 兵种写法统一
+    s = s.replace(/骑兵/g, '骑');
+    s = s.replace(/步兵/g, '步');
+    s = s.replace(/弓兵/g, '弓').replace(/弓箭兵/g, '弓');
+    s = s.replace(/水军/g, '水').replace(/水兵/g, '水');
+    s = s.replace(/蛮兵/g, '蛮').replace(/蛮族/g, '蛮');
+
+    // 预处理: "骑2000" → "骑:2000" (缺少冒号)
+    s = s.replace(/([步弓骑水蛮])\s*(\d+)/g, '$1:$2');
+
+    // 预处理: 武将与兵种之间缺少 | 分隔符
+    s = s.replace(/([^|,()]+\/[^|,()]*?)\s+([步弓骑水蛮]:)/g, '$1|$2');
+    s = s.replace(/(\([\u4e00-\u9fff]{2,8})\s+([步弓骑水蛮]:)/g, '$1|$2');
+
     const result = [];
-    // 匹配 城名(内容)，内容可含嵌套括号（不含顶层括号）
-    const re = /([^,，、(（\s]+)[（(]([^）)]*)[）)]/g;
+    // 匹配 城名(内容)
+    const re = /([^,\s(]+)\s*\(([^)]*)\)/g;
     let m;
-    while ((m = re.exec(raw)) !== null) {
+    while ((m = re.exec(s)) !== null) {
       const name  = m[1].trim();
       const inner = m[2].trim();
       if (!name) continue;
@@ -305,11 +521,17 @@ window.SGParser = (function () {
         holderRaw = inner.slice(0, pipeIdx).trim();
         troopsRaw = inner.slice(pipeIdx + 1).trim();
       } else {
-        holderRaw = inner;
-        troopsRaw = null;
+        if (/[步弓骑水蛮]:\d+/.test(inner)) {
+          var troopStart = inner.search(/[步弓骑水蛮]:/);
+          holderRaw = inner.slice(0, troopStart).trim().replace(/[\/／]\s*$/, '');
+          troopsRaw = inner.slice(troopStart).trim();
+        } else {
+          holderRaw = inner;
+          troopsRaw = null;
+        }
       }
 
-      const holders = (holderRaw === '无') ? [] : holderRaw.split('/').map(s => s.trim()).filter(Boolean);
+      const holders = (holderRaw === '无' || !holderRaw) ? [] : holderRaw.split(/[\/／]/).map(h => h.trim()).filter(Boolean);
       result.push({
         name,
         holder:  holders.join('/') || '无',
@@ -318,11 +540,37 @@ window.SGParser = (function () {
       });
     }
 
-    // 兼容无括号纯城名
-    if (!result.length) {
-      raw.split(/[,，、\s]+/).forEach(s => {
-        const n = s.trim();
-        if (n) result.push({ name: n, holder: '无', holders: [], troops: {} });
+    // ★ 降级: 如果正则一个都没匹配到,尝试按换行拆分
+    if (result.length === 0) {
+      var lines = s.split(/[,\n]/).map(function (l) {
+        return l.trim();
+      }).filter(Boolean);
+      lines.forEach(function (line) {
+        var lm = line.match(/([\u4e00-\u9fff]{2,6})\s*\(([^)]*)\)/);
+        if (lm) {
+          var lInner = lm[2].trim();
+          var lHolders = lInner.split(/[\/／、]/).map(function (h) {
+            return h.trim();
+          }).filter(function (h) {
+            return h && h !== '无' && !/[步弓骑水蛮]:/.test(h);
+          });
+          result.push({
+            name: lm[1].trim(),
+            holder: lHolders.join('/') || '无',
+            holders: lHolders,
+            troops:  _parseTroops(lInner),
+          });
+        } else {
+          var cityOnly = line.match(/^([\u4e00-\u9fff]{2,6})$/);
+          if (cityOnly) {
+            result.push({
+              name: cityOnly[1],
+              holder: '无',
+              holders: [],
+              troops: {},
+            });
+          }
+        }
       });
     }
     return result;
@@ -333,8 +581,15 @@ window.SGParser = (function () {
   //  城池:许昌(夏侯惇/张辽),邺城(袁绍),合肥(乐进)
   // ─────────────────────────────────────────
   function _parseNpcBlock(raw) {
-    const cityRaw = raw.replace(/^城池[:：]?\s*/i, '').trim();
-    const list = _parseCityList(cityRaw);
+    if (!raw || !raw.trim()) return [];
+    var s = raw.replace(/^城池[:：]?\s*/i, '').trim();
+    // 如果内容是多行格式(每行一座城),把换行转逗号
+    if (s.indexOf('\n') !== -1 && s.indexOf(',') === -1) {
+      s = s.split('\n').map(function (l) {
+        return l.trim();
+      }).filter(Boolean).join(',');
+    }
+    const list = _parseCityList(s);
     return list.map(c => ({
       name:    c.name,
       holders: c.holders || (c.holder && c.holder !== '无' ? c.holder.split('/') : []),
@@ -351,10 +606,11 @@ window.SGParser = (function () {
   function _parseTroops(raw) {
     if (!raw || raw === '无兵' || !raw.trim()) return {};
     const result = {};
-    raw.split(',').forEach(seg => {
-      const m = seg.trim().match(/^([步弓骑水蛮])[:：](\d+)$/);
-      if (m) result[m[1]] = parseInt(m[2]);
-    });
+    const re = /([步弓骑水蛮])\s*[:：]?\s*(\d+)/g;
+    let m;
+    while ((m = re.exec(raw)) !== null) {
+      result[m[1]] = parseInt(m[2], 10);
+    }
     return result;
   }
 
@@ -365,33 +621,35 @@ window.SGParser = (function () {
   // ─────────────────────────────────────────
   function _parseGeneralList(raw) {
     if (!raw || !raw.trim()) return [];
+    var s = raw;
+    s = s.replace(/、/g, ',');
     const result = [];
-    // 同时匹配半角 () 和全角（）括号 — BUG#4 修复
-    const re = /([^,，、(（\s]+)[（(]([^）)]*)[）)]/g;
+    const re = /([\u4e00-\u9fff]{2,8})\s*\(([^)]*)\)/g;
     let m;
-    while ((m = re.exec(raw)) !== null) {
-      const name   = m[1].trim();
-      // 状态字段去除括号内多余空格，再查白名单
-      let   status = m[2].trim();
-      if (!VALID_STATUS.includes(status)) {
-        // 白名单外状态：记录警告但不丢失武将，默认健康
-        console.warn(`[SGParser] 武将"${name}"状态"${status}"不在白名单，视为健康`);
-        status = '健康';
+    while ((m = re.exec(s)) !== null) {
+      const name = m[1].trim();
+      let status = m[2].trim();
+      if (!name) continue;
+      if (status && VALID_STATUS.indexOf(status) === -1) {
+        status = '';
       }
-      // 武将名：2-8 汉字（过滤拼音、英文、残余标点）
-      if (name && name.length >= 2 && name.length <= 8 && /[\u4e00-\u9fa5]/.test(name)) {
-        result.push({ name, status });
+      result.push({ name, status: status || '' });
+    }
+
+    if (result.length > 0) return result;
+
+    var parts = s.split(/[,\s]+/).filter(Boolean);
+    parts.forEach(function (part) {
+      var nm = part.match(/([\u4e00-\u9fff]{2,8})/);
+      if (nm) {
+        var statusMatch = part.match(/(疲劳|受伤|患病|阵亡)/);
+        result.push({
+          name: nm[1],
+          status: statusMatch ? statusMatch[1] : ''
+        });
       }
-    }
-    // 兜底：无括号格式（如 "马超,庞德"）
-    if (!result.length) {
-      raw.split(/[,，、\s]+/).forEach(s => {
-        const n = s.trim();
-        if (n && n.length >= 2 && n.length <= 8 && /[\u4e00-\u9fa5]/.test(n)) {
-          result.push({ name: n, status: '健康' });
-        }
-      });
-    }
+    });
+
     return result;
   }
 
@@ -401,23 +659,58 @@ window.SGParser = (function () {
   // ─────────────────────────────────────────
   function _parseBattles(raw) {
     if (!raw || !raw.trim()) return [];
-    const battles = [];
-    const re = /^(.+?)[→\->＞]\s*(.+?)\s*[|｜]\s*(胜|平|负)\s*[|｜]\s*伤亡[:：]攻(\d+)守(\d+)/;
-    for (const line of raw.split('\n').map(l => l.trim()).filter(Boolean)) {
-      if (/^本回合无战事/.test(line)) continue;
-      const m = line.match(re);
-      if (m) {
-        battles.push({
-          attacker:      m[1].trim(),
-          defender:      m[2].trim(),
-          result:        m[3],
-          attacker_loss: parseInt(m[4]),
-          defender_loss: parseInt(m[5]),
-          success:       m[3] === '胜',
-        });
+    var lines = raw.split('\n').map(function (l) {
+      return l.trim();
+    }).filter(Boolean);
+
+    var results = [];
+
+    lines.forEach(function (line) {
+      if (/无战事|无战斗|刀兵未动|太平无事/.test(line)) return;
+
+      var s = line;
+      s = s.replace(/->|=>|→|➜|➡/g, '→');
+
+      var arrowM = s.match(/([^→|]+)→([^→|]+)/);
+      if (!arrowM) return;
+
+      var attacker = arrowM[1].trim();
+      var rest = arrowM[2].trim() + ' ' + s.slice(arrowM.index + arrowM[0].length);
+
+      var defM = rest.match(/^([^|/,]+)/);
+      var defender = defM ? defM[1].trim() : '';
+
+      var resultStr = '';
+      if (/大胜|完胜/.test(s)) resultStr = '大胜';
+      else if (/小胜/.test(s)) resultStr = '小胜';
+      else if (/惨胜/.test(s)) resultStr = '惨胜';
+      else if (/胜/.test(s)) resultStr = '胜';
+      else if (/平|平手|僵持/.test(s)) resultStr = '平';
+      else if (/败|负/.test(s)) resultStr = '负';
+
+      var atkLoss = 0, defLoss = 0;
+      var casM = s.match(/伤亡\s*[:：]\s*攻\s*(-?\d+)\s*守\s*(-?\d+)/);
+      if (casM) {
+        atkLoss = parseInt(casM[1]);
+        defLoss = parseInt(casM[2]);
+      } else {
+        var atkM = s.match(/攻[方]?\s*[:：]?\s*[-损失]*\s*(\d+)/);
+        var defM2 = s.match(/守[方]?\s*[:：]?\s*[-损失]*\s*(\d+)/);
+        if (atkM) atkLoss = parseInt(atkM[1]);
+        if (defM2) defLoss = parseInt(defM2[1]);
       }
-    }
-    return battles;
+
+      results.push({
+        attacker: attacker,
+        defender: defender,
+        result: resultStr,
+        attacker_loss: atkLoss,
+        defender_loss: defLoss,
+        success: resultStr && resultStr !== '负' && resultStr !== '平',
+      });
+    });
+
+    return results;
   }
 
   // ═══════════════════════════════════════════════════════
@@ -581,7 +874,10 @@ window.SGParser = (function () {
       //    新逻辑：≥1 即尝试匹配，但只有明确是总变化行（含已知资源名）才采纳
       //    判定规则：行内资源△数字数量 ≥1，且行首非锚点关键字
       // ══════════════════════════════════════
-      const totalMatches = [...line.matchAll(/(金|粮|兵|民心|城)△([+-]?\d+)/g)];
+      // 尝试提取各资源变化
+      // 模式1(标准): 金△+120
+      // 模式2(宽松): 金△ +120 或 金:+120 或 金+120
+      const totalMatches = [...line.matchAll(/(金|粮|兵|民心|城)\s*[△:]?\s*([+-]?\d+)/g)];
       if (totalMatches.length >= 1) {
         // 排除已在 Step2 处理的专项锚点行（这些行含 △ 但不是总变化行）
         const isSpecialAnchor = /^(收支|府库|暗账|驻军|兵种|季度|情报)△/.test(line);
@@ -715,36 +1011,46 @@ window.SGParser = (function () {
             if (emojiMatch) {
               let rest = seg.slice(matchLength).trim().replace(/^[\s\u3000]+/, '');
 
+              // ★ 增强容错: emoji 可选, 剩余回合用 /数字 可选匹配
               // 1. & 2. 新格式 / 放宽的格式 (emoji 武将 动作/剩余)
               const slashIdx = rest.lastIndexOf('/');
+              let remainStr = '0';
+              let body = rest;
               if (slashIdx !== -1) {
-                let remainStr = rest.slice(slashIdx + 1).trim();
-                let body = rest.slice(0, slashIdx).trim().replace(/[\s\u3000]+$/, '');
-
-                let name, action;
-                let spaceMatch = body.match(/^([\u4e00-\u9fa5]{2,8})[\s\u3000]+(.+)$/);
-                if (spaceMatch) {
-                  name = spaceMatch[1];
-                  action = spaceMatch[2];
-                } else {
-                  const compoundSurnames = ['诸葛', '夏侯', '司马', '皇甫', '公孙', '慕容', '尉迟', '太史', '独孤', '令狐', '万俟', '宇文', '贺拔', '东门', '西门', '南门', '北门', '上官', '欧阳', '呼延'];
-                  let nameLen = 2;
-                  if (body.length >= 4 && compoundSurnames.includes(body.slice(0, 2))) {
-                    nameLen = 3;
-                  }
-                  name = body.slice(0, nameLen);
-                  action = body.slice(nameLen);
+                remainStr = rest.slice(slashIdx + 1).trim();
+                body = rest.slice(0, slashIdx).trim().replace(/[\s\u3000]+$/, '');
+              } else {
+                // 如果没有/剩余回合,尝试提取结尾数字
+                let endDigitMatch = rest.match(/([\s\u3000]+)(\d+)$/);
+                if (endDigitMatch) {
+                   remainStr = endDigitMatch[2];
+                   body = rest.slice(0, endDigitMatch.index).trim().replace(/[\s\u3000]+$/, '');
                 }
-
-                buffs.push({
-                  type:    EMOJI_MAP[emojiMatch],
-                  emoji:   emojiMatch,
-                  general: name,
-                  action:  action,
-                  remain:  parseInt(remainStr, 10)
-                });
-                return;
               }
+
+              let name, action;
+              let spaceMatch = body.match(/^([\u4e00-\u9fa5]{2,8})[\s\u3000]+(.+)$/);
+              if (spaceMatch) {
+                name = spaceMatch[1];
+                action = spaceMatch[2];
+              } else {
+                const compoundSurnames = ['诸葛', '夏侯', '司马', '皇甫', '公孙', '慕容', '尉迟', '太史', '独孤', '令狐', '万俟', '宇文', '贺拔', '东门', '西门', '南门', '北门', '上官', '欧阳', '呼延'];
+                let nameLen = 2;
+                if (body.length >= 4 && compoundSurnames.includes(body.slice(0, 2))) {
+                  nameLen = 3;
+                }
+                name = body.slice(0, nameLen);
+                action = body.slice(nameLen);
+              }
+
+              buffs.push({
+                type:    EMOJI_MAP[emojiMatch],
+                emoji:   emojiMatch,
+                general: name,
+                action:  action,
+                remain:  parseInt(remainStr, 10) || 0
+              });
+              return;
 
               // 3. 到期格式：emoji-到期
               if (rest === '-到期') {
@@ -812,7 +1118,7 @@ window.SGParser = (function () {
           // 格式：金:产出+30,维护-24,明账-10,府库-120,合计-124
           //       民心:赤字-5,合计-5
           //       兵 战损-80,合计-80   （空格分隔也支持）
-          const catM = line.match(/^(金|粮|兵|民心)[：:,，\s]+(.*)/);
+          const catM = line.match(/^(金|粮|兵|民心)[：:,，\s]*(.*)/);
           if (catM) {
             const cat  = catM[1];
             const rest = catM[2];
