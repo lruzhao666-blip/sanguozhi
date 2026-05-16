@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260515b" />
+  <link rel="stylesheet" href="css/style.css?v=20260516a" />
 </head>
 <body>
 
@@ -249,6 +249,33 @@
           <button id="btn-publish" class="btn-publish">🚀 发布回合</button>
           <button id="btn-clear-all" class="btn-danger">🗑️ 清空全部记录</button>
         </div>
+
+        <div class="gm-export-section">
+          <div class="gm-export-header">
+            <span>📦 续接工具</span>
+          </div>
+          <div class="gm-export-btns">
+            <button id="btn-gen-savepack" class="btn-preview">📦 生成续接包</button>
+            <button id="btn-gen-format-hint" class="btn-preview">📋 生成格式提醒</button>
+          </div>
+          <div id="export-output-wrap" class="hidden">
+            <textarea id="export-output" class="gm-ta" rows="15" readonly></textarea>
+            <button id="btn-copy-export" class="btn-preview" style="padding: 6px 12px; margin-top: 8px;">📋 一键复制</button>
+            <span id="copy-feedback" class="hidden">已复制!</span>
+          </div>
+        </div>
+
+        <details class="gm-notes-details">
+          <summary class="gm-notes-summary">
+            📝 GM 笔记(长线剧情/NPC档案/野外角色)
+          </summary>
+          <textarea id="gm-notes-ta" class="gm-ta" rows="10"
+            placeholder="在此记录本局长线剧情、NPC性格档案、野外角色状态等信息。续接包会自动引用此处内容。"></textarea>
+          <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+            <button id="btn-save-notes" class="btn-preview">💾 保存笔记</button>
+            <span id="notes-save-feedback" class="hidden">已保存!</span>
+          </div>
+        </details>
       </div>
 
       <div id="parse-preview" class="parse-preview hidden">
@@ -287,11 +314,11 @@
   </div>
 </div>
 
-<script src="js/parser.js?v=20260515a"></script>
-<script src="js/map.js?v=20260515a"></script>
-<script src="js/tips.js?v=20260515a"></script>
-<script src="js/general-duties.js?v=20260515a"></script>
-<script src="js/generals-tooltip.js?v=20260515a"></script>
-<script src="js/main.js?v=20260515a"></script>
+<script src="js/parser.js?v=20260516a"></script>
+<script src="js/map.js?v=20260516a"></script>
+<script src="js/tips.js?v=20260516a"></script>
+<script src="js/general-duties.js?v=20260516a"></script>
+<script src="js/generals-tooltip.js?v=20260516a"></script>
+<script src="js/main.js?v=20260516a"></script>
 </body>
 </html>

@@ -31,6 +31,7 @@
   'use strict';
 
   const SUPA_URL  = 'https://smiifcbmmtolimtaxpip.supabase.co/rest/v1/sanguo_rounds';
+  const NOTES_URL = SUPA_URL.replace('sanguo_rounds', 'gm_notes');
   const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaWlmY2JtbXRvbGltdGF4cGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTM4MzgsImV4cCI6MjA5Mzg4OTgzOH0.9pMRTaWDqXqWb_Ttti93dj8-FXgQMjAAbIZL5E-zN54';
   const SUPA_HEADERS = {
     'apikey': SUPA_KEY,
@@ -83,12 +84,66 @@
     updateSyncStatus('loading');
     try {
       await fetchAllRounds();
+      await loadGmNotes();
       renderAll();
       startPolling();
       updateSyncStatus('online');
     } catch (e) {
       console.error('[SG] 加载失败:', e);
       updateSyncStatus('error');
+    }
+  }
+
+  async function loadGmNotes() {
+    try {
+      const res = await fetchWithTimeout(`${NOTES_URL}?key=eq.freetext&select=value`, { headers: SUPA_HEADERS }, 5000);
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (rows.length && rows[0].value) {
+        const ta = document.getElementById('gm-notes-ta');
+        if (ta) ta.value = rows[0].value;
+      }
+    } catch (e) {
+      console.error('Failed to load gm notes:', e);
+    }
+  }
+
+  async function saveGmNotes() {
+    const ta = document.getElementById('gm-notes-ta');
+    if (!ta) return;
+    const value = ta.value;
+    try {
+      // First try to check if it exists
+      const checkRes = await fetchWithTimeout(`${NOTES_URL}?key=eq.freetext&select=id`, { headers: SUPA_HEADERS }, 5000);
+      const rows = await checkRes.json();
+
+      let res;
+      if (rows.length > 0) {
+        // Update
+        res = await fetchWithTimeout(`${NOTES_URL}?key=eq.freetext`, {
+          method: 'PATCH',
+          headers: SUPA_HEADERS,
+          body: JSON.stringify({ value, updated_at: new Date().toISOString() })
+        }, 5000);
+      } else {
+        // Insert
+        res = await fetchWithTimeout(`${NOTES_URL}`, {
+          method: 'POST',
+          headers: SUPA_HEADERS,
+          body: JSON.stringify({ key: 'freetext', value, updated_at: new Date().toISOString() })
+        }, 5000);
+      }
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const feedback = document.getElementById('notes-save-feedback');
+      if (feedback) {
+        feedback.classList.remove('hidden');
+        setTimeout(() => feedback.classList.add('hidden'), 1500);
+      }
+    } catch (e) {
+      console.error('Failed to save gm notes:', e);
+      showToast('❌ 保存笔记失败');
     }
   }
 
@@ -237,6 +292,217 @@
     document.getElementById('btn-publish').addEventListener('click', onPublish);
     document.getElementById('btn-clear-all').addEventListener('click', onClearAll);
     document.getElementById('btn-undo').addEventListener('click', onUndo);
+    bindExportTools();
+  }
+
+  function bindExportTools() {
+    document.getElementById('btn-gen-savepack')?.addEventListener('click', generateSavePack);
+    document.getElementById('btn-gen-format-hint')?.addEventListener('click', generateFormatHint);
+    document.getElementById('btn-copy-export')?.addEventListener('click', copyExportText);
+    document.getElementById('btn-save-notes')?.addEventListener('click', saveGmNotes);
+  }
+
+  function generateSavePack() {
+    if (!state.rounds || state.rounds.length === 0) {
+      showToast('⚠️ 暂无回合数据可导出');
+      return;
+    }
+
+    const nowStr = new Date().toLocaleString('zh-CN', { hour12: false });
+    const lastRoundIdx = state.rounds.length - 1;
+    const lastRoundData = state.rounds[lastRoundIdx];
+    const lastRoundNum = lastRoundData.round;
+
+    // Check missing fields gracefully
+    const season = lastRoundData.parsed.season || '请填';
+    const gmNotesTa = document.getElementById('gm-notes-ta');
+    const gmNotesText = (gmNotesTa && gmNotesTa.value.trim()) ? gmNotesTa.value.trim() : '(暂无,建议在GM笔记中记录长线剧情、野外角色、NPC性格等信息)';
+
+    let period = '请手动填写';
+    let boss = '请手动填写';
+    if (window.gmNotesCache) {
+      if (window.gmNotesCache.period) period = window.gmNotesCache.period;
+      if (window.gmNotesCache.boss) boss = window.gmNotesCache.boss;
+    }
+
+    let text = `═══ 《三国志文字版》存档续接包 ═══\n`;
+    text += `续接时间:${nowStr}\n`;
+    text += `最后回合:第${lastRoundNum}回合\n\n`;
+
+    text += `【本局基础信息】\n`;
+    text += `时期:${period}\n`;
+    text += `当前节气:${season}\n`;
+    text += `强力势力:${boss}\n\n`;
+
+    const slots = ['甲', '乙', '丙'];
+    for (let i = 0; i < 3; i++) {
+      const p = state.players[i];
+      if (!p || !p.name) continue;
+
+      text += `【${slots[i]}】${p.name}\n`;
+      text += `金:${p.gold ?? 0} 粮:${p.food ?? 0} 兵:${p.troop ?? 0} 民心:${p.morale ?? 0} 城:${p.cities ?? 0}\n`;
+
+      let citiesStr = '';
+      if (p.cities_list && p.cities_list.length > 0) {
+        citiesStr = p.cities_list.map(c => {
+          let holders = (c.holders && c.holders.length > 0) ? c.holders.join('/') : (c.holder || '');
+          let troopsArr = [];
+          if (c.troops) {
+            for (let t in c.troops) {
+              if (c.troops[t] > 0) troopsArr.push(`${t}:${c.troops[t]}`);
+            }
+          }
+          let troopsStr = troopsArr.join(',');
+          return `${c.name}(${holders}|${troopsStr})`;
+        }).join(',');
+      } else {
+        citiesStr = '(无数据)';
+      }
+      text += `城池:${citiesStr}\n`;
+
+      let generalsStr = '';
+      if (p.generals && p.generals.length > 0) {
+        generalsStr = p.generals.map(g => {
+          let st = (g.status === '健康' || !g.status) ? '' : g.status;
+          return `${g.name}(${st})`;
+        }).join(',');
+      } else {
+        generalsStr = '(无数据)';
+      }
+      text += `武将:${generalsStr}\n`;
+
+      let dutiesStr = '';
+      const lastChanges = lastRoundData.parsed.changes || [];
+      const pChange = lastChanges.find(ch => ch.slot === i);
+      let pDuties = [];
+      if (pChange && pChange.productionOps && pChange.productionOps.length > 0) {
+         pDuties = pChange.productionOps;
+      } else if (lastRoundData.parsed.cityOwnership) {
+         for (let cityName in lastRoundData.parsed.cityOwnership) {
+            const cObj = lastRoundData.parsed.cityOwnership[cityName];
+            if (cObj.owner === `player_${i}` && cObj.productionBuffs) {
+               pDuties = pDuties.concat(cObj.productionBuffs);
+            }
+         }
+      }
+      if (pDuties.length > 0) {
+        dutiesStr = pDuties.map(d => {
+          const action = d.action || '';
+          const remain = d.remain > 0 ? d.remain : 0;
+          return `${d.city}:${d.emoji || ''} ${d.general} ${action}/${remain}`;
+        }).join(' ');
+      } else {
+        dutiesStr = '(无数据)';
+      }
+      text += `任事:${dutiesStr}\n\n`;
+    }
+
+    text += `【NPC 城池现状】\n`;
+    let npcCities = [];
+    if (lastRoundData.parsed.cityOwnership) {
+      for (let cityName in lastRoundData.parsed.cityOwnership) {
+        const cObj = lastRoundData.parsed.cityOwnership[cityName];
+        if (cObj.owner === 'npc') {
+          npcCities.push(`${cityName}(${cObj.holder || ''})`);
+        }
+      }
+    }
+    if (npcCities.length > 0) {
+      // Chunk by 5
+      let lines = [];
+      for(let i=0; i<npcCities.length; i+=5) {
+        lines.push(npcCities.slice(i, i+5).join(','));
+      }
+      text += lines.join('\n') + '\n\n';
+    } else {
+      text += `(无数据)\n\n`;
+    }
+
+    text += `【近期重要事件】\n`;
+    const startIdx = Math.max(0, state.rounds.length - 3);
+    let digestsCount = 0;
+    for (let i = startIdx; i < state.rounds.length; i++) {
+      const rd = state.rounds[i];
+      if (rd.parsed.digest) {
+        text += `第${rd.round}回合:${rd.parsed.digest}\n`;
+        digestsCount++;
+      }
+    }
+    if (digestsCount === 0) text += `(无数据)\n`;
+    text += `\n`;
+
+    text += `【GM 笔记】\n${gmNotesText}\n\n`;
+    text += `═══ 续接包结束 ═══`;
+
+    const outputWrap = document.getElementById('export-output-wrap');
+    const ta = document.getElementById('export-output');
+    if (outputWrap && ta) {
+      outputWrap.classList.remove('hidden');
+      ta.value = text;
+    }
+  }
+
+  function generateFormatHint() {
+    const text = `═══ 本回合格式提醒(必须严格遵守) ═══
+
+1. 整段输出包裹在一个代码块(\`\`\`)内,代码块外无任何文字
+2. 剧情区与数据区用一行36个等号分隔: ====================================
+3. 剧情区禁用: ** __ * _ # > --- 表格 全角括号()
+4. 数据区字段严格按此顺序,每个独占一行:
+   [回合] [节气] [速递] [甲] [乙] [丙] [NPC] [战报] [变动]
+5. [甲/乙/丙] 内部格式:
+   名号:{名号}
+   金:{数字} 粮:{数字} 兵:{数字} 民心:{数字} 城:{数字}
+   城池:{城名}({武将1}/{武将2}|{兵种}:{数量},{兵种}:{数量})
+   武将:{武将名}(),{武将名}(疲劳)
+6. 城池括号必须用半角(),武将用/分隔,兵种用|分隔
+7. 兵种只用单字: 步/弓/骑/水/蛮
+8. 武将状态只用: 健康(写空括号)/疲劳/受伤/患病/阵亡
+9. [变动] 块写法:
+   甲 金△{±X} 粮△{±X} 兵△{±X} 民心△{±X}
+   甲 收支△
+   金:产出+X,维护-X,合计±X
+   粮:产出+X,维护-X,合计±X
+10. 骰式必须写出每颗点数: 3d6(2,5,3) 不得写 3d6=10
+11. 零值项一律省略,不写 +0 或 -0
+12. 数据区禁 emoji,唯一例外: 产出△ 行的五枚白名单
+    🌾屯田 💰开市 🤝招贤 ⚔️练兵 🔨工造
+
+═══ 提醒结束 ═══`;
+
+    const outputWrap = document.getElementById('export-output-wrap');
+    const ta = document.getElementById('export-output');
+    if (outputWrap && ta) {
+      outputWrap.classList.remove('hidden');
+      ta.value = text;
+    }
+  }
+
+  function copyExportText() {
+    const ta = document.getElementById('export-output');
+    if (!ta) return;
+    const text = ta.value;
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(showFeedback);
+    } else {
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showFeedback();
+      } catch (err) {
+        showToast('❌ 复制失败');
+      }
+    }
+
+    function showFeedback() {
+      const fb = document.getElementById('copy-feedback');
+      if (fb) {
+        fb.classList.remove('hidden');
+        setTimeout(() => fb.classList.add('hidden'), 1500);
+      }
+      showToast('📋 已复制到剪贴板');
+    }
   }
 
   function onPreview() {
@@ -315,6 +581,17 @@
     try {
       const ids = await getAllApiIds();
       await Promise.all(ids.map(r => deleteRoundById(r.id)));
+
+      // Clear gm_notes as well
+      try {
+        await fetchWithTimeout(`${NOTES_URL}?key=eq.freetext`, {
+          method: 'DELETE',
+          headers: SUPA_HEADERS
+        });
+      } catch (e) { console.error('Clear gm_notes fail', e); }
+      const ta = document.getElementById('gm-notes-ta');
+      if (ta) ta.value = '';
+
       state.rounds = []; state.players = defaultPlayers();
       state.lastUpdatedAt = 0;
       if (window.clearAllGeneralDuties) window.clearAllGeneralDuties();
