@@ -3345,7 +3345,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   font-size: .78rem !important;
   padding: 10px 14px !important;
   display: flex; align-items: center; gap: 4px;
-  margin-left: auto;
+  position: absolute; right: 16px;
 }
 .battle-anim-toggle .toggle-label { font-size: .7rem; }
 .battle-anim-toggle.anim-off {

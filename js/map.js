@@ -325,6 +325,17 @@ window.SGMap = (function () {
       <div class="sgmap-wrap" id="sgmap-wrap">
         ${_svg()}
       </div>`;
+
+    let animLayer = document.getElementById('battle-anim-layer');
+    if (!animLayer) {
+      animLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      animLayer.id = 'battle-anim-layer';
+      animLayer.classList.add('battle-anim-layer');
+      animLayer.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      animLayer.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:50;opacity:0;transition:opacity .3s;';
+    }
+    container.appendChild(animLayer);
+
     let tp = document.getElementById('sgmap-tooltip');
     if (!tp) {
       tp = document.createElement('div');
