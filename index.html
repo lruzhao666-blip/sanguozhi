@@ -201,11 +201,18 @@
           <span class="ib-icon">💰</span>
           <span class="ib-title">本回合收支详情</span>
           <span class="ib-sub" id="changes-detail-sub"></span>
+          <button id="btn-verify-balance" class="btn-verify hidden">✅ 校验收支</button>
         </div>
         <div class="ib-body">
           <div class="changes-cards-row" id="changes-cards-row"></div>
         </div>
       </div>
+
+      <div id="verify-panel" class="verify-panel hidden">
+        <div class="verify-title">收支校验结果</div>
+        <div id="verify-cards" class="verify-cards-row"></div>
+      </div>
+
 
       <!-- ══ 行F：历史回合折叠 ══ -->
       <details class="history-details" id="history-details">
@@ -365,6 +372,7 @@
 
 <script src="js/parser.js?v=20260516b"></script>
 <script src="js/dice-calc.js?v=20260516b"></script>
+<script src="js/econ-calc.js?v=20260516b"></script>
 <script src="js/map.js?v=20260516b"></script>
 <script src="js/tips.js?v=20260516b"></script>
 <script src="js/general-duties.js?v=20260516b"></script>

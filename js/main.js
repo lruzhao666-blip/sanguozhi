@@ -743,6 +743,7 @@
   //  渲染总入口
   // ══════════════════════════════════════════
   function renderAll() {
+    if (typeof renderVerifyBtn === "function") renderVerifyBtn();
     const hasData = state.rounds.length > 0;
     const emptyEl = document.getElementById('arena-empty');
     const bodyEl  = document.getElementById('arena-body');
@@ -2525,5 +2526,205 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', function() { init();
+  var btnVerify = document.getElementById('btn-verify-balance');
+  if (btnVerify) {
+    btnVerify.addEventListener('click', window.onVerifyBalance);
+  }
+  var btnCalcCas = document.getElementById('btn-calc-cas');
+  if (btnCalcCas) {
+    btnCalcCas.addEventListener('click', window.onCalcCasualties);
+  }
+});
 })();
+
+
+window.onCalcCasualties = function() {
+  var atkTroops = parseInt(document.getElementById('cas-atk-troops').value, 10) || 0;
+  var defTroops = parseInt(document.getElementById('cas-def-troops').value, 10) || 0;
+  var diff = parseInt(document.getElementById('cas-diff').value, 10) || 0;
+
+  if (atkTroops < 1 || defTroops < 1) {
+    if (window.showToast) window.showToast('⚠️ 请输入有效兵力');
+    return;
+  }
+
+  var mod = {
+    siege:          document.getElementById('cas-siege').checked,
+    flank:          document.getElementById('cas-flank').checked,
+    longMarch:      document.getElementById('cas-march').checked,
+    famedGeneral:   document.getElementById('cas-famous').checked,
+    mountain:       document.getElementById('cas-terrain').checked,
+    pass:           document.getElementById('cas-pass').checked,
+    extremeWeather: document.getElementById('cas-weather').checked,
+  };
+
+  if (!window.EconCalc) {
+    console.error("EconCalc not loaded");
+    return;
+  }
+  var r = window.EconCalc.calcCasualties(atkTroops, defTroops, diff, mod);
+
+  document.getElementById('cas-atk-loss').textContent = '-' + r.atkLoss;
+  document.getElementById('cas-atk-rate').textContent = '伤亡率 ' + r.atkRate;
+  document.getElementById('cas-atk-remain').textContent = '剩余 ' + (atkTroops - r.atkLoss) + ' 兵';
+  document.getElementById('cas-def-loss').textContent = '-' + r.defLoss;
+  document.getElementById('cas-def-rate').textContent = '伤亡率 ' + r.defRate;
+  document.getElementById('cas-def-remain').textContent = '剩余 ' + (defTroops - r.defLoss) + ' 兵';
+  document.getElementById('cas-grade').textContent = r.grade;
+  document.getElementById('cas-details-list').textContent = r.details.join(' · ');
+  document.getElementById('cas-result').classList.remove('hidden');
+};
+
+function renderVerifyBtn() {
+  var btn = document.getElementById('btn-verify-balance');
+  if (!btn) return;
+  if (!state.parsed || !state.parsed.changes || state.parsed.changes.length === 0) {
+    btn.classList.add('hidden');
+    var pnl = document.getElementById('verify-panel');
+    if (pnl) pnl.classList.add('hidden');
+  } else {
+    btn.classList.remove('hidden');
+  }
+}
+
+window.onVerifyBalance = function() {
+  if (!state.parsed || !state.players) return;
+
+  var verifyCardsContainer = document.getElementById('verify-cards');
+  if (!verifyCardsContainer) return;
+  verifyCardsContainer.innerHTML = '';
+
+  var panel = document.getElementById('verify-panel');
+  if (panel) panel.classList.remove('hidden');
+
+  var roundNum = state.parsed.round || 0;
+
+  var currentChanges = state.parsed.changes || [];
+
+  for (var slot in state.players) {
+    var p = state.players[slot];
+    var cityNameList = Object.keys(p.cities || {});
+    var cityCount = cityNameList.length;
+    var morale = p.resources ? (p.resources.morale || 0) : 0;
+    var totalTroop = p.resources ? (p.resources.troop || 0) : 0;
+    var generalCount = Object.keys(p.generals || {}).length;
+
+    var income = window.EconCalc.calcTotalIncome(cityNameList, morale);
+    var maint = window.EconCalc.calcMaintenance(totalTroop, generalCount, cityCount);
+    var quarter = window.EconCalc.calcQuarterly(roundNum, cityCount);
+
+    // Find AI values
+    var aiGoldIncome = null, aiFoodIncome = null;
+    var aiGoldMaint = null, aiFoodMaint = null;
+    var aiGoldNet = null, aiFoodNet = null;
+
+    var cData = currentChanges.find(function(c) { return c.slot === slot; });
+    if (cData && cData.breakdown) {
+      if (cData.breakdown.gold) {
+        cData.breakdown.gold.forEach(function(item) {
+          if (item.label.indexOf('产出') !== -1) aiGoldIncome = item.value;
+          if (item.label.indexOf('维护') !== -1) aiGoldMaint = item.value;
+        });
+      }
+      if (cData.breakdown.food) {
+        cData.breakdown.food.forEach(function(item) {
+          if (item.label.indexOf('产出') !== -1) aiFoodIncome = item.value;
+          if (item.label.indexOf('维护') !== -1) aiFoodMaint = item.value;
+        });
+      }
+      if (cData.resources) {
+        aiGoldNet = cData.resources.gold;
+        aiFoodNet = cData.resources.food;
+      }
+    }
+
+    var html = '<div class="verify-card">';
+    html += '<div class="verify-card-name">' + (window.esc ? window.esc(p.name || slot) : (p.name || slot)) + '</div>';
+
+    function renderRow(label, engineVal, aiVal) {
+      var engineStr = (engineVal > 0 ? '+' : '') + engineVal;
+      var aiStr = (aiVal === null) ? '(未解析到)' : ((aiVal > 0 ? '+' : '') + aiVal);
+
+      var matchClass = '';
+      if (aiVal !== null) {
+        if (Math.abs(engineVal - aiVal) <= 5) {
+          matchClass = 'match';
+        } else {
+          matchClass = 'mismatch';
+          aiStr = '⚠️' + aiStr;
+        }
+      }
+
+      return '<div class="verify-row">' +
+        '<span class="verify-label">' + label + '</span>' +
+        '<span class="verify-engine">引擎: ' + engineStr + '</span>' +
+        '<span class="verify-ai ' + matchClass + '">AI: ' + aiStr + '</span>' +
+        '</div>';
+    }
+
+    html += renderRow('产出(金)', income.totalGold, aiGoldIncome);
+    html += renderRow('产出(粮)', income.totalFood, aiFoodIncome);
+    html += renderRow('维护(金)', -maint.gold, aiGoldMaint);
+    html += renderRow('维护(粮)', -maint.food, aiFoodMaint);
+
+    if (quarter.isQuarter) {
+      html += '<div class="verify-row"><span class="verify-label" style="width:100%;">季度维护: 金-' + quarter.gold + ' 粮-' + quarter.food + '</span></div>';
+    }
+
+    var pState = {
+      cityNames: cityNameList,
+      morale: morale,
+      totalTroop: totalTroop,
+      generalCount: generalCount,
+      roundNum: roundNum,
+      actions: [],
+      events: []
+    };
+
+    var pData = state.parsed && state.parsed.players ? state.parsed.players.find(function(x) { return x.slot === slot; }) : null;
+    if (pData && pData.actions) {
+      pData.actions.forEach(function(a) {
+        var type = '';
+        if (a.raw.indexOf('招募') !== -1) type = '招募';
+        else if (a.raw.indexOf('急征') !== -1) type = '急征';
+        else if (a.raw.indexOf('攻城') !== -1) type = '攻城';
+        else if (a.raw.indexOf('内政') !== -1) type = '内政';
+        else if (a.raw.indexOf('外交') !== -1) type = '外交';
+        else if (a.raw.indexOf('计策') !== -1) type = '计策';
+        else if (a.raw.indexOf('侦察') !== -1) type = '侦察';
+        else if (a.raw.indexOf('剿匪') !== -1) type = '剿匪';
+        else if (a.raw.indexOf('屯田') !== -1) type = '屯田';
+        else if (a.raw.indexOf('开市') !== -1) type = '开市';
+        else if (a.raw.indexOf('招贤') !== -1) type = '招贤';
+        else if (a.raw.indexOf('练兵') !== -1) type = '练兵';
+        else if (a.raw.indexOf('工造') !== -1) type = '工造';
+
+        var count = 0;
+        var match = a.raw.match(/(\d+)/);
+        if (match) count = parseInt(match[1], 10);
+
+        if (type) {
+          pState.actions.push({ type: type, params: { count: count, troops: count } });
+        }
+      });
+    }
+
+    var fullBalance = window.EconCalc.calcFullBalance(pState);
+
+    html += '<div class="verify-row verify-total">' +
+      '<span class="verify-label">净收入(金)</span>' +
+      '<span class="verify-engine">引擎: ' + (fullBalance.net.gold > 0 ? '+' : '') + fullBalance.net.gold + '</span>' +
+      '<span class="verify-ai ' + (aiGoldNet !== null ? (Math.abs(fullBalance.net.gold - aiGoldNet) <= 5 ? 'match' : 'mismatch') : '') + '">AI: ' + (aiGoldNet !== null ? ((aiGoldNet > 0 ? '+' : '') + aiGoldNet) : '(未解析到)') + '</span>' +
+      '</div>';
+
+    html += '<div class="verify-row verify-total">' +
+      '<span class="verify-label">净收入(粮)</span>' +
+      '<span class="verify-engine">引擎: ' + (fullBalance.net.food > 0 ? '+' : '') + fullBalance.net.food + '</span>' +
+      '<span class="verify-ai ' + (aiFoodNet !== null ? (Math.abs(fullBalance.net.food - aiFoodNet) <= 5 ? 'match' : 'mismatch') : '') + '">AI: ' + (aiFoodNet !== null ? ((aiFoodNet > 0 ? '+' : '') + aiFoodNet) : '(未解析到)') + '</span>' +
+      '</div>';
+
+    html += '</div>';
+    verifyCardsContainer.insertAdjacentHTML('beforeend', html);
+  }
+};
