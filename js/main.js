@@ -281,6 +281,87 @@
     document.getElementById('btn-gen-format-hint')?.addEventListener('click', generateFormatHint);
     document.getElementById('btn-copy-export')?.addEventListener('click', copyExportText);
     document.getElementById('btn-save-notes')?.addEventListener('click', saveGmNotes);
+
+    document.getElementById('btn-calc-dice')?.addEventListener('click', onCalcDice);
+    document.getElementById('btn-copy-dice')?.addEventListener('click', onCopyDice);
+
+    var latestRound = state.rounds.length
+      ? state.rounds[state.rounds.length - 1].round
+      : 0;
+    if (latestRound > 0) {
+      var diceRoundEl = document.getElementById('dice-round');
+      if (diceRoundEl && diceRoundEl.value === '1') {
+        diceRoundEl.value = latestRound + 1;
+      }
+    }
+  }
+
+
+  function onCalcDice() {
+    var roundNum = parseInt(
+      document.getElementById('dice-round').value, 10);
+    var sString = document.getElementById('dice-s-string')
+      .value.trim();
+    var count = parseInt(
+      document.getElementById('dice-count').value, 10);
+
+    // 校验
+    if (!roundNum || roundNum < 1) {
+      showToast('⚠️ 请输入有效回合号'); return;
+    }
+    if (!sString || !/^[1-4]+$/.test(sString)) {
+      showToast('⚠️ 行动串只能包含数字1-4'); return;
+    }
+    if (sString.length < 2) {
+      showToast('⚠️ 行动串至少2位'); return;
+    }
+    if (!count || count < 1 || count > 60) {
+      showToast('⚠️ 骰子数量1-60'); return;
+    }
+
+    var dice = window.DiceCalc.calculate(roundNum, sString, count);
+    var groups = window.DiceCalc.formatGroups(dice);
+    var injectText = window.DiceCalc.generateInjectText(
+      roundNum, sString, dice, groups);
+
+    // 渲染视觉卡片
+    var gridEl = document.getElementById('dice-result-grid');
+    gridEl.innerHTML = groups.map(function (g) {
+      var dots = g.dice.map(function (d) {
+        var cls = 'dice-dot';
+        if (d === 6) cls += ' dice-dot--high';
+        if (d === 1) cls += ' dice-dot--low';
+        return '<span class="' + cls + '">' + d + '</span>';
+      }).join('');
+      return '<div class="dice-group-card">'
+        + '<div class="dice-group-label">' + esc(g.label) + '</div>'
+        + '<div class="dice-dots">' + dots + '</div>'
+        + '<div class="dice-group-sum">= ' + g.sum + '</div>'
+        + '<div class="dice-group-notation">'
+        + esc(g.notation) + '</div>'
+        + '</div>';
+    }).join('');
+
+    // 填充文本框
+    document.getElementById('dice-result-text').value = injectText;
+
+    // 显示结果区
+    document.getElementById('dice-result-wrap')
+      .classList.remove('hidden');
+  }
+
+  function onCopyDice() {
+    var text = document.getElementById('dice-result-text').value;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(function () {
+      showToast('📋 骰点已复制到剪贴板');
+    }).catch(function () {
+      // 降级
+      var ta = document.getElementById('dice-result-text');
+      ta.select();
+      document.execCommand('copy');
+      showToast('📋 骰点已复制');
+    });
   }
 
   function generateSavePack() {
