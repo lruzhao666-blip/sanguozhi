@@ -2932,3 +2932,206 @@ header, nav, main, footer { position: relative; z-index: 1; }
   padding: 6px 0 2px;
   letter-spacing: .04em;
 }
+
+/* ── 收支校验面板与按钮 ── */
+.btn-verify {
+  background: rgba(0,0,0,.38);
+  border: 1px solid var(--border-gold);
+  color: var(--gold);
+  font-family: var(--font-serif);
+  font-size: .75rem;
+  padding: 5px 12px;
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: all .2s;
+  margin-left: auto;
+}
+.btn-verify:hover { background: rgba(212,168,67,.07); }
+
+.verify-panel {
+  background: rgba(8,3,3,.88);
+  border: 1px solid var(--border-red);
+  border-radius: var(--rl);
+  margin-top: 12px;
+  padding: 12px;
+}
+.verify-title {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  color: var(--gold);
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+.verify-cards-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.verify-card {
+  flex: 1;
+  min-width: 200px;
+  background: rgba(0,0,0,.38);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: var(--r);
+  padding: 10px;
+}
+.verify-card-name {
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  color: var(--gold);
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.verify-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+}
+.verify-label { color: var(--text-dim); }
+.verify-engine { color: var(--text-sub); }
+.verify-ai { color: var(--text-sub); }
+.verify-ai.match { color: #52d478; }
+.verify-ai.mismatch { color: #ec7a62; font-weight: 700; }
+.verify-total {
+  border-top: 1px dashed rgba(255,255,255,.1);
+  padding-top: 4px;
+  margin-top: 6px;
+  font-weight: 700;
+}
+
+/* ── 伤亡计算器 ── */
+.casualty-calc-details {
+  background: rgba(8,3,3,.9);
+  border: 1px solid rgba(55,25,12,.3);
+  border-radius: var(--rl);
+  overflow: hidden;
+  margin-top: 12px;
+  padding: 10px;
+}
+.casualty-calc-summary {
+  font-family: var(--font-serif);
+  font-size: .8rem;
+  color: var(--text-dim);
+  padding: 5px 8px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  letter-spacing: .04em;
+}
+.casualty-calc-summary:hover { color: var(--text-sub); }
+
+.casualty-calc-body { padding: 10px 8px; }
+
+.cas-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.cas-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cas-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+.dice-input {
+  background: rgba(0,0,0,.5);
+  border: 1px solid rgba(180,120,40,.3);
+  color: var(--gold);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  width: 100px;
+}
+.cas-modifiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  background: rgba(0,0,0,.2);
+  padding: 8px;
+  border-radius: 6px;
+}
+.cas-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  color: #c09050;
+  cursor: pointer;
+}
+.cas-check input {
+  accent-color: #c09050;
+}
+
+.cas-result {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed rgba(255,255,255,.1);
+}
+.cas-result-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+.cas-result-card {
+  width: 140px;
+  text-align: center;
+  padding: 0.75rem;
+  background: rgba(8,3,3,.88);
+  border: 1px solid var(--border-red);
+  border-radius: var(--rl);
+  box-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+.cas-atk { border-color: rgba(225,85,65,0.5); }
+.cas-def { border-color: rgba(55,200,100,0.5); }
+.cas-vs {
+  font-size: 1.2rem;
+  color: #9a7c3e;
+  font-weight: 700;
+}
+.cas-card-title {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.cas-card-num {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ec7a62;
+  margin: 4px 0;
+}
+.cas-card-rate {
+  font-size: 0.75rem;
+  color: #9a7c3e;
+}
+.cas-card-remain {
+  font-size: 0.8rem;
+  color: #f0dfa0;
+  margin-top: 4px;
+}
+.cas-grade {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #f0dfa0;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+.cas-details {
+  font-size: 0.7rem;
+  color: #9a7c3e;
+  text-align: center;
+  margin-top: 4px;
+}

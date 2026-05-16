@@ -273,6 +273,8 @@
     document.getElementById('btn-publish').addEventListener('click', onPublish);
     document.getElementById('btn-clear-all').addEventListener('click', onClearAll);
     document.getElementById('btn-undo').addEventListener('click', onUndo);
+    document.getElementById('btn-calc-cas')?.addEventListener('click', onCalcCasualties);
+    document.getElementById('btn-verify-balance')?.addEventListener('click', onVerifyBalance);
     bindExportTools();
   }
 
@@ -680,7 +682,16 @@
     }
     updateFooter();
     updateUndoBtn();
+    renderVerifyBtn(hasData);
   }
+
+  function renderVerifyBtn(hasData) {
+    const verifyPanel = document.getElementById('verify-panel');
+    if (verifyPanel) {
+      verifyPanel.classList.add('hidden'); // Reset state
+    }
+  }
+
 
   // ── 势力地图 ──
   function renderMap() {
@@ -2442,6 +2453,142 @@
       renderTab(activeTab);
       tabBtn.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     });
+  }
+
+
+  // ────────────────────────────────────────
+  // 经济校验与伤亡计算
+  // ────────────────────────────────────────
+
+  function onVerifyBalance() {
+    if (!state.rounds || state.rounds.length === 0) return;
+    const latest = state.rounds[state.rounds.length - 1];
+    let changes = latest.parsed.changes || [];
+
+    const panel = document.getElementById('verify-panel');
+    const cardsRow = document.getElementById('verify-cards');
+    if (!panel || !cardsRow) return;
+
+    panel.classList.remove('hidden');
+    cardsRow.innerHTML = '';
+
+    state.players.forEach((p, idx) => {
+      const slot = ['甲', '乙', '丙'][idx] || '?';
+      const aiChange = changes.find(c => c.slot === slot);
+
+      let aiIncomeGold = null, aiIncomeFood = null;
+      let aiMaintGold = null, aiMaintFood = null;
+
+      if (aiChange && aiChange.breakdown) {
+        if (aiChange.breakdown.gold) {
+          const incG = aiChange.breakdown.gold.find(x => x.label.includes('产出'));
+          const mntG = aiChange.breakdown.gold.find(x => x.label.includes('维护'));
+          if (incG) aiIncomeGold = incG.value;
+          if (mntG) aiMaintGold = mntG.value;
+        }
+        if (aiChange.breakdown.food) {
+          const incF = aiChange.breakdown.food.find(x => x.label.includes('产出'));
+          const mntF = aiChange.breakdown.food.find(x => x.label.includes('维护'));
+          if (incF) aiIncomeFood = incF.value;
+          if (mntF) aiMaintFood = mntF.value;
+        }
+      }
+
+      const pState = {
+        cityNames: Object.keys(state.cityOwnership || {}).filter(k => state.cityOwnership[k] === idx),
+        morale: p.resources.morale || 50,
+        totalTroop: p.resources.troop || 0,
+        generalCount: (p.generals || []).length,
+        roundNum: latest.round || 0
+      };
+
+      const income = EconCalc.calcTotalIncome(pState.cityNames, pState.morale);
+      const maint = EconCalc.calcMaintenance(pState.totalTroop, pState.generalCount, pState.cityNames.length);
+      const quarter = EconCalc.calcQuarterly(pState.roundNum, pState.cityNames.length);
+
+      const renderRow = (label, enVal, aiVal, isNet=false, isNeg=false) => {
+        let matchClass = '';
+        let aiStr = '(未解析到)';
+        if (aiVal !== null) {
+          const diff = Math.abs(enVal - aiVal);
+          const isMatch = diff <= 5;
+          matchClass = isMatch ? 'match' : 'mismatch';
+          aiStr = (isNet ? (aiVal >= 0 ? '+' : '') : (isNeg ? '-' : '+')) + Math.abs(aiVal);
+          if (!isMatch) aiStr = '⚠️ ' + aiStr;
+        }
+        const enStr = (isNet ? (enVal >= 0 ? '+' : '') : (isNeg ? '-' : '+')) + Math.abs(enVal);
+        const rowClass = isNet ? 'verify-row verify-total' : 'verify-row';
+        return `<div class="${rowClass}">
+          <span class="verify-label">${label}</span>
+          <span class="verify-engine">引擎: ${enStr}</span>
+          <span class="verify-ai ${matchClass}">AI: ${aiStr}</span>
+        </div>`;
+      };
+
+      let html = `<div class="verify-card">
+        <div class="verify-card-name">${p.name}</div>
+        ${renderRow('产出(金)', income.totalGold, aiIncomeGold)}
+        ${renderRow('产出(粮)', income.totalFood, aiIncomeFood)}
+        ${renderRow('维护(金)', maint.gold, aiMaintGold !== null ? Math.abs(aiMaintGold) : null, false, true)}
+        ${renderRow('维护(粮)', maint.food, aiMaintFood !== null ? Math.abs(aiMaintFood) : null, false, true)}`;
+
+      if (quarter.isQuarter) {
+        html += `<div class="verify-row verify-total">
+          <span class="verify-label">季度(金)</span>
+          <span class="verify-engine">引擎: -${quarter.gold}</span>
+          <span class="verify-ai"></span>
+        </div>
+        <div class="verify-row">
+          <span class="verify-label">季度(粮)</span>
+          <span class="verify-engine">引擎: -${quarter.food}</span>
+          <span class="verify-ai"></span>
+        </div>`;
+      }
+
+      // Net income summation
+      const enNetGold = income.totalGold - maint.gold - (quarter.isQuarter ? quarter.gold : 0);
+      const enNetFood = income.totalFood - maint.food - (quarter.isQuarter ? quarter.food : 0);
+      const aiNetGold = aiChange && aiChange.resources && aiChange.resources.gold !== undefined ? aiChange.resources.gold : null;
+      const aiNetFood = aiChange && aiChange.resources && aiChange.resources.food !== undefined ? aiChange.resources.food : null;
+
+      html += `${renderRow('净收入(金)', enNetGold, aiNetGold, true)}
+        ${renderRow('净收入(粮)', enNetFood, aiNetFood, true)}`;
+
+      html += `</div>`;
+      cardsRow.innerHTML += html;
+    });
+  }
+
+  function onCalcCasualties() {
+    var atkTroops = parseInt(document.getElementById('cas-atk-troops').value, 10) || 0;
+    var defTroops = parseInt(document.getElementById('cas-def-troops').value, 10) || 0;
+    var diff = parseInt(document.getElementById('cas-diff').value, 10) || 0;
+
+    if (atkTroops < 1 || defTroops < 1) {
+      showToast('⚠️ 请输入有效兵力'); return;
+    }
+
+    var mod = {
+      siege:          document.getElementById('cas-siege').checked,
+      flank:          document.getElementById('cas-flank').checked,
+      longMarch:      document.getElementById('cas-march').checked,
+      famedGeneral:   document.getElementById('cas-famous').checked,
+      mountain:       document.getElementById('cas-terrain').checked,
+      pass:           document.getElementById('cas-pass').checked,
+      extremeWeather: document.getElementById('cas-weather').checked,
+    };
+
+    var r = EconCalc.calcCasualties(atkTroops, defTroops, diff, mod);
+
+    document.getElementById('cas-atk-loss').textContent = '-' + r.atkLoss;
+    document.getElementById('cas-atk-rate').textContent = '伤亡率 ' + r.atkRate;
+    document.getElementById('cas-atk-remain').textContent = '剩余 ' + (atkTroops - r.atkLoss) + ' 兵';
+    document.getElementById('cas-def-loss').textContent = '-' + r.defLoss;
+    document.getElementById('cas-def-rate').textContent = '伤亡率 ' + r.defRate;
+    document.getElementById('cas-def-remain').textContent = '剩余 ' + (defTroops - r.defLoss) + ' 兵';
+    document.getElementById('cas-grade').textContent = r.grade;
+    document.getElementById('cas-details-list').textContent = r.details.join(' · ');
+    document.getElementById('cas-result').classList.remove('hidden');
   }
 
   document.addEventListener('DOMContentLoaded', init);

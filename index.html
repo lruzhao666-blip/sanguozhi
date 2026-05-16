@@ -201,10 +201,16 @@
           <span class="ib-icon">💰</span>
           <span class="ib-title">本回合收支详情</span>
           <span class="ib-sub" id="changes-detail-sub"></span>
+          <button id="btn-verify-balance" class="btn-verify">✅ 校验收支</button>
         </div>
         <div class="ib-body">
           <div class="changes-cards-row" id="changes-cards-row"></div>
         </div>
+      </div>
+
+      <div id="verify-panel" class="verify-panel hidden">
+        <div class="verify-title">收支校验结果</div>
+        <div id="verify-cards" class="verify-cards-row"></div>
       </div>
 
       <!-- ══ 行F：历史回合折叠 ══ -->
@@ -265,6 +271,76 @@
           </div>
         </div>
 
+        <details class="casualty-calc-details">
+          <summary class="casualty-calc-summary">
+            ⚔️ 伤亡计算器
+          </summary>
+          <div class="casualty-calc-body">
+
+            <div class="cas-row">
+              <div class="cas-field">
+                <label class="cas-label">攻方兵力</label>
+                <input type="number" id="cas-atk-troops" class="dice-input" value="1500" />
+              </div>
+              <div class="cas-field">
+                <label class="cas-label">守方兵力</label>
+                <input type="number" id="cas-def-troops" class="dice-input" value="1000" />
+              </div>
+              <div class="cas-field">
+                <label class="cas-label">骰式差值(攻-守)</label>
+                <input type="number" id="cas-diff" class="dice-input" value="5" />
+              </div>
+            </div>
+
+            <div class="cas-modifiers">
+              <label class="cas-check">
+                <input type="checkbox" id="cas-siege" /> 攻城战
+              </label>
+              <label class="cas-check">
+                <input type="checkbox" id="cas-flank" /> 夹击/中伏
+              </label>
+              <label class="cas-check">
+                <input type="checkbox" id="cas-march" /> 远征/疲劳
+              </label>
+              <label class="cas-check">
+                <input type="checkbox" id="cas-famous" /> 名将指挥(败方)
+              </label>
+              <label class="cas-check">
+                <input type="checkbox" id="cas-terrain" /> 山地/水战不利
+              </label>
+              <label class="cas-check">
+                <input type="checkbox" id="cas-pass" /> 险关
+              </label>
+              <label class="cas-check">
+                <input type="checkbox" id="cas-weather" /> 极端天候
+              </label>
+            </div>
+
+            <button id="btn-calc-cas" class="btn-preview">⚔️ 计算伤亡</button>
+
+            <div id="cas-result" class="cas-result hidden">
+              <div class="cas-result-row">
+                <div class="cas-result-card cas-atk">
+                  <div class="cas-card-title">攻方</div>
+                  <div class="cas-card-num" id="cas-atk-loss">—</div>
+                  <div class="cas-card-rate" id="cas-atk-rate">—</div>
+                  <div class="cas-card-remain" id="cas-atk-remain">—</div>
+                </div>
+                <div class="cas-vs">VS</div>
+                <div class="cas-result-card cas-def">
+                  <div class="cas-card-title">守方</div>
+                  <div class="cas-card-num" id="cas-def-loss">—</div>
+                  <div class="cas-card-rate" id="cas-def-rate">—</div>
+                  <div class="cas-card-remain" id="cas-def-remain">—</div>
+                </div>
+              </div>
+              <div class="cas-grade" id="cas-grade">—</div>
+              <div class="cas-details" id="cas-details-list">—</div>
+            </div>
+
+          </div>
+        </details>
+
         <details class="gm-notes-details">
           <summary class="gm-notes-summary">
             📝 GM 笔记(长线剧情/NPC档案/野外角色)
@@ -319,6 +395,7 @@
 <script src="js/tips.js?v=20260516a"></script>
 <script src="js/general-duties.js?v=20260516a"></script>
 <script src="js/generals-tooltip.js?v=20260516a"></script>
+<script src="js/econ-calc.js?v=20260516a"></script>
 <script src="js/main.js?v=20260516a"></script>
 </body>
 </html>
