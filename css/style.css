@@ -3270,3 +3270,89 @@ header, nav, main, footer { position: relative; z-index: 1; }
   }
 }
 
+
+/* ══════════════════════════════════════════
+   战场重现动画 — Battle Replay
+══════════════════════════════════════════ */
+
+/* 动画层容器 */
+.battle-anim-layer {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 50;
+  opacity: 0; transition: opacity .3s ease;
+}
+.battle-anim-layer.active { opacity: 1; }
+
+/* ── 攻城弧线 ── */
+.battle-arc {
+  fill: none;
+  stroke: var(--red-bright);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(231,76,60,.7));
+  stroke-dasharray: var(--arc-len);
+  stroke-dashoffset: var(--arc-len);
+  animation: arc-fly 2.8s cubic-bezier(.22,.61,.36,1) forwards;
+}
+@keyframes arc-fly {
+  0%   { stroke-dashoffset: var(--arc-len); opacity: 1; }
+  85%  { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+/* ── 箭头粒子（弧线末端） ── */
+.battle-arrow {
+  fill: var(--gold-light);
+  filter: drop-shadow(0 0 4px rgba(212,168,67,.8));
+  opacity: 0;
+  animation: arrow-appear .3s ease 2.5s forwards;
+}
+@keyframes arrow-appear {
+  0%   { opacity: 0; transform: scale(0.5); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── 命中闪烁（应用到目标城池 polygon） ── */
+.city-hit-flash {
+  animation: hit-flash .6s ease 2.8s 3;
+}
+@keyframes hit-flash {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; filter: brightness(2.5) drop-shadow(0 0 12px rgba(231,76,60,.9)); }
+}
+
+/* ── 伤亡浮动数字 ── */
+.battle-dmg-text {
+  font-family: var(--font-serif);
+  font-size: 11px;
+  font-weight: 900;
+  fill: var(--red-bright);
+  text-anchor: middle;
+  opacity: 0;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.9));
+  animation: dmg-float 2.5s ease 3s forwards;
+}
+@keyframes dmg-float {
+  0%   { opacity: 0; transform: translateY(0); }
+  15%  { opacity: 1; transform: translateY(-4px); }
+  80%  { opacity: 1; transform: translateY(-16px); }
+  100% { opacity: 0; transform: translateY(-22px); }
+}
+
+/* ── 开关按钮 ── */
+.battle-anim-toggle {
+  font-size: .78rem !important;
+  padding: 10px 14px !important;
+  display: flex; align-items: center; gap: 4px;
+  margin-left: auto;
+}
+.battle-anim-toggle .toggle-label { font-size: .7rem; }
+.battle-anim-toggle.anim-off {
+  opacity: .4;
+}
+.battle-anim-toggle.anim-off .toggle-label::after {
+  content: '(关)';
+  margin-left: 2px;
+  color: var(--text-dim);
+}
