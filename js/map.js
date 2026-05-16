@@ -317,6 +317,7 @@ window.SGMap = (function () {
     const c = document.getElementById('map-svg-container');
     if (!c) return;
     _build(c);
+    _initBattleAnim();
   }
 
   function _build(container) {
@@ -561,7 +562,7 @@ window.SGMap = (function () {
 
         ${isCityOwned ? `
         <!-- 城池主体（内缩） -->
-        <polygon points="${_hexPoints(x, y, Ri)}"
+        <polygon data-city-id="${city.id}" data-city-name="${_esc(city.name)}" points="${_hexPoints(x, y, Ri)}"
           fill="${color.fill}"
           stroke="${color.stroke}" stroke-width="1.4"
           filter="url(#fshadow)"/>
@@ -597,7 +598,7 @@ window.SGMap = (function () {
 
         ` : `
         <!-- 空城内圈 -->
-        <polygon points="${_hexPoints(x, y, Ri)}"
+        <polygon data-city-id="${city.id}" data-city-name="${_esc(city.name)}" points="${_hexPoints(x, y, Ri)}"
           fill="rgba(7,6,13,0.60)" stroke="rgba(180,148,72,0.13)" stroke-width="0.8"/>
 
         <!-- 空城城名 -->
@@ -1022,18 +1023,189 @@ window.SGMap = (function () {
     return result;
   }
 
+
+  /* ═══════════════════════════════════════════
+     战场重现动画模块 (Battle Replay Animation)
+  ═══════════════════════════════════════════ */
+
+  // 状态：动画是否启用（默认开启，localStorage 持久化）
+  let _animEnabled = localStorage.getItem('battleAnimOff') !== '1';
+
+  // 城市坐标查找表（id → {x, y} SVG坐标），在 init() 时填充
+  let _cityXY = {};
+
+  // 缓存最近一次战斗数据，用于 tab 切换时重播
+  let _lastBattles = [];
+
+  /**
+   * 初始化动画模块（在 SGMap.init() 末尾调用）
+   */
+  function _initBattleAnim() {
+    // 构建城市坐标映射（同时用 id 和 name 作为 key）
+    CITIES.forEach(c => {
+      const xy = hexToXY(c.hx, c.hy);
+      _cityXY[c.id] = xy;
+      _cityXY[c.name] = xy;
+    });
+
+    // 绑定开关按钮
+    const btn = document.getElementById('btn-toggle-battle-anim');
+    if (btn) {
+      btn.classList.toggle('anim-off', !_animEnabled);
+      btn.addEventListener('click', () => {
+        _animEnabled = !_animEnabled;
+        localStorage.setItem('battleAnimOff', _animEnabled ? '0' : '1');
+        btn.classList.toggle('anim-off', !_animEnabled);
+        if (!_animEnabled) _clearAnimLayer();
+      });
+    }
+
+    // ── 监听「势力地图」tab 切换，自动重播 ──
+    const mapNavBtn = document.querySelector('.nav-btn[data-tab="tab-map"]');
+    if (mapNavBtn) {
+      mapNavBtn.addEventListener('click', () => {
+        // 延迟 400ms 等 tab 切换动画 & 地图重绘完成后再播放
+        setTimeout(() => {
+          if (_lastBattles.length > 0) {
+            playBattleAnim(_lastBattles);
+          }
+        }, 400);
+      });
+    } else {
+      // Fallback for nav button
+      const allNavBtns = document.querySelectorAll('#main-nav .nav-btn');
+      allNavBtns.forEach(btn => {
+        if (btn.textContent.includes('地图')) {
+          btn.addEventListener('click', () => {
+            setTimeout(() => {
+              if (_lastBattles.length > 0) {
+                playBattleAnim(_lastBattles);
+              }
+            }, 400);
+          });
+        }
+      });
+    }
+  }
+
+  /**
+   * 清空动画层
+   */
+  function _clearAnimLayer() {
+    const layer = document.getElementById('battle-anim-layer');
+    if (layer) {
+      layer.innerHTML = '';
+      layer.classList.remove('active');
+    }
+    // 移除城池闪烁 class
+    document.querySelectorAll('.city-hit-flash').forEach(el => el.classList.remove('city-hit-flash'));
+  }
+
+  /**
+   * 播放战场重现动画
+   * @param {Array} battles - 战斗数据数组，每项格式：
+   *   { attacker: '城名或id', defender: '城名或id', damage: '数字或文本' }
+   */
+  function playBattleAnim(battles) {
+    if (!_animEnabled || !battles || battles.length === 0) return;
+
+    const layer = document.getElementById('battle-anim-layer');
+    const svgEl = document.getElementById('sgmap-svg');
+    if (!layer || !svgEl) return;
+
+    // 缓存战斗数据，用于 tab 切换重播
+    _lastBattles = battles;
+
+    // 同步 viewBox
+    const vb = svgEl.getAttribute('viewBox');
+    if (vb) layer.setAttribute('viewBox', vb);
+
+    _clearAnimLayer();
+
+    // 延迟 300ms 后开始，给地图渲染留时间
+    setTimeout(() => {
+      layer.classList.add('active');
+
+      battles.forEach((b, i) => {
+        const from = _cityXY[b.attacker];
+        const to = _cityXY[b.defender];
+        if (!from || !to) return;
+
+        // 计算贝塞尔弧线控制点（向上凸起）
+        const midX = (from.x + to.x) / 2;
+        const midY = (from.y + to.y) / 2;
+        const dist = Math.sqrt((to.x - from.x) ** 2 + (to.y - from.y) ** 2);
+        const bulge = Math.min(dist * 0.4, 60);
+        // 法线方向（垂直于连线，向上）
+        const nx = -(to.y - from.y) / dist;
+        const ny = (to.x - from.x) / dist;
+        const cx = midX + nx * bulge;
+        const cy = midY + ny * bulge;
+
+        const pathD = `M ${from.x} ${from.y} Q ${cx} ${cy} ${to.x} ${to.y}`;
+
+        // 创建 path 元素
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathD);
+        path.setAttribute('class', 'battle-arc');
+        path.style.animationDelay = `${i * 0.5}s`;
+
+        layer.appendChild(path);
+
+        // 获取弧线长度并设置 CSS 变量
+        requestAnimationFrame(() => {
+          const len = path.getTotalLength();
+          path.style.setProperty('--arc-len', len);
+          path.setAttribute('stroke-dasharray', len);
+          path.setAttribute('stroke-dashoffset', len);
+        });
+
+        // 命中后：城池闪烁
+        const hitDelay = 2800 + i * 500;
+        setTimeout(() => {
+          const cityPoly = svgEl.querySelector(`[data-city-id="${b.defender}"]`) ||
+                           svgEl.querySelector(`[data-city-name="${b.defender}"]`);
+          if (cityPoly) cityPoly.classList.add('city-hit-flash');
+        }, hitDelay);
+
+        // 伤亡数字
+        if (b.damage) {
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', to.x);
+          text.setAttribute('y', to.y - 12);
+          text.setAttribute('class', 'battle-dmg-text');
+          text.style.animationDelay = `${3 + i * 0.5}s`;
+          text.textContent = `-${b.damage}`;
+          layer.appendChild(text);
+        }
+      });
+
+      // 动画全部结束后清理（最大 8 秒安全上限）
+      const totalDur = 6000 + battles.length * 500;
+      setTimeout(_clearAnimLayer, Math.min(totalDur, 8000));
+
+    }, 300);
+  }
+
   /* ─────────────────────────────────
      公开 API
   ───────────────────────────────── */
   return {
+
     init,
-    update(newPlayers, cityMap) {
+    playBattleAnim,
+    clearAnim: _clearAnimLayer,
+    update(newPlayers, cityMap, battles) {
       players       = newPlayers || [];
       cityOwnership = cityMap    || {};
       const c = document.getElementById('map-svg-container');
-      if (!c) return;
-      _build(c);
+      if (c) _build(c);
       _updateLegend();
+      // 如果有战斗数据，缓存并触发动画
+      if (battles && battles.length > 0) {
+        _lastBattles = battles;
+        playBattleAnim(battles);
+      }
     },
     parseCityOwnership,
     CITIES,
