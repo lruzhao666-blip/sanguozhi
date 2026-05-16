@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260516a" />
+  <link rel="stylesheet" href="css/style.css?v=20260516b" />
 </head>
 <body>
 
@@ -250,6 +250,55 @@
           <button id="btn-clear-all" class="btn-danger">🗑️ 清空全部记录</button>
         </div>
 
+
+        <details class="dice-calc-details" id="dice-calc-details">
+          <summary class="dice-calc-summary">
+            🎲 骰点预算器
+          </summary>
+          <div class="dice-calc-body">
+
+            <div class="dice-row">
+              <div class="dice-field">
+                <label class="dice-label">回合号</label>
+                <input type="number" id="dice-round" class="dice-input"
+                  min="1" value="1" />
+              </div>
+              <div class="dice-field">
+                <label class="dice-label">行动串 S</label>
+                <input type="text" id="dice-s-string" class="dice-input"
+                  placeholder="如: 132412" maxlength="20" />
+              </div>
+              <div class="dice-field">
+                <label class="dice-label">需要几颗骰子</label>
+                <input type="number" id="dice-count" class="dice-input"
+                  min="1" max="60" value="18" />
+              </div>
+            </div>
+
+            <div class="dice-help">
+              行动串填法: 三位玩家行动按甲→乙→丙拼接。
+              ①=1 ②=2 ③=3 ④=4。
+              例: 甲选①③,乙选②④,丙选①② → S = "132412"
+            </div>
+
+            <div class="dice-actions">
+              <button id="btn-calc-dice" class="btn-preview">
+                🎲 计算骰点</button>
+            </div>
+
+            <div id="dice-result-wrap" class="hidden">
+              <div class="dice-result-title">骰点序列</div>
+              <div class="dice-result-grid" id="dice-result-grid">
+              </div>
+              <textarea id="dice-result-text" class="gm-ta" rows="6"
+                readonly></textarea>
+              <button id="btn-copy-dice" class="btn-preview btn-small">
+                📋 复制骰点注入块</button>
+            </div>
+
+          </div>
+        </details>
+
         <div class="gm-export-section">
           <div class="gm-export-header">
             <span>📦 续接工具</span>
@@ -314,11 +363,12 @@
   </div>
 </div>
 
-<script src="js/parser.js?v=20260516a"></script>
-<script src="js/map.js?v=20260516a"></script>
-<script src="js/tips.js?v=20260516a"></script>
-<script src="js/general-duties.js?v=20260516a"></script>
-<script src="js/generals-tooltip.js?v=20260516a"></script>
-<script src="js/main.js?v=20260516a"></script>
+<script src="js/parser.js?v=20260516b"></script>
+<script src="js/dice-calc.js?v=20260516b"></script>
+<script src="js/map.js?v=20260516b"></script>
+<script src="js/tips.js?v=20260516b"></script>
+<script src="js/general-duties.js?v=20260516b"></script>
+<script src="js/generals-tooltip.js?v=20260516b"></script>
+<script src="js/main.js?v=20260516b"></script>
 </body>
 </html>
