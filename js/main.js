@@ -743,7 +743,11 @@
   //  渲染总入口
   // ══════════════════════════════════════════
   function renderAll() {
-    if (typeof renderVerifyBtn === "function") renderVerifyBtn();
+    try {
+      if (typeof renderVerifyBtn === "function") renderVerifyBtn();
+    } catch (e) {
+      console.warn('[SG] renderVerifyBtn skipped:', e);
+    }
     const hasData = state.rounds.length > 0;
     const emptyEl = document.getElementById('arena-empty');
     const bodyEl  = document.getElementById('arena-body');
