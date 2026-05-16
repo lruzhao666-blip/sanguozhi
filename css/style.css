@@ -2933,6 +2933,13 @@ header, nav, main, footer { position: relative; z-index: 1; }
   letter-spacing: .04em;
 }
 
+
+/* Parse Preview */
+.pp-row { margin-bottom:0.3rem; font-size:0.8rem; }
+.pp-ok { color:#52d478; }
+.pp-warn { color:#f0c040; }
+.pp-fail { color:#ec7a62; font-weight:600; }
+
 /* ══════════════════════════════════════════
    骰点预算器样式 (Dice Calculator)
    ══════════════════════════════════════════ */
@@ -3262,3 +3269,4 @@ header, nav, main, footer { position: relative; z-index: 1; }
     width: 110px;
   }
 }
+
