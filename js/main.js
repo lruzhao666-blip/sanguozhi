@@ -2757,7 +2757,7 @@ window.onCalcCasualties = function() {
         console.warn('[SG] EconCalc not loaded, onCalcCasualties skipped.');
         return;
     }
-  var atkTroops = parseInt(document.getElementById('cas-atk-troops').value, 10) || 0;
+    var atkTroops = parseInt(document.getElementById('cas-atk-troops').value, 10) || 0;
   var defTroops = parseInt(document.getElementById('cas-def-troops').value, 10) || 0;
   var diff = parseInt(document.getElementById('cas-diff').value, 10) || 0;
 
@@ -2949,4 +2949,5 @@ window.onVerifyBalance = function() {
     html += '</div>';
     verifyCardsContainer.insertAdjacentHTML('beforeend', html);
   }
+  } catch (e) { console.error(e); }
 };
