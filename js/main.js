@@ -294,8 +294,97 @@
         diceRoundEl.value = latestRound + 1;
       }
     }
+
+    document.getElementById('btn-export-json')?.addEventListener('click', onExportJson);
+    document.getElementById('btn-import-json')?.addEventListener('click', function() {
+      document.getElementById('import-json-input').click();
+    });
+    document.getElementById('import-json-input')?.addEventListener('change', onImportJson);
   }
 
+  function onExportJson() {
+    if (!state.rounds || state.rounds.length === 0) {
+      showToast('⚠️ 暂无数据可导出');
+      return;
+    }
+    var lastRound = state.rounds[state.rounds.length - 1].round;
+    var gmNotesTa = document.getElementById('gm-notes-ta');
+    var exportData = {
+      version: 'sanguo-v1',
+      exportedAt: new Date().toISOString(),
+      lastRound: lastRound,
+      rounds: state.rounds.map(function(rd) {
+        return {
+          round: rd.round,
+          rawContent: rd.rawContent,
+          parsed: rd.parsed
+        };
+      }),
+      gmNotes: gmNotesTa ? gmNotesTa.value : ''
+    };
+    var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    a.href = url;
+    a.download = 'sanguo_存档_第' + lastRound + '回合_' + dateStr + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ 存档已导出');
+  }
+
+  function onImportJson(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = async function(ev) {
+      try {
+        var data = JSON.parse(ev.target.result);
+        if (data.version !== 'sanguo-v1') {
+          showToast('❌ 文件格式不正确（缺少 version: sanguo-v1）');
+          return;
+        }
+        if (!data.rounds || !data.rounds.length) {
+          showToast('❌ 存档中无回合数据');
+          return;
+        }
+        if (!confirm('确认导入存档？将覆盖当前所有云端数据（共 ' + data.rounds.length + ' 回合）')) {
+          return;
+        }
+        showToast('⏳ 导入中…');
+        // 清空现有数据
+        var ids = await getAllApiIds();
+        await Promise.all(ids.map(function(r) { return deleteRoundById(r.id); }));
+        // 逐回合写入
+        for (var i = 0; i < data.rounds.length; i++) {
+          var rd = data.rounds[i];
+          var roundObj = {
+            round: rd.round,
+            roundTitle: '',
+            parsed: rd.parsed || SGParser.parse(rd.rawContent),
+            rawContent: rd.rawContent
+          };
+          await publishRound(roundObj);
+        }
+        // 写入 GM 笔记
+        if (data.gmNotes) {
+          var ta = document.getElementById('gm-notes-ta');
+          if (ta) ta.value = data.gmNotes;
+          await saveGmNotes();
+        }
+        // 刷新
+        await fetchAllRounds();
+        renderAll();
+        updateUndoBtn();
+        showToast('✅ 已导入 ' + data.rounds.length + ' 回合数据');
+      } catch (err) {
+        console.error('Import error:', err);
+        showToast('❌ 导入失败: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
 
   function onCalcDice() {
     var roundNum = parseInt(
@@ -493,6 +582,26 @@
     if (digestsCount === 0) text += `(无数据)\n`;
     text += `\n`;
 
+    text += '【剧情时间线】\n';
+    var timelineCount = 0;
+    for (var ti = 0; ti < state.rounds.length; ti++) {
+      var trd = state.rounds[ti];
+      var tParsed = trd.parsed || {};
+      var summaryLine = tParsed.summary || tParsed.digest || '';
+      if (summaryLine) {
+        text += '第' + trd.round + '回合: ' + summaryLine.slice(0, 80) + '\n';
+        timelineCount++;
+      }
+      if (tParsed.longArcs && trd.round % 5 === 0) {
+        var la = tParsed.longArcs;
+        if (la.arcs && la.arcs.length) {
+          text += '  长线: ' + la.arcs.join('; ') + '\n';
+        }
+      }
+    }
+    if (timelineCount === 0) text += '(无摘要数据)\n';
+    text += '\n';
+
     text += `【GM 笔记】\n${gmNotesText}\n\n`;
     text += `═══ 续接包结束 ═══`;
 
@@ -511,7 +620,7 @@
 2. 剧情区与数据区用一行36个等号分隔: ====================================
 3. 剧情区禁用: ** __ * _ # > --- 表格 全角括号()
 4. 数据区字段严格按此顺序,每个独占一行:
-   [回合] [节气] [速递] [甲] [乙] [丙] [NPC] [战报] [变动]
+   [回合] [节气] [速递] [甲] [乙] [丙] [NPC] [战报] [变动] [摘要] [长线]
 5. [甲/乙/丙] 内部格式:
    名号:{名号}
    金:{数字} 粮:{数字} 兵:{数字} 民心:{数字} 城:{数字}
@@ -529,6 +638,8 @@
 11. 零值项一律省略,不写 +0 或 -0
 12. 数据区禁 emoji,唯一例外: 产出△ 行的五枚白名单
     🌾屯田 💰开市 🤝招贤 ⚔️练兵 🔨工造
+13. [摘要] 每回合必填,1-2句话概括本回合核心事件,不超过80字
+14. [长线] 每5回合必填,最多三行: 线一:/线二:/线三: 或 伏笔:/野外:
 
 ═══ 提醒结束 ═══`;
 
@@ -2400,6 +2511,20 @@
       : '<span class="pp-warn">⚠️ 变动块未识别</span>';
     html += '</div>';
 
+    // 摘要
+    html += '<div class="pp-row">';
+    html += (parsed.summary && parsed.summary.length > 0)
+      ? '<span class="pp-ok">✅ 摘要: ' + esc(parsed.summary) + '</span>'
+      : '<span class="pp-warn">⚠️ 摘要: (未检测到)</span>';
+    html += '</div>';
+
+    // 长线
+    html += '<div class="pp-row">';
+    html += (parsed.longArcs && parsed.longArcs.arcs && parsed.longArcs.arcs.length > 0)
+      ? '<span class="pp-ok">✅ 长线: ' + parsed.longArcs.arcs.length + '条</span>'
+      : '<span class="pp-warn">⚠️ 长线: (未检测到，每5回合出现)</span>';
+    html += '</div>';
+
     // 剧情区
     html += '<div class="pp-row">';
     html += parsed.rawDigest
@@ -2627,6 +2752,11 @@
 
 
 window.onCalcCasualties = function() {
+  try {
+    if (typeof window.EconCalc === "undefined") {
+        console.warn('[SG] EconCalc not loaded, onCalcCasualties skipped.');
+        return;
+    }
   var atkTroops = parseInt(document.getElementById('cas-atk-troops').value, 10) || 0;
   var defTroops = parseInt(document.getElementById('cas-def-troops').value, 10) || 0;
   var diff = parseInt(document.getElementById('cas-diff').value, 10) || 0;
@@ -2676,6 +2806,11 @@ function renderVerifyBtn() {
 }
 
 window.onVerifyBalance = function() {
+  try {
+    if (typeof window.EconCalc === "undefined") {
+        console.warn('[SG] EconCalc not loaded, onVerifyBalance skipped.');
+        return;
+    }
   if (!state.parsed || !state.players) return;
 
   var verifyCardsContainer = document.getElementById('verify-cards');

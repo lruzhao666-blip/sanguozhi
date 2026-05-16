@@ -199,6 +199,8 @@ window.SGParser = (function () {
       wildEvents:    [],      // [{desc}]        ← 新增
       events:        [],      // v3 格式事件
       errors:        [],      // v3 格式错误
+      summary:       '',
+      longArcs:      null,
     };
   }
 
@@ -253,6 +255,16 @@ window.SGParser = (function () {
         ...npcStatus.map(s => ({ anchor: 'NPC状态', label: s.city, deltas: [], text: s.desc })),
         ...wildEvents.map(e => ({ anchor: '野外',   label: '',      deltas: [], text: e.desc })),
       ];
+    }
+
+    // [摘要]
+    if (blocks['摘要']) {
+      result.summary = blocks['摘要'].trim().slice(0, 80);
+    }
+
+    // [长线]
+    if (blocks['长线']) {
+      result.longArcs = _parseLongArcs(blocks['长线']);
     }
 
     // 构建 cityOwnership
@@ -359,7 +371,7 @@ window.SGParser = (function () {
   //  按方括号标签切块
   // ─────────────────────────────────────────
   function _splitBlocks(text) {
-    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','变动','驻城']);
+    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','变动','驻城','摘要','长线']);
     // ★ 新增: 别名映射
     var ALIASES = {
       '甲方': '甲', '玩家甲': '甲', '城主甲': '甲',
@@ -731,6 +743,26 @@ window.SGParser = (function () {
   //  └ 全局锚点   NPC状态△虎牢关:吕布更换西门巡夜
   //               野外△:高定再送山盐但仍未归附
   // ═══════════════════════════════════════════════════════
+  function _parseLongArcs(text) {
+    var lines = text.split('\n').filter(function(l) { return l.trim(); });
+    var arcs = [];
+    var foreshadows = [];
+    var wildChars = [];
+    lines.forEach(function(line) {
+      var l = line.trim();
+      if (/^线[一二三四五1-5][:：]/.test(l)) {
+        arcs.push(l.replace(/^线[一二三四五1-5][:：]\s*/, ''));
+      } else if (/^伏笔[:：]/.test(l)) {
+        foreshadows.push(l.replace(/^伏笔[:：]\s*/, ''));
+      } else if (/^野外[:：]/.test(l)) {
+        wildChars.push(l.replace(/^野外[:：]\s*/, ''));
+      } else {
+        arcs.push(l);
+      }
+    });
+    return { arcs: arcs, foreshadows: foreshadows, wildChars: wildChars };
+  }
+
   function _parseChangesBlock(raw) {
     const npcStatus  = [];
     const wildEvents = [];
