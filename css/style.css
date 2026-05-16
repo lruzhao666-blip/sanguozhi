@@ -2922,3 +2922,97 @@ header, nav, main, footer { position: relative; z-index: 1; }
   padding: 6px 0 2px;
   letter-spacing: .04em;
 }
+
+/* 骰点预算器 */
+.dice-calc-details {
+  background: rgba(8,3,3,.9); border: 1px solid rgba(55,25,12,.3);
+  border-radius: var(--rl); overflow: hidden;
+  margin-top: 1rem;
+}
+.dice-calc-summary {
+  font-family: var(--font-serif); font-size: .8rem; color: var(--text-dim);
+  padding: 11px 18px; cursor: pointer; list-style: none;
+  display: flex; align-items: center; gap: 8px; user-select: none;
+  letter-spacing: .04em;
+}
+.dice-calc-summary:hover { color: var(--text-sub); }
+.dice-calc-body {
+  padding: 1rem;
+}
+.dice-row {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+}
+.dice-field {
+  flex: 1; min-width: 120px;
+}
+.dice-label {
+  font-size: 0.75rem; color: #9a7c3e;
+  display: block; margin-bottom: 0.25rem;
+}
+.dice-input {
+  height: 2.2rem;
+  padding: 0.3rem 0.5rem;
+  background: rgba(10,11,16,0.8);
+  border: 1px solid rgba(200,155,55,0.3);
+  color: #f0dfa0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: 'Noto Sans SC';
+  width: 100%; box-sizing: border-box;
+}
+.dice-help {
+  font-size: 0.7rem; color: #9a7c3e;
+  margin: 0.5rem 0; line-height: 1.5;
+}
+.dice-actions {
+  margin: 0.75rem 0;
+}
+.dice-result-title {
+  font-size: 0.85rem; color: #f0dfa0;
+  font-weight: 600; margin-bottom: 0.5rem;
+}
+.dice-result-grid {
+  display: flex; flex-wrap: wrap;
+  gap: 0.5rem; margin-bottom: 0.75rem;
+}
+.dice-group-card {
+  padding: 0.5rem; border-radius: 6px;
+  border: 1px solid rgba(200,155,55,0.3);
+  background: rgba(20,18,12,0.7);
+}
+.dice-dots {
+  display: flex; flex-direction: row; gap: 0.4rem; justify-content: center;
+  margin: 0.3rem 0;
+}
+.dice-dot {
+  width: 2rem; height: 2rem; border-radius: 4px;
+  background: rgba(192,144,80,0.15);
+  border: 1px solid rgba(192,144,80,0.4);
+  color: #f0dfa0; font-weight: 700; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.dice-dot--high {
+  background: rgba(225,85,65,0.25);
+  border: 1px solid rgba(225,85,65,0.5);
+  color: #ec7a62;
+}
+.dice-dot--low {
+  background: rgba(65,150,240,0.2);
+  border: 1px solid rgba(65,150,240,0.4);
+  color: #60aef0;
+}
+.dice-group-label {
+  font-size: 0.7rem; color: #9a7c3e;
+  text-align: center;
+}
+.dice-group-sum {
+  font-size: 0.85rem; color: #f0dfa0;
+  font-weight: 700; text-align: center;
+}
+.dice-group-notation {
+  font-size: 0.65rem; color: #9a7c3e;
+  font-family: monospace; text-align: center;
+}
+.btn-small {
+  padding: 0.3rem 0.8rem; font-size: 0.75rem;
+}
