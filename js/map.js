@@ -69,18 +69,18 @@ window.SGMap = (function () {
   const NPC_C   = { fill:'rgba(35,25, 6,0.85)',  film:'rgba(170,128,40,0.22)', stroke:'rgba(200,155,55,0.70)', glow:'#caa042', text:'#f0dfa0' };
 // NPC 阵营专属配色（≥3 城时启用），仿照 NPC_C 结构
 const NPC_FACTION_COLORS = [
-  // 青蓝（袁绍系，冷色但偏青，与玩家蓝紫拉开）
-  { fill:'rgba(20,75,95,0.92)',   film:'rgba(60,150,180,0.32)',  stroke:'rgba(90,190,220,0.85)',  glow:'#5fc8e8',  text:'#d8f2fb' },
-  // 赭黄（曹操系，暖金，与 NPC_C 灰金区分但同色系）
-  { fill:'rgba(95,60,15,0.92)',   film:'rgba(210,140,55,0.32)',  stroke:'rgba(240,175,80,0.85)',  glow:'#f0b860',  text:'#fbe8c8' },
-  // 品红玫（避开纯红，偏粉/紫红）
-  { fill:'rgba(90,20,55,0.92)',   film:'rgba(190,70,130,0.32)',  stroke:'rgba(225,100,160,0.85)', glow:'#e87aac',  text:'#fbd8e8' },
-  // 橄榄黄绿（偏黄不偏翠，与玩家绿区分）
-  { fill:'rgba(70,75,15,0.92)',   film:'rgba(170,175,55,0.32)',  stroke:'rgba(205,210,90,0.85)',  glow:'#d8d860',  text:'#f5f5c8' },
-  // 砖橙（暖橙红，与玩家正红区分）
-  { fill:'rgba(95,40,15,0.92)',   film:'rgba(215,110,55,0.32)',  stroke:'rgba(245,140,80,0.85)',  glow:'#f08c60',  text:'#fbd8c8' },
-  // 青松（深青绿，偏蓝不偏黄）
-  { fill:'rgba(15,75,65,0.92)',   film:'rgba(55,170,150,0.32)',  stroke:'rgba(85,210,185,0.85)',  glow:'#5fe0c0',  text:'#d8fbf2' },
+  // 玄青（袁绍系）— H:185° 深孔雀青
+  { fill:'rgba(8,55,62,0.82)',    film:'rgba(40,140,160,0.20)',  stroke:'rgba(70,170,185,0.70)',  glow:'#5fb8c8',  text:'#d8eef2' },
+  // 墨紫（曹操系）— H:280° 暗紫罗兰
+  { fill:'rgba(48,18,72,0.82)',   film:'rgba(135,75,190,0.20)',  stroke:'rgba(160,105,210,0.70)', glow:'#a878d8',  text:'#ece0f5' },
+  // 赭石（刘表系）— H:25° 暗赭橙
+  { fill:'rgba(78,42,12,0.82)',   film:'rgba(180,110,45,0.20)',  stroke:'rgba(205,135,70,0.70)',  glow:'#cf9560',  text:'#f2e0c8' },
+  // 黛蓝灰（孙策系）— H:215° 低饱和灰青
+  { fill:'rgba(28,42,62,0.82)',   film:'rgba(85,110,145,0.20)',  stroke:'rgba(115,140,175,0.70)', glow:'#92aacb',  text:'#dde4ef' },
+  // 苔褐（刘璋系）— H:55° 暗黄褐
+  { fill:'rgba(62,52,12,0.82)',   film:'rgba(155,135,45,0.20)',  stroke:'rgba(185,165,75,0.70)',  glow:'#beaa55',  text:'#ede4c2' },
+  // 铁锈红（马腾系）— H:10° 暗赭红
+  { fill:'rgba(72,22,12,0.82)',   film:'rgba(170,70,45,0.20)',   stroke:'rgba(195,95,70,0.70)',   glow:'#c87a60',  text:'#f0d8d0' },
 ];
 
 // 阵营→槽位的稳定映射（模块级缓存）
