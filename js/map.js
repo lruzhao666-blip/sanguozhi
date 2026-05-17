@@ -71,8 +71,8 @@ window.SGMap = (function () {
 const NPC_FACTION_COLORS = [
   // 玄青（袁绍系）— H:185° 深孔雀青
   { fill:'rgba(8,55,62,0.82)',    film:'rgba(40,140,160,0.20)',  stroke:'rgba(70,170,185,0.70)',  glow:'#5fb8c8',  text:'#d8eef2' },
-  // 墨紫（曹操系）— H:280° 暗紫罗兰
-  { fill:'rgba(70,22,42,0.82)',   film:'rgba(165,65,110,0.20)',  stroke:'rgba(190,90,135,0.70)', glow:'#b87095',  text:'#f0d8e2' },  // 绛色（暗酒红/漆器色）
+  // 绛色（曹操系）— 暗酒红/漆器色
+  { fill:'rgba(70,22,42,0.82)',   film:'rgba(165,65,110,0.20)',  stroke:'rgba(190,90,135,0.70)', glow:'#b87095',  text:'#f0d8e2' },
   // 赭石（刘表系）— H:25° 暗赭橙
   { fill:'rgba(78,42,12,0.82)',   film:'rgba(180,110,45,0.20)',  stroke:'rgba(205,135,70,0.70)',  glow:'#cf9560',  text:'#f2e0c8' },
   // 黛蓝灰（孙策系）— H:215° 低饱和灰青
@@ -996,42 +996,44 @@ let _npcFactionSlots = {};
      图例
   ───────────────────────────────── */
   function _updateLegend() {
-    const el = document.getElementById('sgmap-legend');
-    if (!el) return;
-    const cnt = {};
-    CITIES.forEach(c => {
-      const ow = cityOwnership[c.name];
-      if (!ow || ow.owner === '' || ow.owner === 'npc') return;
-      cnt[ow.playerIdx] = (cnt[ow.playerIdx] || 0) + 1;
-    });
-    let html = players.map((p, i) => {
-      const pc = P_COLOR[i]; if (!pc) return '';
-      return `<span class="sgmap-legend-item">
-        <span class="sgmap-legend-dot" style="background:${pc.stroke};box-shadow:0 0 5px ${pc.glow}"></span>
-        <span style="color:${pc.glow};font-weight:700">${_esc(p.name || '城主' + '甲乙丙'[i])}</span>
-        <span style="color:var(--text-dim);font-size:.65rem"> ${cnt[i] || 0}城</span>
-      </span>`;
-    }).join('');
+    setTimeout(() => {
+      const el = document.getElementById('sgmap-legend');
+      if (!el) return;
+      const cnt = {};
+      CITIES.forEach(c => {
+        const ow = cityOwnership[c.name];
+        if (!ow || ow.owner === '' || ow.owner === 'npc') return;
+        cnt[ow.playerIdx] = (cnt[ow.playerIdx] || 0) + 1;
+      });
+      let html = players.map((p, i) => {
+        const pc = P_COLOR[i]; if (!pc) return '';
+        return `<span class="sgmap-legend-item">
+          <span class="sgmap-legend-dot" style="background:${pc.stroke};box-shadow:0 0 5px ${pc.glow}"></span>
+          <span style="color:${pc.glow};font-weight:700">${_esc(p.name || '城主' + '甲乙丙'[i])}</span>
+          <span style="color:var(--text-dim);font-size:.65rem"> ${cnt[i] || 0}城</span>
+        </span>`;
+      }).join('');
 
-    // 已上色的 NPC 阵营图例
-    const factionList = Object.entries(_npcFactionSlots);
-    for (const [faction, idx] of factionList) {
-      const c = NPC_FACTION_COLORS[idx];
-      const cnt = Object.values(cityOwnership).filter(o => o.owner === 'npc' && o.faction === faction).length;
+      // 已上色的 NPC 阵营图例
+      const factionList = Object.entries(_npcFactionSlots);
+      for (const [faction, idx] of factionList) {
+        const c = NPC_FACTION_COLORS[idx];
+        const cnt = Object.values(cityOwnership).filter(o => o.owner === 'npc' && o.faction === faction).length;
+        html += `<span class="sgmap-legend-item">
+          <span class="sgmap-legend-dot" style="background:${c.stroke};box-shadow:0 0 5px ${c.glow}"></span>
+          <span style="color:${c.glow};font-weight:700">${_esc(faction)}</span>
+          <span style="color:var(--text-dim);font-size:.65rem"> ${cnt}城</span>
+        </span>`;
+      }
+
+      const npcCnt = Object.values(cityOwnership).filter(o => o.owner === 'npc').length;
       html += `<span class="sgmap-legend-item">
-        <span class="sgmap-legend-dot" style="background:${c.stroke};box-shadow:0 0 5px ${c.glow}"></span>
-        <span style="color:${c.glow};font-weight:700">${_esc(faction)}</span>
-        <span style="color:var(--text-dim);font-size:.65rem"> ${cnt}城</span>
+        <span class="sgmap-legend-dot" style="background:${NPC_C.stroke}"></span>
+        <span style="color:${NPC_C.glow};font-weight:700">NPC</span>
+        <span style="color:var(--text-dim);font-size:.65rem"> ${npcCnt}城</span>
       </span>`;
-    }
-
-    const npcCnt = Object.values(cityOwnership).filter(o => o.owner === 'npc').length;
-    html += `<span class="sgmap-legend-item">
-      <span class="sgmap-legend-dot" style="background:${NPC_C.stroke}"></span>
-      <span style="color:${NPC_C.glow};font-weight:700">NPC</span>
-      <span style="color:var(--text-dim);font-size:.65rem"> ${npcCnt}城</span>
-    </span>`;
-    el.innerHTML = html;
+      el.innerHTML = html;
+    }, 0);
   }
 
   /* ─────────────────────────────────
