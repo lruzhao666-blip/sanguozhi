@@ -2935,6 +2935,10 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .raw-player-anchor.with-subtitle .raw-player-name {
   display: inline-block;
 }
+.raw-player-anchor.with-subtitle .action-player-tag {
+  margin-bottom: 0;
+  display: inline-flex;
+}
 .raw-player-anchor.with-subtitle .raw-player-sep {
   color: var(--text-dim);
   font-size: .85rem;

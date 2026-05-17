@@ -859,18 +859,25 @@
       const flushGroup = () => {
         if (!grp) return;
         const sl = grp.slot % 3;
-        let inner = `<div class="action-player-tag" data-slot="${sl}">${esc(grp.name)}</div>`;
+        let inner = '';
 
-        // ── 主行动条目：玩家名后的标题行（action-item，无序号） ──
+        // ── 主行动条目：玩家名与标题合并为同行小标题 ──
         if (grp.titleText) {
           const { name, desc } = splitDash(grp.titleText);
-          inner += '<div class="action-item">';
-          inner += `<span class="name">${highlightInline(name)}</span>`;
+          let subtitleHtml = `<span class="raw-player-subtitle">${highlightInline(name)}`;
           if (desc) {
-            inner += `<span class="dash">\u2014\u2014</span>`;
-            inner += `<span class="desc">${highlightInline(desc)}</span>`;
+            subtitleHtml += `<span class="dash">\u2014\u2014</span><span class="desc">${highlightInline(desc)}</span>`;
           }
-          inner += '</div>';
+          subtitleHtml += `</span>`;
+
+          inner += `
+<div class="raw-player-anchor with-subtitle">
+  <span class="raw-player-name action-player-tag" data-slot="${sl}">${esc(grp.name)}</span>
+  <span class="raw-player-sep">·</span>
+  ${subtitleHtml}
+</div>`.trim();
+        } else {
+          inner += `<div class="action-player-tag" data-slot="${sl}">${esc(grp.name)}</div>`;
         }
 
         // ── 新代码：正文行按段落渲染 ──
