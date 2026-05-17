@@ -2951,14 +2951,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
   letter-spacing: .12em;
 }
 @media (max-width: 480px) {
-  .raw-player-anchor.with-subtitle {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-  }
-  .raw-player-anchor.with-subtitle .raw-player-sep {
-    display: none;
-  }
   .raw-player-anchor.with-subtitle .raw-player-subtitle {
     font-size: .95rem;
   }
