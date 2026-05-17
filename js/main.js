@@ -1698,11 +1698,11 @@
     return groups;
   }
 
-  // ── 公共事件区（NPC动态 + v3 事件列表 + 错误提示）──
+  // ── 公共事件区（四方动态 + v3 事件列表 + 错误提示）──
   function _renderPublicEvents(publicEvents, v3Events, v3Errors) {
     let html = '';
 
-    // ── NPC 动态 / 野外动态 ──
+    // ── 四方动态 / 野外动态 ──
     if (publicEvents && publicEvents.length) {
       const npcItems = publicEvents.filter(ev =>
         ev.anchor === 'NPC状态' || ev.anchor === '野外'
@@ -1729,7 +1729,7 @@
 
         if (gridHtml) {
           html += `<div class="npc-events-block">
-            <div class="npc-events-hd">🎭 NPC 动态</div>
+            <div class="npc-events-hd">🎭 四方动态</div>
             <div class="npc-events-grid">${gridHtml}</div>
           </div>`;
         }
@@ -1850,7 +1850,7 @@
       </div>`;
     }).join('');
 
-    // ── 公共事件区（NPC动态 + 野外动态）──
+    // ── 公共事件区（四方动态 + 野外动态）──
     // 优先使用本次重解析的结果（freshNpcStatus/freshWildEvents）；
     // rawContent 不存在时降级到 parsed 里已有的字段；
     // 最后兜底尝试 changes.__publicEvents（内存中的新鲜解析不受 JSON 往返影响）。
