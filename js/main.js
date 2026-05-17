@@ -1060,10 +1060,46 @@
       // 玩家行（👤 或 👤 段落内的玩家标识）
       if (PLAYER_RE.test(tLine) || (currentCard && currentCard.emoji === '👤' && RESULT_PLAYER_LINE_RE.test(tLine) && tLine.trim().length <= 30)) {
         flushPara();
-        if (currentCard) {
-          currentCard.lines.push(`<div class="raw-player">${highlightInline(tLine)}</div>`);
+
+        const nextLineRaw = lines[i + 1] || '';
+        const nextLine = nextLineRaw.trim().replace(/^[【\[][^】\]\n]{1,12}[】\]]\s*/, '');
+
+        const isActionSubtitle = s => {
+          if (!s) return false;
+          if (s.length > 30) return false;
+          if (/[。！？；,，.!?;]/.test(s)) return false;
+
+          const t = s.trim();
+          const isPNameCheck = t.length >= 1 && t.length <= 10
+            && !/[：:①②③④⑤⑥]/.test(t)
+            && !/^[\s\u3000]/.test(t)
+            && !/^[📍🔖💡⏳🎯🌍⚡📢🔥📜🎴🌐⚔️🏯🌅🌙•·▪▸▶◆◇■□=─═—]/.test(t);
+          if (isPNameCheck || PLAYER_RE.test(s)) return false;
+
+          if (/^[📍🔖💡⏳🎯🌍⚡📢🔥📜🎴🌐⚔️🏯🌅🌙•·▪▸▶◆◇■□=─═—]/.test(s)) return false;
+          if (/^[①②③④⑤⑥]/.test(s) || /^[A-Ca-c][.．、：:\s]/.test(s)) return false;
+          if (/^[=─═—]{3,}$/.test(s)) return false;
+          return true;
+        };
+
+        if (isActionSubtitle(nextLine)) {
+          const anchorHtml = `<div class="raw-player-anchor with-subtitle">
+            <span class="raw-player-name">${highlightInline(tLine)}</span>
+            <span class="raw-player-sep">·</span>
+            <span class="raw-player-subtitle">${esc(nextLine)}</span>
+          </div>`;
+          if (currentCard) {
+            currentCard.lines.push(anchorHtml);
+          } else {
+            out.push(anchorHtml);
+          }
+          i++;
         } else {
-          out.push(`<div class="raw-player">${highlightInline(tLine)}</div>`);
+          if (currentCard) {
+            currentCard.lines.push(`<div class="raw-player">${highlightInline(tLine)}</div>`);
+          } else {
+            out.push(`<div class="raw-player">${highlightInline(tLine)}</div>`);
+          }
         }
         continue;
       }
