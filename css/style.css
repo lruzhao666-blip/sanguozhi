@@ -26,6 +26,25 @@
   --font-sans:   'Noto Sans SC', 'Source Han Sans SC', '思源黑体', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --r:  6px;
   --rl: 10px;
+
+  --p0-strip: #e74c3c;
+  --p0-fill: rgba(231,76,60,0.32);
+  --p1-strip: #3dbe6c;
+  --p1-fill: rgba(61,190,108,0.32);
+  --p2-strip: #3498db;
+  --p2-fill: rgba(52,152,219,0.32);
+  --npc1-strip: #4a6b7c;
+  --npc1-fill: rgba(74,107,124,0.35);
+  --npc2-strip: #a8763e;
+  --npc2-fill: rgba(168,118,62,0.32);
+  --npc3-strip: #5a7a52;
+  --npc3-fill: rgba(90,122,82,0.32);
+  --npc4-strip: #7a5a78;
+  --npc4-fill: rgba(122,90,120,0.32);
+  --npc5-strip: #5a6b8a;
+  --npc5-fill: rgba(90,107,138,0.32);
+  --npc6-strip: #b07050;
+  --npc6-fill: rgba(176,112,80,0.30);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1341,9 +1360,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .p2-header { background: linear-gradient(110deg, rgba(8,52,120,.45), rgba(4,26,65,.2)); }
 
 .pc-color-strip { width: 3px; height: 32px; border-radius: 2px; flex-shrink: 0; align-self: center; }
-.p0-strip { background: var(--p0-color); box-shadow: 0 0 6px rgba(231,76,60,.6); }
-.p1-strip { background: var(--p1-color); box-shadow: 0 0 6px rgba(61,190,108,.6); }
-.p2-strip { background: var(--p2-color); box-shadow: 0 0 6px rgba(52,152,219,.6); }
+.p0-strip { background: var(--p0-strip); box-shadow: 0 0 6px var(--p0-strip); }
+.p1-strip { background: var(--p1-strip); box-shadow: 0 0 6px var(--p1-strip); }
+.p2-strip { background: var(--p2-strip); box-shadow: 0 0 6px var(--p2-strip); }
 
 .pc-identity { flex: 1; min-width: 0; }
 .pc-name {
@@ -1396,9 +1415,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
   background: rgba(255,255,255,.07); border-radius: 2px; overflow: hidden;
 }
 .morale-bar-fill { height: 100%; transition: width .8s ease; border-radius: 2px; }
-.p0-fill { background: linear-gradient(90deg, rgba(140,20,10,.6), var(--p0-color)); }
-.p1-fill { background: linear-gradient(90deg, rgba(8,80,30,.6),   var(--p1-color)); }
-.p2-fill { background: linear-gradient(90deg, rgba(5,40,110,.6),  var(--p2-color)); }
+.p0-fill { background: linear-gradient(90deg, rgba(140,20,10,.6), var(--p0-fill)); }
+.p1-fill { background: linear-gradient(90deg, rgba(8,80,30,.6),   var(--p1-fill)); }
+.p2-fill { background: linear-gradient(90deg, rgba(5,40,110,.6),  var(--p2-fill)); }
 .morale-label { font-size: .6rem; color: var(--text-dim); font-family: var(--font-sans); flex-shrink: 0; }
 
 /* ── 武将区 ── */
@@ -2963,3 +2982,119 @@ header, nav, main, footer { position: relative; z-index: 1; }
     font-size: .95rem;
   }
 }
+
+
+/* ─────────────────────────────────
+   势力配色调整面板
+───────────────────────────────── */
+.color-panel {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  padding: 0;
+}
+.color-panel-summary {
+  padding: 12px 16px;
+  color: #d4af37;
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.color-panel-sub {
+  margin-left: 12px;
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+  font-weight: 400;
+}
+.color-panel-body { padding: 0 16px 16px; }
+.color-section { margin-top: 12px; }
+.color-section-title {
+  color: rgba(212,175,55,0.85);
+  font-size: 13px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed rgba(212,175,55,0.2);
+}
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+.color-swatch {
+  width: 16px; height: 16px; border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.color-label {
+  min-width: 90px;
+  color: #e8e8e8;
+  font-size: 13px;
+}
+.color-picker {
+  width: 36px; height: 24px;
+  border: 1px solid rgba(212,175,55,0.3);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+}
+.color-hint {
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+}
+.color-reset {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid rgba(212,175,55,0.3);
+  color: rgba(212,175,55,0.8);
+  padding: 3px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.color-reset:hover { background: rgba(212,175,55,0.1); }
+.color-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.btn-color-reset, .btn-color-apply {
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Noto Serif SC', serif;
+}
+.btn-color-reset {
+  background: transparent;
+  border: 1px solid rgba(255,100,100,0.4);
+  color: rgba(255,150,150,0.9);
+}
+.btn-color-apply {
+  background: rgba(212,175,55,0.15);
+  border: 1px solid rgba(212,175,55,0.5);
+  color: #d4af37;
+}
+
+.npc1-strip { background: var(--npc1-strip); box-shadow: 0 0 6px var(--npc1-strip); }
+.npc2-strip { background: var(--npc2-strip); box-shadow: 0 0 6px var(--npc2-strip); }
+.npc3-strip { background: var(--npc3-strip); box-shadow: 0 0 6px var(--npc3-strip); }
+.npc4-strip { background: var(--npc4-strip); box-shadow: 0 0 6px var(--npc4-strip); }
+.npc5-strip { background: var(--npc5-strip); box-shadow: 0 0 6px var(--npc5-strip); }
+.npc6-strip { background: var(--npc6-strip); box-shadow: 0 0 6px var(--npc6-strip); }
+
+.npc1-fill { background: linear-gradient(90deg, rgba(74,107,124,0.6), var(--npc1-fill)); }
+.npc2-fill { background: linear-gradient(90deg, rgba(168,118,62,0.6), var(--npc2-fill)); }
+.npc3-fill { background: linear-gradient(90deg, rgba(90,122,82,0.6), var(--npc3-fill)); }
+.npc4-fill { background: linear-gradient(90deg, rgba(122,90,120,0.6), var(--npc4-fill)); }
+.npc5-fill { background: linear-gradient(90deg, rgba(90,107,138,0.6), var(--npc5-fill)); }
+.npc6-fill { background: linear-gradient(90deg, rgba(176,112,80,0.6), var(--npc6-fill)); }
+
+.npc1-header { background: linear-gradient(110deg, rgba(74,107,124,0.45), rgba(74,107,124,0.2)); }
+.npc2-header { background: linear-gradient(110deg, rgba(168,118,62,0.45), rgba(168,118,62,0.2)); }
+.npc3-header { background: linear-gradient(110deg, rgba(90,122,82,0.45), rgba(90,122,82,0.2)); }
+.npc4-header { background: linear-gradient(110deg, rgba(122,90,120,0.45), rgba(122,90,120,0.2)); }
+.npc5-header { background: linear-gradient(110deg, rgba(90,107,138,0.45), rgba(90,107,138,0.2)); }
+.npc6-header { background: linear-gradient(110deg, rgba(176,112,80,0.45), rgba(176,112,80,0.2)); }
