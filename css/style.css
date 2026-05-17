@@ -2922,3 +2922,42 @@ header, nav, main, footer { position: relative; z-index: 1; }
   padding: 6px 0 2px;
   letter-spacing: .04em;
 }
+
+/* 玩家锚点 + 行动小标题 */
+.raw-player-anchor.with-subtitle {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.raw-player-anchor.with-subtitle .raw-player-name {
+  display: inline-block;
+}
+.raw-player-anchor.with-subtitle .raw-player-sep {
+  color: var(--text-dim);
+  font-size: .85rem;
+  opacity: .6;
+}
+.raw-player-anchor.with-subtitle .raw-player-subtitle {
+  color: var(--text-main);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .5px;
+  border-bottom: 1px dashed var(--border-gold);
+  padding-bottom: 2px;
+}
+@media (max-width: 480px) {
+  .raw-player-anchor.with-subtitle {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .raw-player-anchor.with-subtitle .raw-player-sep {
+    display: none;
+  }
+  .raw-player-anchor.with-subtitle .raw-player-subtitle {
+    font-size: .85rem;
+  }
+}
