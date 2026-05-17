@@ -292,11 +292,12 @@ window.SGParser = (function () {
     }
     const result = [];
     // 匹配 城名(内容)，内容可含嵌套括号（不含顶层括号）
-    const re = /([^,，、(（\s]+)[（(]([^）)]*)[）)]/g;
+    const re = /([^,，、\[(（\s]+)(?:\[([^\]]+)\])?[（(]([^）)]*)[）)]/g;
     let m;
     while ((m = re.exec(raw)) !== null) {
       const name  = m[1].trim();
-      const inner = m[2].trim();
+      const faction = m[2] ? m[2].trim() : null;
+      const inner = m[3].trim();
       if (!name) continue;
 
       const pipeIdx = inner.indexOf('|');
@@ -312,6 +313,7 @@ window.SGParser = (function () {
       const holders = (holderRaw === '无') ? [] : holderRaw.split('/').map(s => s.trim()).filter(Boolean);
       result.push({
         name,
+        faction,
         holder:  holders.join('/') || '无',
         holders,
         troops:  _parseTroops(troopsRaw),
@@ -322,7 +324,7 @@ window.SGParser = (function () {
     if (!result.length) {
       raw.split(/[,，、\s]+/).forEach(s => {
         const n = s.trim();
-        if (n) result.push({ name: n, holder: '无', holders: [], troops: {} });
+        if (n) result.push({ name: n, faction: null, holder: '无', holders: [], troops: {} });
       });
     }
     return result;
@@ -337,6 +339,7 @@ window.SGParser = (function () {
     const list = _parseCityList(cityRaw);
     return list.map(c => ({
       name:    c.name,
+      faction: c.faction,
       holders: c.holders || (c.holder && c.holder !== '无' ? c.holder.split('/') : []),
       holder:  c.holder,
       troops:  c.troops || {},
@@ -1099,6 +1102,7 @@ window.SGParser = (function () {
       if (!result[c.name]) {
         result[c.name] = {
           owner:      'npc',
+          faction:    c.faction || null,
           playerIdx:  -1,
           playerName: '',
           holder:     c.holder || '无',
