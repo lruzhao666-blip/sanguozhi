@@ -67,6 +67,18 @@ window.SGMap = (function () {
     { fill:'rgba( 8,40,90,0.82)',  film:'rgba(40,125,220,0.20)', stroke:'rgba(65,150,240,0.70)', glow:'#60aef0', text:'#daeeff' },  // 青
   ];
   const NPC_C   = { fill:'rgba(35,25, 6,0.85)',  film:'rgba(170,128,40,0.22)', stroke:'rgba(200,155,55,0.70)', glow:'#caa042', text:'#f0dfa0' };
+// NPC 阵营专属配色（≥3 城时启用），仿照 NPC_C 结构
+const NPC_FACTION_COLORS = [
+  { fill:'rgba(35,50,60,0.85)',   film:'rgba(74,107,124,0.22)',  stroke:'rgba(120,160,180,0.70)', glow:'#7fb0c8',  text:'#dfeef5' }, // 玄铁青
+  { fill:'rgba(55,40,15,0.85)',   film:'rgba(168,118,62,0.22)',  stroke:'rgba(200,150,90,0.70)',  glow:'#d4a06a',  text:'#f5e6d0' }, // 赭黄
+  { fill:'rgba(28,42,25,0.85)',   film:'rgba(90,122,82,0.22)',   stroke:'rgba(130,170,115,0.70)', glow:'#9bc488',  text:'#e0efd8' }, // 竹墨绿
+  { fill:'rgba(45,30,45,0.85)',   film:'rgba(122,90,120,0.22)',  stroke:'rgba(165,130,165,0.70)', glow:'#c9a4c9',  text:'#f0e0f0' }, // 暮紫
+  { fill:'rgba(28,35,55,0.85)',   film:'rgba(90,107,138,0.22)',  stroke:'rgba(135,155,195,0.70)', glow:'#a8bce0',  text:'#dde6f5' }, // 砚灰蓝
+  { fill:'rgba(60,30,18,0.85)',   film:'rgba(176,112,80,0.22)',  stroke:'rgba(210,140,105,0.70)', glow:'#e0a080',  text:'#f7e0d0' }, // 枯橙
+];
+
+// 阵营→槽位的稳定映射（模块级缓存）
+let _npcFactionSlots = {};
   const EMPTY_C = { fill:'rgba(10,11,16,0.55)',  film:'rgba(40, 45,55,0.12)',  stroke:'rgba(175,148,82,0.16)', glow:'#887760', text:'rgba(185,158,100,0.32)' };
 
   /* 奖励图标（加 \uFE0F 变体选择符，强制彩色 emoji 渲染） */
@@ -319,7 +331,41 @@ window.SGMap = (function () {
     _build(c);
   }
 
+  function _updateNpcFactionSlots() {
+    // 统计每个阵营的城池数
+    const counts = {};
+    for (const city of CITIES) {
+      const ow = cityOwnership[city.name];
+      if (ow && ow.owner === 'npc' && ow.faction) {
+        counts[ow.faction] = (counts[ow.faction] || 0) + 1;
+      }
+    }
+    // 释放跌破 3 城的阵营
+    const newSlots = {};
+    const usedIdx = new Set();
+    for (const f in _npcFactionSlots) {
+      if (counts[f] >= 3) {
+        newSlots[f] = _npcFactionSlots[f];
+        usedIdx.add(newSlots[f]);
+      }
+    }
+    // 给新达到 3 城的阵营分配下一个空槽
+    for (const f in counts) {
+      if (counts[f] >= 3 && newSlots[f] === undefined) {
+        for (let i = 0; i < NPC_FACTION_COLORS.length; i++) {
+          if (!usedIdx.has(i)) {
+            newSlots[f] = i;
+            usedIdx.add(i);
+            break;
+          }
+        }
+      }
+    }
+    _npcFactionSlots = newSlots;
+  }
+
   function _build(container) {
+    _updateNpcFactionSlots();
     container.innerHTML = `
       <div class="sgmap-wrap" id="sgmap-wrap">
         ${_svg()}
@@ -537,7 +583,9 @@ window.SGMap = (function () {
       if (!ow || ow.owner === '') {
         color = EMPTY_C;
       } else if (ow.owner === 'npc') {
-        color = NPC_C; isNPC = true;
+        isNPC = true;
+        const slotIdx = ow.faction != null ? _npcFactionSlots[ow.faction] : undefined;
+        color = (slotIdx !== undefined) ? NPC_FACTION_COLORS[slotIdx] : NPC_C;
       } else {
         pidx = ow.playerIdx;
         color = P_COLOR[pidx] || EMPTY_C;
@@ -958,6 +1006,19 @@ window.SGMap = (function () {
         <span style="color:var(--text-dim);font-size:.65rem"> ${cnt[i] || 0}城</span>
       </span>`;
     }).join('');
+
+    // 已上色的 NPC 阵营图例
+    const factionList = Object.entries(_npcFactionSlots);
+    for (const [faction, idx] of factionList) {
+      const c = NPC_FACTION_COLORS[idx];
+      const cnt = Object.values(cityOwnership).filter(o => o.owner === 'npc' && o.faction === faction).length;
+      html += `<span class="sgmap-legend-item">
+        <span class="sgmap-legend-dot" style="background:${c.stroke};box-shadow:0 0 5px ${c.glow}"></span>
+        <span style="color:${c.glow};font-weight:700">${_esc(faction)}</span>
+        <span style="color:var(--text-dim);font-size:.65rem"> ${cnt}城</span>
+      </span>`;
+    }
+
     const npcCnt = Object.values(cityOwnership).filter(o => o.owner === 'npc').length;
     html += `<span class="sgmap-legend-item">
       <span class="sgmap-legend-dot" style="background:${NPC_C.stroke}"></span>
