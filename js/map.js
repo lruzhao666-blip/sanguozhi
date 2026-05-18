@@ -71,8 +71,8 @@ window.SGMap = (function () {
 const NPC_FACTION_COLORS = [
   // 索引 0 — 玄青（袁绍）H:185°
   { fill:'rgba(15,72,82,0.82)',   film:'rgba(55,160,180,0.22)',  stroke:'rgba(90,185,200,0.75)',  glow:'#5fb8c8', text:'#d8eef2' },
-  // 索引 1 — 靛青紫（曹魏）H:240°
-  { fill:'rgba(35,30,78,0.82)',   film:'rgba(90,80,165,0.22)',   stroke:'rgba(120,108,190,0.75)', glow:'#3d3d8a', text:'#d0cce8' },
+  // 索引 1 — 玄铁青（曹魏）H:220° 冷峻铁器质感
+  { fill:'rgba(20,32,52,0.82)', film:'rgba(70,95,135,0.22)', stroke:'rgba(95,120,160,0.75)', glow:'#3a5878', text:'#ccd6e4' },
   // 索引 2 — 赭石（刘表）H:25°
   { fill:'rgba(98,55,18,0.82)',   film:'rgba(200,128,55,0.22)',  stroke:'rgba(220,150,82,0.75)',  glow:'#cf9560', text:'#f2e0c8' },
   // 索引 3 — 赭褐红（孙吴）H:350°
