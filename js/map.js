@@ -83,6 +83,17 @@ const NPC_FACTION_COLORS = [
   { fill:'rgba(72,22,12,0.82)',   film:'rgba(170,70,45,0.20)',   stroke:'rgba(195,95,70,0.70)',   glow:'#c87a60',  text:'#f0d8d0' },
 ];
 
+// 历史势力→颜色槽位硬绑映射（不在此表的势力走"先到先得"）
+// 别名共享同一槽位（孙策=孙权、马腾=韩遂等兄弟/继承关系）
+const FACTION_FIXED_SLOTS = {
+  '袁绍': 0,
+  '曹操': 1,
+  '刘表': 2,
+  '孙策': 3, '孙权': 3,
+  '刘璋': 4,
+  '马腾': 5, '韩遂': 5,
+};
+
 // 阵营→槽位的稳定映射（模块级缓存）
 let _npcFactionSlots = {};
   const EMPTY_C = { fill:'rgba(10,11,16,0.55)',  film:'rgba(40, 45,55,0.12)',  stroke:'rgba(175,148,82,0.16)', glow:'#887760', text:'rgba(185,158,100,0.32)' };
@@ -338,7 +349,7 @@ let _npcFactionSlots = {};
   }
 
   function _updateNpcFactionSlots() {
-    // 统计每个阵营的城池数
+    // 1. 统计每个阵营的城池数
     const counts = {};
     for (const city of CITIES) {
       const ow = cityOwnership[city.name];
@@ -346,18 +357,33 @@ let _npcFactionSlots = {};
         counts[ow.faction] = (counts[ow.faction] || 0) + 1;
       }
     }
-    // 释放跌破 3 城的阵营
+
     const newSlots = {};
     const usedIdx = new Set();
-    for (const f in _npcFactionSlots) {
+
+    // 2. 优先分配硬绑阵营（≥3 城且在 FACTION_FIXED_SLOTS 里）
+    for (const f in FACTION_FIXED_SLOTS) {
       if (counts[f] >= 3) {
-        newSlots[f] = _npcFactionSlots[f];
-        usedIdx.add(newSlots[f]);
+        const slot = FACTION_FIXED_SLOTS[f];
+        newSlots[f] = slot;
+        usedIdx.add(slot);
       }
     }
-    // 给新达到 3 城的阵营分配下一个空槽
+
+    // 3. 保留仍 ≥3 城、非硬绑、且槽位未被硬绑挤占的旧映射
+    for (const f in _npcFactionSlots) {
+      if (counts[f] >= 3 && !(f in FACTION_FIXED_SLOTS) && newSlots[f] === undefined) {
+        const oldSlot = _npcFactionSlots[f];
+        if (!usedIdx.has(oldSlot)) {
+          newSlots[f] = oldSlot;
+          usedIdx.add(oldSlot);
+        }
+      }
+    }
+
+    // 4. 给新达到 ≥3 城、非硬绑、还没拿到槽的阵营分配下一个空槽
     for (const f in counts) {
-      if (counts[f] >= 3 && newSlots[f] === undefined) {
+      if (counts[f] >= 3 && !(f in FACTION_FIXED_SLOTS) && newSlots[f] === undefined) {
         for (let i = 0; i < NPC_FACTION_COLORS.length; i++) {
           if (!usedIdx.has(i)) {
             newSlots[f] = i;
@@ -367,6 +393,7 @@ let _npcFactionSlots = {};
         }
       }
     }
+
     _npcFactionSlots = newSlots;
   }
 
