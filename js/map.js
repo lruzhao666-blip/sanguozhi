@@ -66,7 +66,7 @@ window.SGMap = (function () {
     { fill:'rgba( 8,55,22,0.82)',  film:'rgba(40,185,85,0.18)',  stroke:'rgba(55,200,100,0.70)', glow:'#52d478', text:'#e2f8ec' },  // 翠
     { fill:'rgba( 8,40,90,0.82)',  film:'rgba(40,125,220,0.20)', stroke:'rgba(65,150,240,0.70)', glow:'#60aef0', text:'#daeeff' },  // 青
   ];
-  const NPC_C   = { fill:'rgba(35,25, 6,0.85)',  film:'rgba(170,128,40,0.22)', stroke:'rgba(200,155,55,0.70)', glow:'#caa042', text:'#f0dfa0' };
+  const NPC_C   = { fill:'rgba(25,18, 4,0.78)',  film:'rgba(125, 95,30,0.16)', stroke:'rgba(155,120,45,0.55)', glow:'#9c7c34', text:'#d8c890' };
 // NPC 阵营专属配色（≥3 城时启用），仿照 NPC_C 结构
 const NPC_FACTION_COLORS = [
   // 玄青（袁绍系）— H:185° 深孔雀青（沿用）
