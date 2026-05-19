@@ -1826,15 +1826,6 @@
       // 合并旧字段进 anchorGroups（兼容已存 Supabase 旧数据）
       const anchorGroups = _migrateToAnchorGroups(ch);
 
-      // 收支校验警告
-      const warningsHtml = (ch.warnings && ch.warnings.length)
-        ? `<div class="anchor-group" style="border-left-color:rgba(230,80,50,.5)">
-            <h4 class="ag-title"><span class="ag-icon">⚠</span>数据校验</h4>
-            <ul class="ag-items">${ch.warnings.map(w =>
-              `<li class="ag-item"><span class="ag-label" style="color:#f07070">${esc(w)}</span></li>`
-            ).join('')}</ul>
-          </div>` : '';
-
       return `<div class="cd-card cd-card-${ci}">
         <div class="cd-header cd-header-${ci}">
           <div class="cd-strip cd-strip-${ci}"></div>
@@ -1844,7 +1835,6 @@
         ${_renderBreakdown(ch.breakdown, ch.troopChanges)}
         <div class="cc-anchor-groups">
           ${_renderAnchorGroups(anchorGroups)}
-          ${warningsHtml}
         </div>
         <div class="cd-card-spacer"></div>
       </div>`;
