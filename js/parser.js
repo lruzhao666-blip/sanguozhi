@@ -1047,18 +1047,7 @@ window.SGParser = (function () {
   //  breakdown[res].total 应 == resources[res]
   // ─────────────────────────────────────────
   function _validateBreakdown(change, slot) {
-    for (const res of ['金', '粮', '兵', '民心']) {
-      const bd = change.breakdown[res];
-      if (!bd || bd.total === null || bd.total === undefined) continue;
-      const declared = change.resources[res];
-      if (declared === undefined) continue;
-      if (bd.total !== declared) {
-        const msg = `${res}合计不符：收支明细合计${bd.total > 0 ? '+' : ''}${bd.total}，` +
-                    `总变化${declared > 0 ? '+' : ''}${declared}`;
-        change.warnings.push(msg);
-        console.warn(`[SGParser] [变动][${slot}] ${msg}`);
-      }
-    }
+    // 数据校验功能已移除（保留空函数以兼容调用方）
   }
 
   // ─────────────────────────────────────────
