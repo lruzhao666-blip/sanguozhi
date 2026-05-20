@@ -2956,3 +2956,118 @@ header, nav, main, footer { position: relative; z-index: 1; }
   }
 }
 
+
+/* ══════════════════════════════════════════
+   v3.19 城池悬浮卡 · 资产卡设计
+══════════════════════════════════════════ */
+.sgmap-tooltip.city-card {
+  position: absolute;
+  background: linear-gradient(155deg, rgba(20,8,8,.96), rgba(8,4,4,.98));
+  border: 1px solid var(--border-gold);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(255,200,100,.03) inset;
+  width: 320px;
+  pointer-events: none;
+  z-index: 9999;
+}
+.city-card .cc-hud { position: relative; padding: 18px 20px 16px; border-bottom: 1px solid rgba(212,168,67,.12); overflow: hidden; }
+.city-card .cc-hud::before { content:''; position:absolute; inset:0; pointer-events:none; opacity:.8; }
+
+.city-card.tier-xiancheng { border-color: rgba(180,180,190,.45); }
+.city-card.tier-xiancheng .cc-hud::before { background: linear-gradient(135deg, rgba(120,120,130,.06), transparent 60%); }
+
+.city-card.tier-juncheng { border-color: rgba(90,160,230,.55); }
+.city-card.tier-juncheng .cc-hud::before {
+  background: radial-gradient(circle at 80% 20%, rgba(80,150,220,.4), transparent 55%), linear-gradient(135deg, rgba(50,100,180,.10), transparent 60%);
+  opacity: .5;
+}
+
+.city-card.tier-zhouzhi { border-color: rgba(180,130,230,.6); }
+.city-card.tier-zhouzhi .cc-hud::before {
+  background: radial-gradient(circle at 80% 20%, rgba(170,110,230,.5), transparent 55%), linear-gradient(135deg, rgba(120,60,180,.14), transparent 60%);
+  opacity: .65;
+}
+.city-card.tier-zhouzhi::after {
+  content:''; position:absolute; inset:-1px; border-radius:12px;
+  background: linear-gradient(135deg, rgba(170,110,230,.5), transparent 50%);
+  z-index:-1; filter: blur(6px); opacity:.35;
+  animation: zhouzhi-breath 4s ease-in-out infinite;
+}
+@keyframes zhouzhi-breath { 0%,100%{opacity:.25;} 50%{opacity:.5;} }
+
+.city-card.tier-xiongdu { border-color: rgba(240,170,70,.7); }
+.city-card.tier-xiongdu .cc-hud::before {
+  background:
+    radial-gradient(circle at 80% 20%, rgba(240,160,60,.6), transparent 55%),
+    radial-gradient(circle at 20% 80%, rgba(255,180,80,.18), transparent 50%),
+    linear-gradient(135deg, rgba(200,110,30,.16), transparent 60%);
+  opacity: .8;
+}
+.city-card.tier-xiongdu::after {
+  content:''; position:absolute; inset:-1px; border-radius:12px;
+  background: linear-gradient(135deg, rgba(240,160,60,.6), transparent 40%, rgba(255,200,100,.4));
+  z-index:-1; filter: blur(8px); opacity:.5;
+  animation: xiongdu-breath 3.5s ease-in-out infinite;
+}
+@keyframes xiongdu-breath { 0%,100%{opacity:.4;} 50%{opacity:.75;} }
+
+.city-card .cc-headline { display:flex; align-items:center; justify-content:space-between; gap:10px; position:relative; z-index:1; }
+.city-card .cc-name { font-size:1.5rem; font-weight:900; color:var(--text-main); letter-spacing:.12em; text-shadow: 0 2px 8px rgba(0,0,0,.8); line-height:1; }
+.city-card .cc-tier { font-size:.7rem; font-weight:700; letter-spacing:.25em; padding:4px 12px 4px 14px; border-radius:14px; border:1px solid; white-space:nowrap; }
+
+.city-card.tier-xiancheng .cc-tier { color:#dcdce0; background:rgba(180,180,185,.22); border-color:rgba(180,180,190,.45); }
+.city-card.tier-juncheng .cc-tier  { color:#b8d8f5; background:rgba(60,130,200,.28); border-color:rgba(90,160,230,.55); box-shadow:0 0 8px rgba(80,150,220,.4); }
+.city-card.tier-zhouzhi .cc-tier   { color:#e6c8ff; background:rgba(150,90,210,.30); border-color:rgba(180,130,230,.6); box-shadow:0 0 12px rgba(170,110,230,.5); }
+.city-card.tier-xiongdu .cc-tier   { color:#ffd9a0; background:linear-gradient(135deg, rgba(230,140,40,.32), rgba(255,180,80,.22)); border-color:rgba(240,170,70,.7); box-shadow:0 0 14px rgba(240,160,60,.6); }
+
+.city-card .cc-substatus { display:flex; gap:6px; margin-top:6px; position:relative; z-index:1; }
+.city-card .cc-mini-tag { font-size:.6rem; font-weight:500; letter-spacing:.08em; padding:1px 8px; border-radius:9px; border:1px solid; }
+.tag-status-complete { color:#b8d4b8; border-color:rgba(120,180,120,.35); background:rgba(40,80,40,.2); }
+.tag-status-damaged  { color:#d4a888; border-color:rgba(180,100,60,.4);  background:rgba(80,40,20,.25); }
+.tag-strategic-key    { color:#f0c8a0; border-color:rgba(220,150,80,.4);  background:rgba(100,60,20,.25); }
+.tag-strategic-normal { color:#b8b0a0; border-color:rgba(130,115,90,.32); background:rgba(50,42,30,.2); }
+.tag-strategic-border { color:#a8b8a0; border-color:rgba(120,140,100,.32);background:rgba(40,50,30,.2); }
+
+.city-card .cc-output {
+  display:flex; gap:16px; margin-top:14px; padding:10px 14px;
+  background:linear-gradient(90deg, rgba(0,0,0,.4), rgba(0,0,0,.15));
+  border-radius:8px; border:1px solid rgba(212,168,67,.18); position:relative; z-index:1;
+}
+.city-card .cc-output-item { flex:1; text-align:center; }
+.city-card .cc-output-label { font-size:.56rem; font-weight:500; color:var(--text-dim); letter-spacing:.2em; margin-bottom:2px; }
+.city-card .cc-output-value { font-size:1.35rem; font-weight:900; line-height:1; letter-spacing:.02em; }
+.city-card .cc-output-gold .cc-output-value { color:#f5d68a; text-shadow:0 0 10px rgba(245,200,80,.3); }
+.city-card .cc-output-food .cc-output-value { color:#c8e08a; text-shadow:0 0 10px rgba(180,220,100,.3); }
+.city-card .cc-output-mult { font-size:.56rem; font-weight:400; color:var(--text-dim); margin-top:2px; letter-spacing:.06em; }
+
+.city-card .cc-poem { font-size:.76rem; font-weight:400; color:var(--text-sub); letter-spacing:.04em; margin-top:12px; padding-left:8px; border-left:2px solid rgba(212,168,67,.3); line-height:1.55; position:relative; z-index:1; }
+.city-card .cc-bonuses { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; position:relative; z-index:1; }
+.city-card .cc-bonus { font-size:.7rem; font-weight:500; color:var(--gold-light); padding:3px 9px; background:rgba(80,50,15,.4); border:1px solid rgba(212,168,67,.3); border-radius:12px; letter-spacing:.06em; }
+
+.city-card .cc-owner-bar { display:flex; align-items:center; gap:10px; padding:9px 20px; background:rgba(0,0,0,.35); border-bottom:1px solid rgba(212,168,67,.08); font-size:.76rem; }
+.city-card .cc-owner-flag { width:10px; height:14px; border-radius:1px; }
+.city-card.owner-p0 .cc-owner-flag { background:linear-gradient(180deg, #e74c3c, #8b0000); box-shadow:0 0 6px rgba(231,76,60,.5); }
+.city-card.owner-p1 .cc-owner-flag { background:linear-gradient(180deg, #3dbe6c, #226833); box-shadow:0 0 6px rgba(61,190,108,.5); }
+.city-card.owner-p2 .cc-owner-flag { background:linear-gradient(180deg, #3498db, #1a5278); box-shadow:0 0 6px rgba(52,152,219,.5); }
+.city-card.owner-npc .cc-owner-flag { background:linear-gradient(180deg, #a87b3a, #5a3f1a); }
+.city-card.owner-neutral .cc-owner-flag { background:linear-gradient(180deg, #6a6a6a, #333); }
+.city-card .cc-owner-name { font-weight:700; color:var(--text-main); letter-spacing:.1em; }
+.city-card .cc-owner-status { font-size:.66rem; font-weight:400; color:var(--text-dim); margin-left:auto; letter-spacing:.08em; }
+
+.city-card .cc-section { padding:12px 20px 10px; border-bottom:1px solid rgba(212,168,67,.06); }
+.city-card .cc-section-label { font-size:.64rem; font-weight:700; color:var(--gold-dim); letter-spacing:.25em; margin-bottom:8px; }
+.city-card .cc-generals { font-size:.92rem; font-weight:500; color:var(--text-main); margin-bottom:8px; letter-spacing:.04em; }
+.city-card .cc-general-main { color:var(--gold-light); font-weight:700; }
+.city-card .cc-troops { display:flex; gap:6px; flex-wrap:wrap; }
+.city-card .cc-troop-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; background:rgba(30,15,15,.55); border:1px solid rgba(180,140,80,.22); border-radius:10px; font-size:.7rem; }
+.city-card .cc-troop-name { color:var(--text-sub); font-size:.66rem; font-weight:400; }
+.city-card .cc-troop-num { color:var(--text-main); font-weight:700; }
+
+.city-card .cc-policies { padding:12px 20px 16px; }
+.city-card .cc-policy-row { display:flex; align-items:center; gap:10px; padding:6px 0; font-size:.82rem; border-bottom:1px dashed rgba(212,168,67,.08); }
+.city-card .cc-policy-row:last-child { border-bottom:none; }
+.city-card .cc-policy-emoji { font-size:1.05rem; width:22px; text-align:center; flex-shrink:0; }
+.city-card .cc-policy-general { color:var(--gold-light); font-weight:700; width:64px; flex-shrink:0; letter-spacing:.04em; }
+.city-card .cc-policy-action { color:var(--text-sub); font-weight:400; letter-spacing:.04em; }
+.city-card .cc-policy-empty { font-size:.74rem; color:var(--text-dim); text-align:center; padding:8px 0; }

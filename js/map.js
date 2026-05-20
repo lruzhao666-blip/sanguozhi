@@ -127,90 +127,118 @@ let _npcFactionSlots = {};
        列 14-16 ：冀州 / 徐州 / 扬州北
        列 17-19 ：幽州 / 扬州东
   ───────────────────────────────── */
+
+// 城等基础产出 (v3.19)
+const TIER_BASE = {
+  1: { gold: 300, food: 600 },  // 雄都
+  2: { gold: 200, food: 400 },  // 州治
+  3: { gold: 120, food: 250 },  // 郡城
+  4: { gold:  60, food: 120 },  // 县城
+};
+
+// 地利乘算系数 (v3.19)
+const BONUS_MULT = {
+  '粮丰':       { gold: 1.0,  food: 1.5  },
+  '金丰':       { gold: 1.5,  food: 1.0  },
+  '进攻+':      { gold: 1.2,  food: 1.0  },
+  '谋略+':      { gold: 1.1,  food: 1.0  },
+  '水战强':     { gold: 1.0,  food: 1.15 },
+  '苦寒减产':   { gold: 0.8,  food: 0.8  },
+  '瘴气':       { gold: 1.0,  food: 0.75 },
+  '偏远':       { gold: 0.9,  food: 0.9  },
+  '防御+':      { gold: 1.0,  food: 1.0  },
+  '骑兵强':     { gold: 1.0,  food: 1.0  },
+  '蛮兵强':     { gold: 1.0,  food: 1.0  },
+  '险关':       { gold: 1.0,  food: 1.0  },
+};
+
+// 城等中文名映射
+const TIER_NAME = { 1: '雄都', 2: '州治', 3: '郡城', 4: '县城' };
+
   const CITIES = [
     /* ══ 幽州 ══ */
-    { id:'xiangping', name:'襄平',  region:'幽州', hx:19, hy:0,  tier:2, bonusKey:'骑兵强', bonusKeys:['骑兵强','苦寒减产'],  terrain:'山地', npcGuard:'公孙度', terrainDesc:'辽东孤城，北接鲜卑，骑兵之利冠绝北疆。' },
-    { id:'beiping',   name:'北平',  region:'幽州', hx:17, hy:1,  tier:2, bonusKey:'骑兵强', bonusKeys:['骑兵强','防御+'],   terrain:'山地', npcGuard:'公孙瓒', terrainDesc:'燕山脚下雄关，白马义从所出之地。' },
-    { id:'ji',        name:'蓟县',  region:'幽州', hx:15, hy:1,  tier:1, bonusKey:'粮丰', bonusKeys:['粮丰','苦寒减产'],terrain:'苦寒', npcGuard:'刘虞',   terrainDesc:'幽州治所，渔阳沃野，百姓殷实。' },
+    { id:'xiangping', name:'襄平',  region:'幽州', hx:19, hy:0,  tier:3, bonusKey:'骑兵强', bonusKeys:['骑兵强','苦寒减产'],  terrain:'山地', npcGuard:'公孙度', terrainDesc:'辽东孤城，北接鲜卑，骑兵之利冠绝北疆。' },
+    { id:'beiping',   name:'北平',  region:'幽州', hx:17, hy:1,  tier:3, bonusKey:'骑兵强', bonusKeys:['骑兵强','防御+'],   terrain:'山地', npcGuard:'公孙瓒', terrainDesc:'燕山脚下雄关，白马义从所出之地。' },
+    { id:'ji',        name:'蓟县',  region:'幽州', hx:15, hy:1,  tier:2, bonusKey:'粮丰', bonusKeys:['粮丰','苦寒减产'],terrain:'苦寒', npcGuard:'刘虞',   terrainDesc:'幽州治所，渔阳沃野，百姓殷实。' },
 
     /* ══ 冀州 ══ */
-    { id:'nanpi',     name:'南皮',  region:'冀州', hx:16, hy:2,  tier:2, bonusKey:'粮丰', bonusKeys:['粮丰','水战强'],    terrain:'平原', npcGuard:'袁谭',   terrainDesc:'渤海郡治，水陆码头，袁氏起家之所。' },
-    { id:'pingyuan',  name:'平原',  region:'冀州', hx:15, hy:3,  tier:2, bonusKey:'粮丰', bonusKeys:['粮丰','进攻+'],    terrain:'平原', npcGuard:'管亥',   terrainDesc:'黄河故道，一马平川，刘备曾在此为相。' },
+    { id:'nanpi',     name:'南皮',  region:'冀州', hx:16, hy:2,  tier:3, bonusKey:'粮丰', bonusKeys:['粮丰','水战强'],    terrain:'平原', npcGuard:'袁谭',   terrainDesc:'渤海郡治，水陆码头，袁氏起家之所。' },
+    { id:'pingyuan',  name:'平原',  region:'冀州', hx:15, hy:3,  tier:3, bonusKey:'粮丰', bonusKeys:['粮丰','进攻+'],    terrain:'平原', npcGuard:'管亥',   terrainDesc:'黄河故道，一马平川，刘备曾在此为相。' },
     { id:'ye',        name:'邺城',  region:'冀州', hx:14, hy:2,  tier:1, bonusKey:'金丰', bonusKeys:['金丰','防御+'],   terrain:'平原', npcGuard:'袁尚',   terrainDesc:'冀州治所，河北第一坚城。' },
 
     /* ══ 并州 ══ */
     { id:'jinyang',   name:'晋阳',  region:'并州', hx:12, hy:2,  tier:2, bonusKey:'骑兵强', bonusKeys:['骑兵强','谋略+'],  terrain:'山地', npcGuard:'高干',   terrainDesc:'太原郡治，并州铁骑出没之地。' },
-    { id:'shangdang', name:'上党',  region:'并州', hx:13, hy:3,  tier:2, bonusKey:'骑兵强', bonusKeys:['骑兵强','险关'],   terrain:'山地', npcGuard:'郭援',   terrainDesc:'天下之脊，群山环抱，兵家必争之地。' },
+    { id:'shangdang', name:'上党',  region:'并州', hx:13, hy:3,  tier:3, bonusKey:'骑兵强', bonusKeys:['骑兵强','险关'],   terrain:'山地', npcGuard:'郭援',   terrainDesc:'天下之脊，群山环抱，兵家必争之地。' },
 
     /* ══ 青州 ══ */
     { id:'beihai',    name:'北海',  region:'青州', hx:17, hy:3,  tier:2, bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'孔融',   terrainDesc:'青州治所，东临大海，渔盐之利甲于天下。' },
-    { id:'jinan',     name:'济南',  region:'青州', hx:16, hy:4,  tier:2, bonusKey:'粮丰', bonusKeys:['粮丰'],    terrain:'平原', npcGuard:'田楷',   terrainDesc:'泰山之北，济水之南，土地肥沃。' },
+    { id:'jinan',     name:'济南',  region:'青州', hx:16, hy:4,  tier:3, bonusKey:'粮丰', bonusKeys:['粮丰'],    terrain:'平原', npcGuard:'田楷',   terrainDesc:'泰山之北，济水之南，土地肥沃。' },
 
     /* ══ 司隶 ══ */
-    { id:'henei',     name:'河内',  region:'司隶', hx:13, hy:4,  tier:2, bonusKey:'粮丰', bonusKeys:['粮丰','进攻+'],    terrain:'平原', npcGuard:'张杨',   terrainDesc:'黄河北岸，沃野千里，洛阳屏障。' },
+    { id:'henei',     name:'河内',  region:'司隶', hx:13, hy:4,  tier:3, bonusKey:'粮丰', bonusKeys:['粮丰','进攻+'],    terrain:'平原', npcGuard:'张杨',   terrainDesc:'黄河北岸，沃野千里，洛阳屏障。' },
     { id:'luoyang',   name:'洛阳',  region:'司隶', hx:12, hy:5,  tier:1, bonusKey:'金丰', bonusKeys:['金丰','谋略+'],   terrain:'平原', npcGuard:'华雄',   terrainDesc:'九朝古都，八关锁钥，虎牢函谷拱卫。' },
-    { id:'hongnong',  name:'弘农',  region:'司隶', hx:11, hy:5,  tier:2, bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'段煨',   terrainDesc:'函谷关下，西通关中，东接洛阳。' },
+    { id:'hongnong',  name:'弘农',  region:'司隶', hx:11, hy:5,  tier:3, bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'段煨',   terrainDesc:'函谷关下，西通关中，东接洛阳。' },
     { id:'huguan',    name:'虎牢关',region:'司隶', hx:13, hy:5,  tier:3, bonusKey:'险关', bonusKeys:['险关','防御+'],    terrain:'关隘', npcGuard:'华雄',   terrainDesc:'天下第一雄关，扼守洛阳东大门。' },
     { id:'tongguan',  name:'潼关',  region:'司隶', hx:11, hy:6,  tier:3, bonusKey:'险关', bonusKeys:['险关','防御+'],    terrain:'关隘', npcGuard:'李蒙',   terrainDesc:'关中东大门，崤函险道之锁钥。' },
 
     /* ══ 雍凉 ══ */
     { id:'changan',   name:'长安',  region:'雍凉', hx:10, hy:6,  tier:1, bonusKey:'金丰', bonusKeys:['金丰','骑兵强'],  terrain:'平原', npcGuard:'李傕',   terrainDesc:'前汉旧都，关中沃野，八百里秦川。' },
-    { id:'anding',    name:'安定',  region:'雍凉', hx:9,  hy:5,  tier:2, bonusKey:'骑兵强', bonusKeys:['骑兵强'],  terrain:'山地', npcGuard:'梁兴',   terrainDesc:'泾水之畔，黄土高原，胡笳声不绝。' },
-    { id:'jietingx',  name:'街亭',  region:'雍凉', hx:8,  hy:5,  tier:3, bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'马遵',   terrainDesc:'陇右门户，失此则陇道断绝。' },
-    { id:'tianshui',  name:'天水',  region:'雍凉', hx:8,  hy:6,  tier:2, bonusKey:'骑兵强', bonusKeys:['骑兵强','防御+'],   terrain:'山地', npcGuard:'姜冏',   terrainDesc:'陇右重镇，胡汉杂居，出名马良将。' },
-    { id:'wuwei',     name:'武威',  region:'雍凉', hx:5,  hy:5,  tier:2, bonusKey:'骑兵强', bonusKeys:['骑兵强','苦寒减产'],  terrain:'平原', npcGuard:'韩遂',   terrainDesc:'河西走廊咽喉，大漠孤烟，长河落日。' },
-    { id:'xiping',    name:'西平',  region:'雍凉', hx:3,  hy:6,  tier:3, bonusKey:'苦寒减产', bonusKeys:['苦寒减产','险关'],terrain:'苦寒', npcGuard:'麴演',   terrainDesc:'湟水之滨，羌氐聚居，雪山在望。' },
+    { id:'anding',    name:'安定',  region:'雍凉', hx:9,  hy:5,  tier:3, bonusKey:'骑兵强', bonusKeys:['骑兵强'],  terrain:'山地', npcGuard:'梁兴',   terrainDesc:'泾水之畔，黄土高原，胡笳声不绝。' },
+    { id:'jietingx',  name:'街亭',  region:'雍凉', hx:8,  hy:5,  tier:4, bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'马遵',   terrainDesc:'陇右门户，失此则陇道断绝。' },
+    { id:'tianshui',  name:'天水',  region:'雍凉', hx:8,  hy:6,  tier:3, bonusKey:'骑兵强', bonusKeys:['骑兵强','防御+'],   terrain:'山地', npcGuard:'姜冏',   terrainDesc:'陇右重镇，胡汉杂居，出名马良将。' },
+    { id:'wuwei',     name:'武威',  region:'雍凉', hx:5,  hy:5,  tier:3, bonusKey:'骑兵强', bonusKeys:['骑兵强','苦寒减产'],  terrain:'平原', npcGuard:'韩遂',   terrainDesc:'河西走廊咽喉，大漠孤烟，长河落日。' },
+    { id:'xiping',    name:'西平',  region:'雍凉', hx:3,  hy:6,  tier:4, bonusKey:'苦寒减产', bonusKeys:['苦寒减产','险关'],terrain:'苦寒', npcGuard:'麴演',   terrainDesc:'湟水之滨，羌氐聚居，雪山在望。' },
 
     /* ══ 兖豫 ══ */
-    { id:'puyang',    name:'濮阳',  region:'兖豫', hx:14, hy:4,  tier:2, bonusKey:'粮丰', bonusKeys:['粮丰','防御+'],   terrain:'平原', npcGuard:'吕旷',   terrainDesc:'黄河南岸要冲，曹操与吕布鏖战之地。' },
+    { id:'puyang',    name:'濮阳',  region:'兖豫', hx:14, hy:4,  tier:3, bonusKey:'粮丰', bonusKeys:['粮丰','防御+'],   terrain:'平原', npcGuard:'吕旷',   terrainDesc:'黄河南岸要冲，曹操与吕布鏖战之地。' },
     { id:'chenliu',   name:'陈留',  region:'兖豫', hx:14, hy:5,  tier:2, bonusKey:'粮丰', bonusKeys:['粮丰','谋略+'],    terrain:'平原', npcGuard:'张邈',   terrainDesc:'曹操起兵之地，中原通衢。' },
     { id:'xuchang',   name:'许昌',  region:'兖豫', hx:13, hy:6,  tier:1, bonusKey:'金丰', bonusKeys:['金丰','谋略+'],   terrain:'平原', npcGuard:'夏侯惇', terrainDesc:'颍川之地，人才渊薮，天子所在。' },
-    { id:'qiao',      name:'谯郡',  region:'兖豫', hx:14, hy:7,  tier:2, bonusKey:'进攻+', bonusKeys:['进攻+','粮丰'],   terrain:'平原', npcGuard:'夏侯渊', terrainDesc:'曹氏故乡，沛国精兵，民风彪悍。' },
-    { id:'runan',     name:'汝南',  region:'兖豫', hx:13, hy:7,  tier:2, bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'刘辟',   terrainDesc:'袁氏根基，门生故吏遍天下。' },
+    { id:'qiao',      name:'谯郡',  region:'兖豫', hx:14, hy:7,  tier:3, bonusKey:'进攻+', bonusKeys:['进攻+','粮丰'],   terrain:'平原', npcGuard:'夏侯渊', terrainDesc:'曹氏故乡，沛国精兵，民风彪悍。' },
+    { id:'runan',     name:'汝南',  region:'兖豫', hx:13, hy:7,  tier:3, bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'刘辟',   terrainDesc:'袁氏根基，门生故吏遍天下。' },
 
     /* ══ 徐州 ══ */
     { id:'xiaopei',   name:'小沛',  region:'徐州', hx:14, hy:6,  tier:3, bonusKey:'进攻+', bonusKeys:['进攻+'],   terrain:'平原', npcGuard:'陈宫',   terrainDesc:'沛县小城，刘备数度寄居，交通要冲。' },
-    { id:'xiapi',     name:'下邳',  region:'徐州', hx:16, hy:5,  tier:1, bonusKey:'粮丰', bonusKeys:['粮丰','防御+'],   terrain:'平原', npcGuard:'臧霸',   terrainDesc:'徐州治所，泗水绕城，吕布殒命处。' },
-    { id:'guangling', name:'广陵',  region:'徐州', hx:17, hy:5,  tier:2, bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'陈登',   terrainDesc:'长江北岸，与江东隔水相望。' },
+    { id:'xiapi',     name:'下邳',  region:'徐州', hx:16, hy:5,  tier:2, bonusKey:'粮丰', bonusKeys:['粮丰','防御+'],   terrain:'平原', npcGuard:'臧霸',   terrainDesc:'徐州治所，泗水绕城，吕布殒命处。' },
+    { id:'guangling', name:'广陵',  region:'徐州', hx:17, hy:5,  tier:3, bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'陈登',   terrainDesc:'长江北岸，与江东隔水相望。' },
 
     /* ══ 荆襄 ══ */
-    { id:'wan',       name:'宛城',  region:'荆襄', hx:12, hy:7,  tier:2, bonusKey:'防御+', bonusKeys:['防御+','进攻+'],   terrain:'关隘', npcGuard:'张绣',   terrainDesc:'南阳郡治，北扼洛阳，南通襄阳。' },
-    { id:'xinye',     name:'新野',  region:'荆襄', hx:12, hy:8,  tier:3, bonusKey:'进攻+', bonusKeys:['进攻+'],   terrain:'平原', npcGuard:'刘磐',   terrainDesc:'南阳南境小城，刘备屯兵之所。' },
+    { id:'wan',       name:'宛城',  region:'荆襄', hx:12, hy:7,  tier:3, bonusKey:'防御+', bonusKeys:['防御+','进攻+'],   terrain:'关隘', npcGuard:'张绣',   terrainDesc:'南阳郡治，北扼洛阳，南通襄阳。' },
+    { id:'xinye',     name:'新野',  region:'荆襄', hx:12, hy:8,  tier:4, bonusKey:'进攻+', bonusKeys:['进攻+'],   terrain:'平原', npcGuard:'刘磐',   terrainDesc:'南阳南境小城，刘备屯兵之所。' },
     { id:'xiangyang', name:'襄阳',  region:'荆襄', hx:12, hy:9,  tier:1, bonusKey:'水战强', bonusKeys:['水战强','谋略+'],  terrain:'水域', npcGuard:'蔡瑁',   terrainDesc:'汉水之滨，荆州治所，水陆要冲。' },
     { id:'jiangxia',  name:'江夏',  region:'荆襄', hx:14, hy:9,  tier:2, bonusKey:'水战强', bonusKeys:['水战强','防御+'],  terrain:'水域', npcGuard:'黄祖',   terrainDesc:'长江汉水交汇，水军重镇。' },
-    { id:'jiangling', name:'江陵',  region:'荆襄', hx:12, hy:10, tier:2, bonusKey:'粮丰', bonusKeys:['粮丰','水战强'],    terrain:'平原', npcGuard:'文聘',   terrainDesc:'南郡治所，荆州粮仓军械所在。' },
-    { id:'wuling',    name:'武陵',  region:'荆襄', hx:10, hy:11, tier:3, bonusKey:'蛮兵强', bonusKeys:['蛮兵强','瘴气'],  terrain:'瘴林', npcGuard:'金旋',   terrainDesc:'湘西群山，五溪蛮聚居，瘴气弥漫。' },
-    { id:'changsha',  name:'长沙',  region:'荆襄', hx:13, hy:11, tier:2, bonusKey:'粮丰', bonusKeys:['粮丰','进攻+'],   terrain:'森林', npcGuard:'韩玄',   terrainDesc:'湘江之滨，荆南重镇，黄忠坐镇。' },
-    { id:'guiyang',   name:'桂阳',  region:'荆襄', hx:14, hy:12, tier:3, bonusKey:'金丰', bonusKeys:['金丰','偏远'],    terrain:'山地', npcGuard:'赵范',   terrainDesc:'湘南矿藏丰饶，金银铜铁皆出于此。' },
-    { id:'lingling',  name:'零陵',  region:'荆襄', hx:11, hy:12, tier:3, bonusKey:'谋略+', bonusKeys:['谋略+','偏远'],   terrain:'森林', npcGuard:'刘度',   terrainDesc:'湘江上游，山林幽深，隐士辈出。' },
+    { id:'jiangling', name:'江陵',  region:'荆襄', hx:12, hy:10, tier:3, bonusKey:'粮丰', bonusKeys:['粮丰','水战强'],    terrain:'平原', npcGuard:'文聘',   terrainDesc:'南郡治所，荆州粮仓军械所在。' },
+    { id:'wuling',    name:'武陵',  region:'荆襄', hx:10, hy:11, tier:4, bonusKey:'蛮兵强', bonusKeys:['蛮兵强','瘴气'],  terrain:'瘴林', npcGuard:'金旋',   terrainDesc:'湘西群山，五溪蛮聚居，瘴气弥漫。' },
+    { id:'changsha',  name:'长沙',  region:'荆襄', hx:13, hy:11, tier:3, bonusKey:'粮丰', bonusKeys:['粮丰','进攻+'],   terrain:'森林', npcGuard:'韩玄',   terrainDesc:'湘江之滨，荆南重镇，黄忠坐镇。' },
+    { id:'guiyang',   name:'桂阳',  region:'荆襄', hx:14, hy:12, tier:4, bonusKey:'金丰', bonusKeys:['金丰','偏远'],    terrain:'山地', npcGuard:'赵范',   terrainDesc:'湘南矿藏丰饶，金银铜铁皆出于此。' },
+    { id:'lingling',  name:'零陵',  region:'荆襄', hx:11, hy:12, tier:4, bonusKey:'谋略+', bonusKeys:['谋略+','偏远'],   terrain:'森林', npcGuard:'刘度',   terrainDesc:'湘江上游，山林幽深，隐士辈出。' },
 
     /* ══ 扬州 ══ */
     { id:'shouchun',  name:'寿春',  region:'扬州', hx:15, hy:8,  tier:2, bonusKey:'粮丰', bonusKeys:['粮丰','进攻+'],    terrain:'平原', npcGuard:'纪灵',   terrainDesc:'淮南重镇，袁术僭号之地。' },
-    { id:'hefei',     name:'合肥',  region:'扬州', hx:15, hy:9,  tier:2, bonusKey:'防御+', bonusKeys:['防御+','水战强'],   terrain:'水域', npcGuard:'刘馥',   terrainDesc:'淮南门户，东吴无数次北伐折戟之地。' },
-    { id:'lujiang',   name:'庐江',  region:'扬州', hx:15, hy:10, tier:2, bonusKey:'水战强', bonusKeys:['水战强'],  terrain:'水域', npcGuard:'陆康',   terrainDesc:'大别山东麓，长江北岸，陆氏世居之地。' },
+    { id:'hefei',     name:'合肥',  region:'扬州', hx:15, hy:9,  tier:3, bonusKey:'防御+', bonusKeys:['防御+','水战强'],   terrain:'水域', npcGuard:'刘馥',   terrainDesc:'淮南门户，东吴无数次北伐折戟之地。' },
+    { id:'lujiang',   name:'庐江',  region:'扬州', hx:15, hy:10, tier:3, bonusKey:'水战强', bonusKeys:['水战强'],  terrain:'水域', npcGuard:'陆康',   terrainDesc:'大别山东麓，长江北岸，陆氏世居之地。' },
     { id:'jianye',    name:'建业',  region:'扬州', hx:16, hy:10, tier:1, bonusKey:'金丰', bonusKeys:['金丰','防御+'],   terrain:'水域', npcGuard:'凌操',   terrainDesc:'钟山龙蟠，石城虎踞，孙氏江东根基。' },
     { id:'wu',        name:'吴郡',  region:'扬州', hx:17, hy:10, tier:2, bonusKey:'金丰', bonusKeys:['金丰','水战强'],    terrain:'水域', npcGuard:'朱治',   terrainDesc:'太湖之滨，鱼米之乡，丝绸织造甲天下。' },
-    { id:'chaisang',  name:'柴桑',  region:'扬州', hx:15, hy:11, tier:2, bonusKey:'水战强', bonusKeys:['水战强','谋略+'],  terrain:'水域', npcGuard:'太史慈', terrainDesc:'鄱阳湖口，周瑜操练水军之所。' },
-    { id:'kuaiji',    name:'会稽',  region:'扬州', hx:18, hy:12, tier:2, bonusKey:'水战强', bonusKeys:['水战强','金丰'],  terrain:'水域', npcGuard:'王朗',   terrainDesc:'钱塘潮涌，稽山如黛，百越遗风犹存。' },
-    { id:'luling',    name:'庐陵',  region:'扬州', hx:16, hy:12, tier:3, bonusKey:'蛮兵强', bonusKeys:['蛮兵强','偏远'],  terrain:'森林', npcGuard:'贺齐',   terrainDesc:'赣江之畔，山越聚居，山民骁勇。' },
+    { id:'chaisang',  name:'柴桑',  region:'扬州', hx:15, hy:11, tier:3, bonusKey:'水战强', bonusKeys:['水战强','谋略+'],  terrain:'水域', npcGuard:'太史慈', terrainDesc:'鄱阳湖口，周瑜操练水军之所。' },
+    { id:'kuaiji',    name:'会稽',  region:'扬州', hx:18, hy:12, tier:3, bonusKey:'水战强', bonusKeys:['水战强','金丰'],  terrain:'水域', npcGuard:'王朗',   terrainDesc:'钱塘潮涌，稽山如黛，百越遗风犹存。' },
+    { id:'luling',    name:'庐陵',  region:'扬州', hx:16, hy:12, tier:4, bonusKey:'蛮兵强', bonusKeys:['蛮兵强','偏远'],  terrain:'森林', npcGuard:'贺齐',   terrainDesc:'赣江之畔，山越聚居，山民骁勇。' },
 
     /* ══ 益州 ══ */
-    { id:'wudu',      name:'武都',  region:'益州', hx:6,  hy:8,  tier:3, bonusKey:'险关', bonusKeys:['险关','苦寒减产'],    terrain:'山地', npcGuard:'杨秋',   terrainDesc:'陇南山地，氐羌杂居，雪山阻隔。' },
-    { id:'yangpingg', name:'阳平关',region:'益州', hx:8,  hy:8,  tier:3, bonusKey:'险关', bonusKeys:['险关','防御+'],    terrain:'关隘', npcGuard:'杨任',   terrainDesc:'汉中西大门，扼守褒斜道入口。' },
+    { id:'wudu',      name:'武都',  region:'益州', hx:6,  hy:8,  tier:4, bonusKey:'险关', bonusKeys:['险关','苦寒减产'],    terrain:'山地', npcGuard:'杨秋',   terrainDesc:'陇南山地，氐羌杂居，雪山阻隔。' },
+    { id:'yangpingg', name:'阳平关',region:'益州', hx:8,  hy:8,  tier:4, bonusKey:'险关', bonusKeys:['险关','防御+'],    terrain:'关隘', npcGuard:'杨任',   terrainDesc:'汉中西大门，扼守褒斜道入口。' },
     { id:'hanzhong',  name:'汉中',  region:'益州', hx:9,  hy:8,  tier:2, bonusKey:'险关', bonusKeys:['险关','谋略+'],    terrain:'关隘', npcGuard:'张鲁',   terrainDesc:'秦岭巴山之间，五斗米道圣地。' },
     { id:'shangyong', name:'上庸',  region:'益州', hx:11, hy:9,  tier:3, bonusKey:'防御+', bonusKeys:['防御+','险关'],   terrain:'山地', npcGuard:'申耽',   terrainDesc:'汉水中游，群山环抱。' },
-    { id:'jiange',    name:'剑阁',  region:'益州', hx:6,  hy:9,  tier:3, bonusKey:'险关', bonusKeys:['险关','防御+'],    terrain:'关隘', npcGuard:'费诗',   terrainDesc:'剑门七十二峰，蜀道之天险。' },
-    { id:'jiameng',   name:'葭萌关',region:'益州', hx:7,  hy:9,  tier:3, bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'孟达',   terrainDesc:'入蜀要冲，益州北大门。' },
-    { id:'zitong',    name:'梓潼',  region:'益州', hx:7,  hy:10, tier:2, bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'刘璝',   terrainDesc:'剑阁之北，蜀道咽喉。' },
+    { id:'jiange',    name:'剑阁',  region:'益州', hx:6,  hy:9,  tier:4, bonusKey:'险关', bonusKeys:['险关','防御+'],    terrain:'关隘', npcGuard:'费诗',   terrainDesc:'剑门七十二峰，蜀道之天险。' },
+    { id:'jiameng',   name:'葭萌关',region:'益州', hx:7,  hy:9,  tier:4, bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'孟达',   terrainDesc:'入蜀要冲，益州北大门。' },
+    { id:'zitong',    name:'梓潼',  region:'益州', hx:7,  hy:10, tier:4, bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'刘璝',   terrainDesc:'剑阁之北，蜀道咽喉。' },
     { id:'chengdu',   name:'成都',  region:'益州', hx:6,  hy:11, tier:1, bonusKey:'粮丰', bonusKeys:['粮丰','金丰'],    terrain:'平原', npcGuard:'刘璋',   terrainDesc:'天府之国，锦江绕城，蜀锦甲天下。' },
-    { id:'jiangzhou', name:'江州',  region:'益州', hx:8,  hy:11, tier:2, bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'费观',   terrainDesc:'嘉陵江与长江交汇，水路辐辏。' },
-    { id:'yongan',    name:'永安',  region:'益州', hx:9,  hy:11, tier:2, bonusKey:'险关', bonusKeys:['险关','防御+'],    terrain:'关隘', npcGuard:'严颜',   terrainDesc:'三峡咽喉，白帝城高，益州东大门。' },
+    { id:'jiangzhou', name:'江州',  region:'益州', hx:8,  hy:11, tier:3, bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'费观',   terrainDesc:'嘉陵江与长江交汇，水路辐辏。' },
+    { id:'yongan',    name:'永安',  region:'益州', hx:9,  hy:11, tier:3, bonusKey:'险关', bonusKeys:['险关','防御+'],    terrain:'关隘', npcGuard:'严颜',   terrainDesc:'三峡咽喉，白帝城高，益州东大门。' },
 
     /* ══ 南中 ══ */
-    { id:'jianning',  name:'建宁',  region:'南中', hx:7,  hy:13, tier:2, bonusKey:'蛮兵强', bonusKeys:['蛮兵强','瘴气'],  terrain:'瘴林', npcGuard:'雍闿',   terrainDesc:'南中腹地，滇池之畔，瘴气弥漫。' },
-    { id:'yunnan',    name:'云南',  region:'南中', hx:5,  hy:14, tier:3, bonusKey:'蛮兵强', bonusKeys:['蛮兵强','瘴气','偏远'],    terrain:'瘴林', npcGuard:'高定',   terrainDesc:'苍山洱海，瘴疠不绝，蛮兵以毒箭见长。' },
-    { id:'yongchang', name:'永昌',  region:'南中', hx:3,  hy:14, tier:3, bonusKey:'金丰', bonusKeys:['金丰','偏远'],    terrain:'苦寒', npcGuard:'吕凯',   terrainDesc:'化外极西，产琥珀翡翠香料，路途艰险。' },
-    { id:'jiaozhi',   name:'交趾',  region:'南中', hx:13, hy:14, tier:2, bonusKey:'水战强', bonusKeys:['水战强','偏远','蛮兵强'],  terrain:'水域', npcGuard:'士燮',   terrainDesc:'南海之滨，海舶云集，珠玳犀象堆积。' },
+    { id:'jianning',  name:'建宁',  region:'南中', hx:7,  hy:13, tier:3, bonusKey:'蛮兵强', bonusKeys:['蛮兵强','瘴气'],  terrain:'瘴林', npcGuard:'雍闿',   terrainDesc:'南中腹地，滇池之畔，瘴气弥漫。' },
+    { id:'yunnan',    name:'云南',  region:'南中', hx:5,  hy:14, tier:4, bonusKey:'蛮兵强', bonusKeys:['蛮兵强','瘴气','偏远'],    terrain:'瘴林', npcGuard:'高定',   terrainDesc:'苍山洱海，瘴疠不绝，蛮兵以毒箭见长。' },
+    { id:'yongchang', name:'永昌',  region:'南中', hx:3,  hy:14, tier:4, bonusKey:'金丰', bonusKeys:['金丰','偏远'],    terrain:'苦寒', npcGuard:'吕凯',   terrainDesc:'化外极西，产琥珀翡翠香料，路途艰险。' },
+    { id:'jiaozhi',   name:'交趾',  region:'南中', hx:13, hy:14, tier:3, bonusKey:'水战强', bonusKeys:['水战强','偏远','蛮兵强'],  terrain:'水域', npcGuard:'士燮',   terrainDesc:'南海之滨，海舶云集，珠玳犀象堆积。' },
   ];
 
   /* ─────────────────────────────────
@@ -329,11 +357,56 @@ let _npcFactionSlots = {};
   /* ─────────────────────────────────
      状态
   ───────────────────────────────── */
+
   let cityOwnership = {};
+  // 记录城池首次被某玩家占领的回合数
+  let cityFirstOwn = {};  // { '陈留': { owner:'p0', turn: 4 }, ... }
+  // 记录城池战斗损伤(被攻打过即标残破)
+  let cityDamaged = {};   // { '陈留': true, ... }
+
+  function _updateCityHistory(turn) {
+    for (const cityName in cityOwnership) {
+      const ow = cityOwnership[cityName];
+      if (!ow) continue;
+      const prev = cityFirstOwn[cityName];
+      if (!prev || prev.owner !== ow.owner) {
+        cityFirstOwn[cityName] = { owner: ow.owner, turn: turn };
+      }
+    }
+  }
+
   let players = [];
   let _tooltip = null;
 
+
+  // 计算某城基础产出(已含地利乘算,未含民心阶梯)
+  function _calcCityOutput(city) {
+    const base = TIER_BASE[city.tier] || TIER_BASE[3];
+    let gold = base.gold, food = base.food;
+    const bonuses = city.bonusKeys || [];
+    for (const b of bonuses) {
+      const m = BONUS_MULT[b];
+      if (m) { gold *= m.gold; food *= m.food; }
+    }
+    return {
+      gold: Math.round(gold),
+      food: Math.round(food),
+      baseGold: base.gold,
+      baseFood: base.food,
+      multGold: gold / base.gold,
+      multFood: food / base.food,
+    };
+  }
+
+  // 派生战略标签(根据 tier)
+  function _deriveStrategic(tier) {
+    if (tier <= 2) return { key: 'key',     text: '要地' };
+    if (tier === 3) return { key: 'normal', text: '普通' };
+    return { key: 'border', text: '边陲' };
+  }
+
   function _esc(s) {
+
     return String(s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -906,87 +979,123 @@ let _npcFactionSlots = {};
     const isEmpty = !ow || ow.owner === '';
     const isPlayer= !isNPC && !isEmpty;
 
-    let ownerStr = '无主', ownerClr = EMPTY_C.glow;
+    let ownerClass = 'owner-neutral', ownerName = '无主';
     if (isNPC) {
-      ownerStr = 'NPC 势力'; ownerClr = NPC_C.glow;
+      ownerClass = 'owner-npc';
+      ownerName = ow.faction || 'NPC 势力';
     } else if (isPlayer) {
+      ownerClass = 'owner-p' + ow.playerIdx;
       const p = players[ow.playerIdx];
-      ownerStr = `${p?.name || ow.playerName}${ow.isMulti ? '〔占领〕' : '〔主城〕'}`;
-      ownerClr = P_COLOR[ow.playerIdx]?.glow || '#fff';
+      ownerName = p?.name || ow.playerName;
     }
 
-    const tierLabel  = city.tier === 1 ? '重镇' : city.tier === 2 ? '要地' : '城寨';
+    const tierClass = city.tier === 1 ? 'tier-xiongdu' :
+                      city.tier === 2 ? 'tier-zhouzhi' :
+                      city.tier === 3 ? 'tier-juncheng' : 'tier-xiancheng';
+
+    const tierName = TIER_NAME[city.tier];
+    const strat = _deriveStrategic(city.tier);
+    const out = _calcCityOutput(city);
+
+    let goldCalc = out.multGold === 1 ? '基础' : `${out.baseGold} × ${out.multGold.toFixed(2)}`;
+    let foodCalc = out.multFood === 1 ? '基础' : `${out.baseFood} × ${out.multFood.toFixed(2)}`;
 
     let bonusHtml = '';
-    if (city.bonusKeys && city.bonusKeys.length > 0) {
-      bonusHtml = city.bonusKeys.map(k => {
-        const icon = BONUS_ICON[k] || '✦';
-        return `${icon} <span>${_esc(k)}</span>`;
-      }).join(' · ');
-    } else {
-      const bonusIcon = BONUS_ICON[city.bonusKey] || '✦';
-      bonusHtml = `${bonusIcon} <span>${_esc(city.bonusKey)}</span>`;
+    const keys = city.bonusKeys && city.bonusKeys.length ? city.bonusKeys : (city.bonusKey ? [city.bonusKey] : []);
+    if (keys.length) {
+      bonusHtml = keys.map(k => `<span class="cc-bonus">${BONUS_ICON[k]||''} ${_esc(k)}</span>`).join('');
+    }
+
+    let turnHtml = '';
+    if (isNPC && ow.faction && ow.isMain) {
+        turnHtml = '强力势力 · 大本营';
+    } else if (cityFirstOwn[name] && cityFirstOwn[name].turn) {
+        turnHtml = `占领 · 第 ${cityFirstOwn[name].turn} 回合`;
     }
 
     const rawHolder  = (ow?.holder || '').trim();
-    const holderDisp = (rawHolder && rawHolder !== '无')
-      ? rawHolder
-      : (isNPC ? (city.npcGuard || '未知') : '暂无');
-
-    const holderHtml = `<div class="sgt-row sgt-holder">
-      <span class="sgt-lbl">驻将</span>
-      <b style="color:${ownerClr}">${_esc(holderDisp)}</b>
-    </div>`;
-
-    const troops = ow?.troops || {};
-    const hasTroop = Object.keys(troops).some(k => (troops[k] || 0) > 0);
-    let troopHtml = '';
-
-    const _chips = (t) => TROOP_TYPES.filter(k => (t[k]||0) > 0)
-      .map(k => `<span class="sgt-troop-chip"><b>${k}</b><span>${Number(t[k]).toLocaleString()}</span></span>`);
-
-    if (isPlayer) {
-      if (hasTroop) {
-        troopHtml = `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span>
-          <span class="sgt-troop-list">${_chips(troops).join('')}</span></div>`;
-      } else {
-        troopHtml = `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span>
-          <span class="sgt-dim">无兵</span></div>`;
-      }
+    let generalsHtml = '';
+    if (rawHolder && rawHolder !== '无') {
+      const gs = rawHolder.split(/[，、]/);
+      generalsHtml = gs.map((g, i) => i === 0 ? `<span class="cc-general-main">${_esc(g)}</span>` : _esc(g)).join('、');
+    } else {
+      generalsHtml = isNPC ? `<span class="cc-general-main">${_esc(city.npcGuard || '未知')}</span>` : '暂无';
     }
 
-    // ── 任事（productionBuffs）── 仅玩家城显示
+    const troops = ow?.troops || {};
+    const _chips = (t) => TROOP_TYPES.filter(k => (t[k]||0) > 0)
+      .map(k => `<div class="cc-troop-chip"><span class="cc-troop-name">${k}</span><span class="cc-troop-num">${Number(t[k]).toLocaleString()}</span></div>`);
+
+    let troopHtml = '';
+    const hasTroop = Object.keys(troops).some(k => (troops[k] || 0) > 0);
+    if (hasTroop) {
+        troopHtml = _chips(troops).join('');
+    } else {
+        troopHtml = '<span class="cc-policy-empty">无守军</span>';
+    }
+
     let dutyHtml = '';
     if (isPlayer) {
       const buffs = ow?.productionBuffs;
       const buffList = buffs ? Object.values(buffs) : [];
       const dutyList = buffList.filter(b => b.general && b.action);
       if (dutyList.length > 0) {
-        const rows = dutyList.map(b => {
-          return `<div class="sgt-row sgt-prod-buff">
-            <span class="duty-emoji" style="margin-right:2px">${_esc(b.emoji || '')}</span>
-            <span class="duty-general" style="color:${ownerClr};font-weight:700">${_esc(b.general)}</span>
-            <span class="duty-action" style="margin-left:0.5rem;color:var(--text-sub)">${_esc(b.action)}</span>
-          </div>`;
-        }).join('');
-        dutyHtml = `<div class="sgt-divider"></div>
-          <div class="sgt-prod-title">任事</div>${rows}`;
+        dutyHtml = dutyList.map(b => `<div class="cc-policy-row">
+            <div class="cc-policy-emoji">${_esc(b.emoji || '')}</div>
+            <div class="cc-policy-general">${_esc(b.general)}</div>
+            <div class="cc-policy-action">${_esc(b.action)}</div>
+          </div>`).join('');
+      } else {
+        dutyHtml = '<div class="cc-policy-empty">暂无任事武将</div>';
       }
+    } else {
+      dutyHtml = '<div class="cc-policy-empty">-</div>';
     }
 
+    _tooltip.className = `sgmap-tooltip city-card ${tierClass} ${ownerClass}`;
     _tooltip.innerHTML = `
-      <div class="sgt-header">
-        <span class="sgt-name" style="color:${ownerClr}">${_esc(city.name)}</span>
-        <span class="sgt-badges">
-          <span class="sgt-badge">${city.region}</span>
-          <span class="sgt-badge">${tierLabel}</span>
-        </span>
+      <div class="cc-hud">
+        <div class="cc-headline">
+          <div class="cc-name">${_esc(city.name)}</div>
+          <div class="cc-tier">${tierName}</div>
+        </div>
+        <div class="cc-substatus">
+          <div class="cc-mini-tag tag-status-complete">完整</div>
+          <div class="cc-mini-tag tag-strategic-${strat.key}">${strat.text}</div>
+        </div>
+        <div class="cc-output">
+          <div class="cc-output-item cc-output-gold">
+            <div class="cc-output-label">金锭</div>
+            <div class="cc-output-value">${out.gold}</div>
+            <div class="cc-output-mult">${goldCalc}</div>
+          </div>
+          <div class="cc-output-item cc-output-food">
+            <div class="cc-output-label">粮草</div>
+            <div class="cc-output-value">${out.food}</div>
+            <div class="cc-output-mult">${foodCalc}</div>
+          </div>
+        </div>
+        <div class="cc-poem">${_esc(city.terrainDesc)}</div>
+        <div class="cc-bonuses">${bonusHtml}</div>
       </div>
-      <div class="sgt-desc">${_esc(city.terrainDesc)}</div>
-      <div class="sgt-row sgt-bonus">${bonusHtml}</div>
-      <div class="sgt-row sgt-owner" style="color:${ownerClr}">⚑ ${_esc(ownerStr)}</div>
-      <div class="sgt-divider"></div>
-      ${holderHtml}${troopHtml}${dutyHtml}`;
+
+      <div class="cc-owner-bar">
+        <div class="cc-owner-flag"></div>
+        <div class="cc-owner-name">${_esc(ownerName)}</div>
+        <div class="cc-owner-status">${turnHtml}</div>
+      </div>
+
+      <div class="cc-section">
+        <div class="cc-section-label">守将与兵力</div>
+        <div class="cc-generals">${generalsHtml}</div>
+        <div class="cc-troops">${troopHtml}</div>
+      </div>
+
+      <div class="cc-policies">
+        <div class="cc-section-label" style="margin-bottom:4px;">任事</div>
+        ${dutyHtml}
+      </div>
+    `;
 
     _tooltip.classList.add('visible');
     _moveTip(e);
@@ -1127,9 +1236,10 @@ let _npcFactionSlots = {};
       if (!c) return null;
       return { name: c.name, region: c.region, tier: c.tier, terrain: c.terrain, bonusKeys: c.bonusKeys || [c.bonusKey] };
     },
-    update(newPlayers, cityMap) {
+    update(newPlayers, cityMap, turn) {
       players       = newPlayers || [];
       cityOwnership = cityMap    || {};
+      _updateCityHistory(turn);
       const c = document.getElementById('map-svg-container');
       if (!c) return;
       _build(c);
