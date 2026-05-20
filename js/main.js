@@ -403,26 +403,15 @@
     }
     updateFooter();
     updateUndoBtn();
-    renderDuties();
+    const latestDuties = _collectDuties();
   }
 
-// ─────────────────────────────────────────
-// 任事调度板块渲染 v1
-// 数据源:cityOwnership[城].productionBuffs + players[i].generals
-// 熟练度:遍历 state.rounds 反推已挂回合数
-// ─────────────────────────────────────────
-function renderDuties() {
-  const block = document.getElementById('block-duties');
-  const body  = document.getElementById('duties-body');
-  const sub   = document.getElementById('duties-sub');
-  if (!block || !body) return;
 
-  // 拿最近一回合的 cityOwnership
+function _collectDuties() {
   const last = state.rounds[state.rounds.length - 1];
-  if (!last || !last.parsed) { block.classList.add('hidden'); return; }
+  if (!last || !last.parsed) return [null, null, null];
   const co = last.parsed.cityOwnership || {};
 
-  // 任事类型 → 契合 bonusKeys 表
   const FIT_MAP = {
     '屯田': ['粮丰', '水战强'],
     '开市': ['金丰', '进攻+'],
@@ -431,9 +420,9 @@ function renderDuties() {
     '工造': ['险关', '防御+']
   };
 
-  // 收集每位玩家的任事列表
   const slotsData = [0, 1, 2].map(idx => {
     const p = state.players[idx];
+    if (!p) return { idx, name: '', duties: [], idle: [] };
     const duties = [];
     Object.keys(co).forEach(cityName => {
       const entry = co[cityName];
@@ -446,7 +435,6 @@ function renderDuties() {
       });
     });
 
-    // 计算每条任事的"已挂回合数"
     duties.forEach(d => {
       let count = 0;
       for (let i = state.rounds.length - 1; i >= 0; i--) {
@@ -460,19 +448,16 @@ function renderDuties() {
       d.streak = count || 1;
     });
 
-    // 兼职判定:同 general 出现 ≥2 次
     const generalCount = {};
     duties.forEach(d => { generalCount[d.general] = (generalCount[d.general] || 0) + 1; });
     duties.forEach(d => { d.isMulti = generalCount[d.general] >= 2; });
 
-    // 地利契合判定
     duties.forEach(d => {
       const meta = window.SGMap?.getCityMeta?.(d.city);
       const fits = FIT_MAP[d.type] || [];
       d.isFit = meta?.bonusKeys?.some(k => fits.includes(k)) || false;
     });
 
-    // 未挂任事武将列表
     const dutyGenerals = new Set(duties.map(d => d.general));
     const idle = (p.generals || []).filter(g =>
       g.status !== '阵亡' && !dutyGenerals.has(g.name)
@@ -481,70 +466,89 @@ function renderDuties() {
     return { idx, name: p.name, duties, idle };
   });
 
-  const totalDuties = slotsData.reduce((s, x) => s + x.duties.length, 0);
-  const totalCities = new Set(slotsData.flatMap(s => s.duties.map(d => d.city))).size;
-
-  // 三家全无任事 + 全无武将 → 整块隐藏
-  const totalIdle = slotsData.reduce((s, x) => s + x.idle.length, 0);
-  if (totalDuties === 0 && totalIdle === 0) { block.classList.add('hidden'); return; }
-  block.classList.remove('hidden');
-
-  sub.textContent = totalDuties > 0 ? `共 ${totalDuties} 项 · ${totalCities} 城` : '';
-
-  // 渲染
-  body.innerHTML = slotsData.map(s => _renderDutySlot(s)).join('');
+  return slotsData;
 }
 
-function _renderDutySlot(s) {
-  const cnt = s.duties.length;
-  const rows = s.duties.length
-    ? s.duties.map(d => _renderDutyCard(d, s.idx)).join('')
-    : '<div class="duty-empty">—— 暂无任事</div>';
+function _renderPcardDuties(idx, duties, idle) {
+  if (duties.length === 0 && idle.length === 0) return '';
 
-  const idleHtml = s.idle.length
-    ? `<div class="duty-idle">
-         <span class="duty-idle-label">未挂任事</span>
-         <span class="duty-idle-count">${s.idle.length} 人</span>
-         <span class="duty-idle-names">${s.idle.map(g =>
-           g.status === '健康' ? esc(g.name) : `${esc(g.name)}<span class="duty-idle-status">(${g.status})</span>`
-         ).join(' · ')}</span>
-       </div>`
-    : '';
+  const groups = {};
+  duties.forEach(d => {
+    if (!groups[d.type]) groups[d.type] = { emoji: d.emoji, list: [] };
+    groups[d.type].list.push(d);
+  });
+
+  const types = Object.keys(groups);
+  let chipsHtml = '';
+  let listsHtml = '';
+
+  types.forEach(type => {
+    const g = groups[type];
+    const uid = `duty-${idx}-${type}`;
+    chipsHtml += `
+      <div class="pcard-duty-chip" data-duty-target="${uid}">
+        <span class="pcard-duty-chip-emoji">${g.emoji}</span>
+        <span class="pcard-duty-chip-count">${g.list.length}</span>
+      </div>`;
+
+    const rows = g.list.map(d => {
+      const tierClass = d.streak >= 15 ? 'streak-p3' : d.streak >= 10 ? 'streak-p2' : d.streak >= 5 ? 'streak-p1' : 'streak-p0';
+      const generalClass = d.isMulti ? 'pcard-duty-general pcard-duty-general-multi' : 'pcard-duty-general';
+      const fitDot = d.isFit ? '<span class="pcard-duty-fit-dot" title="地利契合">·</span>' : '';
+      const multiTitle = d.isMulti ? '兼职·产出减半' : '';
+      const rowTitle = `${esc(d.action)} · 已挂 ${d.streak} 回合${d.isMulti ? ' · ' + multiTitle : ''}`;
+
+      return `
+        <div class="pcard-duty-row" title="${rowTitle}">
+          <span class="${generalClass}"${d.isMulti ? ` title="${multiTitle}"` : ''}>${esc(d.general)}</span>${fitDot}
+          <span class="pcard-duty-sep">·</span>
+          <span class="pcard-duty-city">${esc(d.city)}</span>
+          <span class="pcard-duty-streak ${tierClass}">${d.streak}回</span>
+        </div>`;
+    }).join('');
+
+    listsHtml += `<div class="pcard-duty-group" id="${uid}" hidden data-duty-group="${type}">${rows}</div>`;
+  });
+
+  const idleHtml = idle.length ? `
+    <div class="pcard-duty-idle">
+      <span class="pcard-duty-idle-label">未任事</span>
+      <span class="pcard-duty-idle-names">${idle.map(g =>
+        g.status === '健康' ? esc(g.name) : `${esc(g.name)}<span class="pcard-duty-idle-status">(${g.status})</span>`
+      ).join(' · ')}</span>
+    </div>` : '';
 
   return `
-    <div class="duty-col slot-${s.idx}">
-      <div class="duty-col-header">
-        <span class="duty-col-name">${esc(s.name)}</span>
-        ${cnt > 0 ? `<span class="duty-col-count">${cnt} 项</span>` : '<span class="duty-col-count duty-col-count-zero">0 项</span>'}
-      </div>
-      <div class="duty-rows">${rows}</div>
+    <div class="pcard-duties">
+      <div class="pcard-duties-title">—— 任事调度 ——</div>
+      ${chipsHtml ? `<div class="pcard-duty-chips">${chipsHtml}</div>` : ''}
+      ${listsHtml}
       ${idleHtml}
     </div>`;
 }
 
-function _renderDutyCard(d, slotIdx) {
-  // 回合数颜色分档:1-4 普通 / 5-9 暖黄 / 10-14 橙金 / 15+ 亮金
-  const tierClass = d.streak >= 15 ? 'streak-3' : d.streak >= 10 ? 'streak-2' : d.streak >= 5 ? 'streak-1' : 'streak-0';
+// Global delegated event listener for chips
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.pcard-duty-chip');
+  if (!chip) return;
+  const targetId = chip.getAttribute('data-duty-target');
+  if (!targetId) return;
 
-  // 兼职:武将名变橙黄;契合:emoji 后加绿点
-  const generalClass = d.isMulti ? 'duty-general duty-general-multi' : 'duty-general';
-  const fitDot = d.isFit ? '<span class="duty-fit-dot" title="该城地利契合此任事·触发率提升">·</span>' : '';
+  const targetEl = document.getElementById(targetId);
+  if (targetEl) {
+    const isHidden = targetEl.hasAttribute('hidden');
+    if (isHidden) {
+      targetEl.removeAttribute('hidden');
+      chip.classList.add('expanded');
+    } else {
+      targetEl.setAttribute('hidden', '');
+      chip.classList.remove('expanded');
+    }
+  }
+});
 
-  const multiTitle = d.isMulti ? '兼职·产出与彩蛋率减半' : '';
-  const fitTitle = d.isFit ? '地利契合·触发率提升' : '';
-  const rowTitle = `${esc(d.action)} · 已挂 ${d.streak} 回合 · 熟练度门槛参考 5/10/15${d.isMulti ? ' · ' + multiTitle : ''}${d.isFit ? ' · ' + fitTitle : ''}`;
 
-  return `
-    <div class="duty-row slot-${slotIdx}" title="${rowTitle}">
-      <span class="duty-emoji">${d.emoji}</span>${fitDot}
-      <span class="${generalClass}"${d.isMulti ? ` title="${multiTitle}"` : ''}>${esc(d.general)}</span>
-      <span class="duty-sep">·</span>
-      <span class="duty-city">${esc(d.city)}</span>
-      <span class="duty-streak ${tierClass}">${d.streak}回</span>
-    </div>`;
-}
-
-  // ── 势力地图 ──
+// ── 势力地图 ──
   function renderMap() {
     const latest       = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
     const latestParsed = latest ? latest.parsed : null;
@@ -1464,6 +1468,18 @@ function _renderDutyCard(d, slotIdx) {
       }
 
       renderGenList(i, p.generals);
+
+      const dutyContainer = document.getElementById(`pc-duties-${i}`);
+      if (dutyContainer) {
+         dutyContainer.remove();
+      }
+      if (dutiesData) {
+         const genListEl = document.getElementById(`pc-generals-${i}`);
+         if (genListEl) {
+            const html = _renderPcardDuties(i, pcardDuties.duties, pcardDuties.idle);
+            genListEl.insertAdjacentHTML('afterend', `<div id="pc-duties-${i}">${html}</div>`);
+         }
+      }
 
       const noteEl = document.getElementById(`pc-note-${i}`);
       if (noteEl) {
