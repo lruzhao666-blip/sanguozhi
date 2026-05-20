@@ -497,57 +497,50 @@ function renderDuties() {
 
 function _renderDutySlot(s) {
   const cnt = s.duties.length;
-  const dutyCards = s.duties.length
-    ? `<div class="duty-cards">${s.duties.map(d => _renderDutyCard(d, s.idx)).join('')}</div>`
-    : `<div class="duty-empty">—— 暂无任事</div>`;
+  const rows = s.duties.length
+    ? s.duties.map(d => _renderDutyCard(d, s.idx)).join('')
+    : '<div class="duty-empty">—— 暂无任事</div>';
 
   const idleHtml = s.idle.length
     ? `<div class="duty-idle">
-         <span class="duty-idle-label">▸ 未挂任事</span>
+         <span class="duty-idle-label">未挂任事</span>
          <span class="duty-idle-count">${s.idle.length} 人</span>
          <span class="duty-idle-names">${s.idle.map(g =>
            g.status === '健康' ? esc(g.name) : `${esc(g.name)}<span class="duty-idle-status">(${g.status})</span>`
-         ).join('  ')}</span>
+         ).join(' · ')}</span>
        </div>`
     : '';
 
   return `
-    <div class="duty-slot duty-slot-${s.idx}">
-      <div class="duty-slot-header">
-        <span class="duty-slot-name">${esc(s.name)}</span>
-        ${cnt > 0 ? `<span class="duty-slot-count">${cnt} 项</span>` : ''}
+    <div class="duty-col slot-${s.idx}">
+      <div class="duty-col-header">
+        <span class="duty-col-name">${esc(s.name)}</span>
+        ${cnt > 0 ? `<span class="duty-col-count">${cnt} 项</span>` : '<span class="duty-col-count duty-col-count-zero">0 项</span>'}
       </div>
-      ${dutyCards}
+      <div class="duty-rows">${rows}</div>
       ${idleHtml}
     </div>`;
 }
 
 function _renderDutyCard(d, slotIdx) {
-  const badges = [];
-  if (d.isMulti) badges.push(`<span class="duty-badge duty-badge-multi" title="该武将同时挂 ≥2 项任事,产出与彩蛋率减半">⚠ 兼职</span>`);
-  if (d.isFit)   badges.push(`<span class="duty-badge duty-badge-fit" title="该城地利契合此类任事,地利层面触发率提升(天候由 GM 内部裁定)">⚡ 得地利</span>`);
+  // 回合数颜色分档:1-4 普通 / 5-9 暖黄 / 10-14 橙金 / 15+ 亮金
+  const tierClass = d.streak >= 15 ? 'streak-3' : d.streak >= 10 ? 'streak-2' : d.streak >= 5 ? 'streak-1' : 'streak-0';
 
-  // 进度条:已挂回合数 / 15 上限,15+ 满格金色
-  const pct = Math.min(100, (d.streak / 15) * 100);
-  const tierClass = d.streak >= 15 ? 'tier-3' : d.streak >= 10 ? 'tier-2' : d.streak >= 5 ? 'tier-1' : 'tier-0';
+  // 兼职:武将名变橙黄;契合:emoji 后加绿点
+  const generalClass = d.isMulti ? 'duty-general duty-general-multi' : 'duty-general';
+  const fitDot = d.isFit ? '<span class="duty-fit-dot" title="该城地利契合此任事·触发率提升">·</span>' : '';
+
+  const multiTitle = d.isMulti ? '兼职·产出与彩蛋率减半' : '';
+  const fitTitle = d.isFit ? '地利契合·触发率提升' : '';
+  const rowTitle = `${esc(d.action)} · 已挂 ${d.streak} 回合 · 熟练度门槛参考 5/10/15${d.isMulti ? ' · ' + multiTitle : ''}${d.isFit ? ' · ' + fitTitle : ''}`;
 
   return `
-    <div class="duty-card slot-${slotIdx} ${d.isMulti ? 'duty-card-multi' : ''}">
-      <div class="duty-card-head">
-        <span class="duty-emoji">${d.emoji}</span>
-        <span class="duty-type">${esc(d.type)}</span>
-        <span class="duty-badges">${badges.join('')}</span>
-      </div>
-      <div class="duty-card-body">
-        <span class="duty-general">${esc(d.general)}</span>
-        <span class="duty-sep">·</span>
-        <span class="duty-city">${esc(d.city)}</span>
-      </div>
-      <div class="duty-card-action">${esc(d.action)}</div>
-      <div class="duty-card-bar ${tierClass}" title="已挂 ${d.streak} 回合 · 熟练度门槛参考 5/10/15 · 彩蛋触发由 GM 内部裁定">
-        <div class="duty-bar-track"><div class="duty-bar-fill" style="width:${pct}%"></div></div>
-        <span class="duty-bar-num">${d.streak} 回</span>
-      </div>
+    <div class="duty-row slot-${slotIdx}" title="${rowTitle}">
+      <span class="duty-emoji">${d.emoji}</span>${fitDot}
+      <span class="${generalClass}"${d.isMulti ? ` title="${multiTitle}"` : ''}>${esc(d.general)}</span>
+      <span class="duty-sep">·</span>
+      <span class="duty-city">${esc(d.city)}</span>
+      <span class="duty-streak ${tierClass}">${d.streak}回</span>
     </div>`;
 }
 
