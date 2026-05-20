@@ -178,22 +178,10 @@ window.SGParser = (function () {
         if (!entry) return;
         if (!entry.productionBuffs) entry.productionBuffs = {};
         op.buffs.forEach(b => {
-          if (b.expired) {
-            // 到期：删除该 type 的 buff
-            delete entry.productionBuffs[b.type];
-          } else {
-            // 写入/覆盖
-            entry.productionBuffs[b.type] = {
-              type:     b.type,
-              emoji:    b.emoji,
-              general:  b.general,
-              action:   b.action,
-              remain:   b.remain,
-              // 保留旧版字段
-              value:    b.value,
-              resource: b.resource,
-            };
-          }
+          const key = `${b.general}_${b.type}`;
+          entry.productionBuffs[key] = {
+            type: b.type, emoji: b.emoji, general: b.general, action: b.action
+          };
         });
       });
     });
@@ -687,101 +675,25 @@ window.SGParser = (function () {
       }
 
       // 产出△城名:🌾 任峻 督民筑渠/4,🔨 韩浩 督造箭楼/3
-      if (/^产出△/.test(line)) {
-        anchor = null;
-        const rest = line.replace(/^产出△\s*/, '').trim();
-        const colonPos = rest.search(/[:：]/);
-        if (colonPos > 0) {
-          const cityName = rest.slice(0, colonPos).trim();
-          const buffStr  = rest.slice(colonPos + 1).trim();
-          const buffs = [];
-          const EMOJI_MAP = {
-            '🌾': '屯田', '💰': '开市', '🐫': '通商', '🤝': '人才', '🔨': '工造',
-            '📚': '教化', '⚔️': '军训', '🕊️': '情报', '🎁': '特产'
-          };
-          buffStr.split(/[,，]/).forEach(seg => {
-            seg = seg.trim().replace(/\uFE0F/g, '');
-            if (!seg) return;
-
-            // Emoji 匹配 (使用归一化进行匹配以兼容变体选择符)
-            let emojiMatch = null;
-            let matchLength = 0;
-            for (const key in EMOJI_MAP) {
-              const keyNorm = key.replace(/\uFE0F/g, '');
-              if (seg.startsWith(keyNorm)) {
-                emojiMatch = key;
-                matchLength = keyNorm.length;
-                break;
-              }
-            }
-
-            if (emojiMatch) {
-              let rest = seg.slice(matchLength).trim().replace(/^[\s\u3000]+/, '');
-
-              // 1. & 2. 新格式 / 放宽的格式 (emoji 武将 动作[/剩余])
-              let remainStr = null;
-              const slashM = rest.match(/\/(\d+)\s*$/);
-              if (slashM) {
-                remainStr = slashM[1];
-                rest = rest.slice(0, slashM.index).trim().replace(/[\s\u3000]+$/, '');
-              }
-
-              // 3. 到期格式：emoji-到期
-              if (rest === '-到期') {
-                buffs.push({ type: EMOJI_MAP[emojiMatch], emoji: emojiMatch, expired: true });
-                return;
-              }
-
-              let body = rest;
-              let name, action;
-              let spaceMatch = body.match(/^([\u4e00-\u9fa5]{2,8})[\s\u3000]+(.+)$/);
-              if (spaceMatch) {
-                name = spaceMatch[1];
-                action = spaceMatch[2];
-              } else {
-                const compoundSurnames = ['诸葛', '夏侯', '司马', '皇甫', '公孙', '慕容', '尉迟', '太史', '独孤', '令狐', '万俟', '宇文', '贺拔', '东门', '西门', '南门', '北门', '上官', '欧阳', '呼延'];
-                let nameLen = 2;
-                if (body.length >= 4 && compoundSurnames.includes(body.slice(0, 2))) {
-                  nameLen = 3;
-                }
-                name = body.slice(0, nameLen);
-                action = body.slice(nameLen);
-              }
-
-              buffs.push({
-                type:    EMOJI_MAP[emojiMatch],
-                emoji:   emojiMatch,
-                general: name,
-                action:  action,
-                remain:  remainStr == null ? null : parseInt(remainStr, 10)
-              });
-              return;
-            }
-
-            // 4. 旧格式兼容：屯田-到期
-            const oldExpM = seg.match(/^([^+-]+)-到期$/);
-            if (oldExpM) { buffs.push({ type: oldExpM[1].trim(), expired: true }); return; }
-
-            // 5. 旧格式：屯田+45粮/5
-            const oldBufM = seg.match(/^([^+\-]+)[+]([0-9]+)([^/]+)\/([0-9]+)$/);
-            if (oldBufM) {
-              buffs.push({
-                type:     oldBufM[1].trim(),
-                value:    parseInt(oldBufM[2]),
-                resource: oldBufM[3].trim(),
-                remain:   parseInt(oldBufM[4]),
-              });
-              return;
-            }
-
-            // 6. 兜底
-            buffs.push({ type: seg, raw: seg });
-          });
-          if (!change.productionOps) change.productionOps = [];
-          change.productionOps.push({ city: cityName, buffs });
-        }
-        continue;
-      }
+// v3.18.1 任事行:甲 产出△ 城名:🌾 武将名 动作短语
+// 单一格式,无 /剩余回合,无到期标记,无旧格式兼容
+if (/^产出△/.test(line)) {
+  anchor = null;
+  const m = line.match(/^产出△\s*([^:：]+)[:：]\s*(🌾|💰|🤝|⚔️|🔨)\uFE0F?\s*([\u4e00-\u9fa5]{2,8})\s+(.+?)\s*$/);
+  if (m) {
+    const EMOJI_MAP = { '🌾':'屯田', '💰':'开市', '🤝':'人才', '⚔️':'军训', '🔨':'工造' };
+    const emoji = m[2];
+    const type  = EMOJI_MAP[emoji];
+    if (!change.productionOps) change.productionOps = [];
+    change.productionOps.push({
+      city:  m[1].trim(),
+      buffs: [{ type, emoji, general: m[3], action: m[4].trim() }]
+    });
+  } else {
+    console.warn('[SGParser] 产出△ 行不符 v3.18.1 格式:' + line);
+  }
+  continue;
+}
 
       // 情报△（旧格式兼容）
       if (/^情报△/.test(line)) {
