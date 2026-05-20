@@ -1122,6 +1122,11 @@ let _npcFactionSlots = {};
   ───────────────────────────────── */
   return {
     init,
+    getCityMeta(name) {
+      const c = CITIES.find(x => x.name === name);
+      if (!c) return null;
+      return { name: c.name, region: c.region, tier: c.tier, terrain: c.terrain, bonusKeys: c.bonusKeys || [c.bonusKey] };
+    },
     update(newPlayers, cityMap) {
       players       = newPlayers || [];
       cityOwnership = cityMap    || {};

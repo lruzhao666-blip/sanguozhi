@@ -403,7 +403,153 @@
     }
     updateFooter();
     updateUndoBtn();
+    renderDuties();
   }
+
+// ─────────────────────────────────────────
+// 任事调度板块渲染 v1
+// 数据源:cityOwnership[城].productionBuffs + players[i].generals
+// 熟练度:遍历 state.rounds 反推已挂回合数
+// ─────────────────────────────────────────
+function renderDuties() {
+  const block = document.getElementById('block-duties');
+  const body  = document.getElementById('duties-body');
+  const sub   = document.getElementById('duties-sub');
+  if (!block || !body) return;
+
+  // 拿最近一回合的 cityOwnership
+  const last = state.rounds[state.rounds.length - 1];
+  if (!last || !last.parsed) { block.classList.add('hidden'); return; }
+  const co = last.parsed.cityOwnership || {};
+
+  // 任事类型 → 契合 bonusKeys 表
+  const FIT_MAP = {
+    '屯田': ['粮丰', '水战强'],
+    '开市': ['金丰', '进攻+'],
+    '人才': ['谋略+'],
+    '军训': ['骑兵强', '防御+', '进攻+', '蛮兵强', '水战强'],
+    '工造': ['险关', '防御+']
+  };
+
+  // 收集每位玩家的任事列表
+  const slotsData = [0, 1, 2].map(idx => {
+    const p = state.players[idx];
+    const duties = [];
+    Object.keys(co).forEach(cityName => {
+      const entry = co[cityName];
+      if (entry.playerIdx !== idx) return;
+      const buffs = entry.productionBuffs || {};
+      Object.keys(buffs).forEach(k => {
+        const b = buffs[k];
+        if (!b.general || !b.action) return;
+        duties.push({ city: cityName, ...b });
+      });
+    });
+
+    // 计算每条任事的"已挂回合数"
+    duties.forEach(d => {
+      let count = 0;
+      for (let i = state.rounds.length - 1; i >= 0; i--) {
+        const r = state.rounds[i];
+        const e = r.parsed?.cityOwnership?.[d.city];
+        const has = e?.productionBuffs && Object.values(e.productionBuffs).some(
+          b => b.general === d.general && b.type === d.type
+        );
+        if (has) count++; else break;
+      }
+      d.streak = count || 1;
+    });
+
+    // 兼职判定:同 general 出现 ≥2 次
+    const generalCount = {};
+    duties.forEach(d => { generalCount[d.general] = (generalCount[d.general] || 0) + 1; });
+    duties.forEach(d => { d.isMulti = generalCount[d.general] >= 2; });
+
+    // 地利契合判定
+    duties.forEach(d => {
+      const meta = window.SGMap?.getCityMeta?.(d.city);
+      const fits = FIT_MAP[d.type] || [];
+      d.isFit = meta?.bonusKeys?.some(k => fits.includes(k)) || false;
+    });
+
+    // 未挂任事武将列表
+    const dutyGenerals = new Set(duties.map(d => d.general));
+    const idle = (p.generals || []).filter(g =>
+      g.status !== '阵亡' && !dutyGenerals.has(g.name)
+    );
+
+    return { idx, name: p.name, duties, idle };
+  });
+
+  const totalDuties = slotsData.reduce((s, x) => s + x.duties.length, 0);
+  const totalCities = new Set(slotsData.flatMap(s => s.duties.map(d => d.city))).size;
+
+  // 三家全无任事 + 全无武将 → 整块隐藏
+  const totalIdle = slotsData.reduce((s, x) => s + x.idle.length, 0);
+  if (totalDuties === 0 && totalIdle === 0) { block.classList.add('hidden'); return; }
+  block.classList.remove('hidden');
+
+  sub.textContent = totalDuties > 0 ? `共 ${totalDuties} 项 · ${totalCities} 城` : '';
+
+  // 渲染
+  body.innerHTML = slotsData.map(s => _renderDutySlot(s)).join('');
+}
+
+function _renderDutySlot(s) {
+  const cnt = s.duties.length;
+  const dutyCards = s.duties.length
+    ? `<div class="duty-cards">${s.duties.map(d => _renderDutyCard(d, s.idx)).join('')}</div>`
+    : `<div class="duty-empty">—— 暂无任事</div>`;
+
+  const idleHtml = s.idle.length
+    ? `<div class="duty-idle">
+         <span class="duty-idle-label">▸ 未挂任事</span>
+         <span class="duty-idle-count">${s.idle.length} 人</span>
+         <span class="duty-idle-names">${s.idle.map(g =>
+           g.status === '健康' ? esc(g.name) : `${esc(g.name)}<span class="duty-idle-status">(${g.status})</span>`
+         ).join('  ')}</span>
+       </div>`
+    : '';
+
+  return `
+    <div class="duty-slot duty-slot-${s.idx}">
+      <div class="duty-slot-header">
+        <span class="duty-slot-name">${esc(s.name)}</span>
+        ${cnt > 0 ? `<span class="duty-slot-count">${cnt} 项</span>` : ''}
+      </div>
+      ${dutyCards}
+      ${idleHtml}
+    </div>`;
+}
+
+function _renderDutyCard(d, slotIdx) {
+  const badges = [];
+  if (d.isMulti) badges.push(`<span class="duty-badge duty-badge-multi" title="该武将同时挂 ≥2 项任事,产出与彩蛋率减半">⚠ 兼职</span>`);
+  if (d.isFit)   badges.push(`<span class="duty-badge duty-badge-fit" title="该城地利契合此类任事,地利层面触发率提升(天候由 GM 内部裁定)">⚡ 得地利</span>`);
+
+  // 进度条:已挂回合数 / 15 上限,15+ 满格金色
+  const pct = Math.min(100, (d.streak / 15) * 100);
+  const tierClass = d.streak >= 15 ? 'tier-3' : d.streak >= 10 ? 'tier-2' : d.streak >= 5 ? 'tier-1' : 'tier-0';
+
+  return `
+    <div class="duty-card slot-${slotIdx} ${d.isMulti ? 'duty-card-multi' : ''}">
+      <div class="duty-card-head">
+        <span class="duty-emoji">${d.emoji}</span>
+        <span class="duty-type">${esc(d.type)}</span>
+        <span class="duty-badges">${badges.join('')}</span>
+      </div>
+      <div class="duty-card-body">
+        <span class="duty-general">${esc(d.general)}</span>
+        <span class="duty-sep">·</span>
+        <span class="duty-city">${esc(d.city)}</span>
+      </div>
+      <div class="duty-card-action">${esc(d.action)}</div>
+      <div class="duty-card-bar ${tierClass}" title="已挂 ${d.streak} 回合 · 熟练度门槛参考 5/10/15 · 彩蛋触发由 GM 内部裁定">
+        <div class="duty-bar-track"><div class="duty-bar-fill" style="width:${pct}%"></div></div>
+        <span class="duty-bar-num">${d.streak} 回</span>
+      </div>
+    </div>`;
+}
 
   // ── 势力地图 ──
   function renderMap() {
