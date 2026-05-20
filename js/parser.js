@@ -181,7 +181,7 @@ window.SGParser = (function () {
           if (b.expired) {
             // 到期：删除该 type 的 buff
             delete entry.productionBuffs[b.type];
-          } else if (b.remain != null) {
+          } else {
             // 写入/覆盖
             entry.productionBuffs[b.type] = {
               type:     b.type,
@@ -718,35 +718,12 @@ window.SGParser = (function () {
             if (emojiMatch) {
               let rest = seg.slice(matchLength).trim().replace(/^[\s\u3000]+/, '');
 
-              // 1. & 2. 新格式 / 放宽的格式 (emoji 武将 动作/剩余)
-              const slashIdx = rest.lastIndexOf('/');
-              if (slashIdx !== -1) {
-                let remainStr = rest.slice(slashIdx + 1).trim();
-                let body = rest.slice(0, slashIdx).trim().replace(/[\s\u3000]+$/, '');
-
-                let name, action;
-                let spaceMatch = body.match(/^([\u4e00-\u9fa5]{2,8})[\s\u3000]+(.+)$/);
-                if (spaceMatch) {
-                  name = spaceMatch[1];
-                  action = spaceMatch[2];
-                } else {
-                  const compoundSurnames = ['诸葛', '夏侯', '司马', '皇甫', '公孙', '慕容', '尉迟', '太史', '独孤', '令狐', '万俟', '宇文', '贺拔', '东门', '西门', '南门', '北门', '上官', '欧阳', '呼延'];
-                  let nameLen = 2;
-                  if (body.length >= 4 && compoundSurnames.includes(body.slice(0, 2))) {
-                    nameLen = 3;
-                  }
-                  name = body.slice(0, nameLen);
-                  action = body.slice(nameLen);
-                }
-
-                buffs.push({
-                  type:    EMOJI_MAP[emojiMatch],
-                  emoji:   emojiMatch,
-                  general: name,
-                  action:  action,
-                  remain:  parseInt(remainStr, 10)
-                });
-                return;
+              // 1. & 2. 新格式 / 放宽的格式 (emoji 武将 动作[/剩余])
+              let remainStr = null;
+              const slashM = rest.match(/\/(\d+)\s*$/);
+              if (slashM) {
+                remainStr = slashM[1];
+                rest = rest.slice(0, slashM.index).trim().replace(/[\s\u3000]+$/, '');
               }
 
               // 3. 到期格式：emoji-到期
@@ -754,6 +731,31 @@ window.SGParser = (function () {
                 buffs.push({ type: EMOJI_MAP[emojiMatch], emoji: emojiMatch, expired: true });
                 return;
               }
+
+              let body = rest;
+              let name, action;
+              let spaceMatch = body.match(/^([\u4e00-\u9fa5]{2,8})[\s\u3000]+(.+)$/);
+              if (spaceMatch) {
+                name = spaceMatch[1];
+                action = spaceMatch[2];
+              } else {
+                const compoundSurnames = ['诸葛', '夏侯', '司马', '皇甫', '公孙', '慕容', '尉迟', '太史', '独孤', '令狐', '万俟', '宇文', '贺拔', '东门', '西门', '南门', '北门', '上官', '欧阳', '呼延'];
+                let nameLen = 2;
+                if (body.length >= 4 && compoundSurnames.includes(body.slice(0, 2))) {
+                  nameLen = 3;
+                }
+                name = body.slice(0, nameLen);
+                action = body.slice(nameLen);
+              }
+
+              buffs.push({
+                type:    EMOJI_MAP[emojiMatch],
+                emoji:   emojiMatch,
+                general: name,
+                action:  action,
+                remain:  remainStr == null ? null : parseInt(remainStr, 10)
+              });
+              return;
             }
 
             // 4. 旧格式兼容：屯田-到期
