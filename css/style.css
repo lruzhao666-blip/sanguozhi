@@ -2871,7 +2871,13 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgmap-tooltip .sgt-prod-chain .ch-step b { color:#a07830; font-weight:600; }
 .sgmap-tooltip .sgt-prod-chain .ch-arrow { color:rgba(180,148,68,.4); margin:0 4px; font-size:.7rem; }
 .sgmap-tooltip .sgt-prod-chain .ch-policy { color:#98d09a; font-weight:600; }
-.sgmap-tooltip .sgt-prod-chain .ch-adept { color:#6dcc88; font-size:0.82em; font-weight:600; }
+.sgmap-tooltip .sgt-prod-chain .ch-adept { color:#98d09a; font-size:1em; font-weight:600; }
 .sgmap-tooltip .sgt-prod-badge-row { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
 .sgmap-tooltip .sgt-prod-mini-badge { font-size:.56rem; letter-spacing:.06em; padding:1px 6px; border-radius:8px; font-weight:600; }
 .sgmap-tooltip .sgt-prod-mini-badge.policy { background:rgba(80,140,80,.16); border:1px solid rgba(100,170,100,.28); color:#98d09a; }
+
+.sgt-adept-row {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(109, 204, 136, 0.15);
+}
