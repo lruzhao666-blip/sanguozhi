@@ -22,29 +22,6 @@
   const POLL_MS  = 30000;
   const MAX_ROWS = 100;
 
-// 磨合期(localStorage 追踪)
-const HONEY_KEY = 'sgz_honeymoon';
-
-function getHoneymoon(cityName) {
-  try {
-    const obj = JSON.parse(localStorage.getItem(HONEY_KEY) || '{}');
-    return obj[cityName] || 0;
-  } catch(e) { return 0; }
-}
-
-function updateHoneymoonOnTurn(newConqueredCities) {
-  let obj = {};
-  try { obj = JSON.parse(localStorage.getItem(HONEY_KEY) || '{}'); } catch(e) {}
-  // 全部 -1
-  for (const k of Object.keys(obj)) {
-    obj[k] -= 1;
-    if (obj[k] <= 0) delete obj[k];
-  }
-  // 新城打 3
-  for (const c of newConqueredCities) obj[c] = 3;
-  localStorage.setItem(HONEY_KEY, JSON.stringify(obj));
-}
-
   let state = {
     rounds:        [],
     players:       defaultPlayers(),
@@ -271,28 +248,6 @@ function updateHoneymoonOnTurn(newConqueredCities) {
 
     try {
       const rd = { round: roundNum, roundTitle: '', parsed, rawContent: raw };
-
-      const newConqueredCities = [];
-      if (rd.parsed && rd.parsed.changes) {
-        rd.parsed.changes.forEach(ch => {
-          const m = ch.raw.match(/城△\+\d+\(攻下([^)]+)\)/);
-          if (m) {
-            const citiesStr = m[1];
-            citiesStr.split(/[,，、]+/).forEach(c => {
-               newConqueredCities.push(c.replace(/^攻下/, '').trim());
-            });
-          }
-        });
-      }
-      updateHoneymoonOnTurn(newConqueredCities);
-
-      if (rd.parsed && rd.parsed.players) {
-        const currentRes = rd.parsed.players.map(p => ({
-          slot: p.slot, gold: p.gold, food: p.food, troop: p.troop, morale: p.morale
-        }));
-        localStorage.setItem('sgz_last_resources', JSON.stringify(currentRes));
-      }
-
       await publishRound(rd);
       await fetchAllRounds();
       renderAll();
@@ -429,62 +384,7 @@ function updateHoneymoonOnTurn(newConqueredCities) {
   // ══════════════════════════════════════════
   //  渲染总入口
   // ══════════════════════════════════════════
-
-  // Run validator
-  function runValidator(parsed) {
-    const banner = document.getElementById('validate-banner');
-    if (!banner || !window.SGValidator) return;
-
-    let lastResources = null;
-    try { lastResources = JSON.parse(localStorage.getItem('sgz_last_resources')); } catch(e) {}
-
-    const { errors, warnings } = SGValidator.validate(parsed, lastResources);
-
-    const total = errors.length + warnings.length;
-    if (total === 0) {
-      banner.classList.add('hidden');
-      return;
-    }
-
-    banner.classList.remove('hidden');
-    banner.classList.toggle('has-warnings', errors.length === 0 && warnings.length > 0);
-
-    const countEl = banner.querySelector('.vb-count b');
-    if (countEl) countEl.textContent = total;
-
-    const listEl = banner.querySelector('.vb-list');
-    if (listEl) {
-      listEl.innerHTML = '';
-      errors.forEach(e => {
-        listEl.innerHTML += `<li class="err">[${e.slot}方] ${e.message}</li>`;
-      });
-      warnings.forEach(w => {
-        listEl.innerHTML += `<li class="warn">[${w.slot}方] ${w.message}</li>`;
-      });
-    }
-
-    const copyBtn = document.getElementById('vb-copy');
-    if (copyBtn) {
-      copyBtn.onclick = () => {
-        const text = SGValidator.buildPromptText(parsed.round, errors, warnings);
-        navigator.clipboard.writeText(text).then(() => showToast('复制成功'));
-      };
-    }
-  }
-
-  // Toggle banner body
-  document.addEventListener('DOMContentLoaded', () => {
-    const toggleBtn = document.getElementById('vb-toggle');
-    const bodyEl = document.getElementById('vb-body');
-    if (toggleBtn && bodyEl) {
-      toggleBtn.addEventListener('click', () => {
-        const isHidden = bodyEl.classList.contains('hidden');
-        bodyEl.classList.toggle('hidden');
-        toggleBtn.textContent = isHidden ? '收起 ▲' : '展开 ▼';
-      });
-    }
-  });
-\n  function renderAll() {
+  function renderAll() {
     const hasData = state.rounds.length > 0;
     const emptyEl = document.getElementById('arena-empty');
     const bodyEl  = document.getElementById('arena-body');
@@ -499,7 +399,7 @@ function updateHoneymoonOnTurn(newConqueredCities) {
       renderBattlesBlock(latest.parsed.battles || []);
       renderMap();
       renderChangesDetail();
-      renderHistorySection();\n      runValidator(latest.parsed);
+      renderHistorySection();
     }
     updateFooter();
     updateUndoBtn();

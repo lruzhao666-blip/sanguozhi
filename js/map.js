@@ -216,93 +216,7 @@ let _npcFactionSlots = {};
   /* ─────────────────────────────────
      道路连接
   ───────────────────────────────── */
-
-  // === v3.19 TIER & PRODUCTION LOGIC ===
-  const TIER_BASE = {
-    4: { gold:300, food:600, name:'雄都' },
-    3: { gold:200, food:400, name:'州治' },
-    2: { gold:120, food:250, name:'郡城' },
-    1: { gold:60,  food:120, name:'县城' },
-  };
-
-  const CITY_TIER_OVERRIDE = {
-    '邺城':4, '洛阳':4, '长安':4, '许昌':4, '襄阳':4, '建业':4, '成都':4,
-    '蓟县':3, '晋阳':3, '陈留':3, '下邳':3, '江夏':3, '寿春':3, '吴郡':3, '汉中':3,
-    '襄平':2,'北平':2,'南皮':2,'平原':2,'上党':2,'北海':2,'济南':2,
-    '弘农':2,'河内':2,'天水':2,'安定':2,'武威':2,
-    '濮阳':2,'汝南':2,'谯郡':2,'广陵':2,
-    '宛城':2,'江陵':2,'长沙':2,
-    '合肥':2,'庐江':2,'会稽':2,'柴桑':2,
-    '上庸':2,'梓潼':2,'永安':2,'江州':2,
-    '建宁':2,'交趾':2,
-  };
-
-  function getCityTier(name) {
-    return CITY_TIER_OVERRIDE[name] || 1;
-  }
-
-  const TAG_MULT = {
-    '粮丰':{gold:1.0,food:1.5},   '金丰':{gold:1.5,food:1.0},
-    '苦寒减产':{gold:0.8,food:0.8},'瘴气':{gold:1.0,food:0.75},
-    '偏远':{gold:0.9,food:0.9},   '进攻+':{gold:1.2,food:1.0},
-    '谋略+':{gold:1.1,food:1.0},   '水战强':{gold:1.0,food:1.15},
-    '防御+':{gold:1.0,food:1.0},   '骑兵强':{gold:1.0,food:1.0},
-    '蛮兵强':{gold:1.0,food:1.0},  '险关':{gold:1.0,food:1.0},
-  };
-
-  function calcCityProduction(cityName, ownerInfo, allParsedData) {
-    const tier = getCityTier(cityName);
-    const base = TIER_BASE[tier];
-    const cityStatic = CITIES.find(c => c.name === cityName);
-    if (!cityStatic) return null;
-
-    let goldMult = 1, foodMult = 1;
-    const geoSteps = [];
-    for (const tag of cityStatic.bonusKeys || []) {
-      const t = TAG_MULT[tag];
-      if (!t || (t.gold === 1 && t.food === 1)) continue;
-      geoSteps.push({ tag, gold:t.gold, food:t.food });
-      goldMult *= t.gold;
-      foodMult *= t.food;
-    }
-
-    const isOwn = ownerInfo && ownerInfo.owner !== 'npc' && ownerInfo.owner !== '';
-    let policyGoldMult = 1, policyFoodMult = 1;
-    const policy = isOwn && allParsedData && allParsedData.policies ? allParsedData.policies[cityName] : null;
-    if (policy) {
-      if (policy.name === '屯田') policyFoodMult = 1.30;
-      if (policy.name === '开市') policyGoldMult = 1.30;
-    }
-
-    let moraleMult = 1.0, moraleVal = null;
-    if (isOwn && allParsedData && allParsedData.playerMorale) {
-      moraleVal = allParsedData.playerMorale[ownerInfo.playerIdx];
-      if (moraleVal >= 75) moraleMult = 1.1;
-      else if (moraleVal <= 39) moraleMult = 0.9;
-    }
-
-    const honeyLeft = isOwn ? (getHoneymoon(cityName) || 0) : 0;
-    const honeymoonMult = honeyLeft > 0 ? 1.5 : 1.0;
-
-    const gold = isOwn
-      ? Math.round(base.gold * goldMult * policyGoldMult * moraleMult * honeymoonMult)
-      : Math.round(base.gold * goldMult);
-    const food = isOwn
-      ? Math.round(base.food * foodMult * policyFoodMult * moraleMult * honeymoonMult)
-      : Math.round(base.food * foodMult);
-
-    return { tier, tierName:base.name, base, gold, food, geoSteps, isOwn, policy, moraleVal, moraleMult, honeyLeft };
-  }
-
-  const HONEY_KEY = 'sgz_honeymoon';
-  function getHoneymoon(cityName) {
-    try {
-      const obj = JSON.parse(localStorage.getItem(HONEY_KEY) || '{}');
-      return obj[cityName] || 0;
-    } catch(e) { return 0; }
-  }
-  // ==============================
-\n  const ROADS = [
+  const ROADS = [
     ['xiangping','beiping'],['beiping','ji'],
     ['ji','nanpi'],['ji','ye'],['beiping','nanpi'],
     ['nanpi','pingyuan'],['nanpi','ye'],['ye','pingyuan'],
@@ -992,30 +906,16 @@ let _npcFactionSlots = {};
     const isEmpty = !ow || ow.owner === '';
     const isPlayer= !isNPC && !isEmpty;
 
-    let ownerClr = EMPTY_C.glow;
-    let factionChipHtml = `<span class="sgt-faction-chip empty" style="color:${EMPTY_C.glow};border-color:${EMPTY_C.stroke};background:${EMPTY_C.fill}">空城</span>`;
+    let ownerStr = '无主', ownerClr = EMPTY_C.glow;
     if (isNPC) {
-      let npcCol = NPC_C;
-      let fName = 'NPC 势力';
-      if (ow.faction != null) {
-        fName = ow.faction;
-        const slotIdx = _npcFactionSlots[ow.faction];
-        if (slotIdx !== undefined && NPC_FACTION_COLORS[slotIdx]) {
-          npcCol = NPC_FACTION_COLORS[slotIdx];
-        }
-      }
-      ownerClr = npcCol.glow;
-      factionChipHtml = `<span class="sgt-faction-chip npc" style="color:${npcCol.glow};border-color:${npcCol.stroke};background:${npcCol.fill}">${_esc(fName)}</span>`;
+      ownerStr = 'NPC 势力'; ownerClr = NPC_C.glow;
     } else if (isPlayer) {
-      const pCol = P_COLOR[ow.playerIdx] || EMPTY_C;
-      ownerClr = pCol.glow;
       const p = players[ow.playerIdx];
-      const pName = p?.name || ow.playerName || `P${ow.playerIdx+1}`;
-      factionChipHtml = `<span class="sgt-faction-chip player" style="color:${pCol.glow};border-color:${pCol.stroke};background:${pCol.fill}">${_esc(pName)}方</span>`;
+      ownerStr = `${p?.name || ow.playerName}${ow.isMulti ? '〔占领〕' : '〔主城〕'}`;
+      ownerClr = P_COLOR[ow.playerIdx]?.glow || '#fff';
     }
 
-    const cityTier = getCityTier(city.name);
-    const tierLabel = TIER_BASE[cityTier].name;
+    const tierLabel  = city.tier === 1 ? '重镇' : city.tier === 2 ? '要地' : '城寨';
 
     let bonusHtml = '';
     if (city.bonusKeys && city.bonusKeys.length > 0) {
@@ -1074,108 +974,19 @@ let _npcFactionSlots = {};
       }
     }
 
-    // Prepare allParsedData
-    let allParsedData = { policies: {}, playerMorale: [] };
-    try {
-      if (window.state && window.state.rounds && window.state.rounds.length > 0) {
-        const latestParsed = window.state.rounds[window.state.rounds.length - 1].parsed;
-        if (latestParsed) {
-          if (latestParsed.players) {
-            allParsedData.playerMorale = latestParsed.players.map(p => p.morale || 0);
-          }
-          if (latestParsed.cityOwnership) {
-            Object.keys(latestParsed.cityOwnership).forEach(cName => {
-              const buffs = latestParsed.cityOwnership[cName].productionBuffs;
-              if (buffs) {
-                const buffList = Object.values(buffs);
-                // Find the first policy (屯田/开市)
-                const policyBuff = buffList.find(b => b.action === '屯田' || b.action === '开市' || b.type === '屯田' || b.type === '开市');
-                if (policyBuff) {
-                  allParsedData.policies[cName] = { name: policyBuff.type || policyBuff.action, general: policyBuff.general };
-                }
-              }
-            });
-          }
-        }
-      }
-    } catch (e) {}
-
-    const fakeOw = ow;
-    const prod = calcCityProduction(city.name, fakeOw, allParsedData);
-
-    let prodHtml = '';
-    if (prod) {
-      let chainHtml = `基础 ${prod.base.gold}金/${prod.base.food}粮`;
-      if (prod.geoSteps.length > 0) {
-        chainHtml += ' › ' + prod.geoSteps.map(step => {
-          let s = [];
-          if (step.gold !== 1) s.push(`💰×${step.gold}`);
-          if (step.food !== 1) s.push(`🌾×${step.food}`);
-          return `${step.tag}(${s.join(', ')})`;
-        }).join('·');
-      }
-      if (prod.isOwn && prod.policy) {
-        chainHtml += ` › ${prod.policy.name === '屯田' ? '🌾' : '💰'}${prod.policy.name} ${prod.policy.name === '屯田' ? '🌾+30%' : '💰+30%'}`;
-      }
-
-      let badgeRowHtml = '';
-      if (prod.isOwn) {
-        if (prod.policy) {
-          badgeRowHtml += `<span class="sgt-prod-mini-badge policy">${prod.policy.name === '屯田' ? '🌾' : '💰'} ${prod.policy.name}</span>`;
-        }
-        if (prod.moraleMult !== 1.0) {
-          const mClass = prod.moraleMult > 1.0 ? 'morale-high' : 'morale-low';
-          const mText = prod.moraleMult > 1.0 ? '民心高涨(产出+10%)' : '民心涣散(产出-10%)';
-          badgeRowHtml += `<span class="sgt-prod-mini-badge ${mClass}">${mText}</span>`;
-        }
-        if (prod.honeyLeft > 0) {
-          badgeRowHtml += `<span class="sgt-prod-mini-badge honeymoon">磨合期(产出+50%)</span>`;
-        }
-      }
-
-      const isExact = prod.isOwn;
-      const titleText = isExact ? '预计本回合产出' : '攻下后基础产出';
-      const tagText = isExact ? '含修正' : '仅基础+地利';
-
-      prodHtml = `
-<div class="sgt-divider"></div>
-<div class="sgt-prod-block">
-  <div class="sgt-prod-block-title">📊 ${titleText}
-    <span class="pt-tag">${tagText}</span>
-  </div>
-  <div class="sgt-prod-main">
-    <span class="sgt-prod-item">
-      <span class="sgt-prod-emoji">💰</span>
-      <span class="sgt-prod-approx">${isExact ? '' : '约'}</span>
-      <span class="sgt-prod-num">${prod.gold}</span>
-      <span class="sgt-prod-unit">金</span>
-    </span>
-    <span class="sgt-prod-item">
-      <span class="sgt-prod-emoji">🌾</span>
-      <span class="sgt-prod-approx">${isExact ? '' : '约'}</span>
-      <span class="sgt-prod-num">${prod.food}</span>
-      <span class="sgt-prod-unit">粮</span>
-    </span>
-  </div>
-  <div class="sgt-prod-chain">
-    ${chainHtml}
-  </div>
-  ${badgeRowHtml ? `<div class="sgt-prod-badge-row">${badgeRowHtml}</div>` : ''}
-</div>`;
-    }
-
     _tooltip.innerHTML = `
       <div class="sgt-header">
         <span class="sgt-name" style="color:${ownerClr}">${_esc(city.name)}</span>
-        ${factionChipHtml}
+        <span class="sgt-badges">
+          <span class="sgt-badge">${city.region}</span>
+          <span class="sgt-badge">${tierLabel}</span>
+        </span>
       </div>
-      <span class="sgt-badges" style="display:block; margin-top: 4px; margin-bottom: 8px;">
-        <span class="sgt-badge tier-${cityTier}">${tierLabel}</span>
-        ${bonusHtml}
-      </span>
       <div class="sgt-desc">${_esc(city.terrainDesc)}</div>
+      <div class="sgt-row sgt-bonus">${bonusHtml}</div>
+      <div class="sgt-row sgt-owner" style="color:${ownerClr}">⚑ ${_esc(ownerStr)}</div>
       <div class="sgt-divider"></div>
-      ${holderHtml}${troopHtml}${dutyHtml}${prodHtml}`;
+      ${holderHtml}${troopHtml}${dutyHtml}`;
 
     _tooltip.classList.add('visible');
     _moveTip(e);
