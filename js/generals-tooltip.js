@@ -165,7 +165,7 @@
         if (WARNING_RE.test(r)) {
           cls = 'gtp-role gtp-role-warn';
         } else if (POLICY_RE.test(r)) {
-          cls = 'gtp-role gtp-role-policy';
+          cls = 'gtp-role gtp-role-normal';
         } else {
           cls = 'gtp-role gtp-role-normal';
         }
