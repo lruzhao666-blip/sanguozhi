@@ -978,7 +978,7 @@ const BONUS_MULT = {
       const c = (slotIdx !== undefined) ? NPC_FACTION_COLORS[slotIdx] : NPC_C;
       factionChip = `<span class="sgt-faction-chip" style="background:${c.film};border:1px solid ${c.stroke};color:${c.glow}">${_esc(ow.faction)}</span>`;
     } else if (isNPC) {
-      factionChip = `<span class="sgt-faction-chip" style="background:${NPC_C.film};border:1px solid ${NPC_C.stroke};color:${NPC_C.glow}">NPC</span>`;
+      factionChip = `<span class="sgt-faction-chip" style="background:${NPC_C.film};border:1px solid ${NPC_C.stroke};color:${NPC_C.glow}">群雄</span>`;
     }
 
     // 城等 badge

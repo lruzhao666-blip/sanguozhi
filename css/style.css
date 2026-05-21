@@ -2809,7 +2809,14 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 .sgmap-tooltip .sgt-name { font-family:'Noto Serif SC',serif; font-size:1.02rem; font-weight:900; letter-spacing:.06em; color:#f0e6d3; }
 .sgmap-tooltip .sgt-faction-chip {
-  font-size:.62rem; padding:1px 7px; border-radius:9px; font-weight:600; letter-spacing:.04em;
+  display:inline-block;
+  font-size:.62rem;
+  padding:2px 9px;
+  border-radius:10px;
+  font-weight:600;
+  letter-spacing:.04em;
+  line-height:1.4;
+  white-space:nowrap;
 }
 .sgmap-tooltip .sgt-badges { display:flex; gap:4px; margin-left:auto; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
 .sgmap-tooltip .sgt-badge {
