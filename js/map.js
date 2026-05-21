@@ -972,7 +972,7 @@ const BONUS_MULT = {
     if (isPlayer) {
       const p = players[ow.playerIdx];
       const pc = P_COLOR[ow.playerIdx] || EMPTY_C;
-      factionChip = `<span class="sgt-faction-chip" style="background:${pc.stroke}22;border:1px solid ${pc.stroke}66;color:${pc.glow}">${_esc(p?.name || ow.playerName || '')}</span>`;
+      factionChip = `<span class="sgt-faction-chip" style="background:${pc.film};border:1px solid ${pc.stroke};color:${pc.glow}">${_esc(p?.name || ow.playerName || '')}</span>`;
     } else if (isNPC && ow.faction) {
       const slotIdx = _npcFactionSlots[ow.faction];
       const c = (slotIdx !== undefined) ? NPC_FACTION_COLORS[slotIdx] : NPC_C;
