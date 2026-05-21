@@ -1,5 +1,5 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v14
+ * map.js — 三国志文字版 · 势力地图 v15
  *
  * ✦ 60 座城池，十二大州区
  * ✦ flat-top 六边形，整个矩形网格完整铺满（无空白）
@@ -127,6 +127,45 @@ let _npcFactionSlots = {};
        列 14-16 ：冀州 / 徐州 / 扬州北
        列 17-19 ：幽州 / 扬州东
   ───────────────────────────────── */
+// v15 城池→城等映射
+const CITY_TIER_MAP = {
+  '襄平':'郡城','北平':'郡城','蓟县':'州治',
+  '南皮':'郡城','平原':'郡城','邺城':'雄都',
+  '晋阳':'州治','上党':'郡城',
+  '北海':'郡城','济南':'郡城',
+  '洛阳':'雄都','弘农':'郡城','河内':'郡城','虎牢关':'县城','潼关':'县城',
+  '长安':'雄都','天水':'郡城','安定':'郡城','武威':'郡城','西平':'县城','街亭':'县城',
+  '濮阳':'郡城','陈留':'州治','许昌':'雄都','汝南':'郡城','谯郡':'郡城',
+  '下邳':'州治','小沛':'县城','广陵':'郡城',
+  '宛城':'郡城','新野':'县城','襄阳':'雄都','江夏':'州治','江陵':'郡城',
+  '武陵':'县城','长沙':'郡城','桂阳':'县城','零陵':'县城',
+  '寿春':'州治','合肥':'郡城','庐江':'郡城','建业':'雄都','吴郡':'州治',
+  '会稽':'郡城','柴桑':'郡城','庐陵':'县城',
+  '汉中':'州治','上庸':'郡城','梓潼':'郡城','成都':'雄都','永安':'郡城',
+  '江州':'郡城','武都':'县城','剑阁':'县城','葭萌关':'县城','阳平关':'县城',
+  '建宁':'郡城','云南':'县城','永昌':'县城','交趾':'郡城',
+};
+
+// v15 城等基础产出
+const CITY_TIER_BASE = {
+  '雄都': { gold: 300, food: 600 },
+  '州治': { gold: 200, food: 400 },
+  '郡城': { gold: 120, food: 250 },
+  '县城': { gold: 60,  food: 120 },
+};
+
+// v15 地利百分比乘算
+const BONUS_MULT = {
+  '粮丰':     { food: 1.5  },
+  '金丰':     { gold: 1.5  },
+  '进攻+':    { gold: 1.2  },
+  '谋略+':    { gold: 1.1  },
+  '水战强':   { food: 1.15 },
+  '苦寒减产': { gold: 0.8, food: 0.8 },
+  '瘴气':     { food: 0.75 },
+  '偏远':     { gold: 0.9, food: 0.9 },
+};
+
   const CITIES = [
     /* ══ 幽州 ══ */
     { id:'xiangping', name:'襄平',  region:'幽州', hx:19, hy:0,  tier:2, bonusKey:'骑兵强', bonusKeys:['骑兵强','苦寒减产'],  terrain:'山地', npcGuard:'公孙度', terrainDesc:'辽东孤城，北接鲜卑，骑兵之利冠绝北疆。' },
@@ -896,6 +935,28 @@ let _npcFactionSlots = {};
   /* ─────────────────────────────────
      Tooltip
   ───────────────────────────────── */
+  function _calcProd(city, ow) {
+    const tier = CITY_TIER_MAP[city.name] || '郡城';
+    const base = CITY_TIER_BASE[tier];
+    let gold = base.gold, food = base.food;
+    const mults = [];
+    (city.bonusKeys || [city.bonusKey] || []).forEach(k => {
+      const m = BONUS_MULT[k]; if (!m) return;
+      if (m.gold) { gold *= m.gold; mults.push({k, type:'gold', v:m.gold}); }
+      if (m.food) { food *= m.food; mults.push({k, type:'food', v:m.food}); }
+    });
+    const isPlayer = ow && ow.owner && ow.owner !== 'npc' && ow.owner !== '';
+    const chain = { base, tier, mults, policy: null };
+    if (isPlayer) {
+      const buffs = ow.productionBuffs ? Object.values(ow.productionBuffs) : [];
+      const hasTun = buffs.some(b => b.emoji === '🌾');
+      const hasShi = buffs.some(b => b.emoji === '💰');
+      if (hasTun) { food *= 1.3; chain.policy = {type:'food', name:'屯田', v:1.3}; }
+      if (hasShi) { gold *= 1.3; chain.policy = {type:'gold', name:'开市', v:1.3}; }
+    }
+    return { gold: Math.round(gold), food: Math.round(food), chain, isPlayer };
+  }
+
   function _showTip(g, e) {
     const name = g.dataset.name;
     const city = CITIES.find(c => c.name === name);
@@ -906,88 +967,93 @@ let _npcFactionSlots = {};
     const isEmpty = !ow || ow.owner === '';
     const isPlayer= !isNPC && !isEmpty;
 
-    let ownerStr = '无主', ownerClr = EMPTY_C.glow;
-    if (isNPC) {
-      ownerStr = 'NPC 势力'; ownerClr = NPC_C.glow;
-    } else if (isPlayer) {
+    // 阵营 chip
+    let factionChip = '';
+    if (isPlayer) {
       const p = players[ow.playerIdx];
-      ownerStr = `${p?.name || ow.playerName}${ow.isMulti ? '〔占领〕' : '〔主城〕'}`;
-      ownerClr = P_COLOR[ow.playerIdx]?.glow || '#fff';
+      const pc = P_COLOR[ow.playerIdx] || EMPTY_C;
+      factionChip = `<span class="sgt-faction-chip" style="background:${pc.stroke}22;border:1px solid ${pc.stroke}66;color:${pc.glow}">${_esc(p?.name || ow.playerName || '')}</span>`;
+    } else if (isNPC && ow.faction) {
+      const slotIdx = _npcFactionSlots[ow.faction];
+      const c = (slotIdx !== undefined) ? NPC_FACTION_COLORS[slotIdx] : NPC_C;
+      factionChip = `<span class="sgt-faction-chip" style="background:${c.film};border:1px solid ${c.stroke};color:${c.glow}">${_esc(ow.faction)}</span>`;
+    } else if (isNPC) {
+      factionChip = `<span class="sgt-faction-chip" style="background:${NPC_C.film};border:1px solid ${NPC_C.stroke};color:${NPC_C.glow}">NPC</span>`;
     }
 
-    const tierLabel  = city.tier === 1 ? '重镇' : city.tier === 2 ? '要地' : '城寨';
+    // 城等 badge
+    const tier = CITY_TIER_MAP[city.name] || '郡城';
+    const tierClass = tier === '雄都' ? 'tier-4' : tier === '州治' ? 'tier-3' : '';
+    const tierBadge = `<span class="sgt-badge ${tierClass}">${tier}</span>`;
+    const bonusBadges = (city.bonusKeys || [city.bonusKey] || [])
+      .map(k => `<span class="sgt-badge">${_esc(k)}</span>`).join('');
 
-    let bonusHtml = '';
-    if (city.bonusKeys && city.bonusKeys.length > 0) {
-      bonusHtml = city.bonusKeys.map(k => {
-        const icon = BONUS_ICON[k] || '✦';
-        return `${icon} <span>${_esc(k)}</span>`;
-      }).join(' · ');
-    } else {
-      const bonusIcon = BONUS_ICON[city.bonusKey] || '✦';
-      bonusHtml = `${bonusIcon} <span>${_esc(city.bonusKey)}</span>`;
-    }
-
-    const rawHolder  = (ow?.holder || '').trim();
+    // 驻将
+    const rawHolder = (ow?.holder || '').trim();
     const holderDisp = (rawHolder && rawHolder !== '无')
       ? rawHolder
       : (isNPC ? (city.npcGuard || '未知') : '暂无');
 
-    const holderHtml = `<div class="sgt-row sgt-holder">
-      <span class="sgt-lbl">驻将</span>
-      <b style="color:${ownerClr}">${_esc(holderDisp)}</b>
-    </div>`;
-
+    // 兵力
     const troops = ow?.troops || {};
     const hasTroop = Object.keys(troops).some(k => (troops[k] || 0) > 0);
     let troopHtml = '';
-
     const _chips = (t) => TROOP_TYPES.filter(k => (t[k]||0) > 0)
-      .map(k => `<span class="sgt-troop-chip"><b>${k}</b><span>${Number(t[k]).toLocaleString()}</span></span>`);
-
+      .map(k => `<span class="sgt-troop-chip"><b>${k}</b><span>${Number(t[k]).toLocaleString()}</span></span>`).join('');
     if (isPlayer) {
-      if (hasTroop) {
-        troopHtml = `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span>
-          <span class="sgt-troop-list">${_chips(troops).join('')}</span></div>`;
-      } else {
-        troopHtml = `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span>
-          <span class="sgt-dim">无兵</span></div>`;
-      }
+      troopHtml = hasTroop
+        ? `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-troop-list">${_chips(troops)}</span></div>`
+        : `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-dim">无兵</span></div>`;
+    } else if (isNPC && hasTroop) {
+      troopHtml = `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-troop-list">${_chips(troops)}</span></div>`;
     }
 
-    // ── 任事（productionBuffs）── 仅玩家城显示
-    let dutyHtml = '';
-    if (isPlayer) {
-      const buffs = ow?.productionBuffs;
-      const buffList = buffs ? Object.values(buffs) : [];
-      const dutyList = buffList.filter(b => b.general && b.action);
-      if (dutyList.length > 0) {
-        const rows = dutyList.map(b => {
-          return `<div class="sgt-row sgt-prod-buff">
-            <span class="duty-emoji" style="margin-right:2px">${_esc(b.emoji || '')}</span>
-            <span class="duty-general" style="color:${ownerClr};font-weight:700">${_esc(b.general)}</span>
-            <span class="duty-action" style="margin-left:0.5rem;color:var(--text-sub)">${_esc(b.action)}</span>
-          </div>`;
-        }).join('');
-        dutyHtml = `<div class="sgt-divider"></div>
-          <div class="sgt-prod-title">任事</div>${rows}`;
-      }
+    // 产出
+    const prod = _calcProd(city, ow);
+    const multStr = prod.chain.mults.map(m => {
+      const icon = m.type === 'gold' ? '💰' : '🌾';
+      return `${_esc(m.k)}(${icon}×${m.v})`;
+    }).join(' · ');
+    let chainHtml = `<span class="ch-step">基础 <b>${prod.chain.base.gold}金/${prod.chain.base.food}粮</b></span>`;
+    if (multStr) chainHtml += `<span class="ch-arrow">›</span><span class="ch-step">${multStr}</span>`;
+    if (prod.chain.policy) {
+      const icon = prod.chain.policy.type === 'gold' ? '💰' : '🌾';
+      chainHtml += `<span class="ch-arrow">›</span><span class="ch-policy">${icon} ${prod.chain.policy.name} ${icon}+30%</span>`;
     }
+
+    // 主政 badge
+    let badgeRow = '';
+    if (isPlayer) {
+      const buffs = ow?.productionBuffs ? Object.values(ow.productionBuffs) : [];
+      badgeRow = buffs.filter(b => b.general && b.action).map(b =>
+        `<span class="sgt-prod-mini-badge policy">${_esc(b.emoji||'')} ${_esc(b.general)} · ${_esc(b.action)}</span>`
+      ).join('');
+    }
+
+    const prodTitle = isPlayer ? '📊 预计本回合产出' : '📊 攻下后基础产出';
+    const prodTag = isPlayer ? '含修正' : '仅基础+地利';
 
     _tooltip.innerHTML = `
       <div class="sgt-header">
-        <span class="sgt-name" style="color:${ownerClr}">${_esc(city.name)}</span>
-        <span class="sgt-badges">
-          <span class="sgt-badge">${city.region}</span>
-          <span class="sgt-badge">${tierLabel}</span>
-        </span>
+        <div class="sgt-name">${_esc(city.name)}</div>
+        ${factionChip}
+        <div class="sgt-badges">${tierBadge}${bonusBadges}</div>
       </div>
       <div class="sgt-desc">${_esc(city.terrainDesc)}</div>
-      <div class="sgt-row sgt-bonus">${bonusHtml}</div>
-      <div class="sgt-row sgt-owner" style="color:${ownerClr}">⚑ ${_esc(ownerStr)}</div>
-      <div class="sgt-divider"></div>
-      ${holderHtml}${troopHtml}${dutyHtml}`;
-
+      <div class="sgt-info-block">
+        <div class="sgt-row sgt-holder"><span class="sgt-lbl">驻将</span><b>${_esc(holderDisp)}</b></div>
+        ${troopHtml}
+      </div>
+      ${isEmpty ? '' : `
+      <div class="sgt-prod-block">
+        <div class="sgt-prod-block-title">${prodTitle}<span class="pt-tag">${prodTag}</span></div>
+        <div class="sgt-prod-main">
+          <span class="sgt-prod-item"><span class="sgt-prod-emoji">💰</span><span class="sgt-prod-approx">约</span><span class="sgt-prod-num">${prod.gold}</span><span class="sgt-prod-unit">金</span></span>
+          <span class="sgt-prod-item"><span class="sgt-prod-emoji">🌾</span><span class="sgt-prod-approx">约</span><span class="sgt-prod-num">${prod.food}</span><span class="sgt-prod-unit">粮</span></span>
+        </div>
+        <div class="sgt-prod-chain">${chainHtml}</div>
+        ${badgeRow ? `<div class="sgt-prod-badge-row">${badgeRow}</div>` : ''}
+      </div>`}`;
     _tooltip.classList.add('visible');
     _moveTip(e);
   }

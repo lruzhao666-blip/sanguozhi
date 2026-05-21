@@ -698,8 +698,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
   opacity: .55;
 }
 
-
-
 /* ══════════════════════════════════════════
    段落分组（无盒子，纯间距分组）
    标题是色标签，正文自由呼吸
@@ -968,7 +966,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
   .digest-raw .raw-num-badge { font-size: .96rem; }
 }
 
-
 /* ══════════════════════════════════════════
    三方势力横排
 ══════════════════════════════════════════ */
@@ -1050,199 +1047,34 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 
 /* ══ 城池弹窗 Tooltip（v3）══ */
-.sgmap-tooltip {
-  position: fixed; z-index: 9999; pointer-events: none;
-  background: rgba(7,6,13,.96);
-  border: 1px solid rgba(200,160,70,.18);
-  border-radius: var(--rl); padding: 12px 16px 14px;
-  font-size: .8rem; min-width: 220px; max-width: 290px;
-  box-shadow:
-    0 16px 48px rgba(0,0,0,.92),
-    inset 0 1px 0 rgba(255,255,255,.05),
-    inset 0 0 0 1px rgba(255,255,255,.02);
-  opacity: 0; transform: translateY(6px);
-  transition: opacity .15s, transform .15s;
-}
+
 @media (pointer: coarse) {
-  .sgmap-tooltip {
-    max-width: calc(100vw - 20px);
-    min-width: 0;
-    font-size: .84rem;
-    border-radius: var(--rl);
-    box-shadow: 0 -6px 32px rgba(0,0,0,.92);
-  }
+
 }
-.sgmap-tooltip.visible { opacity: 1; transform: translateY(0); }
 
 /* ── 弹窗头部 ── */
-.sgt-header {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 7px; padding-bottom: 7px;
-  border-bottom: 1px solid rgba(180,148,68,.22);
-}
-.sgt-name {
-  font-family: var(--font-serif); font-size: 1.02rem;
-  font-weight: 900; letter-spacing: .06em;
-}
-.sgt-badges {
-  display: flex; gap: 4px; margin-left: auto;
-  flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end;
-}
-.sgt-badge {
-  font-size: .58rem; font-family: var(--font-sans);
-  border: 1px solid rgba(212,168,67,.30);
-  border-radius: 9px; padding: 1px 7px;
-  color: var(--gold-dim); font-weight: 600;
-  background: rgba(212,168,67,.08);
-}
 
 /* ── 地形描述 ── */
-.sgt-desc {
-  font-size: .71rem; color: var(--text-dim);
-  line-height: 1.65; margin-bottom: 7px;
-  font-family: var(--font-serif);
-}
 
 /* ── 通用行 ── */
-.sgt-row {
-  font-size: .78rem; color: var(--text-sub);
-  line-height: 1.8; font-family: var(--font-serif);
-  display: flex; align-items: center; gap: 6px;
-}
 
 /* ── 标签（驻将/兵力 前的小字） ── */
-.sgt-lbl {
-  font-size: .60rem; color: var(--text-dim);
-  white-space: nowrap; flex-shrink: 0;
-  min-width: 2.4em; text-align: right;
-  letter-spacing: .04em;
-  align-self: center;
-}
 
 /* ── 暗淡占位文字（无兵/未知） ── */
-.sgt-dim {
-  font-size: .82rem;
-  font-weight: 700;
-  font-family: var(--font-sans);
-  font-style: normal;
-  color: var(--text-dim);
-}
 
 /* ── 归属行 ── */
-.sgt-owner { font-weight: 700; margin-bottom: 2px; }
-.sgt-bonus { gap: 5px; color: var(--gold-dim); font-size: .74rem; }
-.sgt-bonus span:first-child {
-  font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;
-  font-style: normal;
-  -webkit-text-stroke: 0;
-  text-stroke: 0;
-}
 
 /* ── 分隔线 ── */
-.sgt-divider {
-  height: 1px; margin: 8px 0;
-  background: rgba(180,148,68,.15);
-}
 
 /* ── 驻将 / 兵力 信息块 ── */
-.sgt-info-block {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 6px 8px;
-  background: rgba(255,255,255,.03);
-  border-radius: 5px;
-  border: 1px solid rgba(180,148,68,.10);
-}
 
 /* ── 驻将行 ── */
-.sgt-holder {
-  display: flex; align-items: center; gap: 8px;
-}
-.sgt-holder .sgt-lbl {
-  font-size: .62rem;
-  color: var(--text-dim);
-  letter-spacing: .08em;
-  min-width: 2.2em;
-  flex-shrink: 0;
-}
-.sgt-holder b {
-  font-weight: 700;
-  font-size: .82rem;
-  font-family: var(--font-sans);
-  color: var(--text-main);
-  letter-spacing: .04em;
-}
 
 /* ── 兵力行 ── */
-.sgt-troops {
-  display: flex; align-items: center; gap: 8px;
-  flex-wrap: wrap;
-}
-.sgt-troops .sgt-lbl {
-  font-size: .62rem;
-  color: var(--text-dim);
-  letter-spacing: .08em;
-  min-width: 2.2em;
-  flex-shrink: 0;
-}
-.sgt-troop-list {
-  display: flex; flex-wrap: wrap;
-  gap: 2px 10px;
-}
 
 /* 兵种 + 数量：轻描边分组，简洁高级 */
-.sgt-troop-chip {
-  display: inline-flex; align-items: baseline; gap: 3px;
-  background: none; border: none; padding: 0;
-  white-space: nowrap;
-}
-.sgt-troop-chip b {
-  font-size: .68rem;
-  font-weight: 600;
-  font-family: var(--font-sans);
-  color: var(--text-dim);
-  letter-spacing: .04em;
-}
-.sgt-troop-chip span {
-  font-size: .82rem;
-  font-weight: 700;
-  font-family: var(--font-sans);
-  color: var(--text-sub);
-  letter-spacing: .01em;
-}
-
-/* ── 兼容旧 sgt-res（保留不删） ── */
-.sgt-res {
-  display: flex; flex-wrap: wrap; gap: 4px 10px;
-  margin-top: 6px; padding-top: 5px;
-  border-top: 1px solid rgba(255,255,255,.06);
-}
-.sgt-res span { font-size: .7rem; color: var(--text-sub); }
-.sgt-res b { color: var(--gold-light); font-weight: 700; margin-left: 2px; }
 
 /* ── 当前产业段（productionBuffs） ── */
-.sgt-prod-title {
-  font-size: .60rem; color: var(--text-dim);
-  letter-spacing: .1em; margin-bottom: 3px;
-}
-.sgt-prod-buff {
-  display: flex; align-items: center; gap: 6px;
-  font-size: .76rem;
-}
-.sgt-prod-buff .sgt-lbl {
-  min-width: 3.8em;
-  color: var(--gold-dim);
-  font-size: .62rem;
-}
-.sgt-prod-val {
-  font-weight: 700; color: var(--gold-light);
-  font-family: var(--font-sans); font-size: .78rem;
-}
-.sgt-prod-remain {
-  color: var(--text-dim); font-size: .68rem;
-  margin-left: auto; white-space: nowrap;
-}
 
 /* ══════════════════════════════════════════
    战斗结算
@@ -2956,3 +2788,76 @@ header, nav, main, footer { position: relative; z-index: 1; }
   }
 }
 
+
+/* ════ 城池悬浮卡 v15 ════ */
+.sgmap-tooltip {
+  position:fixed; z-index:9999; pointer-events:none;
+  opacity:0; transition:opacity .12s;
+  background: rgba(7,6,13,.96);
+  border: 1px solid rgba(200,160,70,.28);
+  border-radius: 10px; padding: 12px 16px 14px;
+  font-size: .8rem; width: 310px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.05);
+  color:#c8b89a;
+}
+.sgmap-tooltip.visible { opacity:1; }
+.sgmap-tooltip .sgt-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 7px; padding-bottom: 7px;
+  border-bottom: 1px solid rgba(180,148,68,.22);
+  flex-wrap: wrap;
+}
+.sgmap-tooltip .sgt-name { font-family:'Noto Serif SC',serif; font-size:1.02rem; font-weight:900; letter-spacing:.06em; color:#f0e6d3; }
+.sgmap-tooltip .sgt-faction-chip {
+  font-size:.62rem; padding:1px 7px; border-radius:9px; font-weight:600; letter-spacing:.04em;
+}
+.sgmap-tooltip .sgt-badges { display:flex; gap:4px; margin-left:auto; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+.sgmap-tooltip .sgt-badge {
+  font-size:.58rem; border:1px solid rgba(212,168,67,.30); border-radius:9px; padding:1px 7px;
+  color:#a07830; font-weight:600; background:rgba(212,168,67,.08);
+}
+.sgmap-tooltip .sgt-badge.tier-4 { border-color:rgba(220,90,70,.5); color:#f0a878; background:rgba(220,80,60,.14); }
+.sgmap-tooltip .sgt-badge.tier-3 { border-color:rgba(212,168,67,.55); color:#f0c060; background:rgba(212,168,67,.16); }
+.sgmap-tooltip .sgt-desc {
+  font-size:.71rem; color:#7a6a5a; line-height:1.65; margin-bottom:7px; font-family:'Noto Serif SC',serif;
+}
+.sgmap-tooltip .sgt-info-block {
+  display:flex; flex-direction:column; gap:5px;
+  padding:7px 9px; background:rgba(255,255,255,.03);
+  border-radius:5px; border:1px solid rgba(180,148,68,.10);
+}
+.sgmap-tooltip .sgt-row { display:flex; align-items:center; gap:8px; font-family:'Noto Serif SC',serif; }
+.sgmap-tooltip .sgt-lbl { font-size:.60rem; color:#7a6a5a; white-space:nowrap; flex-shrink:0; letter-spacing:.04em; }
+.sgmap-tooltip .sgt-holder b { font-weight:700; font-size:.82rem; font-family:'Noto Sans SC',sans-serif; color:#f0e6d3; letter-spacing:.04em; }
+.sgmap-tooltip .sgt-troops { flex-wrap:wrap; }
+.sgmap-tooltip .sgt-troop-list { display:flex; flex-wrap:wrap; gap:2px 10px; }
+.sgmap-tooltip .sgt-troop-chip { display:inline-flex; align-items:baseline; gap:3px; }
+.sgmap-tooltip .sgt-troop-chip b { font-size:.68rem; font-weight:600; color:#7a6a5a; letter-spacing:.04em; }
+.sgmap-tooltip .sgt-troop-chip span { font-size:.82rem; font-weight:700; color:#c8b89a; }
+.sgmap-tooltip .sgt-dim { font-size:.7rem; color:#5a4d3a; }
+.sgmap-tooltip .sgt-prod-block {
+  margin-top:8px; padding:8px 10px 9px;
+  background:linear-gradient(135deg,rgba(80,55,15,.16),rgba(40,28,8,.10));
+  border:1px solid rgba(180,148,68,.20); border-radius:5px;
+}
+.sgmap-tooltip .sgt-prod-block-title {
+  font-size:.60rem; color:#a07830; letter-spacing:.14em;
+  margin-bottom:6px; font-family:'Noto Sans SC',sans-serif;
+  display:flex; align-items:center; gap:5px;
+}
+.sgmap-tooltip .sgt-prod-block-title::before { content:''; width:2px; height:9px; background:rgba(212,168,67,.5); }
+.sgmap-tooltip .sgt-prod-block-title .pt-tag { margin-left:auto; font-size:.56rem; color:#7a6a5a; letter-spacing:.05em; font-weight:400; }
+.sgmap-tooltip .sgt-prod-main { display:flex; gap:14px; align-items:baseline; padding:2px 0 4px; }
+.sgmap-tooltip .sgt-prod-item { display:inline-flex; align-items:baseline; gap:4px; }
+.sgmap-tooltip .sgt-prod-emoji { font-size:.85rem; }
+.sgmap-tooltip .sgt-prod-approx { font-size:.58rem; color:#7a6a5a; letter-spacing:.05em; }
+.sgmap-tooltip .sgt-prod-num { font-size:1.05rem; font-weight:700; color:#f0c060; letter-spacing:.02em; }
+.sgmap-tooltip .sgt-prod-unit { font-size:.62rem; color:#c8b89a; letter-spacing:.04em; }
+.sgmap-tooltip .sgt-prod-chain { font-size:.62rem; color:#7a6a5a; line-height:1.6; margin-top:5px; letter-spacing:.02em; }
+.sgmap-tooltip .sgt-prod-chain .ch-step { color:#c8b89a; }
+.sgmap-tooltip .sgt-prod-chain .ch-step b { color:#a07830; font-weight:600; }
+.sgmap-tooltip .sgt-prod-chain .ch-arrow { color:rgba(180,148,68,.4); margin:0 4px; font-size:.7rem; }
+.sgmap-tooltip .sgt-prod-chain .ch-policy { color:#98d09a; font-weight:600; }
+.sgmap-tooltip .sgt-prod-badge-row { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
+.sgmap-tooltip .sgt-prod-mini-badge { font-size:.56rem; letter-spacing:.06em; padding:1px 6px; border-radius:8px; font-weight:600; }
+.sgmap-tooltip .sgt-prod-mini-badge.policy { background:rgba(80,140,80,.16); border:1px solid rgba(100,170,100,.28); color:#98d09a; }
