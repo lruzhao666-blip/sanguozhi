@@ -11,6 +11,60 @@
 window.SGMap = (function () {
   'use strict';
 
+  // ═══════════════════════════════════════════════════
+  // v3.19 规则常量区 · 改规则只改这里
+  // 引用规则手册:三国志文字版_v3.19_参考手册.md
+  // ═══════════════════════════════════════════════════
+
+  const TIER_BASE = {
+    xiancheng: { gold: 60,  food: 120 },
+    juncheng:  { gold: 120, food: 250 },
+    zhouzhi:   { gold: 200, food: 400 },
+    xiongdu:   { gold: 300, food: 600 }
+  };
+
+  const TIER_NAME = {
+    xiancheng: '县城',
+    juncheng:  '郡城',
+    zhouzhi:   '州治',
+    xiongdu:   '雄都'
+  };
+
+  // 现有 CITIES 数据中 tier 是数字 1/2 体系,做向后兼容映射
+  const TIER_KEY_FROM_NUM = {
+    1: 'xiongdu',   // tier:1 视为雄都/州治级
+    2: 'zhouzhi',   // tier:2 视为州治/郡城级
+    3: 'juncheng',
+    4: 'xiancheng'
+  };
+
+  const BONUS_MULT = {
+    '粮丰':     { gold: 1.0,  food: 1.5  },
+    '金丰':     { gold: 1.5,  food: 1.0  },
+    '苦寒减产': { gold: 0.8,  food: 0.8  },
+    '瘴气':     { gold: 1.0,  food: 0.75 },
+    '偏远':     { gold: 0.9,  food: 0.9  },
+    '防御+':    { gold: 1.0,  food: 1.0  },
+    '进攻+':    { gold: 1.2,  food: 1.0  },
+    '谋略+':    { gold: 1.1,  food: 1.0  },
+    '骑兵强':   { gold: 1.0,  food: 1.0  },
+    '水战强':   { gold: 1.0,  food: 1.15 },
+    '蛮兵强':   { gold: 1.0,  food: 1.0  },
+    '险关':     { gold: 1.0,  food: 1.0  }
+  };
+
+  const MORALE_TIER = {
+    high: { threshold: 75, mult: 1.1 },
+    low:  { threshold: 39, mult: 0.9 }
+  };
+
+  const NEW_CITY_GRACE = { turns: 3, mult: 1.5 };
+
+  // ═══════════════════════════════════════════════════
+  // v3.19 规则常量区结束
+  // ═══════════════════════════════════════════════════
+
+
   /* ─────────────────────────────────
      六边形参数（flat-top 横尖）
      横版长方形布局：hx 3-19 × hy 0-14
@@ -96,6 +150,9 @@ const FACTION_FIXED_SLOTS = {
 
 // 阵营→槽位的稳定映射（模块级缓存）
 let _npcFactionSlots = {};
+  // v3.19 城池历史记录
+  let cityFirstOwn = {}; // { 城名: 首次玩家占领回合数 }
+  let cityDamaged  = {}; // { 城名: true 表示曾遭战斗 }
   const EMPTY_C = { fill:'rgba(10,11,16,0.55)',  film:'rgba(40, 45,55,0.12)',  stroke:'rgba(175,148,82,0.16)', glow:'#887760', text:'rgba(185,158,100,0.32)' };
 
   /* 奖励图标（加 \uFE0F 变体选择符，强制彩色 emoji 渲染） */
@@ -337,6 +394,107 @@ let _npcFactionSlots = {};
     return String(s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─── v3.19 城池悬浮卡工具函数 ───
+
+  // 把 CITIES 数据里的 tier 数字转成 v3.19 城等字符串
+  function _tierKey(city) {
+    if (!city) return 'juncheng';
+    if (typeof city.tier === 'string') return city.tier;
+    return TIER_KEY_FROM_NUM[city.tier] || 'juncheng';
+  }
+
+  // 计算城池基础理论产出(不含主政/彩蛋/磨合期/停摆)
+  function _calcCityOutput(city, ownerMorale) {
+    const tier = _tierKey(city);
+    const base = TIER_BASE[tier] || TIER_BASE.juncheng;
+    let gold = base.gold;
+    let food = base.food;
+
+    const bonusKeys = city.bonusKeys || [];
+    bonusKeys.forEach(function(key) {
+      const m = BONUS_MULT[key];
+      if (m) { gold *= m.gold; food *= m.food; }
+    });
+
+    if (typeof ownerMorale === 'number') {
+      if (ownerMorale >= MORALE_TIER.high.threshold) {
+        gold *= MORALE_TIER.high.mult;
+        food *= MORALE_TIER.high.mult;
+      } else if (ownerMorale <= MORALE_TIER.low.threshold) {
+        gold *= MORALE_TIER.low.mult;
+        food *= MORALE_TIER.low.mult;
+      }
+    }
+
+    return {
+      gold: Math.round(gold),
+      food: Math.round(food),
+      goldFormula: _buildFormula(base.gold, bonusKeys, 'gold', ownerMorale),
+      foodFormula: _buildFormula(base.food, bonusKeys, 'food', ownerMorale)
+    };
+  }
+
+  function _buildFormula(baseValue, bonusKeys, type, morale) {
+    const parts = [String(baseValue)];
+    bonusKeys.forEach(function(key) {
+      const m = BONUS_MULT[key];
+      if (m && m[type] !== 1.0) parts.push('× ' + m[type]);
+    });
+    if (typeof morale === 'number') {
+      if (morale >= MORALE_TIER.high.threshold) parts.push('× 1.1');
+      else if (morale <= MORALE_TIER.low.threshold) parts.push('× 0.9');
+    }
+    return parts.length === 1 ? '基础' : parts.join(' ');
+  }
+
+  // 归属分类
+  // 返回 { ownClass, factionSlot, factionTag, isMainCamp }
+  // ownClass: 'p0'|'p1'|'p2'|'npc-faction'|'npc'|'stray'
+  // factionSlot: 0-5 或 null(NPC 阵营色槽位)
+  // factionTag: 阵营主公名 或 null
+  // isMainCamp: true 表示该城是该阵营大本营
+  function _classifyOwnership(city, ownerInfo) {
+    // 玩家城
+    if (ownerInfo && typeof ownerInfo.slot === 'number') {
+      return {
+        ownClass:    'p' + ownerInfo.slot,
+        factionSlot: null,
+        factionTag:  null,
+        isMainCamp:  false
+      };
+    }
+    // NPC 阵营城(挂阵营标签)
+    const tag = city.factionTag || (typeof cityOwnership !== 'undefined' && cityOwnership[city.name] && cityOwnership[city.name].faction) || null;
+    if (tag) {
+      const slot = (typeof _npcFactionSlots !== 'undefined' && _npcFactionSlots[tag] !== undefined)
+                   ? _npcFactionSlots[tag]
+                   : null;
+      // 大本营判定:city.isMainCamp 字段优先,否则按"该势力首座城"近似
+      const isMain = !!city.isMainCamp;
+      return {
+        ownClass:    (slot !== null) ? 'npc-faction' : 'npc',
+        factionSlot: slot,
+        factionTag:  tag,
+        isMainCamp:  isMain
+      };
+    }
+    // 散城
+    return {
+      ownClass:    'stray',
+      factionSlot: null,
+      factionTag:  null,
+      isMainCamp:  false
+    };
+  }
+
+  // 兵力雾化描述(NPC 城用)
+  function _fogTroops(totalTroops) {
+    if (!totalTroops || totalTroops < 500) return '兵 稀 城 单';
+    if (totalTroops < 2000) return '兵 众 整 肃';
+    if (totalTroops < 5000) return '重 兵 屯 聚';
+    return '兵 锋 如 林';
   }
 
   /* ─────────────────────────────────
@@ -901,92 +1059,170 @@ let _npcFactionSlots = {};
     const city = CITIES.find(c => c.name === name);
     if (!city || !_tooltip) return;
 
-    const ow      = cityOwnership[name];
-    const isNPC   = ow?.owner === 'npc';
-    const isEmpty = !ow || ow.owner === '';
-    const isPlayer= !isNPC && !isEmpty;
+    const ow = cityOwnership[city.name];
+    const ownerInfo = (ow && ow.owner !== 'npc' && ow.owner !== '') ? { slot: ow.playerIdx, name: ow.playerName } : null;
 
-    let ownerStr = '无主', ownerClr = EMPTY_C.glow;
-    if (isNPC) {
-      ownerStr = 'NPC 势力'; ownerClr = NPC_C.glow;
-    } else if (isPlayer) {
-      const p = players[ow.playerIdx];
-      ownerStr = `${p?.name || ow.playerName}${ow.isMulti ? '〔占领〕' : '〔主城〕'}`;
-      ownerClr = P_COLOR[ow.playerIdx]?.glow || '#fff';
+    const morale = (ownerInfo && typeof ownerInfo.slot === 'number') ? (players[ownerInfo.slot] || {}).morale : null;
+    const classify   = _classifyOwnership(city, ownerInfo);
+    const tierKey    = _tierKey(city);
+    const tierName   = TIER_NAME[tierKey] || '郡城';
+
+    const isPlayer = (classify.ownClass === 'p0' || classify.ownClass === 'p1' || classify.ownClass === 'p2');
+    const isNpcFac = (classify.ownClass === 'npc-faction');
+    const isNpc    = (classify.ownClass === 'npc' || classify.ownClass === 'npc-faction');
+    const isStray  = (classify.ownClass === 'stray');
+
+    const isDamaged    = !!cityDamaged[city.name];
+    const firstOwnTurn = cityFirstOwn[city.name];
+
+    // 1. 阵营横幅(仅 NPC 类)
+    let bannerHTML = '';
+    if (isNpc && classify.factionTag) {
+      const subText = classify.isMainCamp ? '大 本 营' : '嫡 系';
+      bannerHTML =
+        '<div class="sgt-faction-banner">'
+        + '<span class="sgt-faction-name">' + _esc(classify.factionTag) + '</span>'
+        + '<span class="sgt-faction-sub">' + subText + '</span>'
+        + '</div>';
     }
 
-    const tierLabel  = city.tier === 1 ? '重镇' : city.tier === 2 ? '要地' : '城寨';
+    // 2. 状态徽记
+    const statusBadge = isDamaged
+      ? '<span class="sgt-status-badge status-damaged">残破</span>'
+      : '<span class="sgt-status-badge status-complete">完整</span>';
 
-    let bonusHtml = '';
-    if (city.bonusKeys && city.bonusKeys.length > 0) {
-      bonusHtml = city.bonusKeys.map(k => {
-        const icon = BONUS_ICON[k] || '✦';
-        return `${icon} <span>${_esc(k)}</span>`;
-      }).join(' · ');
-    } else {
-      const bonusIcon = BONUS_ICON[city.bonusKey] || '✦';
-      bonusHtml = `${bonusIcon} <span>${_esc(city.bonusKey)}</span>`;
-    }
+    // 3. 地利标签
+    const bonusesHTML = (city.bonusKeys || []).map(function(k) {
+      const icon  = (typeof BONUS_ICON !== 'undefined' && BONUS_ICON[k]) ? BONUS_ICON[k] : '';
+      return '<span class="sgt-bonus-item"><span>' + icon + '</span><span>' + _esc(k) + '</span></span>';
+    }).join('');
 
-    const rawHolder  = (ow?.holder || '').trim();
-    const holderDisp = (rawHolder && rawHolder !== '无')
-      ? rawHolder
-      : (isNPC ? (city.npcGuard || '未知') : '暂无');
-
-    const holderHtml = `<div class="sgt-row sgt-holder">
-      <span class="sgt-lbl">驻将</span>
-      <b style="color:${ownerClr}">${_esc(holderDisp)}</b>
-    </div>`;
-
-    const troops = ow?.troops || {};
-    const hasTroop = Object.keys(troops).some(k => (troops[k] || 0) > 0);
-    let troopHtml = '';
-
-    const _chips = (t) => TROOP_TYPES.filter(k => (t[k]||0) > 0)
-      .map(k => `<span class="sgt-troop-chip"><b>${k}</b><span>${Number(t[k]).toLocaleString()}</span></span>`);
-
+    // 4. 产出 HUD 或情报封锁条
+    let outputHTML = '';
     if (isPlayer) {
-      if (hasTroop) {
-        troopHtml = `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span>
-          <span class="sgt-troop-list">${_chips(troops).join('')}</span></div>`;
+      const out = _calcCityOutput(city, morale);
+      outputHTML =
+        '<div class="sgt-output">'
+        + '<div class="sgt-output-item">'
+        +   '<div class="sgt-output-lbl">金 产 出</div>'
+        +   '<div class="sgt-output-val">+' + out.gold + '</div>'
+        +   '<div class="sgt-output-formula">' + _esc(out.goldFormula) + '</div>'
+        + '</div>'
+        + '<div class="sgt-output-item">'
+        +   '<div class="sgt-output-lbl">粮 产 出</div>'
+        +   '<div class="sgt-output-val">+' + out.food + '</div>'
+        +   '<div class="sgt-output-formula">' + _esc(out.foodFormula) + '</div>'
+        + '</div>'
+        + '</div>';
+    } else if (isNpc) {
+      outputHTML = '<div class="sgt-intel-strip">帐 幕 深 锁 · 内 情 未 详</div>';
+    } else if (isStray) {
+      outputHTML = '<div class="sgt-intel-strip">地 方 守 备 · 帐 内 难 窥</div>';
+    }
+
+    // 5. 归属带
+    let ownerName   = '';
+    let ownerStatus = '';
+    if (isPlayer) {
+      ownerName   = ownerInfo ? _esc(ownerInfo.name || '') : '';
+      ownerStatus = firstOwnTurn
+        ? ('据守 · 第 ' + firstOwnTurn + ' 回合')
+        : '据守 此 地';
+    } else if (isNpc) {
+      ownerName = _esc(classify.factionTag || '');
+      if (classify.isMainCamp) {
+        ownerStatus = '据守 已久';
       } else {
-        troopHtml = `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span>
-          <span class="sgt-dim">无兵</span></div>`;
+        const guard = city.npcGuard || (city.holders && city.holders[0]) || '';
+        ownerStatus = guard ? _esc(guard) + ' 镇守' : '据守';
+      }
+    } else {
+      ownerName   = _esc(city.npcGuard || '无主');
+      ownerStatus = '据地 自守';
+    }
+    const ownerHTML =
+      '<div class="sgt-owner-row">'
+      + '<div class="sgt-owner-flag"></div>'
+      + '<div class="sgt-owner-name">' + ownerName + '</div>'
+      + '<div class="sgt-owner-status">' + ownerStatus + '</div>'
+      + '</div>';
+
+    // 6. 兵情段
+    const rawHolder = (ow?.holder || '').trim();
+    const holderDisp = (rawHolder && rawHolder !== '无') ? rawHolder : (ow?.owner === 'npc' ? (city.npcGuard || '未知') : '暂无');
+    const holdersHTML = '<b>' + _esc(holderDisp) + '</b>';
+    let troopsHTML = '';
+    if (isNpc) {
+      const totalTroops = Object.values(ow?.troops || {}).reduce((a,b)=>a+(b||0), 0);
+      troopsHTML =
+        '<div class="sgt-troops">'
+        + '<span class="sgt-lbl">兵 势</span>'
+        + '<span class="sgt-troops-fog">' + _fogTroops(totalTroops) + '</span>'
+        + '</div>';
+    } else {
+      const troops = ow?.troops || {};
+      const hasTroop = Object.keys(troops).some(k => (troops[k] || 0) > 0);
+      if (hasTroop) {
+        const chips = TROOP_TYPES.filter(k => (troops[k]||0) > 0).map(k => '<span class="sgt-troop-chip"><b>' + k + '</b><span>' + Number(troops[k]).toLocaleString() + '</span></span>').join('');
+        troopsHTML = '<div class="sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-troop-list">' + chips + '</span></div>';
+      } else {
+        troopsHTML = '<div class="sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-dim">无兵</span></div>';
       }
     }
+    const holderLabel = isPlayer ? '驻 将' : '守 将';
+    const infoBlockHTML =
+      '<div class="sgt-info-block">'
+      + '<div class="sgt-holder">'
+      +   '<span class="sgt-lbl">' + holderLabel + '</span>'
+      +   holdersHTML
+      + '</div>'
+      + troopsHTML
+      + '</div>';
 
-    // ── 任事（productionBuffs）── 仅玩家城显示
-    let dutyHtml = '';
+    // 7. 任事段
+    let policiesHTML = '';
     if (isPlayer) {
       const buffs = ow?.productionBuffs;
       const buffList = buffs ? Object.values(buffs) : [];
       const dutyList = buffList.filter(b => b.general && b.action);
       if (dutyList.length > 0) {
-        const rows = dutyList.map(b => {
-          return `<div class="sgt-row sgt-prod-buff">
-            <span class="duty-emoji" style="margin-right:2px">${_esc(b.emoji || '')}</span>
-            <span class="duty-general" style="color:${ownerClr};font-weight:700">${_esc(b.general)}</span>
-            <span class="duty-action" style="margin-left:0.5rem;color:var(--text-sub)">${_esc(b.action)}</span>
-          </div>`;
-        }).join('');
-        dutyHtml = `<div class="sgt-divider"></div>
-          <div class="sgt-prod-title">任事</div>${rows}`;
+        policiesHTML = dutyList.map(b => '<div class="sgt-policy"><span class="sgt-policy-emoji">' + _esc(b.emoji || '') + '</span><span class="sgt-policy-name">' + _esc(b.general) + '</span><span class="sgt-policy-action">' + _esc(b.action) + '</span></div>').join('');
+      } else {
+        policiesHTML = '<div class="sgt-policy-empty">── 暂 未 主 政 ──</div>';
       }
+    } else if (isNpc) {
+      policiesHTML = '<div class="sgt-policy-empty">── 帐 内 自 运 · 不 可 窥 ──</div>';
+    } else {
+      policiesHTML = '<div class="sgt-policy-empty">── 暂 无 主 政 ──</div>';
     }
+    const policiesBlockHTML =
+      '<div class="sgt-policies">'
+      + '<div class="sgt-prod-title">任 事</div>'
+      + policiesHTML
+      + '</div>';
 
-    _tooltip.innerHTML = `
-      <div class="sgt-header">
-        <span class="sgt-name" style="color:${ownerClr}">${_esc(city.name)}</span>
-        <span class="sgt-badges">
-          <span class="sgt-badge">${city.region}</span>
-          <span class="sgt-badge">${tierLabel}</span>
-        </span>
-      </div>
-      <div class="sgt-desc">${_esc(city.terrainDesc)}</div>
-      <div class="sgt-row sgt-bonus">${bonusHtml}</div>
-      <div class="sgt-row sgt-owner" style="color:${ownerClr}">⚑ ${_esc(ownerStr)}</div>
-      <div class="sgt-divider"></div>
-      ${holderHtml}${troopHtml}${dutyHtml}`;
+    // ── 组装最终 ──
+    _tooltip.className = 'sgmap-tooltip own-' + classify.ownClass + ' tier-' + tierKey;
+    if (classify.factionSlot !== null) {
+      _tooltip.setAttribute('data-faction-slot', String(classify.factionSlot));
+    } else {
+      _tooltip.removeAttribute('data-faction-slot');
+    }
+    _tooltip.innerHTML =
+      bannerHTML
+      + '<div class="sgt-header">'
+      +   '<div class="sgt-name">' + _esc(city.name) + '</div>'
+      +   '<div class="sgt-badges">'
+      +     statusBadge
+      +     '<span class="sgt-tier-badge">' + _esc(tierName) + '</span>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="sgt-desc">' + _esc(city.terrainDesc || '') + '</div>'
+      + '<div class="sgt-bonus">' + bonusesHTML + '</div>'
+      + outputHTML
+      + ownerHTML
+      + infoBlockHTML
+      + policiesBlockHTML;
 
     _tooltip.classList.add('visible');
     _moveTip(e);
@@ -1134,6 +1370,28 @@ let _npcFactionSlots = {};
       if (!c) return;
       _build(c);
       _updateLegend();
+      // v3.19 城池占领与受损历史
+      let turn = null;
+      try { if (window && window.state && window.state.round) turn = window.state.round; } catch(e) {}
+      let battles = [];
+      try { if (window && window.state && window.state.battles) battles = window.state.battles; } catch(e) {}
+
+      if (typeof turn !== 'undefined' && turn !== null) {
+        // 玩家城首次占领回合
+        [0, 1, 2].forEach(function(slot) {
+          const cities = (newPlayers && newPlayers[slot] && newPlayers[slot].cities_list) ? newPlayers[slot].cities_list : [];
+          cities.forEach(function(c) {
+            const name = (typeof c === 'string') ? c : (c && c.name);
+            if (name && cityFirstOwn[name] === undefined) cityFirstOwn[name] = turn;
+          });
+        });
+        // 战斗城受损标记
+        battles.forEach(function(b) {
+          if (b && b.city) cityDamaged[b.city] = true;
+          if (b && b.attacker_city) cityDamaged[b.attacker_city] = true;
+          if (b && b.defender_city) cityDamaged[b.defender_city] = true;
+        });
+      }
     },
     parseCityOwnership,
     CITIES,
