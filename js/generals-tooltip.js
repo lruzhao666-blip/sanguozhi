@@ -159,8 +159,16 @@
     var roles = data.suitable_roles || [];
     if (roles.length > 0) {
       rolesHtml = '<div class="gtp-roles-label">适配职务</div><div class="gtp-roles">';
+      var POLICY_RE = /^擅长(屯田|开市|军训|招贤|工造)$/;
       roles.forEach(function (r) {
-        var cls = WARNING_RE.test(r) ? 'gtp-role gtp-role-warn' : 'gtp-role gtp-role-normal';
+        var cls;
+        if (WARNING_RE.test(r)) {
+          cls = 'gtp-role gtp-role-warn';
+        } else if (POLICY_RE.test(r)) {
+          cls = 'gtp-role gtp-role-policy';
+        } else {
+          cls = 'gtp-role gtp-role-normal';
+        }
         rolesHtml += '<span class="' + cls + '">' + _esc(r) + '</span>';
       });
       rolesHtml += '</div>';
@@ -236,6 +244,8 @@
       var data = (rows && rows.length > 0) ? rows[0] : null;
       _cache[name] = data;
       delete _pending[name];
+      window._generalsCache = window._generalsCache || {};
+      window._generalsCache[name] = data;
       // 若用户还在悬停同一武将 → 刷新内容
       if (_curTarget === name && _tip && _tip.classList.contains('gtp-visible')) {
         renderTip(name, data);
