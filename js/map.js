@@ -11,6 +11,38 @@
 window.SGMap = (function () {
   'use strict';
 
+  var _SUPA_URL = 'https://smiifcbmmtolimtaxpip.supabase.co';
+  var _SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaWlmY2JtbXRvbGltdGF4cGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTM4MzgsImV4cCI6MjA5Mzg4OTgzOH0.9pMRTaWDqXqWb_Ttti93dj8-FXgQMjAAbIZL5E-zN54';
+
+  function _ensureGeneralCached(name, callback) {
+    if (!name) return;
+    window._generalsCache = window._generalsCache || {};
+    if (window._generalsCache.hasOwnProperty(name)) {
+      if (callback) callback();
+      return;
+    }
+    var url = _SUPA_URL + '/rest/v1/generals_static'
+      + '?name=eq.' + encodeURIComponent(name)
+      + '&select=name,courtesy_name,nickname,faction_hint,tier,biography,suitable_roles'
+      + '&limit=1';
+    fetch(url, {
+      headers: {
+        'apikey': _SUPA_KEY,
+        'Authorization': 'Bearer ' + _SUPA_KEY,
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(rows) {
+      var data = (rows && rows.length > 0) ? rows[0] : null;
+      window._generalsCache[name] = data;
+      if (callback) callback();
+    })
+    .catch(function() {
+      window._generalsCache[name] = null;
+    });
+  }
+
   /* ─────────────────────────────────
      六边形参数（flat-top 横尖）
      横版长方形布局：hx 3-19 × hy 0-14
@@ -954,16 +986,33 @@ const BONUS_MULT = {
       if (hasTun) { food *= 1.3; chain.policy = {type:'food', name:'屯田', v:1.3}; }
       if (hasShi) { gold *= 1.3; chain.policy = {type:'gold', name:'开市', v:1.3}; }
 
-      if (chain.policy) {
-        const mainBuff = buffs.find(b => b.general && b.action);
-        if (mainBuff && mainBuff.general && window._generalsCache) {
-          const genData = window._generalsCache[mainBuff.general];
-          if (genData && genData.suitable_roles) {
-            const policyName = chain.policy.name;
-            if (genData.suitable_roles.includes('擅长' + policyName)) {
+      if (!chain.policy && isPlayer) {
+        var EMOJI_TO_POLICY = {'⚔️':'军训', '🤝':'招贤', '🔨':'工造', '🌾':'屯田', '💰':'开市'};
+        var buffs2 = ow.productionBuffs ? Object.values(ow.productionBuffs) : [];
+        var mainBuff2 = buffs2.find(function(b) { return b.general && b.action; });
+        if (mainBuff2 && mainBuff2.emoji) {
+          var pName = EMOJI_TO_POLICY[mainBuff2.emoji];
+          if (pName && pName !== '屯田' && pName !== '开市') {
+            // 军训/招贤/工造没有产出乘算，但记录主政名供太守契合判定
+            chain.nonProdPolicy = { name: pName, general: mainBuff2.general };
+          }
+        }
+      }
+
+      if (isPlayer && !chain.adept) {
+        var checkPolicy = chain.policy ? chain.policy.name : (chain.nonProdPolicy ? chain.nonProdPolicy.name : null);
+        var checkGeneral = chain.policy
+          ? (function() { var bs = ow.productionBuffs ? Object.values(ow.productionBuffs) : []; var mb = bs.find(function(b){return b.general;}); return mb ? mb.general : null; })()
+          : (chain.nonProdPolicy ? chain.nonProdPolicy.general : null);
+
+        if (checkPolicy && checkGeneral && window._generalsCache) {
+          var gd = window._generalsCache[checkGeneral];
+          if (gd && gd.suitable_roles && gd.suitable_roles.includes('擅长' + checkPolicy)) {
+            chain.adept = { general: checkGeneral, policy: checkPolicy };
+            // 军训/招贤/工造不做数值乘算（它们的加成体现在战斗/事件触发，不在金粮产出）
+            if (chain.policy) {
               if (chain.policy.type === 'gold') gold *= 1.2;
               else food *= 1.2;
-              chain.adept = { general: mainBuff.general, policy: policyName };
             }
           }
         }
@@ -981,6 +1030,25 @@ const BONUS_MULT = {
     const isNPC   = ow?.owner === 'npc';
     const isEmpty = !ow || ow.owner === '';
     const isPlayer= !isNPC && !isEmpty;
+
+    // 预加载主守数据，加载完后刷新 tooltip 产出区域
+    var _mainGeneral = null;
+    if (isPlayer) {
+      var buffs = ow.productionBuffs ? Object.values(ow.productionBuffs) : [];
+      var mainBuff = buffs.find(function(b) { return b.general && b.action; });
+      if (mainBuff) _mainGeneral = mainBuff.general;
+    }
+    if (_mainGeneral && !(window._generalsCache || {}).hasOwnProperty(_mainGeneral)) {
+      _ensureGeneralCached(_mainGeneral, function() {
+        // 数据到了，如果 tooltip 还在显示同一城，重新渲染
+        if (_tooltip && _tooltip.classList.contains('visible')) {
+          var curName = _tooltip.querySelector('.sgt-name');
+          if (curName && curName.textContent === name) {
+            _showTip(g, e); // 递归调用一次刷新内容
+          }
+        }
+      });
+    }
 
     // 阵营 chip
     let factionChip = '';
@@ -1035,8 +1103,16 @@ const BONUS_MULT = {
       const icon = prod.chain.policy.type === 'gold' ? '💰' : '🌾';
       chainHtml += `<span class="ch-arrow">›</span><span class="ch-policy">${icon} ${prod.chain.policy.name} ${icon}+30%</span>`;
     }
+
+    let adeptHtml = '';
     if (prod.chain.adept) {
-      chainHtml += `<span class="ch-arrow">›</span><span class="ch-adept">太守契合 +20%</span>`;
+      if (prod.chain.policy) {
+        // 屯田/开市：已在 chainHtml 末尾追加（PR2 逻辑）
+        chainHtml += `<span class="ch-arrow">›</span><span class="ch-adept">太守契合 +20%</span>`;
+      } else {
+        // 军训/招贤/工造：单独一行提示
+        adeptHtml = `<div class="sgt-adept-row"><span class="ch-adept">✦ ${_esc(prod.chain.adept.general)} 擅长${_esc(prod.chain.adept.policy)},主政效果 +20%</span></div>`;
+      }
     }
 
     // 主政 badge
@@ -1070,6 +1146,7 @@ const BONUS_MULT = {
           <span class="sgt-prod-item"><span class="sgt-prod-emoji">🌾</span><span class="sgt-prod-approx">约</span><span class="sgt-prod-num">${prod.food}</span><span class="sgt-prod-unit">粮</span></span>
         </div>
         <div class="sgt-prod-chain">${chainHtml}</div>
+        ${adeptHtml}
         ${badgeRow ? `<div class="sgt-prod-badge-row">${badgeRow}</div>` : ''}
       </div>`}`;
     _tooltip.classList.add('visible');
