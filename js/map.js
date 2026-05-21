@@ -953,6 +953,21 @@ const BONUS_MULT = {
       const hasShi = buffs.some(b => b.emoji === '💰');
       if (hasTun) { food *= 1.3; chain.policy = {type:'food', name:'屯田', v:1.3}; }
       if (hasShi) { gold *= 1.3; chain.policy = {type:'gold', name:'开市', v:1.3}; }
+
+      if (chain.policy) {
+        const mainBuff = buffs.find(b => b.general && b.action);
+        if (mainBuff && mainBuff.general && window._generalsCache) {
+          const genData = window._generalsCache[mainBuff.general];
+          if (genData && genData.suitable_roles) {
+            const policyName = chain.policy.name;
+            if (genData.suitable_roles.includes('擅长' + policyName)) {
+              if (chain.policy.type === 'gold') gold *= 1.2;
+              else food *= 1.2;
+              chain.adept = { general: mainBuff.general, policy: policyName };
+            }
+          }
+        }
+      }
     }
     return { gold: Math.round(gold), food: Math.round(food), chain, isPlayer };
   }
@@ -1019,6 +1034,9 @@ const BONUS_MULT = {
     if (prod.chain.policy) {
       const icon = prod.chain.policy.type === 'gold' ? '💰' : '🌾';
       chainHtml += `<span class="ch-arrow">›</span><span class="ch-policy">${icon} ${prod.chain.policy.name} ${icon}+30%</span>`;
+    }
+    if (prod.chain.adept) {
+      chainHtml += `<span class="ch-arrow">›</span><span class="ch-adept">太守契合 +20%</span>`;
     }
 
     // 主政 badge
