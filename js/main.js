@@ -1,5 +1,5 @@
 /**
- * main.js — 三国志文字版 v10 (v2.5)
+ * main.js — 三国志文字版 v10 (v2.7.15)
  * 对接规范 v2.0：
  *  - 剧情区 / 数据区分离（36个=号分隔）
  *  - [甲][乙][丙] 含 cities_list（城名+守将）
@@ -456,7 +456,7 @@
     const npcCnt = Object.values(cm).filter(o => o.owner === 'npc').length;
     html += `<span class="sgmap-legend-item">
       <span class="sgmap-legend-dot" style="background:#9a7c3e;box-shadow:0 0 4px #c09050"></span>
-      <span style="color:#c09050;font-weight:700">NPC</span>
+      <span style="color:#c09050;font-weight:700">群雄</span>
       <span style="color:var(--text-dim);font-size:.65rem"> ${npcCnt}城</span>
     </span>`;
     el.innerHTML = html;
