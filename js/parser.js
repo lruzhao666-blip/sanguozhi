@@ -1,7 +1,7 @@
 /**
  * parser.js — 三国志文字版 · AI内容解析器 v12
  *
- * 规则基准：《三国志文字版 AI主持人系统提示词》v2.7.9
+ * 规则基准：《三国志文字版》核心引擎 v3.20.1
  *
  * 支持三种格式：
  *  A. 新版 GM 双段格式 v4（当前规范）：
@@ -681,7 +681,7 @@ if (/^产出△/.test(line)) {
   anchor = null;
   const m = line.match(/^产出△\s*([^:：]+)[:：]\s*(🌾|💰|🤝|⚔️|🔨)\uFE0F?\s*([\u4e00-\u9fa5]{2,8})\s+(.+?)\s*$/);
   if (m) {
-    const EMOJI_MAP = { '🌾':'屯田', '💰':'开市', '🤝':'人才', '⚔️':'军训', '🔨':'工造' };
+    const EMOJI_MAP = { '🌾':'屯田', '💰':'开市', '🤝':'招贤', '⚔️':'军训', '🔨':'工造' };
     const emoji = m[2];
     const type  = EMOJI_MAP[emoji];
     if (!change.productionOps) change.productionOps = [];
