@@ -1111,7 +1111,16 @@ const BONUS_MULT = {
         chainHtml += `<span class="ch-arrow">›</span><span class="ch-adept">太守契合 +20%</span>`;
       } else {
         // 军训/招贤/工造：单独一行提示
-        adeptHtml = `<div class="sgt-adept-row"><span class="ch-adept">✦ ${_esc(prod.chain.adept.general)} 擅长${_esc(prod.chain.adept.policy)},主政效果 +20%</span></div>`;
+        const policyName = prod.chain.adept.policy;
+        const policyEmojiMap = {
+          '屯田': '🌾',
+          '开市': '💰',
+          '招贤': '🤝',
+          '军训': '⚔️',
+          '工造': '🔨'
+        };
+        const emoji = policyEmojiMap[policyName] || '✦';
+        adeptHtml = `<div class="sgt-adept-row">${emoji} <span class="adept-gen">${_esc(prod.chain.adept.general)}</span> <span class="adept-desc">· 擅长${_esc(policyName)}，效果</span> <span class="adept-val">+20%</span></div>`;
       }
     }
 
