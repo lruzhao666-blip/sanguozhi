@@ -99,7 +99,7 @@ window.SGMap = (function () {
     { fill:'rgba( 8,40,90,0.82)',  film:'rgba(40,125,220,0.20)', stroke:'rgba(65,150,240,0.70)', glow:'#60aef0', text:'#daeeff' },  // 青
   ];
   const NPC_C   = { fill:'rgba(25,18, 4,0.78)',  film:'rgba(125, 95,30,0.16)', stroke:'rgba(155,120,45,0.55)', glow:'#9c7c34', text:'#d8c890' };
-// NPC 阵营专属配色（≥3 城时启用），仿照 NPC_C 结构
+// NPC 阵营专属配色（≥2 城时启用），仿照 NPC_C 结构
 const NPC_FACTION_COLORS = [
   // 索引 0 — 玄青（袁绍）H:185°
   { fill:'rgba(15,72,82,0.82)',   film:'rgba(55,160,180,0.22)',  stroke:'rgba(90,185,200,0.75)',  glow:'#5fb8c8', text:'#d8eef2' },
@@ -434,7 +434,7 @@ const BONUS_MULT = {
 
     // 2. 优先分配硬绑阵营（≥3 城且在 FACTION_FIXED_SLOTS 里）
     for (const f in FACTION_FIXED_SLOTS) {
-      if (counts[f] >= 3) {
+      if (counts[f] >= 2) {
         const slot = FACTION_FIXED_SLOTS[f];
         newSlots[f] = slot;
         usedIdx.add(slot);
@@ -443,7 +443,7 @@ const BONUS_MULT = {
 
     // 3. 保留仍 ≥3 城、非硬绑、且槽位未被硬绑挤占的旧映射
     for (const f in _npcFactionSlots) {
-      if (counts[f] >= 3 && !(f in FACTION_FIXED_SLOTS) && newSlots[f] === undefined) {
+      if (counts[f] >= 2 && !(f in FACTION_FIXED_SLOTS) && newSlots[f] === undefined) {
         const oldSlot = _npcFactionSlots[f];
         if (!usedIdx.has(oldSlot)) {
           newSlots[f] = oldSlot;
@@ -454,7 +454,7 @@ const BONUS_MULT = {
 
     // 4. 给新达到 ≥3 城、非硬绑、还没拿到槽的阵营分配下一个空槽
     for (const f in counts) {
-      if (counts[f] >= 3 && !(f in FACTION_FIXED_SLOTS) && newSlots[f] === undefined) {
+      if (counts[f] >= 2 && !(f in FACTION_FIXED_SLOTS) && newSlots[f] === undefined) {
         for (let i = 0; i < NPC_FACTION_COLORS.length; i++) {
           if (!usedIdx.has(i)) {
             newSlots[f] = i;
