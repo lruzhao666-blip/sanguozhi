@@ -1302,11 +1302,6 @@ const BONUS_MULT = {
      公开 API
   ───────────────────────────────── */
   return {
-    CITIES: CITIES,
-    CITY_TIER_MAP: CITY_TIER_MAP,
-    CITY_TIER_BASE: CITY_TIER_BASE,
-    BONUS_MULT: BONUS_MULT,
-    calcProd: _calcProd,
     init,
     getCityMeta(name) {
       const c = CITIES.find(x => x.name === name);

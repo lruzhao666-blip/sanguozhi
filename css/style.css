@@ -2906,37 +2906,3 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgt-adept-row .adept-gen { color: var(--gold-light); font-weight: 700; }
 .sgt-adept-row .adept-desc { color: var(--text-sub); }
 .sgt-adept-row .adept-val { color: var(--gold); font-weight: 700; }
-
-/* ══ 收支验算提示 ══ */
-.audit-section {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(200, 155, 50, 0.12);
-}
-.audit-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  padding: 0.6rem 0.8rem;
-  margin-bottom: 0.5rem;
-  background: rgba(200, 150, 50, 0.06);
-  border: 1px solid rgba(200, 150, 50, 0.20);
-  border-radius: 6px;
-  font-size: 0.82rem;
-  color: var(--text-main, #e8dcc8);
-  line-height: 1.5;
-}
-.audit-icon { font-size: 1rem; flex-shrink: 0; margin-top: 0.1rem; }
-.audit-text b { color: #f0c050; }
-.audit-hint {
-  display: inline-block;
-  margin-left: 0.4rem;
-  color: var(--text-dim, #8a7a60);
-  font-size: 0.72rem;
-}
-.audit-ok {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.78rem;
-  color: var(--text-dim, #8a7a60);
-  opacity: 0.6;
-}
