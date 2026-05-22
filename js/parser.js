@@ -298,12 +298,16 @@ window.SGParser = (function () {
         troopsRaw = null;
       }
 
-      const holders = (holderRaw === '无') ? [] : holderRaw.split('/').map(s => s.trim()).filter(Boolean);
+      const EMPTY_HOLDER_TOKENS = new Set(['', '无', '空', '空缺', '待补', '待派', '—', '-']);
+      const _trimmed = (holderRaw || '').trim();
+      const holderEmpty = EMPTY_HOLDER_TOKENS.has(_trimmed);
+      const holders = holderEmpty ? [] : _trimmed.split('/').map(s => s.trim()).filter(Boolean);
       result.push({
         name,
         faction,
-        holder:  holders.join('/') || '无',
+        holder:  holderEmpty ? '暂无守将' : (holders.join('/') || '暂无守将'),
         holders,
+        holderEmpty,
         troops:  _parseTroops(troopsRaw),
       });
     }
@@ -312,7 +316,7 @@ window.SGParser = (function () {
     if (!result.length) {
       raw.split(/[,，、\s]+/).forEach(s => {
         const n = s.trim();
-        if (n) result.push({ name: n, faction: null, holder: '无', holders: [], troops: {} });
+        if (n) result.push({ name: n, faction: null, holder: '暂无守将', holders: [], holderEmpty: true, troops: {} });
       });
     }
     return result;
