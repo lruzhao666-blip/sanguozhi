@@ -1111,7 +1111,6 @@ const BONUS_MULT = {
       chainHtml += `<span class="ch-arrow">›</span><span class="ch-policy">${icon} ${prod.chain.policy.name} ${icon}+30%</span>`;
     }
 
-    let adeptHtml = '';
     const policyEmojiMap = {
       '屯田': '🌾','开市': '💰','招贤': '🤝',
       '军训': '⚔️','工造': '🔨'
@@ -1124,18 +1123,6 @@ const BONUS_MULT = {
     chainAdepts.forEach(a => {
       chainHtml += `<span class="ch-arrow">›</span><span class="ch-adept">太守契合 +20%</span>`;
     });
-
-    // 军训/招贤/工造走 .sgt-adept-row 聚合单行
-    const rowAdepts = (prod.chain.adepts || []).filter(
-      a => a.policy === '军训' || a.policy === '招贤' || a.policy === '工造'
-    );
-    if (rowAdepts.length > 0) {
-      const items = rowAdepts.map(a => {
-        const emoji = policyEmojiMap[a.policy] || '✦';
-        return `<span class="adept-item">${emoji} <span class="adept-gen">${_esc(a.general)}</span> <span class="adept-val">+20%</span></span>`;
-      }).join('<span class="adept-sep"> · </span>');
-      adeptHtml = `<div class="sgt-adept-row">${items}</div>`;
-    }
 
     // 主政 badge
     let badgeRow = '';
@@ -1168,7 +1155,6 @@ const BONUS_MULT = {
           <span class="sgt-prod-item"><span class="sgt-prod-emoji">🌾</span><span class="sgt-prod-approx">约</span><span class="sgt-prod-num">${prod.food}</span><span class="sgt-prod-unit">粮</span></span>
         </div>
         <div class="sgt-prod-chain">${chainHtml}</div>
-        ${adeptHtml}
         ${badgeRow ? `<div class="sgt-prod-badge-row">${badgeRow}</div>` : ''}
       </div>`}`;
     _tooltip.classList.add('visible');
