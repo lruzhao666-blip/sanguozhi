@@ -2886,6 +2886,21 @@ header, nav, main, footer { position: relative; z-index: 1; }
   font-size: .72rem;
   line-height: 1.4;
   font-family: inherit;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.sgt-adept-row .adept-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.sgt-adept-row .adept-sep {
+  color: var(--text-dim);
+  margin: 0 2px;
 }
 
 .sgt-adept-row .adept-gen { color: var(--gold-light); font-weight: 700; }

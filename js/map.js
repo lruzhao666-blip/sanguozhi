@@ -1000,20 +1000,27 @@ const BONUS_MULT = {
       }
 
       if (isPlayer && !chain.adept) {
-        var checkPolicy = chain.policy ? chain.policy.name : (chain.nonProdPolicy ? chain.nonProdPolicy.name : null);
-        var checkGeneral = chain.policy
-          ? (function() { var bs = ow.productionBuffs ? Object.values(ow.productionBuffs) : []; var mb = bs.find(function(b){return b.general;}); return mb ? mb.general : null; })()
-          : (chain.nonProdPolicy ? chain.nonProdPolicy.general : null);
-
-        if (checkPolicy && checkGeneral && window._generalsCache) {
-          var gd = window._generalsCache[checkGeneral];
-          if (gd && gd.suitable_roles && gd.suitable_roles.includes('擅长' + checkPolicy)) {
-            chain.adept = { general: checkGeneral, policy: checkPolicy };
-            // 军训/招贤/工造不做数值乘算（它们的加成体现在战斗/事件触发，不在金粮产出）
-            if (chain.policy) {
-              if (chain.policy.type === 'gold') gold *= 1.2;
-              else food *= 1.2;
+        chain.adepts = [];
+        var POLICY_MAP = {'⚔️':'军训', '🤝':'招贤', '🔨':'工造', '🌾':'屯田', '💰':'开市'};
+        var allBuffs = ow.productionBuffs ? Object.values(ow.productionBuffs) : [];
+        allBuffs.forEach(function(b) {
+          if (!b.general || !b.emoji) return;
+          var pName = POLICY_MAP[b.emoji];
+          if (!pName) return;
+          if (window._generalsCache) {
+            var gd = window._generalsCache[b.general];
+            if (gd && gd.suitable_roles && gd.suitable_roles.includes('擅长' + pName)) {
+              chain.adepts.push({ general: b.general, policy: pName });
             }
+          }
+        });
+
+        if (chain.adepts.length > 0) {
+          chain.adept = chain.adepts[0];
+          var hasProdAdept = chain.adepts.some(function(a) { return chain.policy && a.policy === chain.policy.name; });
+          if (hasProdAdept && chain.policy) {
+            if (chain.policy.type === 'gold') gold *= 1.2;
+            else food *= 1.2;
           }
         }
       }
@@ -1105,23 +1112,29 @@ const BONUS_MULT = {
     }
 
     let adeptHtml = '';
-    if (prod.chain.adept) {
-      if (prod.chain.policy) {
-        // 屯田/开市：已在 chainHtml 末尾追加（PR2 逻辑）
-        chainHtml += `<span class="ch-arrow">›</span><span class="ch-adept">太守契合 +20%</span>`;
-      } else {
-        // 军训/招贤/工造：单独一行提示
-        const policyName = prod.chain.adept.policy;
-        const policyEmojiMap = {
-          '屯田': '🌾',
-          '开市': '💰',
-          '招贤': '🤝',
-          '军训': '⚔️',
-          '工造': '🔨'
-        };
-        const emoji = policyEmojiMap[policyName] || '✦';
-        adeptHtml = `<div class="sgt-adept-row">${emoji} <span class="adept-gen">${_esc(prod.chain.adept.general)}</span> <span class="adept-desc">· 擅长${_esc(policyName)}，效果</span> <span class="adept-val">+20%</span></div>`;
-      }
+    const policyEmojiMap = {
+      '屯田': '🌾','开市': '💰','招贤': '🤝',
+      '军训': '⚔️','工造': '🔨'
+    };
+
+    // 屯田/开市仍走嵌入产出链分支（保留现有行为，不要改）
+    const chainAdepts = (prod.chain.adepts || []).filter(
+      a => a.policy === '屯田' || a.policy === '开市'
+    );
+    chainAdepts.forEach(a => {
+      chainHtml += `<span class="ch-arrow">›</span><span class="ch-adept">太守契合 +20%</span>`;
+    });
+
+    // 军训/招贤/工造走 .sgt-adept-row 聚合单行
+    const rowAdepts = (prod.chain.adepts || []).filter(
+      a => a.policy === '军训' || a.policy === '招贤' || a.policy === '工造'
+    );
+    if (rowAdepts.length > 0) {
+      const items = rowAdepts.map(a => {
+        const emoji = policyEmojiMap[a.policy] || '✦';
+        return `<span class="adept-item">${emoji} <span class="adept-gen">${_esc(a.general)}</span> <span class="adept-val">+20%</span></span>`;
+      }).join('<span class="adept-sep"> · </span>');
+      adeptHtml = `<div class="sgt-adept-row">${items}</div>`;
     }
 
     // 主政 badge
