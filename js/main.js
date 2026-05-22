@@ -1871,37 +1871,6 @@
     );
 
     row.innerHTML = cardsHtml + publicHtml;
-
-    // ── 收支验算提示 ──
-    if (window.SGAudit && state.rounds.length) {
-      var auditEl = document.getElementById('audit-alerts');
-      if (auditEl) {
-        var latest = state.rounds[state.rounds.length - 1];
-        var parsed = latest.parsed;
-        var co = parsed.cityOwnership || {};
-        var alertsHtml = '';
-
-        state.players.forEach(function (p, i) {
-          var change = (parsed.changes || [])[i];
-          if (!change || !p.cities_list || !p.cities_list.length) return;
-
-          var alerts = SGAudit.audit(i, p.cities_list, co, change);
-          alerts.forEach(function (a) {
-            var icon = a.type === 'gold' ? '💰' : '🌾';
-            var label = a.type === 'gold' ? '金产出' : '粮产出';
-            alertsHtml += '<div class="audit-alert" data-slot="' + i + '">'
-              + '<span class="audit-icon">⚠️</span>'
-              + '<span class="audit-text">'
-              + '<b>' + esc(p.name) + '</b> ' + icon + label + '：主持人报 <b>' + a.reported + '</b>，'
-              + '系统预估 <b>' + a.expected + '</b>（' + a.direction + '约' + a.diff + '%）'
-              + '<span class="audit-hint">可能因天候/民心/磨合期/彩蛋等软规则导致，仅供参考</span>'
-              + '</span></div>';
-          });
-        });
-
-        auditEl.innerHTML = alertsHtml || '<div class="audit-ok">✅ 本回合产出数据未见明显偏差</div>';
-      }
-    }
   }
 
 
