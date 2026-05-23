@@ -396,7 +396,7 @@
       renderRoundBar(latest);
       renderDigest(latest);
       renderPlayerCards();
-      renderBattlesBlock(latest.parsed.battles || []);
+      renderBattlesBlock(latest.parsed);
       renderMap();
       renderChangesDetail();
       renderHistorySection();
@@ -1227,15 +1227,74 @@
   // ══════════════════════════════════════════
   //  战斗结算
   // ══════════════════════════════════════════
-  function renderBattlesBlock(battles) {
+  function renderBattlesBlock(parsed) {
     const block = document.getElementById('block-battles');
-    const list  = document.getElementById('battles-list');
-    if (!block || !list) return;
-    if (!battles || !battles.length) { block.classList.add('hidden'); return; }
+    if (!block) return;
+
+    const battles = parsed.battles || [];
+    const summary = parsed.battleSummary || '';
+    const transit = parsed.transit || [];
+
+    const hasBattles = battles.length > 0;
+    const hasSummary = !!summary;
+    const hasTransit = transit.length > 0;
+
+    // 只要三者任一有内容就显示军报块
+    if (!hasBattles && !hasSummary && !hasTransit) {
+      block.classList.add('hidden');
+      return;
+    }
     block.classList.remove('hidden');
-    list.innerHTML = '<div class="battle-list">' +
-      battles.map(b => buildBattleCard(b)).join('') +
-      '</div>';
+
+    // 军报摘要
+    const sumEl = document.getElementById('junbao-summary');
+    if (sumEl) {
+      if (hasSummary) {
+        sumEl.classList.remove('hidden');
+        sumEl.innerHTML = `<div class="jbs-text">${esc(summary)}</div>`;
+      } else {
+        sumEl.classList.add('hidden');
+        sumEl.innerHTML = '';
+      }
+    }
+
+    // 在途武将
+    const tranEl = document.getElementById('junbao-transit');
+    if (tranEl) {
+      if (hasTransit) {
+        tranEl.classList.remove('hidden');
+        tranEl.innerHTML = '<div class="jbt-title">🚩 在途部队</div>' +
+          '<div class="jbt-list">' +
+          transit.map(t => {
+            const statusCls = t.status === '被俘' ? 'jbt-captured' :
+                              t.status === '围攻中' ? 'jbt-siege' :
+                              t.status === '撤退中' ? 'jbt-retreat' : 'jbt-march';
+            return `<div class="jbt-row ${statusCls}">` +
+              `<span class="jbt-faction">${esc(t.faction)}</span>` +
+              `<span class="jbt-general">${esc(t.general)}</span>` +
+              `<span class="jbt-route">${esc(t.from)}→${esc(t.to)}</span>` +
+              `<span class="jbt-troop">${esc(t.troopType)}:${t.troopCount}</span>` +
+              `<span class="jbt-status">${esc(t.status)}</span>` +
+              `</div>`;
+          }).join('') +
+          '</div>';
+      } else {
+        tranEl.classList.add('hidden');
+        tranEl.innerHTML = '';
+      }
+    }
+
+    // 战报（原有逻辑）
+    const list = document.getElementById('battles-list');
+    if (list) {
+      if (hasBattles) {
+        list.innerHTML = '<div class="battle-list">' +
+          battles.map(b => buildBattleCard(b)).join('') +
+          '</div>';
+      } else {
+        list.innerHTML = '';
+      }
+    }
   }
 
   function buildBattleCard(b) {

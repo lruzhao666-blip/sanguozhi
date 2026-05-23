@@ -97,6 +97,8 @@ window.SGParser = (function () {
       players:       [],      // [{slot,name,gold,food,troop,morale,cities,cities_list,generals}]
       npcCities:     [],      // [{name,holders:[],troops:{}}]
       battles:       [],      // [{attacker,defender,result,attacker_loss,defender_loss,success}]
+      battleSummary: '',      // 新增
+      transit:       [],      // 新增
       changes:       [],      // [{slot,resources,breakdown,treasury,garrisonOps,troopOps,quarterly,…}]
       garrison:      [],
       cityOwnership: {},
@@ -147,6 +149,16 @@ window.SGParser = (function () {
       result.battles = _parseBattles(blocks['战报']);
     }
 
+    // [军报摘要]
+    if (blocks['军报摘要']) {
+      result.battleSummary = blocks['军报摘要'].trim();
+    }
+
+    // [在途]
+    if (blocks['在途']) {
+      result.transit = _parseTransit(blocks['在途']);
+    }
+
     // [变动]
     if (blocks['变动']) {
       const { changes, npcStatus, wildEvents } = _parseChangesBlock(blocks['变动']);
@@ -191,7 +203,7 @@ window.SGParser = (function () {
   //  按方括号标签切块
   // ─────────────────────────────────────────
   function _splitBlocks(text) {
-    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','变动','驻城']);
+    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','变动','驻城']);
     const lines  = text.split('\n');
     const blocks = {};
     let curKey = null, curBuf = [];
@@ -413,6 +425,29 @@ window.SGParser = (function () {
       }
     }
     return battles;
+  }
+
+  function _parseTransit(raw) {
+    if (!raw || !raw.trim()) return [];
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 1 && /无在途/.test(lines[0])) return [];
+    const result = [];
+    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|围攻中|撤退中|被俘)$/;
+    for (const line of lines) {
+      const m = line.match(re);
+      if (m) {
+        result.push({
+          faction: m[1],
+          general: m[2],
+          from: m[3],
+          to: m[4],
+          troopType: m[5],
+          troopCount: parseInt(m[6]),
+          status: m[7],
+        });
+      }
+    }
+    return result;
   }
 
   // ═══════════════════════════════════════════════════════
