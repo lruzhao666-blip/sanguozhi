@@ -2906,3 +2906,89 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgt-adept-row .adept-gen { color: var(--gold-light); font-weight: 700; }
 .sgt-adept-row .adept-desc { color: var(--text-sub); }
 .sgt-adept-row .adept-val { color: var(--gold); font-weight: 700; }
+
+/* ══ 军报模块：摘要 ══ */
+.junbao-summary {
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(160,120,40,.18);
+}
+.jbs-text {
+  font-family: var(--font-serif);
+  font-size: .88rem;
+  color: var(--gold-light);
+  letter-spacing: .04em;
+  line-height: 1.7;
+}
+
+/* ══ 军报模块：在途部队 ══ */
+.junbao-transit {
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(160,120,40,.18);
+}
+.jbt-title {
+  font-family: var(--font-serif);
+  font-size: .78rem;
+  color: var(--text-dim);
+  letter-spacing: .06em;
+  margin-bottom: 8px;
+}
+.jbt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.jbt-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: var(--r);
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(100,70,30,.2);
+  font-size: .8rem;
+}
+.jbt-faction {
+  font-weight: 600;
+  color: var(--text-sub);
+  min-width: 2em;
+}
+.jbt-general {
+  font-weight: 600;
+  color: var(--text-main);
+  min-width: 3em;
+}
+.jbt-route {
+  color: var(--text-sub);
+  font-size: .76rem;
+}
+.jbt-troop {
+  color: var(--gold-dim);
+  font-size: .76rem;
+}
+.jbt-status {
+  margin-left: auto;
+  font-size: .72rem;
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.jbt-march .jbt-status {
+  color: #7ddd7d;
+  background: rgba(0,160,70,.12);
+  border: 1px solid rgba(0,160,70,.3);
+}
+.jbt-siege .jbt-status {
+  color: #e8b850;
+  background: rgba(200,155,0,.12);
+  border: 1px solid rgba(200,155,0,.3);
+}
+.jbt-retreat .jbt-status {
+  color: #d4b040;
+  background: rgba(180,140,0,.1);
+  border: 1px solid rgba(180,140,0,.25);
+}
+.jbt-captured .jbt-status {
+  color: #e07070;
+  background: rgba(200,40,0,.12);
+  border: 1px solid rgba(200,40,0,.3);
+}
