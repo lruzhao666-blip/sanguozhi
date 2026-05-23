@@ -1227,219 +1227,64 @@
   // ══════════════════════════════════════════
   //  战斗结算
   // ══════════════════════════════════════════
-  function getPlayerName(slotChar) {
-    const idx = {'甲':0, '乙':1, '丙':2}[slotChar];
-    if (idx == null) return slotChar;
-    return state.players[idx] && state.players[idx].name
-      ? state.players[idx].name
-      : slotChar;
-  }
-
-  function parseActor(rawStr) {
-    /**
-     * 解析战报 attacker/defender 字符串。
-     * 支持三种 GM 写法(兼容历史与新规范):
-     *   "甲/关羽"           → {slotChar:'甲',  general:'关羽', cityName:''}
-     *   "NPC·曹仁(许昌)"    → {slotChar:'NPC', general:'曹仁', cityName:'许昌'}
-     *   "袁绍·颜良"          → {slotChar:'袁绍', general:'颜良', cityName:''}
-     *   "关羽"(兜底无分隔) → {slotChar:'?',   general:'关羽', cityName:''}
-     *   "关羽(宛城)"          → {slotChar:'?',   general:'关羽', cityName:'宛城'}
-     */
-    let s = (rawStr || '').trim();
-    // 提取末尾 (城名)
-    let cityName = '';
-    const cm = s.match(/[((]([^))]+)[))]\s*$/);
-    if (cm) { cityName = cm[1].trim(); s = s.slice(0, cm.index).trim(); }
-    // 阵营·武将 或 阵营/武将
-    let slotChar = '?', general = s;
-    const sep = s.search(/[·\/]/);
-    if (sep > 0) {
-      slotChar = s.slice(0, sep).trim();
-      general  = s.slice(sep + 1).trim();
-    }
-    return { slotChar, general, cityName };
-  }
-
-  function buildActorBadge(slotChar) {
-    /**
-     * 根据 slotChar 生成阵营徽章 HTML。
-     * 甲/乙/丙 → 玩家色 + 真实名号
-     * 其他       → NPC 色 + 该字符串原样(NPC / 袁绍 / ? 等)
-     */
-    const playerIdx = {'甲':0, '乙':1, '丙':2}[slotChar];
-    if (playerIdx != null) {
-      const label = getPlayerName(slotChar);
-      return `<span class="actor-slot s-p${playerIdx}">${esc(label)}</span>`;
-    }
-    return `<span class="actor-slot s-npc">${esc(slotChar || 'NPC')}</span>`;
-  }
-
-  function renderBattlesBlock(battles, deployments) {
-    battles     = battles     || [];
-    deployments = deployments || [];
-
+  function renderBattlesBlock(battles) {
     const block = document.getElementById('block-battles');
-    const list  = block ? block.querySelector('.battle-list') : null;
+    const list  = document.getElementById('battles-list');
     if (!block || !list) return;
-
-    // 空状态:整块隐藏
-    if (battles.length === 0 && deployments.length === 0) {
-      block.classList.add('hidden');
-      list.innerHTML = '';
-      _setBattleTitle('本回合军务');
-      return;
-    }
+    if (!battles || !battles.length) { block.classList.add('hidden'); return; }
     block.classList.remove('hidden');
-
-    // 统计
-    const wins   = battles.filter(b => b.result === '胜').length;
-    const draws  = battles.filter(b => b.result === '平').length;
-    const losses = battles.filter(b => b.result === '负').length;
-    const battleCount  = wins + draws + losses;
-    const marchCount   = deployments.filter(d => d.status === 'march').length;
-    const siegeCount   = deployments.filter(d => d.status === 'siege').length;
-    const retreatCount = deployments.filter(d => d.status === 'retreat').length;
-    const captiveCount = deployments.filter(d => d.status === 'captive').length;
-
-    // 动态标题
-    const parts = [];
-    if (battleCount  > 0) parts.push(`战果${battleCount}`);
-    if (marchCount   > 0) parts.push(`行军${marchCount}`);
-    if (siegeCount   > 0) parts.push(`围攻${siegeCount}`);
-    if (retreatCount > 0) parts.push(`撤退${retreatCount}`);
-    if (captiveCount > 0) parts.push(`被俘${captiveCount}`);
-    _setBattleTitle('本回合 ' + parts.join(' · '));
-
-    // 渲染
-    let html = '';
-    if (battles.length > 0) {
-      html += '<div class="bc-group-label">战 · 果</div>';
-      html += _renderCardGroup(battles, _buildBattleCard);
-    }
-    if (deployments.length > 0) {
-      html += '<div class="bc-group-label">在 · 途</div>';
-      html += _renderCardGroup(deployments, _buildDeploymentCard);
-    }
-    list.innerHTML = html;
-
-    // 绑定折叠按钮
-    list.querySelectorAll('.bc-more-toggle').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const grp = btn.previousElementSibling;
-        if (!grp || !grp.classList.contains('bc-hidden-group')) return;
-        const hidden = grp.classList.toggle('hidden');
-        btn.textContent = hidden ? '展开更多 ▾' : '收起 ▴';
-      });
-    });
+    list.innerHTML = '<div class="battle-list">' +
+      battles.map(b => buildBattleCard(b)).join('') +
+      '</div>';
   }
 
-  function _setBattleTitle(text) {
-    // 优先 #block-battles-title;否则 #block-battles 内首个 .ib-title 文本节点
-    let el = document.getElementById('block-battles-title');
-    if (!el) {
-      const block = document.getElementById('block-battles');
-      if (block) el = block.querySelector('.ib-title');
-    }
-    if (el) el.textContent = text;
-  }
+  function buildBattleCard(b) {
+    // 兼容 v2.0（attacker/defender/result/attacker_loss/defender_loss）
+    // 和旧格式（player/dice/resultTxt/narrative/success）
+    const isV2    = b.attacker !== undefined;
+    const success = isV2 ? b.result === '胜' : (b.success ?? true);
+    const isDraw  = isV2 && b.result === '平';
+    const cls     = success ? 'success' : (isDraw ? 'draw' : 'fail');
+    const resultLabel = isV2
+      ? ({ '胜':'胜利', '平':'平局', '负':'失败' }[b.result] || b.result)
+      : (success ? '成功' : '失败');
+    const resultIcon = success ? '⚔️ 胜' : (isDraw ? '🔶 平' : '💀 败');
 
-  function _renderCardGroup(items, builder) {
-    if (items.length <= 3) {
-      return items.map(builder).join('');
-    }
-    const head   = items.slice(0, 3).map(builder).join('');
-    const tail   = items.slice(3).map(builder).join('');
-    return head
-      + `<div class="bc-hidden-group hidden">${tail}</div>`
-      + `<button class="bc-more-toggle">展开更多 ▾</button>`;
-  }
-
-  function _buildBattleCard(b) {
-    const atk = parseActor(b.attacker);
-    const def = parseActor(b.defender);
-    const cityName = def.cityName || atk.cityName;
-
-    const RESULT_MAP = {
-      '胜': { cls: 'success', label: '胜' },
-      '平': { cls: 'draw',    label: '和' },
-      '负': { cls: 'fail',    label: '败' },
-    };
-    const r = RESULT_MAP[b.result] || RESULT_MAP['平'];
-
-    return `
-      <div class="battle-card ${r.cls}">
+    if (isV2) {
+      // ── v2.0 重构卡片 ──
+      const atkLoss = b.attacker_loss ?? 0;
+      const defLoss = b.defender_loss ?? 0;
+      return `<div class="battle-card ${cls}">
         <div class="bc-sides">
-          <div class="bc-atk">
-            <div class="bc-role">攻方</div>
-            <div class="bc-name">${buildActorBadge(atk.slotChar)}${esc(atk.general)}</div>
-            <div class="bc-loss">伤亡 ${b.attacker_loss}</div>
+          <div class="bc-side bc-atk">
+            <span class="bc-role">攻方</span>
+            <span class="bc-name">${esc(b.attacker)}</span>
+            ${atkLoss > 0 ? `<span class="bc-loss loss-atk">-${atkLoss}</span>` : ''}
           </div>
           <div class="bc-center">
-            <div class="bc-result-badge ${r.cls}">${r.label}</div>
+            <span class="bc-result-badge ${cls}">${resultIcon}</span>
           </div>
-          <div class="bc-def">
-            <div class="bc-role">守方</div>
-            <div class="bc-name">${buildActorBadge(def.slotChar)}${esc(def.general)}</div>
-            <div class="bc-loss">伤亡 ${b.defender_loss}</div>
-            ${cityName ? `<div class="bc-city">${esc(cityName)}</div>` : ''}
+          <div class="bc-side bc-def">
+            <span class="bc-role">守方</span>
+            <span class="bc-name">${esc(b.defender)}</span>
+            ${defLoss > 0 ? `<span class="bc-loss loss-def">-${defLoss}</span>` : ''}
           </div>
         </div>
       </div>`;
-  }
-
-  function _buildDeploymentCard(d) {
-    const STATUS_MAP = {
-      march:   { cls: 'march', label: '在途' },
-      siege:   { cls: 'siege', label: '围攻' },
-      retreat: { cls: 'march', label: '撤退' },
-      captive: { cls: 'march', label: '被俘' },
-    };
-    const s = STATUS_MAP[d.status] || STATUS_MAP.march;
-
-    if (d.status === 'siege') {
-      return `
-        <div class="battle-card ${s.cls}">
-          <div class="bc-sides">
-            <div class="bc-atk">
-              <div class="bc-role">攻方</div>
-              <div class="bc-name">${buildActorBadge(d.slot)}${esc(d.general)}</div>
-              <div class="bc-meta">${esc(d.troopType)} ${d.troopCount}</div>
-            </div>
-            <div class="bc-center">
-              <div class="bc-result-badge ${s.cls}">${s.label}</div>
-            </div>
-            <div class="bc-def">
-              <div class="bc-role">守方</div>
-              <div class="bc-name">${esc(d.to)}</div>
-            </div>
-          </div>
+    } else {
+      // ── 旧格式兼容 ──
+      const icon = success ? '✅' : '❌';
+      let html = `<div class="battle-card ${cls}">
+        <div class="bc-legacy">
+          ${b.player ? `<span class="bc-name">${esc(b.player)}</span>` : ''}
+          <span class="bc-result-badge ${cls}">${icon} ${resultLabel}</span>
+          ${b.dice ? `<span class="bc-dice">🎲 ${esc(b.dice)}</span>` : ''}
         </div>`;
+      const desc = b.resultTxt || b.narrative || '';
+      if (desc) html += `<div class="bc-desc">${esc(desc.slice(0, 100))}</div>`;
+      html += `</div>`;
+      return html;
     }
-
-    // march / retreat / captive 共用模板
-    const urgent = (d.status === 'march' && d.remaining === 1) ? 'urgent' : '';
-    const metaRight = d.status === 'march' && d.remaining != null
-      ? `${esc(d.from)} 启程<br>剩 ${d.remaining} 回合`
-      : `${esc(d.from)} 启程`;
-
-    return `
-      <div class="battle-card ${s.cls}">
-        <div class="bc-sides">
-          <div class="bc-atk">
-            <div class="bc-role">攻方</div>
-            <div class="bc-name">${buildActorBadge(d.slot)}${esc(d.general)}</div>
-            <div class="bc-meta">${esc(d.troopType)} ${d.troopCount}</div>
-          </div>
-          <div class="bc-center">
-            <div class="bc-result-badge ${s.cls}">${s.label}</div>
-          </div>
-          <div class="bc-def">
-            <div class="bc-role">目的</div>
-            <div class="bc-name">${esc(d.to)}</div>
-            <div class="bc-meta ${urgent}">${metaRight}</div>
-          </div>
-        </div>
-      </div>`;
   }
 
   // ══════════════════════════════════════════
