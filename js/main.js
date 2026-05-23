@@ -113,8 +113,6 @@
       changes_json:        JSON.stringify(rd.parsed.changes        || []),
       livelihood_json:     JSON.stringify([]),
       city_ownership_json: JSON.stringify(rd.parsed.cityOwnership || {}),
-      en_route_json:       JSON.stringify(rd.parsed.enRoute       || []),
-      battle_summary:      rd.parsed.battleSummary || '',
     };
     const existId = await findRoundId(rd.round);
     if (existId) {
@@ -175,8 +173,6 @@
           battles:       safeJson(row.battles_json,          []),
           changes:       safeJson(row.changes_json,          []),
           cityOwnership: safeJson(row.city_ownership_json,  {}),
-          enRoute:       safeJson(row.en_route_json,         []),
-          battleSummary: row.battle_summary  || '',
           // 兼容旧数据
           livelihood:    safeJson(row.livelihood_json,       []),
           situation:     row.situation  || '',
@@ -400,7 +396,7 @@
       renderRoundBar(latest);
       renderDigest(latest);
       renderPlayerCards();
-      renderWarReport(latest.parsed);
+      renderBattlesBlock(latest.parsed.battles || []);
       renderMap();
       renderChangesDetail();
       renderHistorySection();
@@ -1231,74 +1227,15 @@
   // ══════════════════════════════════════════
   //  战斗结算
   // ══════════════════════════════════════════
-  function renderWarReport(parsed) {
+  function renderBattlesBlock(battles) {
     const block = document.getElementById('block-battles');
-    if (!block) return;
-    const battles = parsed.battles || [];
-    const enRoute = parsed.enRoute || [];
-    const summary = parsed.battleSummary || '';
-
-    const hasAny = battles.length || enRoute.length || summary;
-    if (!hasAny) { block.classList.add('hidden'); return; }
+    const list  = document.getElementById('battles-list');
+    if (!block || !list) return;
+    if (!battles || !battles.length) { block.classList.add('hidden'); return; }
     block.classList.remove('hidden');
-
-    // 1. 军报摘要(顶部)
-    const sumEl = document.getElementById('war-summary');
-    if (summary) {
-      sumEl.innerHTML = `<div class="ws-line">${esc(summary)}</div>`;
-      sumEl.classList.remove('hidden');
-    } else {
-      sumEl.classList.add('hidden');
-    }
-
-    // 2. 在途部队(玩家组优先,NPC 组在后)
-    const enEl = document.getElementById('war-enroute');
-    if (enRoute.length) {
-      enEl.innerHTML = renderEnRouteList(enRoute);
-      enEl.classList.remove('hidden');
-    } else {
-      enEl.classList.add('hidden');
-    }
-
-    // 3. 战斗卡片(沿用原 buildBattleCard,逻辑不动)
-    const btEl = document.getElementById('war-battles');
-    if (battles.length) {
-      btEl.innerHTML = '<div class="battle-list">' +
-        battles.map(b => buildBattleCard(b)).join('') + '</div>';
-      btEl.classList.remove('hidden');
-    } else {
-      btEl.classList.add('hidden');
-    }
-  }
-
-  function renderEnRouteList(list) {
-    const statusKey = s => {
-      if (s.startsWith('剩')) return 'moving';
-      if (s === '围攻中') return 'sieging';
-      if (s === '撤退中') return 'retreating';
-      if (s === '被俘')   return 'captured';
-      return 'moving';
-    };
-
-    const players = list.filter(r => /^[甲乙丙]$/.test(r.camp));
-    const npcs    = list.filter(r => !/^[甲乙丙]$/.test(r.camp));
-
-    const buildRow = r => {
-      const isPlayer = /^[甲乙丙]$/.test(r.camp);
-      const campAttr = isPlayer ? r.camp : 'npc';
-      return `<div class="enroute-row" data-camp="${esc(campAttr)}">
-        <span class="er-camp">${esc(r.camp)}</span>
-        <span class="er-general">${esc(r.general)}</span>
-        <span class="er-route">${esc(r.fromCity)} → ${esc(r.toCity)}</span>
-        <span class="er-troop">${esc(r.troopType)}:${r.troopCount}</span>
-        <span class="er-status er-status-${statusKey(r.status)}">${esc(r.status)}</span>
-      </div>`;
-    };
-
-    let html = '<div class="er-section-label">🚩 在途部队</div>';
-    if (players.length) html += '<div class="er-group er-group-player">' + players.map(buildRow).join('') + '</div>';
-    if (npcs.length)    html += '<div class="er-group er-group-npc">' + npcs.map(buildRow).join('') + '</div>';
-    return html;
+    list.innerHTML = '<div class="battle-list">' +
+      battles.map(b => buildBattleCard(b)).join('') +
+      '</div>';
   }
 
   function buildBattleCard(b) {
@@ -1609,6 +1546,7 @@
       const icon  = ANCHOR_ICON[key] || '◆';
       const isStatus  = key === '状态';
       const isGarrison = key === '驻军';
+      const isTroop   = key === '兵种';
 
       const itemsHtml = items.map(it => {
 
@@ -1627,6 +1565,19 @@
           return `<li class="ag-item ag-item-guard">
             <span class="ag-guard-city">${city}</span>
             <span class="ag-guard-moves">${parts.join('')}</span>
+          </li>`;
+        }
+
+        // ── 兵种：delta chip 正绿负红 ──
+        if (isTroop) {
+          const city = esc(it.label || '');
+          const chipsHtml = (it.deltas || []).map(d =>
+            `<span class="delta-chip ${valCls(d.val)}">${esc(d.res)}${sign(d.val)}${d.val}</span>`
+          ).join('');
+          if (!chipsHtml) return '';
+          return `<li class="ag-item">
+            <span class="ag-label">${city}</span>
+            <span class="ag-deltas">${chipsHtml}</span>
           </li>`;
         }
 
@@ -1713,6 +1664,18 @@
         if (!groups['情报'].some(it => it.text === s || it.label === s)) {
           groups['情报'].push({ label: s, deltas: [], text: s });
         }
+      });
+    }
+    // 兵种变动 ── res 字段用 type（步/弓/骑/水/蛮），val 保持原值供 valCls 正确配色
+    if (ch.troopChanges && ch.troopChanges.length && !groups['兵种']) {
+      groups['兵种'] = [];
+      ch.troopChanges.forEach(tc => {
+        groups['兵种'].push({
+          label:  tc.cityName,
+          deltas: (tc.entries || []).map(e => ({ res: e.type, val: e.val })),
+          text:   tc.spec || '',
+          isTroop: true,
+        });
       });
     }
     // ★ 驻军变动 ── 迁移 ch.guards 进 anchorGroups，按城名去重聚合
