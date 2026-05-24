@@ -1,5 +1,5 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v15
+ * map.js — 三国志文字版 · 势力地图 v16
  *
  * ✦ 60 座城池，十二大州区
  * ✦ flat-top 六边形，整个矩形网格完整铺满（无空白）
@@ -414,6 +414,8 @@ const BONUS_MULT = {
   ───────────────────────────────── */
   let cityOwnership = {};
   let players = [];
+  let _transitData = [];  // [{faction,general,from,to,troopType,troopCount,status}]
+  let _battlesData  = []; // [{attacker,defender,result,attacker_loss,defender_loss,city?}]
   let _tooltip = null;
 
   function _esc(s) {
@@ -526,6 +528,7 @@ const BONUS_MULT = {
         fill="rgba(5,4,10,0.62)" style="pointer-events:none"/>
 
       ${_allHexes()}
+      <g id="sgmap-combat-layer"></g>
     </svg>`;
   }
 
@@ -1168,7 +1171,39 @@ const BONUS_MULT = {
         </div>
         <div class="sgt-prod-chain">${chainHtml}</div>
         ${badgeRow ? `<div class="sgt-prod-badge-row">${badgeRow}</div>` : ''}
-      </div>`}`;
+      </div>`}
+      ${(() => {
+        // 战况信息注入
+        const cn = city.name;
+        let combatHtml = '';
+        // 检查是否有战报
+        const cityBattles = (_battlesData||[]).filter(b => {
+          const m = String(b.defender||'').match(/[（(]([^）)]+)[）)]/);
+          return m && m[1].trim() === cn;
+        });
+        if (cityBattles.length) {
+          combatHtml += '<div class="sgt-combat-divider"></div>';
+          cityBattles.forEach(b => {
+            const icon = b.result==='胜'?'⚔️ 胜': b.result==='负'?'💀 败':'🔶 平';
+            combatHtml += `<div class="sgt-combat-row"><span class="sgt-combat-lbl">战报</span><span class="sgt-combat-val txt-battle"><b>${_esc(icon)}</b> ${_esc(b.attacker)}→${_esc(b.defender)}</span></div>`;
+            combatHtml += `<div class="sgt-combat-row"><span class="sgt-combat-lbl">伤亡</span><span class="sgt-combat-val">攻<b>-${b.attacker_loss||0}</b> 守<b>-${b.defender_loss||0}</b></span></div>`;
+          });
+        }
+        // 检查是否有在途部队
+        const cityTransit = (_transitData||[]).filter(t => t.to === cn || t.from === cn);
+        if (cityTransit.length) {
+          combatHtml += '<div class="sgt-combat-divider"></div>';
+          cityTransit.forEach(t => {
+            const st = t.status==='围攻中'?'<span class="txt-siege">围攻中</span>'
+              : t.status==='撤退中'?'<span class="txt-retreat">撤退中</span>'
+              : t.status==='被俘'?'<span class="txt-captured">被俘</span>'
+              : `<span style="color:#7ddd7d">${_esc(t.status)}</span>`;
+            const dir = t.to===cn ? '→此城' : '出发↗';
+            combatHtml += `<div class="sgt-combat-row"><span class="sgt-combat-lbl">${dir}</span><span class="sgt-combat-val"><b>${_esc(t.general)}</b> ${_esc(t.troopType)}:${t.troopCount} ${st}</span></div>`;
+          });
+        }
+        return combatHtml;
+      })()}`;
     _tooltip.classList.add('visible');
     _moveTip(e);
   }
@@ -1198,6 +1233,195 @@ const BONUS_MULT = {
   function _hideTip() {
     if (_tooltip) _tooltip.classList.remove('visible');
   }
+
+  /* ─────────────────────────────────
+     战况层渲染（战斗环 / 围攻环 / 行军棋子）
+  ───────────────────────────────── */
+  function _renderCombatLayer() {
+    const layer = document.getElementById('sgmap-combat-layer');
+    if (!layer) return;
+    layer.innerHTML = '';
+
+    const NS = 'http://www.w3.org/2000/svg';
+    function ce(tag, attrs) {
+      const e = document.createElementNS(NS, tag);
+      if (attrs) Object.entries(attrs).forEach(([k,v]) => e.setAttribute(k, v));
+      return e;
+    }
+
+    // 城名 → 坐标查找
+    const cityXY = {};
+    CITIES.forEach(c => { cityXY[c.name] = hexToXY(c.hx, c.hy); });
+
+    // 战报目标城名集合（用于画战斗环）
+    // 战报 defender 字段格式可能是 "守方名(城名)" 或纯守方名
+    const battleCities = new Set();
+    const battleByCityName = {};
+    (_battlesData || []).forEach(b => {
+      // 尝试提取城名：defender 含 (城名) 或 attacker 含 (城名)
+      const m = String(b.defender || '').match(/[（(]([^）)]+)[）)]/);
+      const cityName = m ? m[1].trim() : null;
+      if (cityName && cityXY[cityName]) {
+        battleCities.add(cityName);
+        if (!battleByCityName[cityName]) battleByCityName[cityName] = [];
+        battleByCityName[cityName].push(b);
+      }
+    });
+
+    // 围攻中城名集合
+    const siegeCities = new Set();
+    (_transitData || []).filter(t => t.status === '围攻中').forEach(t => {
+      if (t.to && cityXY[t.to]) siegeCities.add(t.to);
+    });
+
+    // ── 元素一：战斗呼吸环 ──
+    battleCities.forEach(cityName => {
+      const {x, y} = cityXY[cityName];
+      const r1 = Ri + 8, r2 = Ri + 3.5, r3 = Ri + 1.8;
+      // 外晕
+      layer.appendChild(ce('circle', { cx:x, cy:y, r:r1, class:'sgmap-battle-aura' }));
+      // 主环（可交互）
+      const ring = ce('circle', { cx:x, cy:y, r:r2, class:'sgmap-battle-ring' });
+      ring.style.cursor = 'pointer';
+      ring.addEventListener('mouseenter', e => {
+        const battles = battleByCityName[cityName] || [];
+        let html = `<div class="sgt-combat-divider"></div>`;
+        battles.forEach(b => {
+          const icon = b.result === '胜' ? '⚔️ 胜' : b.result === '负' ? '💀 败' : '🔶 平';
+          html += `<div class="sgt-combat-row">
+            <span class="sgt-combat-lbl">战报</span>
+            <span class="sgt-combat-val txt-battle"><b>${_esc(icon)}</b> ${_esc(b.attacker)}→${_esc(b.defender)}</span>
+          </div>
+          <div class="sgt-combat-row">
+            <span class="sgt-combat-lbl">伤亡</span>
+            <span class="sgt-combat-val">攻 <b>-${b.attacker_loss||0}</b> · 守 <b>-${b.defender_loss||0}</b></span>
+          </div>`;
+        });
+        _showTipHtml(_buildCombatTip(cityName, html), e);
+      });
+      ring.addEventListener('mousemove', _moveTip);
+      ring.addEventListener('mouseleave', _hideTip);
+      layer.appendChild(ring);
+      // 内金虚线
+      layer.appendChild(ce('circle', { cx:x, cy:y, r:r3, class:'sgmap-battle-ring-inner' }));
+    });
+
+    // ── 元素二：围攻环 ──
+    siegeCities.forEach(cityName => {
+      if (battleCities.has(cityName)) return; // 战斗环优先，不叠加
+      const {x, y} = cityXY[cityName];
+      const r = Ri + 2.2;
+      layer.appendChild(ce('circle', { cx:x, cy:y, r, class:'sgmap-siege-ring' }));
+      layer.appendChild(ce('circle', { cx:x, cy:y, r, class:'sgmap-siege-overlay' }));
+    });
+
+    // ── 元素三：行军棋子 ──
+    (_transitData || []).forEach(t => {
+      const fromXY = cityXY[t.from];
+      const toXY   = cityXY[t.to];
+      if (!fromXY || !toXY) return;
+
+      const status = t.status; // 剩N / 围攻中 / 撤退中 / 被俘
+      const isSiege    = status === '围攻中';
+      const isRetreat  = status === '撤退中';
+      const isCaptured = status === '被俘';
+      const isMarch    = !isSiege && !isRetreat && !isCaptured;
+
+      // 阵营 class
+      const fac = String(t.faction);
+      const fc = fac === '甲' ? 'fp0' : fac === '乙' ? 'fp1' : fac === '丙' ? 'fp2' : 'fnpc';
+      const sc = isSiege ? 's-siege' : isRetreat ? 's-retreat' : isCaptured ? 's-captured' : '';
+
+      // 棋子位置
+      let cx, cy;
+      if (isSiege) {
+        // 围攻：停在目标城外缘
+        const dx = toXY.x - fromXY.x, dy = toXY.y - fromXY.y;
+        const dist = Math.sqrt(dx*dx+dy*dy) || 1;
+        cx = toXY.x - (dx/dist)*(Ri+5);
+        cy = toXY.y - (dy/dist)*(Ri+5);
+      } else if (isRetreat) {
+        // 撤退：靠近出发城 1/4 处
+        cx = fromXY.x + (toXY.x - fromXY.x) * 0.25;
+        cy = fromXY.y + (toXY.y - fromXY.y) * 0.25;
+      } else {
+        // 行军：按剩余回合估算进度
+        const remStr = status || '';
+        const rem = parseInt(remStr.replace('剩','')) || 1;
+        const progress = Math.max(0.2, Math.min(0.82, 1 - rem / Math.max(rem, 4)));
+        cx = fromXY.x + (toXY.x - fromXY.x) * progress;
+        cy = fromXY.y + (toXY.y - fromXY.y) * progress;
+      }
+
+      // 路径虚线（被俘不画路径）
+      if (!isCaptured) {
+        const route = ce('line', {
+          x1: fromXY.x, y1: fromXY.y, x2: toXY.x, y2: toXY.y,
+          class: `sgmap-troop-route ${fc}${isRetreat?' s-retreat':''}`
+        });
+        layer.appendChild(route);
+      }
+
+      // 棋子（小方印 7×7）
+      const hw = 5.5;
+      const g = ce('g', { class: `sgmap-troop ${fc}${sc?' '+sc:''}` });
+      g.appendChild(ce('rect', {
+        x: cx-hw, y: cy-hw, width: hw*2, height: hw*2, rx: '1.5',
+        class: 'sgmap-troop-body'
+      }));
+      // 兵种字符
+      const txt = ce('text', { x: cx, y: cy, class: 'sgmap-troop-glyph' });
+      txt.textContent = t.troopType || '兵';
+      g.appendChild(txt);
+
+      // tooltip
+      g.addEventListener('mouseenter', e => {
+        const statusLabel = isSiege ? '<span class="txt-siege">围攻中</span>'
+          : isRetreat ? '<span class="txt-retreat">撤退中</span>'
+          : isCaptured ? '<span class="txt-captured">被俘</span>'
+          : `<span style="color:#7ddd7d">${_esc(status)}</span>`;
+        const html = `<div class="sgt-combat-divider"></div>
+          <div class="sgt-combat-row">
+            <span class="sgt-combat-lbl">将领</span>
+            <span class="sgt-combat-val"><b>${_esc(t.general)}</b></span>
+          </div>
+          <div class="sgt-combat-row">
+            <span class="sgt-combat-lbl">路线</span>
+            <span class="sgt-combat-val">${_esc(t.from)}→${_esc(t.to)}</span>
+          </div>
+          <div class="sgt-combat-row">
+            <span class="sgt-combat-lbl">兵力</span>
+            <span class="sgt-combat-val">${_esc(t.troopType)}:${t.troopCount||0}</span>
+          </div>
+          <div class="sgt-combat-row">
+            <span class="sgt-combat-lbl">状态</span>
+            <span class="sgt-combat-val">${statusLabel}</span>
+          </div>`;
+        _showTipHtml(_buildCombatTip(t.general, html), e);
+      });
+      g.addEventListener('mousemove', _moveTip);
+      g.addEventListener('mouseleave', _hideTip);
+      layer.appendChild(g);
+    });
+  }
+
+  // 内部辅助：构建战况 tooltip 的 HTML 骨架（复用现有 tooltip 元素）
+  function _buildCombatTip(title, bodyHtml) {
+    return `<div class="sgt-header" style="border-bottom:1px solid rgba(180,148,68,.22);padding-bottom:6px;margin-bottom:4px;">
+      <div class="sgt-name">${_esc(title)}</div>
+    </div>${bodyHtml}`;
+  }
+
+  // 内部辅助：直接用 HTML 显示 tooltip（不走 _showTip 的城池计算逻辑）
+  function _showTipHtml(html, e) {
+    if (!_tooltip) return;
+    _tooltip.innerHTML = html;
+    _tooltip.classList.add('visible');
+    _moveTip(e);
+  }
+
+  // 暴露 Ri 供战况层使用（内圈半径）
+  const Ri = 17 - 3.5;  // 与 _cityLayer 中的 Ri 保持一致
 
   /* ─────────────────────────────────
      图例
@@ -1308,13 +1532,16 @@ const BONUS_MULT = {
       if (!c) return null;
       return { name: c.name, region: c.region, tier: c.tier, terrain: c.terrain, bonusKeys: c.bonusKeys || [c.bonusKey] };
     },
-    update(newPlayers, cityMap) {
-      players       = newPlayers || [];
-      cityOwnership = cityMap    || {};
+    update(newPlayers, cityMap, transitArr, battlesArr) {
+      players       = newPlayers  || [];
+      cityOwnership = cityMap     || {};
+      _transitData  = transitArr  || [];
+      _battlesData  = battlesArr  || [];
       const c = document.getElementById('map-svg-container');
       if (!c) return;
       _build(c);
       _updateLegend();
+      _renderCombatLayer();
     },
     parseCityOwnership,
     CITIES,

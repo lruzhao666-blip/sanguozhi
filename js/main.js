@@ -1,5 +1,5 @@
 /**
- * main.js — 三国志文字版 v10 (v2.5)
+ * main.js — 三国志文字版 v11 (v2.5)
  * 对接规范 v2.0：
  *  - 剧情区 / 数据区分离（36个=号分隔）
  *  - [甲][乙][丙] 含 cities_list（城名+守将）
@@ -434,7 +434,9 @@
       cityMap = SGMap.parseCityOwnership(state.players, latestRaw);
     }
 
-    SGMap.update(state.players, cityMap);
+    SGMap.update(state.players, cityMap,
+      latestParsed?.transit  || [],
+      latestParsed?.battles  || []);
     _renderMapLegend(cityMap);
   }
 
