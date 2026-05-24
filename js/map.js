@@ -1261,48 +1261,6 @@ const BONUS_MULT = {
       return e;
     }
 
-    // ── 燕尾旗几何参数(SVG 单位) ──
-    const FLAG_POLE_H = 14;   // 旗杆长度
-    const FLAG_W      = 11;   // 旗面宽
-    const FLAG_H      = 9;    // 旗面高
-    const FLAG_NOTCH  = 2.8;  // 燕尾凹陷深度
-    const FLAG_SLOT_SPACING = 11;  // 同格多旗水平间距
-
-    // 同格多旗插位:输入旗子总数 + 当前序号,返回旗杆底部相对棋子中心的水平偏移
-    // 规则:1 面正中 / 2 面左右对称 / 3 面左中右等距 / ≥4 面只画前 3
-    function _flagSlotOffset(count, index) {
-      if (count <= 1) return 0;
-      if (count === 2) return [-FLAG_SLOT_SPACING / 2, FLAG_SLOT_SPACING / 2][index];
-      return [-FLAG_SLOT_SPACING, 0, FLAG_SLOT_SPACING][Math.min(index, 2)];
-    }
-
-    // 燕尾旗 SVG 绘制(旗杆底部锚定 fx, fy)
-    // 返回挂在传入 parent <g> 上的 DOM 节点数组
-    function _appendFlagToGroup(parentG, fx, fy, statusCls) {
-      const top = fy - FLAG_POLE_H;
-
-      // 旗杆
-      parentG.appendChild(ce('line', {
-        x1: fx, y1: top, x2: fx, y2: fy,
-        class: 'sgmap-flag-pole'
-      }));
-
-      // 旗面五边形:左上→右上→右中凹→右下→左下
-      const pts = [
-        `${fx},${top}`,
-        `${fx + FLAG_W},${top}`,
-        `${fx + FLAG_W - FLAG_NOTCH},${top + FLAG_H / 2}`,
-        `${fx + FLAG_W},${top + FLAG_H}`,
-        `${fx},${top + FLAG_H}`,
-      ].join(' ');
-      parentG.appendChild(ce('polygon', {
-        points: pts,
-        class: 'sgmap-flag-face',
-        style: `transform-origin: ${fx}px ${fy}px;`
-      }));
-    }
-
-
     // 城名 → 坐标查找
     const cityXY = {};
     CITIES.forEach(c => { cityXY[c.name] = hexToXY(c.hx, c.hy); });
@@ -1380,9 +1338,6 @@ const BONUS_MULT = {
       troopGroups.get(key).troops.push({ type: t.troopType, count: t.troopCount });
     });
 
-    // ─── 阶段一:为每个 troopGroup 算出落点 (cx, cy) 并附带渲染所需的全部上下文 ───
-    const flagUnits = [];
-
     troopGroups.forEach(t => {
       const fromXY = cityXY[t.from];
       const toXY   = cityXY[t.to];
@@ -1400,7 +1355,7 @@ const BONUS_MULT = {
       const fc = fac === '甲' ? 'fp0' : fac === '乙' ? 'fp1' : fac === '丙' ? 'fp2' : 'fnpc';
       const sc = isSiege ? 's-siege' : isRetreat ? 's-retreat' : isCaptured ? 's-captured' : '';
 
-      // 棋子落点计算(完全沿用原逻辑)
+      // 棋子位置
       let cx, cy;
       if (isSiege) {
         const dx = toXY.x - fromXY.x, dy = toXY.y - fromXY.y;
@@ -1417,59 +1372,53 @@ const BONUS_MULT = {
         cy = fromXY.y + (toXY.y - fromXY.y) * progress;
       }
 
-      flagUnits.push({ t, fc, sc, ctype, cx, cy, isSiege, isRetreat, isCaptured, status });
-    });
+      // 用 <g data-ctype> 包裹路径线+棋子，整组一起 toggle
+      const tg = ce('g', { 'data-ctype': ctype });
 
-    // ─── 阶段二:按落点聚合,同格旗子归到一桶 ───
-    // key 用整数化的 (cx, cy),避免浮点误差,容差 ±1px
-    const buckets = new Map();
-    flagUnits.forEach(u => {
-      const key = `${Math.round(u.cx)},${Math.round(u.cy)}`;
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key).push(u);
-    });
-
-    // ─── 阶段三:逐桶渲染,按 _flagSlotOffset 排布 ───
-    buckets.forEach(bucket => {
-      // 每桶最多画 3 面旗,后续多余的丢弃(由 _flagSlotOffset 的规则保证)
-      const drawCount = Math.min(bucket.length, 3);
-      for (let i = 0; i < drawCount; i++) {
-        const u = bucket[i];
-        const offsetX = _flagSlotOffset(drawCount, i);
-        const fx = u.cx + offsetX;
-        const fy = u.cy;
-
-        // 整组:<g data-ctype="..."> 包裹旗子
-        const tg = ce('g', { 'data-ctype': u.ctype });
-
-        // 旗子本体
-        const g = ce('g', { class: `sgmap-troop ${u.fc}${u.sc ? ' ' + u.sc : ''}` });
-        _appendFlagToGroup(g, fx, fy, u.sc);
-
-        // 状态小标记(围攻金点 / 被俘暗点) —— 保留语义,位置改到旗面右下方
-        if (u.isCaptured) {
-          g.appendChild(ce('circle', {
-            cx: fx + FLAG_W + 1.8, cy: fy - 1,
-            r: '1.6', fill: '#1a1410', stroke: '#4a3a28', 'stroke-width': '.5'
+      // 路径虚线
+      if (!isCaptured) {
+        tg.appendChild(ce('line', {
+          x1: fromXY.x, y1: fromXY.y, x2: toXY.x, y2: toXY.y,
+          class: `sgmap-troop-route ${fc}${isRetreat?' s-retreat':''}`
+        }));
+        // 方向小三角（仅行军中）
+        if (!isRetreat) {
+          const _angle = Math.atan2(toXY.y - fromXY.y, toXY.x - fromXY.x);
+          const _tx = toXY.x - Math.cos(_angle) * (Ri + 6);
+          const _ty = toXY.y - Math.sin(_angle) * (Ri + 6);
+          const _triColor = { '甲':'#e74c3c', '乙':'#3dbe6c', '丙':'#3498db' }[fac] || '#c8a020';
+          tg.appendChild(ce('polygon', {
+            points: '0,-2.2 4.5,0 0,2.2',
+            transform: `translate(${_tx.toFixed(2)},${_ty.toFixed(2)}) rotate(${(_angle*180/Math.PI).toFixed(1)})`,
+            fill: _triColor,
+            class: 'sgmap-troop-arrow'
           }));
         }
-        if (u.isSiege) {
-          g.appendChild(ce('circle', {
-            cx: fx + FLAG_W + 1.8, cy: fy - FLAG_POLE_H + 1,
-            r: '1.5', fill: '#d49830', stroke: 'rgba(0,0,0,.5)', 'stroke-width': '.4'
-          }));
-        }
-
-        // Tooltip 事件绑定(完全保留原逻辑)
-        g.addEventListener('mouseenter', e => {
-          _showTipHtml(_buildTroopTip(u.t, u.isSiege, u.isRetreat, u.isCaptured, u.status), e);
-        });
-        g.addEventListener('mousemove', _moveTip);
-        g.addEventListener('mouseleave', _hideTip);
-
-        tg.appendChild(g);
-        layer.appendChild(tg);
       }
+
+      // 棋子
+      const hw = 6.5;
+      const g = ce('g', { class: `sgmap-troop ${fc}${sc?' '+sc:''}` });
+      g.appendChild(ce('rect', {
+        x: cx-hw, y: cy-hw, width: hw*2, height: hw*2, rx: '1.5',
+        class: 'sgmap-troop-body'
+      }));
+      const txt = ce('text', { x: cx, y: cy, class: 'sgmap-troop-glyph' });
+      txt.textContent = (t.general || '将').charAt(0);
+      g.appendChild(txt);
+      if (isCaptured) {
+        g.appendChild(ce('circle', { cx: hw, cy: hw, r: '1.6', fill:'#1a1410', stroke:'#4a3a28', 'stroke-width':'.5' }));
+      }
+      if (isSiege) {
+        g.appendChild(ce('circle', { cx: hw, cy: -hw, r: '1.5', fill:'#d49830', stroke:'rgba(0,0,0,.5)', 'stroke-width':'.4' }));
+      }
+      g.addEventListener('mouseenter', e => {
+        _showTipHtml(_buildTroopTip(t, isSiege, isRetreat, isCaptured, status), e);
+      });
+      g.addEventListener('mousemove', _moveTip);
+      g.addEventListener('mouseleave', _hideTip);
+      tg.appendChild(g);
+      layer.appendChild(tg);
     });
 
     // ── 战况开关栏：恢复各 chip 的显示状态 ──
