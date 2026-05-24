@@ -980,7 +980,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══════════════════════════════════════════
    势力地图 v13 — 暗金墨迹 · 半透明薄膜风
 ══════════════════════════════════════════ */
-.sgmap-body { padding: 4px 6px 8px !important; line-height: normal; }
+.sgmap-body { padding: 4px 6px 8px !important; line-height: normal; position: relative; }
 
 /* ── 地图容器：高度跟随 SVG 内容自适应 ── */
 .sgmap-wrap {
@@ -1001,9 +1001,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ── 图例 — 地图下方，细线隔开 ── */
 .sgmap-legend {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-  gap: 16px;
-  padding: 8px 16px 10px;
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px 18px;
+  padding: 8px 20px 10px;
   border-top: 1px solid rgba(200,160,70,.10);
 }
 .sgmap-legend-item {
@@ -3111,20 +3111,21 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .txt-retreat { color:#8a7c6a; }
 .txt-captured{ color:#8a7868; }
 
-/* ── 地图战况层开关 ── */
+/* ── 地图战况层开关（地图右下角浮层）── */
 .sgmap-ctrl-bar {
   display: flex; gap: 6px; align-items: center;
-  margin-left: auto; flex-shrink: 0;
+  position: absolute; bottom: 10px; right: 12px; z-index: 10;
 }
 .sgmap-ctrl-btn {
-  font-size: .65rem; padding: 2px 7px; border-radius: 10px; cursor: pointer;
-  border: 1px solid rgba(180,140,60,.35); background: rgba(0,0,0,.35);
+  font-size: .65rem; padding: 3px 9px; border-radius: 10px; cursor: pointer;
+  border: 1px solid rgba(180,140,60,.35); background: rgba(12,6,2,.75);
   color: var(--text-dim); letter-spacing: .04em;
   transition: background .18s, color .18s, border-color .18s;
   user-select: none; white-space: nowrap;
+  backdrop-filter: blur(4px);
 }
 .sgmap-ctrl-btn.active {
-  background: rgba(180,140,60,.22); color: var(--gold-light);
+  background: rgba(180,140,60,.25); color: var(--gold-light);
   border-color: rgba(180,140,60,.65);
 }
 .sgmap-ctrl-btn:hover { opacity: .85; }
