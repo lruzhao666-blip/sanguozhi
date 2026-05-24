@@ -1,5 +1,6 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v22
+ * map.js — 三国志文字版 · 势力地图 v22.1
+ * v22.1 (2026-05): 修复 PR 187 引入的 ReferenceError
  * v22 (2026-05): 战况层重做 — 燕尾旗 + 六边形虚线光环,
  *                删除行军虚线/旧 marker
  *
@@ -12,6 +13,15 @@
  */
 window.SGMap = (function () {
   'use strict';
+
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  function ce(tag, attrs) {
+    const e = document.createElementNS(SVG_NS, tag);
+    if (attrs) Object.entries(attrs).forEach(([k,v]) =>
+      e.setAttribute(k, v));
+    return e;
+  }
 
   var _SUPA_URL = 'https://smiifcbmmtolimtaxpip.supabase.co';
   var _SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaWlmY2JtbXRvbGltdGF4cGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTM4MzgsImV4cCI6MjA5Mzg4OTgzOH0.9pMRTaWDqXqWb_Ttti93dj8-FXgQMjAAbIZL5E-zN54';
@@ -381,7 +391,7 @@ const BONUS_MULT = {
   }
 
   /* flat-top 六边形顶点 */
-  function _hexPoints(cx, cy, r) {
+  function hexPoints(cx, cy, r) {
     const pts = [];
     for (let i = 0; i < 6; i++) {
       const a = (Math.PI / 3) * i;
@@ -663,7 +673,7 @@ const BONUS_MULT = {
     for (let col = GRID_COL_START; col <= GRID_COL_END; col++) {
       for (let row = GRID_ROW_START; row <= GRID_ROW_END; row++) {
         const { x, y } = hexToXY(col, row);
-        parts.push(`<polygon points="${_hexPoints(x, y, R)}" fill="rgba(10,8,18,0.18)" stroke="none"/>`);
+        parts.push(`<polygon points="${hexPoints(x, y, R)}" fill="rgba(10,8,18,0.18)" stroke="none"/>`);
       }
     }
     return parts.join('\n');
@@ -682,7 +692,7 @@ const BONUS_MULT = {
       for (let row = GRID_ROW_START; row <= GRID_ROW_END; row++) {
         if (_cityMap[`${col},${row}`]) continue;
         const { x, y } = hexToXY(col, row);
-        const pts = _hexPoints(x, y, R);
+        const pts = hexPoints(x, y, R);
         parts.push(
           `<polygon class="sgmap-neutral-hex" points="${pts}"` +
           ` fill="rgba(0,0,0,0.15)"` +
@@ -728,29 +738,29 @@ const BONUS_MULT = {
       <g class="sgmap-city" data-id="${city.id}" data-name="${_esc(city.name)}" data-stroke="${color.stroke}" style="cursor:pointer">
 
         <!-- 外边框：满半径，与中立格对齐 -->
-        <polygon points="${_hexPoints(x, y, R)}"
+        <polygon points="${hexPoints(x, y, R)}"
           fill="none" stroke="rgba(175,155,95,0.38)" stroke-width="0.8"
           style="pointer-events:none"/>
 
         ${isCityOwned ? `
         <!-- 城池主体（内缩） -->
-        <polygon points="${_hexPoints(x, y, Ri)}"
+        <polygon points="${hexPoints(x, y, Ri)}"
           fill="${color.fill}"
           stroke="${color.stroke}" stroke-width="1.4"
           filter="url(#fshadow)"/>
 
         <!-- 势力色薄膜 -->
-        <polygon points="${_hexPoints(x, y, Ri)}"
+        <polygon points="${hexPoints(x, y, Ri)}"
           fill="${color.film}" stroke="none"
           style="pointer-events:none"/>
 
         <!-- 顶部高光 -->
-        <polygon points="${_hexPoints(x, y - 1, Ri * 0.86)}"
+        <polygon points="${hexPoints(x, y - 1, Ri * 0.86)}"
           fill="url(#${hlGrad})" stroke="none"
           style="pointer-events:none"/>
 
         <!-- hover 光环 -->
-        <polygon class="sgmap-city-ring" points="${_hexPoints(x, y, Ri + 2)}"
+        <polygon class="sgmap-city-ring" points="${hexPoints(x, y, Ri + 2)}"
           fill="none" stroke="${color.stroke}" stroke-width="2.5"
           style="opacity:0;pointer-events:none"/>
 
@@ -770,7 +780,7 @@ const BONUS_MULT = {
 
         ` : `
         <!-- 空城内圈 -->
-        <polygon points="${_hexPoints(x, y, Ri)}"
+        <polygon points="${hexPoints(x, y, Ri)}"
           fill="rgba(7,6,13,0.60)" stroke="rgba(180,148,72,0.13)" stroke-width="0.8"/>
 
         <!-- 空城城名 -->
@@ -804,11 +814,11 @@ const BONUS_MULT = {
 
   /* ── 画燕尾旗 ── */
   function drawFlag(fx, fy, color) {
-    const g = _ce('g', { 'data-ctype': 'flag' });
+    const g = ce('g', { 'data-ctype': 'flag' });
     g.style.pointerEvents = 'none';
 
-    const animG = _ce('g');
-    animG.appendChild(_ce('animateTransform', {
+    const animG = ce('g');
+    animG.appendChild(ce('animateTransform', {
       attributeName: 'transform',
       type: 'rotate',
       values: `-2 ${fx} ${fy}; 2 ${fx} ${fy}; -2 ${fx} ${fy}`,
@@ -820,7 +830,7 @@ const BONUS_MULT = {
     const d = `M${fx},${fy - 14} L${fx + 11},${fy - 14} L${fx + 11 - 2.8},${fy - 9.5} L${fx + 11},${fy - 5} L${fx},${fy - 5} Z`;
 
     // 发光层
-    animG.appendChild(_ce('path', {
+    animG.appendChild(ce('path', {
       d: d,
       fill: color,
       opacity: '0.2',
@@ -828,13 +838,13 @@ const BONUS_MULT = {
     }));
 
     // 旗杆
-    animG.appendChild(_ce('line', {
+    animG.appendChild(ce('line', {
       x1: fx, y1: fy, x2: fx, y2: fy - 14,
       stroke: color, 'stroke-width': '1.3', 'stroke-linecap': 'round'
     }));
 
     // 旗面主体
-    animG.appendChild(_ce('path', {
+    animG.appendChild(ce('path', {
       d: d,
       fill: color,
       opacity: '0.85'
@@ -1354,22 +1364,16 @@ const BONUS_MULT = {
   /* ─────────────────────────────────
      行军位置计算算法
   ───────────────────────────────── */
-  function computeMarchPosition(fromXY, toXY, fromCity, toCity, remaining, status) {
+  function computeMarchPosition(fromXY, toXY, fromCity, toCity, status) {
     let progress = 0;
     if (status === '撤退中') {
-      progress = 0.25; // 简化处理，也可以按同样逻辑算 progress = 1 - p
+      progress = 0.25;
     } else {
       const total = _getJumpCount(fromCity, toCity) || 1;
-      const rem = parseInt((remaining||'').replace('剩','')) || 1;
+      const rem = parseInt((status||'').replace('剩','')) || 1;
       progress = (total - rem) / total;
       if (progress < 0) progress = 0;
     }
-
-    if (status === '撤退中') {
-      progress = 1 - progress;
-    }
-
-    // 钳制进度
     progress = Math.max(0.15, Math.min(0.85, progress));
 
     const px = fromXY.x + (toXY.x - fromXY.x) * progress;
@@ -1435,11 +1439,11 @@ const BONUS_MULT = {
       if (t.to && cityXY[t.to]) siegeCities.add(t.to);
     });
 
-    const halosGroup = _ce('g', { id: 'sgmap-halos' });
+    const halosGroup = ce('g', { id: 'sgmap-halos' });
 
     function drawHalo(cityName, type) {
       const {x, y} = cityXY[cityName];
-      const g = _ce('g', { 'data-ctype': type });
+      const g = ce('g', { 'data-ctype': type });
       g.style.pointerEvents = 'none';
 
       const R_halo = Ri + 5;
@@ -1456,12 +1460,12 @@ const BONUS_MULT = {
         durBreath = '2.2s'; opValues = '0.25; 0.06; 0.25'; swBreath = 0.6;
       }
 
-      const dashPoly = _ce('polygon', {
-        points: _hexPoints(x, y, R_halo),
+      const dashPoly = ce('polygon', {
+        points: hexPoints(x, y, R_halo),
         fill: 'none', stroke: stroke, 'stroke-width': sw,
         'stroke-dasharray': dash, opacity: op
       });
-      const animDash = _ce('animate', {
+      const animDash = ce('animate', {
         attributeName: 'stroke-dashoffset',
         from: '0', to: type === 'battle' ? '-18' : '-26',
         dur: durOffset, repeatCount: 'indefinite'
@@ -1469,11 +1473,11 @@ const BONUS_MULT = {
       dashPoly.appendChild(animDash);
       g.appendChild(dashPoly);
 
-      const breathPoly = _ce('polygon', {
-        points: _hexPoints(x, y, R_breath),
+      const breathPoly = ce('polygon', {
+        points: hexPoints(x, y, R_breath),
         fill: 'none', stroke: stroke, 'stroke-width': swBreath
       });
-      const animBreath = _ce('animate', {
+      const animBreath = ce('animate', {
         attributeName: 'opacity',
         values: opValues,
         dur: durBreath, repeatCount: 'indefinite'
@@ -1493,7 +1497,7 @@ const BONUS_MULT = {
     // ==========================================
     // 元素三：燕尾旗
     // ==========================================
-    const flagsGroup = _ce('g', { id: 'sgmap-flags' });
+    const flagsGroup = ce('g', { id: 'sgmap-flags' });
 
     // key => { x, y, flags: [{color}] }
     const flagPlacements = {};
@@ -1552,7 +1556,7 @@ const BONUS_MULT = {
           flagPlacements[key].flags.push({ color: cInfo.glow });
         }
       } else {
-        const { px, py } = computeMarchPosition(fromXY, toXY, t.from, t.to, t.status, t.status);
+        const { px, py } = computeMarchPosition(fromXY, toXY, t.from, t.to, t.status);
         const closest = getClosestEmptyHex(px, py, occupiedHexes, usedFlagHexes);
         if (closest) {
           const key = `${closest.x},${closest.y}`;
