@@ -1192,7 +1192,8 @@ const BONUS_MULT = {
         // 检查是否有在途部队
         const cityTransit = (_transitData||[]).filter(t => t.to === cn || t.from === cn);
         if (cityTransit.length) {
-          combatHtml += '<div class="sgt-combat-divider"></div>';
+          // 只在战报区为空时才加分割线，避免连续两条线
+          if (!combatHtml) combatHtml += '<div class="sgt-combat-divider"></div>';
           cityTransit.forEach(t => {
             const stCls = t.status==='围攻中' ? 'stt-siege'
               : t.status==='撤退中' ? 'stt-retreat'
