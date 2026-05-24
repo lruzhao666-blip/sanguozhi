@@ -1079,74 +1079,103 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══════════════════════════════════════════
    战斗结算
 ══════════════════════════════════════════ */
-.block-battles { border-color: rgba(200,55,20,.35); }
-.block-battles .ib-header { background: rgba(70,8,0,.4); border-bottom-color: rgba(200,55,20,.3); }
-.battle-list { display: flex; flex-direction: column; gap: 8px; }
+.block-battles { border-color: rgba(180,45,15,.3); }
+.block-battles .ib-header {
+  background: linear-gradient(110deg, rgba(70,8,0,.42), rgba(35,4,0,.22));
+  border-bottom-color: rgba(180,45,15,.22);
+}
+.battle-list { display: flex; flex-direction: column; gap: 5px; }
 
-/* ── 新版战斗卡片（v2.0 三栏：攻方 | 结果 | 守方）── */
+/* ══ 战报卡片 v3.0 — 单行紧凑式 ══ */
 .battle-card {
+  display: flex; align-items: stretch;
   border-radius: var(--r); overflow: hidden;
-  border: 1px solid var(--border-red);
-  position: relative;
+  border: 1px solid transparent;
+  background: rgba(0,0,0,.2);
+  transition: background .15s;
 }
-.battle-card::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-}
-.battle-card.success { border-color: rgba(0,130,55,.3); background: rgba(0,22,10,.18); }
-.battle-card.fail    { border-color: rgba(160,30,15,.35); background: rgba(22,4,2,.18); }
-.battle-card.draw    { border-color: rgba(150,120,0,.32); background: rgba(20,16,0,.18); }
-.battle-card.success::before { background: #3dbe6c; }
-.battle-card.fail::before    { background: var(--red-bright); }
-.battle-card.draw::before    { background: #c8a020; }
+.battle-card:hover { background: rgba(0,0,0,.35); }
 
-/* 三栏布局：攻 | 徽章 | 守 */
-.bc-sides {
-  display: grid; grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  padding: 12px 18px 12px 20px;
+/* 左侧结果色条 */
+.bc-strip {
+  width: 3px; flex-shrink: 0;
+  border-radius: 0;
 }
-.bc-side { display: flex; flex-direction: column; gap: 3px; }
-.bc-atk  { align-items: flex-start; }
-.bc-def  { align-items: flex-end; text-align: right; }
-.bc-center {
-  display: flex; align-items: center; justify-content: center;
-  padding: 0 20px; flex-shrink: 0;
-}
-.bc-role {
-  font-size: .56rem; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--text-dim); font-family: var(--font-sans);
-}
-.bc-name {
-  font-family: var(--font-serif); font-size: .92rem; font-weight: 700;
-  color: var(--text-main); letter-spacing: .03em;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;
-}
-.bc-loss {
-  font-size: .7rem; font-family: var(--font-sans); font-weight: 600;
-  letter-spacing: .02em; margin-top: 1px;
-}
-.loss-atk { color: #e87060; }
-.loss-def { color: #78aae8; }
+.battle-card.success .bc-strip { background: #3dbe6c; }
+.battle-card.fail    .bc-strip { background: var(--red-bright); }
+.battle-card.draw    .bc-strip { background: #c8a020; }
+.battle-card.success { border-color: rgba(0,130,55,.22); }
+.battle-card.fail    { border-color: rgba(160,30,15,.28); }
+.battle-card.draw    { border-color: rgba(150,120,0,.25); }
 
-.bc-result-badge {
-  font-family: var(--font-serif); font-size: .84rem; font-weight: 900;
-  padding: 6px 16px; border-radius: 14px; border: 1px solid;
-  letter-spacing: .05em; white-space: nowrap; text-align: center; line-height: 1.4;
+/* 卡片主体：单行 flex */
+.bc-body {
+  display: flex; align-items: center; flex-wrap: nowrap;
+  gap: 0; padding: 6px 10px 6px 9px;
+  flex: 1; min-width: 0;
 }
-.bc-result-badge.success { color: #7dce7d; border-color: rgba(0,140,55,.32); background: rgba(0,50,18,.28); }
-.bc-result-badge.fail    { color: #e06060; border-color: rgba(180,15,10,.32); background: rgba(50,4,2,.28); }
-.bc-result-badge.draw    { color: #d4aa40; border-color: rgba(155,105,0,.32); background: rgba(40,26,0,.28); }
 
-/* 旧格式兼容行 */
+/* 结果徽章 */
+.bc-badge {
+  font-family: var(--font-serif); font-size: .68rem; font-weight: 800;
+  padding: 2px 8px; border-radius: 5px; border: 1px solid;
+  white-space: nowrap; flex-shrink: 0; letter-spacing: .04em;
+  margin-right: 10px;
+}
+.battle-card.success .bc-badge { color: #6dca7d; border-color: rgba(0,140,55,.3); background: rgba(0,55,20,.22); }
+.battle-card.fail    .bc-badge { color: #e06060; border-color: rgba(175,15,10,.3); background: rgba(50,4,2,.22); }
+.battle-card.draw    .bc-badge { color: #d4aa40; border-color: rgba(155,105,0,.3); background: rgba(40,26,0,.22); }
+
+/* 攻守布局：[攻名 伤] ━━ [守名 伤] */
+.bc-versus {
+  display: flex; align-items: center; flex: 1; min-width: 0;
+  gap: 6px; flex-wrap: nowrap;
+}
+.bc-side-v {
+  display: flex; align-items: baseline; gap: 4px;
+  min-width: 0; overflow: hidden;
+}
+.bc-atk-v { flex: 1; }
+.bc-def-v  { flex: 1; justify-content: flex-end; }
+
+.bc-role-v {
+  font-size: .58rem; color: var(--text-dim);
+  letter-spacing: .06em; flex-shrink: 0;
+  font-family: var(--font-sans);
+}
+.bc-name-v {
+  font-family: var(--font-serif); font-size: .84rem; font-weight: 700;
+  color: var(--text-main); letter-spacing: .02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bc-loss-v {
+  font-size: .66rem; font-weight: 600; flex-shrink: 0;
+  font-family: var(--font-sans); letter-spacing: .01em;
+}
+.loss-atk-v { color: #e07060; }
+.loss-def-v { color: #6898d8; }
+
+/* 中间 VS 分隔 */
+.bc-vs {
+  flex-shrink: 0;
+  font-size: .6rem; color: var(--text-dim);
+  letter-spacing: .04em; padding: 0 4px;
+  opacity: .6;
+}
+
+/* 旧格式兼容 */
 .bc-legacy {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 12px 18px 12px 20px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 10px 6px 9px; flex: 1;
 }
-.bc-dice { font-size: .76rem; color: var(--gold-dim); font-family: var(--font-serif); }
+.bc-dice { font-size: .72rem; color: var(--gold-dim); font-family: var(--font-serif); }
 .bc-desc {
-  font-size: .76rem; color: var(--text-dim); line-height: 1.6;
-  font-family: var(--font-serif); padding: 0 18px 10px 20px;
+  font-size: .72rem; color: var(--text-dim); line-height: 1.55;
+  font-family: var(--font-serif); padding: 2px 10px 6px 9px; flex-shrink: 0; width: 100%;
 }
+/* 向下兼容旧类名（不删除） */
+.bc-sides { display: none; }
+.bc-result-badge { display: none; }
 
 /* ══════════════════════════════════════════
    玩家卡
@@ -2907,100 +2936,186 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgt-adept-row .adept-desc { color: var(--text-sub); }
 .sgt-adept-row .adept-val { color: var(--gold); font-weight: 700; }
 
-/* ══ 军报模块：摘要 ══ */
+/* ══════════════════════════════════════════════════════
+   军报模块 v3.0 — 小而美重设计
+   ====================================================== */
+
+/* 覆盖 ib-body 默认 padding，让子区域自控间距 */
+.junbao-body { padding: 0 !important; }
+
+/* 战报列表区 */
+.junbao-battles {
+  padding: 8px 12px 10px;
+}
+.junbao-battles:empty { display: none; }
+
+/* ── 军报摘要 ── */
 .junbao-summary {
-  padding: 12px 18px;
-  border-bottom: 1px solid rgba(160,120,40,.18);
+  padding: 10px 16px 10px 14px;
+  border-bottom: 1px solid rgba(160,120,40,.15);
+  background: linear-gradient(90deg, rgba(50,32,0,.28), transparent);
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.junbao-summary::before {
+  content: ''; flex-shrink: 0;
+  width: 2px; height: auto; min-height: 16px; align-self: stretch;
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim));
+  border-radius: 2px; margin-top: 2px;
 }
 .jbs-text {
   font-family: var(--font-serif);
-  font-size: .88rem;
-  color: var(--gold-light);
-  letter-spacing: .04em;
-  line-height: 1.7;
+  font-size: .82rem;
+  color: var(--text-sub);
+  letter-spacing: .03em;
+  line-height: 1.65;
 }
 
-/* ══ 军报模块：在途部队 ══ */
+/* ── 在途部队区域 ── */
 .junbao-transit {
-  padding: 10px 10px;
-  border-bottom: 1px solid rgba(160,120,40,.18);
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(160,120,40,.15);
 }
 .jbt-title {
+  display: flex; align-items: center; gap: 6px;
   font-family: var(--font-serif);
-  font-size: .78rem;
+  font-size: .7rem;
   color: var(--text-dim);
-  letter-spacing: .06em;
-  margin-bottom: 8px;
+  letter-spacing: .08em;
+  margin-bottom: 7px;
+}
+.jbt-title::before {
+  content: '';
+  display: inline-block;
+  width: 14px; height: 1px;
+  background: linear-gradient(90deg, var(--gold-dim), transparent);
+}
+.jbt-title::after {
+  content: '';
+  display: inline-block;
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(160,120,40,.2), transparent);
 }
 .jbt-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
+
+/* 在途行：左色条 + 内容 */
 .jbt-row {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 6px;
-  padding: 6px 8px;
+  gap: 0;
   border-radius: var(--r);
-  background: rgba(0,0,0,.25);
-  border: 1px solid rgba(100,70,30,.2);
-  font-size: .8rem;
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(100,70,30,.18);
+  font-size: .78rem;
   min-width: 0;
+  overflow: hidden;
+  transition: background .15s;
 }
-.jbt-faction {
-  font-weight: 600;
-  color: var(--text-sub);
-  flex-shrink: 0;
-  min-width: 1.4em;
+.jbt-row:hover { background: rgba(0,0,0,.38); }
+
+/* 左侧状态色条 */
+.jbt-row::before {
+  content: ''; flex-shrink: 0;
+  width: 3px; align-self: stretch;
+  border-radius: 0;
 }
+.jbt-march::before   { background: rgba(61,190,108,.75); }
+.jbt-siege::before   { background: rgba(230,180,60,.85); }
+.jbt-retreat::before { background: rgba(180,140,0,.65); }
+.jbt-captured::before{ background: rgba(200,60,40,.75); }
+
+/* 行内容包装 */
+.jbt-inner {
+  display: flex; align-items: center; flex-wrap: nowrap;
+  gap: 5px; padding: 5px 8px 5px 7px;
+  flex: 1; min-width: 0;
+}
+
+/* 将领名 chip */
 .jbt-general {
-  font-weight: 600;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: .78rem;
   color: var(--text-main);
   flex-shrink: 0;
-  min-width: 2.2em;
+  letter-spacing: .02em;
 }
+
+/* 阵营 */
+.jbt-faction {
+  font-size: .68rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  letter-spacing: .02em;
+}
+
+/* 分隔点 */
+.jbt-sep {
+  color: var(--text-dim);
+  font-size: .6rem;
+  flex-shrink: 0;
+  opacity: .5;
+}
+
+/* 路线箭头 */
 .jbt-route {
   color: var(--text-sub);
-  font-size: .76rem;
+  font-size: .74rem;
   flex: 1 1 0;
   min-width: 0;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.jbt-arrow {
+  color: var(--gold-dim);
+  margin: 0 2px;
+  font-size: .7rem;
+}
+
+/* 兵种:数量 */
 .jbt-troop {
   color: var(--gold-dim);
-  font-size: .74rem;
+  font-size: .68rem;
   flex-shrink: 0;
+  letter-spacing: .01em;
+  opacity: .85;
 }
+
+/* 状态 pill */
 .jbt-status {
-  margin-left: 0;
   flex-shrink: 0;
   white-space: nowrap;
-  font-size: .72rem;
-  padding: 2px 7px;
-  border-radius: 8px;
-  font-weight: 500;
+  font-family: var(--font-serif);
+  font-size: .66rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 6px;
+  letter-spacing: .04em;
 }
 .jbt-march .jbt-status {
-  color: #7ddd7d;
-  background: rgba(0,160,70,.12);
-  border: 1px solid rgba(0,160,70,.3);
+  color: #6dca7d;
+  background: rgba(0,140,60,.14);
+  border: 1px solid rgba(0,150,65,.28);
 }
 .jbt-siege .jbt-status {
-  color: #e8b850;
-  background: rgba(200,155,0,.12);
+  color: #e6b850;
+  background: rgba(190,145,0,.14);
   border: 1px solid rgba(200,155,0,.3);
 }
 .jbt-retreat .jbt-status {
-  color: #d4b040;
-  background: rgba(180,140,0,.1);
-  border: 1px solid rgba(180,140,0,.25);
+  color: #c8a838;
+  background: rgba(160,125,0,.12);
+  border: 1px solid rgba(170,130,0,.25);
 }
 .jbt-captured .jbt-status {
   color: #e07070;
-  background: rgba(200,40,0,.12);
-  border: 1px solid rgba(200,40,0,.3);
+  background: rgba(180,35,20,.14);
+  border: 1px solid rgba(195,45,25,.3);
 }
 
 /* ══════════════════════════════════════════════════════
