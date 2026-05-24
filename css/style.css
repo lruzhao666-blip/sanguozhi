@@ -2940,12 +2940,14 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .jbt-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 12px;
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 6px 10px;
   border-radius: var(--r);
   background: rgba(0,0,0,.25);
   border: 1px solid rgba(100,70,30,.2);
   font-size: .8rem;
+  min-width: 0;
 }
 .jbt-faction {
   font-weight: 600;
@@ -2960,15 +2962,22 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .jbt-route {
   color: var(--text-sub);
   font-size: .76rem;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .jbt-troop {
   color: var(--gold-dim);
   font-size: .76rem;
 }
 .jbt-status {
-  margin-left: auto;
+  margin-left: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
   font-size: .72rem;
-  padding: 1px 8px;
+  padding: 2px 7px;
   border-radius: 8px;
   font-weight: 500;
 }
@@ -3052,7 +3061,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgmap-troop.fnpc .sgmap-troop-body{ fill:rgba(35,25,6,.95);  stroke:#c8a020; }
 .sgmap-troop-glyph {
   font-family:'Noto Sans SC','PingFang SC',sans-serif;
-  font-size:6.5px; font-weight:700;
+  font-size:8px; font-weight:700;
   text-anchor:middle; pointer-events:none; dominant-baseline:middle;
 }
 .sgmap-troop.fp0  .sgmap-troop-glyph { fill:#fdeae6; }
@@ -3067,15 +3076,19 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgmap-troop.s-captured .sgmap-troop-body { fill:#2a2018; stroke:#5a4838; }
 .sgmap-troop.s-captured .sgmap-troop-glyph{ fill:#6a5a48; }
 
-/* 行军路径线 */
+/* 行军路径线 — 加粗+流动动画 */
 .sgmap-troop-route {
-  fill:none; stroke-width:.8; stroke-dasharray:2.5 2; opacity:.42; pointer-events:none;
+  fill:none; stroke-width:1.5; stroke-dasharray:5 4; opacity:.60; pointer-events:none;
+  animation: sgmap-route-flow 1.8s linear infinite;
 }
 .sgmap-troop-route.fp0  { stroke:#e74c3c; }
 .sgmap-troop-route.fp1  { stroke:#3dbe6c; }
 .sgmap-troop-route.fp2  { stroke:#3498db; }
 .sgmap-troop-route.fnpc { stroke:#c8a020; }
-.sgmap-troop-route.s-retreat { opacity:.28; stroke-dasharray:1.5 2.5; }
+.sgmap-troop-route.s-retreat { opacity:.35; stroke-dasharray:2 4; animation:none; }
+@keyframes sgmap-route-flow {
+  from { stroke-dashoffset: 0; } to { stroke-dashoffset: -18; }
+}
 
 /* ── Tooltip 战况追加区 ── */
 .sgt-combat-divider {
@@ -3097,3 +3110,21 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .txt-siege   { color:#d49830; }
 .txt-retreat { color:#8a7c6a; }
 .txt-captured{ color:#8a7868; }
+
+/* ── 地图战况层开关 ── */
+.sgmap-ctrl-bar {
+  display: flex; gap: 6px; align-items: center;
+  margin-left: auto; flex-shrink: 0;
+}
+.sgmap-ctrl-btn {
+  font-size: .65rem; padding: 2px 7px; border-radius: 10px; cursor: pointer;
+  border: 1px solid rgba(180,140,60,.35); background: rgba(0,0,0,.35);
+  color: var(--text-dim); letter-spacing: .04em;
+  transition: background .18s, color .18s, border-color .18s;
+  user-select: none; white-space: nowrap;
+}
+.sgmap-ctrl-btn.active {
+  background: rgba(180,140,60,.22); color: var(--gold-light);
+  border-color: rgba(180,140,60,.65);
+}
+.sgmap-ctrl-btn:hover { opacity: .85; }
