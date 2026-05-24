@@ -432,7 +432,7 @@ window.SGParser = (function () {
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
     if (lines.length === 1 && /无在途/.test(lines[0])) return [];
     const result = [];
-    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|围攻中|撤退中|被俘|访驻)$/;
+    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|围攻中|撤退中|被俘)$/;
     for (const line of lines) {
       const m = line.match(re);
       if (m) {
