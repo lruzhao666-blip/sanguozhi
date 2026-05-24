@@ -1,5 +1,5 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v17
+ * map.js — 三国志文字版 · 势力地图 v18
  *
  * ✦ 60 座城池，十二大州区
  * ✦ flat-top 六边形，整个矩形网格完整铺满（无空白）
@@ -1277,7 +1277,7 @@ const BONUS_MULT = {
     // ── 元素一：战斗呼吸环 ──
     battleCities.forEach(cityName => {
       const {x, y} = cityXY[cityName];
-      const r1 = Ri + 8, r2 = Ri + 3.5, r3 = Ri + 1.8;
+      const r1 = Ri + 9, r2 = Ri + 5, r3 = Ri + 2.5;  // v18: 基于正确Ri=23，环超出城圈清晰可见
       // 外晕
       layer.appendChild(ce('circle', { cx:x, cy:y, r:r1, class:'sgmap-battle-aura' }));
       // 主环（可交互）
@@ -1310,7 +1310,7 @@ const BONUS_MULT = {
     siegeCities.forEach(cityName => {
       if (battleCities.has(cityName)) return; // 战斗环优先，不叠加
       const {x, y} = cityXY[cityName];
-      const r = Ri + 7;                       // v17: 扩大至 Ri+7，围攻环清晰可见
+      const r = Ri + 5;                       // v18: 围攻环 Ri+5=28px，与战斗环同级
       layer.appendChild(ce('circle', { cx:x, cy:y, r, class:'sgmap-siege-ring' }));
       layer.appendChild(ce('circle', { cx:x, cy:y, r, class:'sgmap-siege-overlay' }));
     });
@@ -1422,8 +1422,8 @@ const BONUS_MULT = {
     _moveTip(e);
   }
 
-  // 暴露 Ri 供战况层使用（内圈半径）
-  const Ri = 17 - 3.5;  // 与 _cityLayer 中的 Ri 保持一致
+  // 暴露 Ri 供战况层使用（内圈半径，与 _cityLayer 保持一致）
+  const Ri = HEX_R - 5;  // v18 fix: 23px，之前错误写死为 13.5
 
   /* ─────────────────────────────────
      图例
