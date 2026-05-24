@@ -1,5 +1,5 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v15(战况层)
+ * map.js — 三国志文字版 · 势力地图 v16(暴露工具方法)
  *
  * ✦ 60 座城池，十二大州区
  * ✦ flat-top 六边形，整个矩形网格完整铺满（无空白）
@@ -1562,11 +1562,32 @@ const BONUS_MULT = {
   /* ─────────────────────────────────
      公开 API
   ───────────────────────────────── */
+
+  // 城名(中文)→城池 id
+  function cityNameToId(name) {
+    if (!name) return null;
+    const found = CITIES.find(c => c.name === name);
+    return found ? found.id : null;
+  }
+
+  // 两座城之间的六边形距离(欧氏距离 / HEX_W,四舍五入)
+  function hexDistance(idA, idB) {
+    const a = CITIES.find(c => c.id === idA);
+    const b = CITIES.find(c => c.id === idB);
+    if (!a || !b) return 3;
+    const pa = hexToXY(a.hx, a.hy);
+    const pb = hexToXY(b.hx, b.hy);
+    const d = Math.hypot(pa.x - pb.x, pa.y - pb.y);
+    return Math.max(1, Math.round(d / HEX_W));
+  }
+
   return {
     init,
     renderBattles,
     renderSieges,
     renderTroops,
+    cityNameToId,
+    hexDistance,
     getCityMeta(name) {
       const c = CITIES.find(x => x.name === name);
       if (!c) return null;
