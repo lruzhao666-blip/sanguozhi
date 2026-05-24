@@ -1,5 +1,6 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v22.1
+ * map.js — 三国志文字版 · 势力地图 v23
+ * v23 (2026-05): 燕尾旗尺寸/位置微调 + 行军悬浮卡回归
  * v22.1 (2026-05): 修复 PR 187 引入的 ReferenceError
  * v22 (2026-05): 战况层重做 — 燕尾旗 + 六边形虚线光环,
  *                删除行军虚线/旧 marker
@@ -798,24 +799,30 @@ const BONUS_MULT = {
 
 
   /* ── 旗帜插入点计算 ── */
-  function flagSlot(cx, cy, count, index, Ri) {
+    function flagSlot(cx, cy, count, index, Ri) {
     if (count === 1) {
-      return { x: cx, y: cy - Ri * 0.75 };
+      return { x: cx, y: cy + Ri * 0.05 };
     } else if (count === 2) {
-      if (index === 0) return { x: cx - Ri * 0.40, y: cy - Ri * 0.55 };
-      if (index === 1) return { x: cx + Ri * 0.40, y: cy - Ri * 0.55 };
+      if (index === 0) return { x: cx - Ri * 0.45, y: cy + Ri * 0.05 };
+      if (index === 1) return { x: cx + Ri * 0.45, y: cy + Ri * 0.05 };
     } else if (count >= 3) {
-      if (index === 0) return { x: cx - Ri * 0.55, y: cy - Ri * 0.40 };
-      if (index === 1) return { x: cx, y: cy - Ri * 0.75 };
-      if (index === 2) return { x: cx + Ri * 0.55, y: cy - Ri * 0.40 };
+      if (index === 0) return { x: cx - Ri * 0.55, y: cy + Ri * 0.15 };
+      if (index === 1) return { x: cx, y: cy - Ri * 0.05 };
+      if (index === 2) return { x: cx + Ri * 0.55, y: cy + Ri * 0.15 };
     }
     return null;
   }
 
-  /* ── 画燕尾旗 ── */
-  function drawFlag(fx, fy, color) {
+    /* ── 画燕尾旗 ── */
+  function drawFlag(fx, fy, color, flagData) {
     const g = ce('g', { 'data-ctype': 'flag' });
     g.style.pointerEvents = 'none';
+
+    if (flagData) {
+      g.setAttribute('data-flag', JSON.stringify(flagData));
+      g.classList.add('sgmap-flag');
+      g.style.cursor = 'pointer';
+    }
 
     const animG = ce('g');
     animG.appendChild(ce('animateTransform', {
@@ -827,19 +834,19 @@ const BONUS_MULT = {
     }));
 
     // 旗面 Path：从左上开始，到右上，内凹到中间，到右下，到左下，闭合
-    const d = `M${fx},${fy - 14} L${fx + 11},${fy - 14} L${fx + 11 - 2.8},${fy - 9.5} L${fx + 11},${fy - 5} L${fx},${fy - 5} Z`;
+    const d = `M${fx},${fy - 18} L${fx + 14},${fy - 18} L${fx + 14 - 3.6},${fy - 12.5} L${fx + 14},${fy - 7} L${fx},${fy - 7} Z`;
 
     // 发光层
     animG.appendChild(ce('path', {
       d: d,
       fill: color,
-      opacity: '0.2',
-      filter: 'url(#fblur3)'
+      opacity: '0.28',
+      style: 'filter: blur(4px)'
     }));
 
     // 旗杆
     animG.appendChild(ce('line', {
-      x1: fx, y1: fy, x2: fx, y2: fy - 14,
+      x1: fx, y1: fy, x2: fx, y2: fy - 18,
       stroke: color, 'stroke-width': '1.3', 'stroke-linecap': 'round'
     }));
 
@@ -942,6 +949,25 @@ const BONUS_MULT = {
           r.classList.remove('sgmap-ring-pulse');
         });
       }
+    });
+
+    container.querySelectorAll('.sgmap-flag').forEach(g => {
+      g.addEventListener('mouseenter', e => {
+        const raw = g.getAttribute('data-flag');
+        if (!raw) return;
+        let d; try { d = JSON.parse(raw); } catch(_) { return; }
+        _showFlagTip(d, e);
+      });
+      g.addEventListener('mousemove', e => _moveTip(e));
+      g.addEventListener('mouseleave', () => _hideTip());
+      g.addEventListener('touchstart', e => {
+        const t = e.touches[0];
+        const raw = g.getAttribute('data-flag');
+        if (!raw) return;
+        let d; try { d = JSON.parse(raw); } catch(_) { return; }
+        _showFlagTip(d, { clientX: t.clientX, clientY: t.clientY });
+        e.preventDefault();
+      }, { passive: false });
     });
   }
 
@@ -1293,6 +1319,108 @@ const BONUS_MULT = {
     _moveTip(e);
   }
 
+  function _showFlagTip(d, e) {
+    if (!_tooltip || !d) return;
+    const esc = _esc;
+
+    // 标题区: 武将名 + 阵营 chip
+    const titleParts = [];
+    titleParts.push('<span class="sgft-name">'
+      + esc(d.general || '(无名部队)') + '</span>');
+    if (d.faction) {
+      let slotCls = 'sgft-faction-npc';
+      if (d.factionSlot === 0) slotCls = 'sgft-faction-p0';
+      else if (d.factionSlot === 1) slotCls = 'sgft-faction-p1';
+      else if (d.factionSlot === 2) slotCls = 'sgft-faction-p2';
+      titleParts.push('<span class="sgft-chip sgft-faction '
+        + slotCls + '">' + esc(d.faction) + '</span>');
+    }
+    const titleHtml = '<div class="sgft-title">'
+      + titleParts.join('') + '</div>';
+
+    // 场景副标题 + 路线/目标
+    const SCENE_LABEL = {
+      march:   '行军中',
+      siege:   '围攻中',
+      retreat: '撤退中'
+    };
+    const SCENE_ICON = {
+      march:   '⚑',
+      siege:   '⚔',
+      retreat: '↩'
+    };
+    const sceneLabel = SCENE_LABEL[d.scene] || '';
+    const sceneIcon  = SCENE_ICON[d.scene]  || '';
+
+    const sceneRows = [];
+    if (d.scene === 'march') {
+      sceneRows.push(
+        '<div class="sgft-scene">'
+        + '<span class="sgft-scene-icon">' + sceneIcon + '</span>'
+        + '<span class="sgft-scene-label">' + sceneLabel + '</span>'
+        + '<span class="sgft-scene-remaining">剩 '
+          + (d.remaining != null ? d.remaining : '?') + ' 回合</span>'
+        + '</div>'
+        + '<div class="sgft-route">'
+        + '<span class="sgft-from">' + esc(d.from || '?') + '</span>'
+        + '<span class="sgft-arrow">→</span>'
+        + '<span class="sgft-to">' + esc(d.to || '?') + '</span>'
+        + '</div>'
+      );
+      if (d.via) {
+        sceneRows.push(
+          '<div class="sgft-via">' + esc(d.via) + '</div>'
+        );
+      }
+    } else if (d.scene === 'siege') {
+      sceneRows.push(
+        '<div class="sgft-scene">'
+        + '<span class="sgft-scene-icon">' + sceneIcon + '</span>'
+        + '<span class="sgft-scene-label">' + sceneLabel + '</span>'
+        + '<span class="sgft-scene-target">' + esc(d.to || '?') + '</span>'
+        + '</div>'
+      );
+    } else if (d.scene === 'retreat') {
+      sceneRows.push(
+        '<div class="sgft-scene">'
+        + '<span class="sgft-scene-icon">' + sceneIcon + '</span>'
+        + '<span class="sgft-scene-label">' + sceneLabel + '</span>'
+        + '</div>'
+        + '<div class="sgft-route">'
+        + '<span class="sgft-from">' + esc(d.to || '?') + '</span>'
+        + '<span class="sgft-arrow">→</span>'
+        + '<span class="sgft-to">' + esc(d.from || '?') + '</span>'
+        + '</div>'
+      );
+    }
+
+    // 兵力分项 chips
+    let troopsHtml = '';
+    if (d.troops && d.troops.length) {
+      const chips = d.troops.map(t =>
+        '<span class="sgft-troop-chip">'
+        + '<span class="sgft-troop-type">' + esc(t.type) + '</span>'
+        + '<span class="sgft-troop-count">' + (t.count || 0) + '</span>'
+        + '</span>').join('');
+      troopsHtml =
+        '<div class="sgft-section">'
+        + '<div class="sgft-section-title">兵力</div>'
+        + '<div class="sgft-troops">' + chips + '</div>'
+        + '</div>';
+    }
+
+    _tooltip.innerHTML = titleHtml
+      + '<div class="sgft-body">'
+      +   sceneRows.join('')
+      +   troopsHtml
+      + '</div>';
+    // 不再清除 compact class（因为沿用已有样式），但如果不带--troop不影响
+    _tooltip.classList.remove('sgmap-tooltip--troop');
+    _tooltip.classList.add('visible');
+    _moveTip(e);
+  }
+
+
   function _moveTip(e) {
     if (!_tooltip) return;
     const PAD = 10, tw = _tooltip.offsetWidth || 230, th = _tooltip.offsetHeight || 130;
@@ -1524,7 +1652,7 @@ const BONUS_MULT = {
             if (!flagPlacements[key]) flagPlacements[key] = { x, y, flags: [] };
             const cInfo = getFactionColorInfo(p.slot || p.name, pidx);
             if (!flagPlacements[key].flags.some(f => f.color === cInfo.glow)) {
-              flagPlacements[key].flags.push({ color: cInfo.glow });
+              flagPlacements[key].flags.push({ color: cInfo.glow, data: null });
             }
           }
         }
@@ -1549,11 +1677,43 @@ const BONUS_MULT = {
 
       const cInfo = getFactionColorInfo(t.faction);
 
+      let scene = '', remaining = null, via = '';
+      if (t.status === '围攻中') scene = 'siege';
+      else if (t.status === '撤退中') scene = 'retreat';
+      else if (t.status.startsWith('剩')) {
+        scene = 'march';
+        const m = t.status.match(/剩(\d+)/);
+        if (m) remaining = parseInt(m[1]);
+        const mVia = t.status.match(/\(.*?\)/);
+        if (mVia) via = mVia[1];
+        else {
+          const parts = t.status.split(' ');
+          if (parts.length > 1) via = parts.slice(1).join(' ');
+        }
+      }
+
+      let factionSlot = -1;
+      if (t.faction === '甲') factionSlot = 0;
+      else if (t.faction === '乙') factionSlot = 1;
+      else if (t.faction === '丙') factionSlot = 2;
+
+      const flagData = {
+        scene: scene,
+        general: t.general,
+        faction: t.faction,
+        factionSlot: factionSlot,
+        from: t.from,
+        to: t.to,
+        remaining: remaining,
+        via: via,
+        troops: t.troops
+      };
+
       if (t.status === '围攻中') {
         const key = `${toXY.x},${toXY.y}`;
         if (!flagPlacements[key]) flagPlacements[key] = { x: toXY.x, y: toXY.y, flags: [] };
         if (!flagPlacements[key].flags.some(f => f.color === cInfo.glow)) {
-          flagPlacements[key].flags.push({ color: cInfo.glow });
+          flagPlacements[key].flags.push({ color: cInfo.glow, data: flagData });
         }
       } else {
         const { px, py } = computeMarchPosition(fromXY, toXY, t.from, t.to, t.status);
@@ -1562,7 +1722,7 @@ const BONUS_MULT = {
           const key = `${closest.x},${closest.y}`;
           if (!flagPlacements[key]) flagPlacements[key] = { x: closest.x, y: closest.y, flags: [] };
           if (!flagPlacements[key].flags.some(f => f.color === cInfo.glow)) {
-            flagPlacements[key].flags.push({ color: cInfo.glow });
+            flagPlacements[key].flags.push({ color: cInfo.glow, data: flagData });
           }
         }
       }
@@ -1575,7 +1735,7 @@ const BONUS_MULT = {
         if (i >= 3) return; // 最多3面
         const pos = flagSlot(x, y, count, i, Ri);
         if (pos) {
-          const fg = drawFlag(pos.x, pos.y, f.color);
+          const fg = drawFlag(pos.x, pos.y, f.color, f.data);
           flagsGroup.appendChild(fg);
         }
       });

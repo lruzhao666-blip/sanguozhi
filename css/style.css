@@ -3359,3 +3359,114 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgt-transit-st.stt-siege   { color:#e6b840; background:rgba(190,145,0,.14); border:1px solid rgba(200,155,0,.26); }
 .sgt-transit-st.stt-retreat { color:#b89848; background:rgba(150,120,0,.12); border:1px solid rgba(160,125,0,.24); }
 .sgt-transit-st.stt-captured{ color:#e06858; background:rgba(180,40,20,.14); border:1px solid rgba(190,45,25,.26); }
+
+/* ══════════════════════════════════════════
+   行军悬浮卡 v1 — 沿用 #sgmap-tooltip 容器
+   视觉对齐城池悬浮卡 (.sgt-* 系列)
+══════════════════════════════════════════ */
+.sgmap-flag { pointer-events: auto !important; cursor: pointer; }
+.sgmap-flag * { pointer-events: none; }
+
+#sgmap-tooltip .sgft-title {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 6px; padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(212,168,67,.15);
+}
+#sgmap-tooltip .sgft-name {
+  font-family: var(--font-serif); font-size: .98rem;
+  font-weight: 700; color: var(--gold-light);
+  letter-spacing: .04em;
+}
+#sgmap-tooltip .sgft-chip {
+  display: inline-block; padding: 1px 8px;
+  font-size: .62rem; letter-spacing: .04em;
+  border-radius: 9px; border: 1px solid;
+  white-space: nowrap;
+}
+#sgmap-tooltip .sgft-faction-p0 {
+  color: #e88070;
+  border-color: rgba(231,76,60,.45);
+  background: rgba(231,76,60,.08);
+}
+#sgmap-tooltip .sgft-faction-p1 {
+  color: #6dca7d;
+  border-color: rgba(61,190,108,.45);
+  background: rgba(61,190,108,.08);
+}
+#sgmap-tooltip .sgft-faction-p2 {
+  color: #60aef0;
+  border-color: rgba(52,152,219,.45);
+  background: rgba(52,152,219,.08);
+}
+#sgmap-tooltip .sgft-faction-npc {
+  color: #c8a060;
+  border-color: rgba(200,160,90,.45);
+  background: rgba(120,90,40,.10);
+}
+
+#sgmap-tooltip .sgft-body {
+  padding: 10px 14px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+#sgmap-tooltip .sgft-scene {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .78rem; color: var(--text-sub);
+}
+#sgmap-tooltip .sgft-scene-icon {
+  font-size: .85rem; opacity: .85;
+}
+#sgmap-tooltip .sgft-scene-label {
+  font-family: var(--font-serif); font-weight: 600;
+  color: var(--gold-light); letter-spacing: .04em;
+}
+#sgmap-tooltip .sgft-scene-target {
+  color: var(--text-main); font-weight: 600;
+}
+#sgmap-tooltip .sgft-scene-remaining {
+  margin-left: auto; font-size: .72rem;
+  color: var(--text-dim); letter-spacing: .04em;
+}
+#sgmap-tooltip .sgft-route {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  background: rgba(0,0,0,.32);
+  border: 1px solid rgba(212,168,67,.12);
+  border-radius: var(--r);
+  font-size: .82rem; color: var(--text-main);
+}
+#sgmap-tooltip .sgft-arrow {
+  color: var(--gold); font-weight: 700;
+  font-size: .9rem;
+}
+#sgmap-tooltip .sgft-from,
+#sgmap-tooltip .sgft-to {
+  font-family: var(--font-serif); font-weight: 600;
+}
+#sgmap-tooltip .sgft-via {
+  font-size: .72rem; color: var(--text-dim);
+  padding-left: 10px;
+  border-left: 2px solid rgba(212,168,67,.18);
+  letter-spacing: .04em;
+}
+#sgmap-tooltip .sgft-section-title {
+  font-size: .66rem; color: var(--text-dim);
+  letter-spacing: .12em;
+  margin-bottom: 4px;
+}
+#sgmap-tooltip .sgft-troops {
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+#sgmap-tooltip .sgft-troop-chip {
+  display: inline-flex; align-items: baseline; gap: 3px;
+  padding: 2px 9px;
+  border-radius: 9px;
+  border: 1px solid rgba(212,168,67,.22);
+  background: rgba(40,28,8,.45);
+  font-size: .72rem;
+}
+#sgmap-tooltip .sgft-troop-type {
+  color: var(--gold-light); font-weight: 700;
+}
+#sgmap-tooltip .sgft-troop-count {
+  color: var(--text-main);
+}
