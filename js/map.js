@@ -1413,7 +1413,8 @@ const BONUS_MULT = {
 
 
   /* ─────────────────────────────────
-     战况层渲染（虚线光环 / 燕尾旗）
+     战况层渲染 v24 — 血脉脉冲五状态
+     战事/围攻/行军/撤退/被俘
   ───────────────────────────────── */
   function _renderCombatLayer() {
     const layer = document.getElementById('sgmap-combat-layer');
@@ -1495,8 +1496,8 @@ const BONUS_MULT = {
       g.appendChild(pFence);
 
       for (let i = 0; i < 6; i++) {
-        // Flat-top hex vertices
-        const angle_deg = 60 * i;
+        // Flat-top hex vertices: angles 30°, 90°, 150°, 210°, 270°, 330°
+        const angle_deg = 60 * i - 30;
         const angle_rad = Math.PI / 180 * angle_deg;
         const vx = rFence * Math.cos(angle_rad);
         const vy = rFence * Math.sin(angle_rad);
@@ -1551,7 +1552,7 @@ const BONUS_MULT = {
 
         const durations = [0, -0.8, -1.6];
         durations.forEach((begin, idx) => {
-          const particle = ce('circle', { class: `combat-march-particle p${idx+1}`, r: 3.5 });
+          const particle = ce('circle', { class: 'combat-march-particle', r: 3.5 });
           const anim = ce('animateMotion', {
             dur: '2.4s', repeatCount: 'indefinite', begin: `${begin}s`
           });
@@ -1586,6 +1587,7 @@ const BONUS_MULT = {
       if (!cityGroup) return;
 
       cityGroup.classList.add('combat-captured-veil');
+      cityGroup.setAttribute('data-combat-captured', 'true');
 
       const g = ce('g', { 'data-ctype': 'captured', style: `--p-color: ${color}` });
       g.appendChild(ce('polygon', {
@@ -1611,9 +1613,9 @@ const BONUS_MULT = {
         el.style.display = on ? '' : 'none';
       });
       if (ctype === 'captured') {
-        document.querySelectorAll(`.combat-captured-veil`).forEach(el => {
-          if (!on) el.classList.remove('combat-captured-veil');
-          else el.classList.add('combat-captured-veil');
+        document.querySelectorAll('[data-combat-captured="true"]').forEach(el => {
+          if (on) el.classList.add('combat-captured-veil');
+          else el.classList.remove('combat-captured-veil');
         });
       }
     });
@@ -1632,12 +1634,9 @@ const BONUS_MULT = {
           el.style.display = on ? '' : 'none';
         });
         if (ctype === 'captured') {
-          document.querySelectorAll(`[data-ctype="captured"]`).forEach(el => {
-             const parent = el.closest('.sgmap-city');
-             if (parent) {
-                if (on) parent.classList.add('combat-captured-veil');
-                else parent.classList.remove('combat-captured-veil');
-             }
+          document.querySelectorAll('[data-combat-captured="true"]').forEach(el => {
+             if (on) el.classList.add('combat-captured-veil');
+             else el.classList.remove('combat-captured-veil');
           });
         }
       });
