@@ -1194,16 +1194,27 @@ const BONUS_MULT = {
         if (cityTransit.length) {
           combatHtml += '<div class="sgt-combat-divider"></div>';
           cityTransit.forEach(t => {
-            const st = t.status==='围攻中'?'<span class="txt-siege">围攻中</span>'
-              : t.status==='撤退中'?'<span class="txt-retreat">撤退中</span>'
-              : t.status==='被俘'?'<span class="txt-captured">被俘</span>'
-              : `<span style="color:#7ddd7d">${_esc(t.status)}</span>`;
-            const dir = t.to===cn ? '→此城' : '出发↗';
-            combatHtml += `<div class="sgt-combat-row"><span class="sgt-combat-lbl">${dir}</span><span class="sgt-combat-val"><b>${_esc(t.general)}</b> ${_esc(t.troopType)}:${t.troopCount} ${st}</span></div>`;
+            const stCls = t.status==='围攻中' ? 'stt-siege'
+              : t.status==='撤退中' ? 'stt-retreat'
+              : t.status==='被俘'   ? 'stt-captured'
+              : 'stt-march';
+            const stTxt = _esc(t.status || '行军中');
+            const dir = t.to===cn ? '入城' : '出发';
+            const routeTxt = `${_esc(t.from)}<span class="stt-arrow-inline">›</span>${_esc(t.to)}`;
+            combatHtml += `<div class="sgt-combat-row sgt-transit-row">` +
+              `<span class="sgt-transit-dir">${dir}</span>` +
+              `<div class="sgt-transit-body">` +
+              `<span class="sgt-transit-gen">${_esc(t.general)}</span>` +
+              `<span class="sgt-transit-route">${routeTxt}</span>` +
+              (t.troopType ? `<span class="sgt-transit-troop">${_esc(t.troopType)}·${t.troopCount}</span>` : '') +
+              `<span class="sgt-transit-st ${stCls}">${stTxt}</span>` +
+              `</div>` +
+              `</div>`;
           });
         }
         return combatHtml;
       })()}`;
+    _tooltip.classList.remove('sgmap-tooltip--troop');  // 城池 tooltip 用标准宽度
     _tooltip.classList.add('visible');
     _moveTip(e);
   }
@@ -1377,29 +1388,7 @@ const BONUS_MULT = {
 
       // tooltip：合并显示所有兵种
       g.addEventListener('mouseenter', e => {
-        const statusLabel = isSiege ? '<span class="txt-siege">围攻中</span>'
-          : isRetreat ? '<span class="txt-retreat">撤退中</span>'
-          : isCaptured ? '<span class="txt-captured">被俘</span>'
-          : `<span style="color:#7ddd7d">${_esc(status)}</span>`;
-        const troopStr = t.troops.map(tr => `${_esc(tr.type)}:${tr.count}`).join(' · ');
-        const html = `<div class="sgt-combat-divider"></div>
-          <div class="sgt-combat-row">
-            <span class="sgt-combat-lbl">将领</span>
-            <span class="sgt-combat-val"><b>${_esc(t.general)}</b></span>
-          </div>
-          <div class="sgt-combat-row">
-            <span class="sgt-combat-lbl">路线</span>
-            <span class="sgt-combat-val">${_esc(t.from)}→${_esc(t.to)}</span>
-          </div>
-          <div class="sgt-combat-row">
-            <span class="sgt-combat-lbl">兵力</span>
-            <span class="sgt-combat-val">${troopStr}</span>
-          </div>
-          <div class="sgt-combat-row">
-            <span class="sgt-combat-lbl">状态</span>
-            <span class="sgt-combat-val">${statusLabel}</span>
-          </div>`;
-        _showTipHtml(_buildCombatTip(t.general, html), e);
+        _showTipHtml(_buildTroopTip(t, isSiege, isRetreat, isCaptured, status), e);
       });
       g.addEventListener('mousemove', _moveTip);
       g.addEventListener('mouseleave', _hideTip);
@@ -1407,17 +1396,46 @@ const BONUS_MULT = {
     });
   }
 
-  // 内部辅助：构建战况 tooltip 的 HTML 骨架（复用现有 tooltip 元素）
-  function _buildCombatTip(title, bodyHtml) {
-    return `<div class="sgt-header" style="border-bottom:1px solid rgba(180,148,68,.22);padding-bottom:6px;margin-bottom:4px;">
-      <div class="sgt-name">${_esc(title)}</div>
-    </div>${bodyHtml}`;
+  // 在途棋子专属 tooltip（v3.0 小而美）
+  function _buildTroopTip(t, isSiege, isRetreat, isCaptured, status) {
+    const statusCls = isSiege ? 'stt-siege'
+      : isRetreat   ? 'stt-retreat'
+      : isCaptured  ? 'stt-captured'
+      : 'stt-march';
+    const stripCls = isSiege ? 'stt-strip-siege'
+      : isRetreat   ? 'stt-strip-retreat'
+      : isCaptured  ? 'stt-strip-captured'
+      : 'stt-strip-march';
+    const statusTxt = _esc(status || '行军中');
+    const troopChips = t.troops.map(tr =>
+      `<span class="stt-troop-chip"><b>${_esc(tr.type)}</b><span>${tr.count}</span></span>`
+    ).join('');
+    return `<div class="sgt-troop-tip">` +
+      `<div class="stt-header">` +
+      `<div class="stt-strip ${stripCls}"></div>` +
+      `<div class="stt-header-main">` +
+      `<span class="stt-name">${_esc(t.general)}</span>` +
+      `<span class="stt-status ${statusCls}">${statusTxt}</span>` +
+      `</div>` +
+      `</div>` +
+      (t.faction ? `<div class="stt-faction">${_esc(t.faction)}</div>` : '') +
+      `<div class="stt-divider"></div>` +
+      `<div class="stt-route">` +
+      `<span class="stt-city">${_esc(t.from)}</span>` +
+      `<span class="stt-arrow">›</span>` +
+      `<span class="stt-city">${_esc(t.to)}</span>` +
+      `</div>` +
+      (troopChips ? `<div class="stt-troops">${troopChips}</div>` : '') +
+      `</div>`;
   }
 
   // 内部辅助：直接用 HTML 显示 tooltip（不走 _showTip 的城池计算逻辑）
   function _showTipHtml(html, e) {
     if (!_tooltip) return;
     _tooltip.innerHTML = html;
+    // 专属在途卡片用 compact 模式（宽度更小）
+    const isTroop = html.indexOf('sgt-troop-tip') !== -1;
+    _tooltip.classList.toggle('sgmap-tooltip--troop', isTroop);
     _tooltip.classList.add('visible');
     _moveTip(e);
   }
