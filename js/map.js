@@ -1,5 +1,5 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v15(战况层)
+ * map.js — 三国志文字版 · 势力地图 v15
  *
  * ✦ 60 座城池，十二大州区
  * ✦ flat-top 六边形，整个矩形网格完整铺满（无空白）
@@ -300,24 +300,40 @@ const BONUS_MULT = {
      道路连接
   ───────────────────────────────── */
   const ROADS = [
-    ['ji','nanpi'],
-    ['nanpi','ye'],
-    ['ye','pingyuan'],
-    ['ye','luoyang'],
-    ['luoyang','xuchang'],
-    ['luoyang','tongguan'],
-    ['tongguan','changan'],
-    ['luoyang','wan'],
-    ['xuchang','chenliu'],
-    ['xuchang','runan'],
-    ['runan','shouchun'],
-    ['shouchun','hefei'],
-    ['wan','xiangyang'],
-    ['xiangyang','jiangling'],
-    ['jiangling','jiangxia'],
-    ['jiangxia','jianye'],
-    ['changan','hanzhong'],
-    ['hanzhong','chengdu'],
+    ['xiangping','beiping'],['beiping','ji'],
+    ['ji','nanpi'],['ji','ye'],['beiping','nanpi'],
+    ['nanpi','pingyuan'],['nanpi','ye'],['ye','pingyuan'],
+    ['ye','jinyang'],['ye','shangdang'],['jinyang','shangdang'],
+    ['nanpi','beihai'],['pingyuan','beihai'],['pingyuan','jinan'],
+    ['jinan','puyang'],['beihai','puyang'],
+    ['ye','henei'],['jinyang','henei'],['shangdang','henei'],['shangdang','luoyang'],
+    ['henei','luoyang'],['luoyang','hongnong'],['luoyang','huguan'],
+    ['hongnong','tongguan'],['tongguan','changan'],
+    ['changan','anding'],['changan','tianshui'],['anding','tianshui'],
+    ['anding','wuwei'],['wuwei','xiping'],['tianshui','jietingx'],['jietingx','anding'],
+    ['luoyang','xuchang'],['luoyang','puyang'],
+    ['puyang','chenliu'],['puyang','xiaopei'],['chenliu','xuchang'],['xuchang','runan'],
+    ['xuchang','qiao'],['qiao','runan'],
+    ['qiao','xiaopei'],['xiaopei','xiapi'],['xiaopei','xuchang'],['xiapi','guangling'],
+    ['luoyang','wan'],['runan','wan'],['runan','xinye'],
+    ['wan','xinye'],['xinye','xiangyang'],['xiangyang','jiangling'],
+    ['xiangyang','jiangxia'],['jiangling','jiangxia'],
+    ['jiangling','wuling'],['jiangling','changsha'],
+    ['changsha','lingling'],['changsha','guiyang'],['wuling','lingling'],
+    ['guangling','shouchun'],['shouchun','hefei'],['hefei','lujiang'],
+    ['lujiang','jianye'],['jianye','wu'],['jianye','chaisang'],
+    ['wu','kuaiji'],['chaisang','luling'],['chaisang','lujiang'],
+    ['jiangxia','hefei'],['jiangxia','jianye'],
+    ['tongguan','hanzhong'],['tianshui','wudu'],['wudu','yangpingg'],['wudu','jiange'],
+    ['hanzhong','yangpingg'],['yangpingg','jiange'],
+    ['jiange','jiameng'],['jiameng','zitong'],['zitong','chengdu'],
+    ['hanzhong','shangyong'],
+    ['chengdu','jiangzhou'],['jiangzhou','yongan'],
+    ['yongan','jiangling'],['yongan','chaisang'],['yongan','jiangxia'],
+    ['shangyong','yongan'],['shangyong','xiangyang'],['shangyong','xinye'],
+    ['chengdu','jianning'],['jiangzhou','jianning'],
+    ['jianning','yunnan'],['yunnan','yongchang'],['jianning','jiaozhi'],
+    ['guangling','jianye'],['guiyang','luling'],
   ];
 
   /* ─────────────────────────────────
@@ -401,7 +417,6 @@ const BONUS_MULT = {
   let _tooltip = null;
 
   function _esc(s) {
-    if (s == null) return '';
     return String(s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -511,12 +526,6 @@ const BONUS_MULT = {
         fill="rgba(5,4,10,0.62)" style="pointer-events:none"/>
 
       ${_allHexes()}
-
-      <g data-layer="battleAura"></g>
-      <g data-layer="battleRing"></g>
-      <g data-layer="siege"></g>
-      <g data-layer="route"></g>
-      <g data-layer="troop"></g>
     </svg>`;
   }
 
@@ -810,7 +819,7 @@ const BONUS_MULT = {
       }
       return `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}"
         x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}"
-        stroke="rgba(175,148,82,0.08)" stroke-width="0.7"
+        stroke="rgba(255,255,255,0.04)" stroke-width="0.7"
         stroke-dasharray="2,5" stroke-linecap="round"/>`;
     }).join('');
   }
@@ -1289,284 +1298,11 @@ const BONUS_MULT = {
     return result;
   }
 
-
-  /* ─────────────────────────────────
-     战况层 v3.0 API
-  ───────────────────────────────── */
-  function renderBattles(battles) {
-    const svg = document.getElementById('sgmap-svg');
-    if (!svg) return;
-    const gAura = svg.querySelector('g[data-layer="battleAura"]');
-    const gRing = svg.querySelector('g[data-layer="battleRing"]');
-    if (!gAura || !gRing) return;
-
-    gAura.innerHTML = '';
-    gRing.innerHTML = '';
-
-    if (!battles || battles.length === 0) return;
-
-    let auraHtml = '';
-
-    battles.forEach(b => {
-      const city = CITIES.find(c => c.id === b.city);
-      if (!city) return;
-      const { x, y } = hexToXY(city.hx, city.hy);
-
-      auraHtml += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${HEX_R + 8}" class="battle-aura"/>`;
-
-      const battleG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-
-      const middleRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      middleRing.setAttribute('cx', x.toFixed(1));
-      middleRing.setAttribute('cy', y.toFixed(1));
-      middleRing.setAttribute('r', HEX_R + 3.5);
-      middleRing.setAttribute('class', 'battle-ring');
-
-      const innerRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      innerRing.setAttribute('cx', x.toFixed(1));
-      innerRing.setAttribute('cy', y.toFixed(1));
-      innerRing.setAttribute('r', HEX_R + 1.8);
-      innerRing.setAttribute('class', 'battle-ring-inner');
-
-      battleG.appendChild(middleRing);
-      battleG.appendChild(innerRing);
-      gRing.appendChild(battleG);
-
-      const resText = b.result === '平' ? '和' : b.result;
-      const html = `<div class="sgt-head">
-  <span class="sgt-name txt-battle">${_esc(city.name)} · 战</span>
-  <span class="sgt-badge">${_esc(resText)}</span>
-</div>
-<div class="sgt-row"><span class="sgt-lbl">攻</span>
-  <span class="sgt-val"><b>${_esc(b.attacker)}</b></span></div>
-<div class="sgt-row"><span class="sgt-lbl">守</span>
-  <span class="sgt-val"><b>${_esc(b.defender)}</b></span></div>
-<div class="sgt-divider"></div>
-<div class="sgt-row"><span class="sgt-lbl">伤亡</span>
-  <span class="sgt-val">攻 ${_esc(b.attLoss)} · 守 ${_esc(b.defLoss)}</span></div>`;
-
-      middleRing.addEventListener('mouseenter', e => {
-        _tooltip.innerHTML = html;
-        _tooltip.classList.add('visible');
-        _moveTip(e);
-      });
-      middleRing.addEventListener('mousemove', e => {
-        _moveTip(e);
-      });
-      middleRing.addEventListener('mouseleave', () => {
-        _hideTip();
-      });
-      // Click bound to the same show tip logic as requested
-      middleRing.addEventListener('click', e => {
-        _tooltip.innerHTML = html;
-        _tooltip.classList.add('visible');
-        _moveTip(e);
-      });
-    });
-
-    gAura.innerHTML = auraHtml;
-  }
-
-
-  function renderSieges(enroute) {
-    const svg = document.getElementById('sgmap-svg');
-    if (!svg) return;
-    const gSiege = svg.querySelector('g[data-layer="siege"]');
-    if (!gSiege) return;
-
-    gSiege.innerHTML = '';
-    if (!enroute || enroute.length === 0) return;
-
-    let html = '';
-    enroute.forEach(e => {
-      if (e.status !== 'sieging') return;
-      const cFrom = CITIES.find(c => c.id === e.from);
-      const cTo = CITIES.find(c => c.id === e.to);
-      if (!cFrom || !cTo) return;
-
-      const pb = hexToXY(cTo.hx, cTo.hy);
-
-      html += `
-        <g>
-          <circle cx="${pb.x.toFixed(1)}" cy="${pb.y.toFixed(1)}" r="${HEX_R + 2.2}" class="siege-ring"/>
-          <circle cx="${pb.x.toFixed(1)}" cy="${pb.y.toFixed(1)}" r="${HEX_R + 2.2}" class="siege-ring-overlay"/>
-        </g>
-      `;
-    });
-    gSiege.innerHTML = html;
-  }
-
-
-  function renderTroops(enroute) {
-    const svg = document.getElementById('sgmap-svg');
-    if (!svg) return;
-    const gRoute = svg.querySelector('g[data-layer="route"]');
-    const gTroop = svg.querySelector('g[data-layer="troop"]');
-    if (!gRoute || !gTroop) return;
-
-    gRoute.innerHTML = '';
-    gTroop.innerHTML = '';
-
-    if (!enroute || enroute.length === 0) return;
-
-    let routeHtml = '';
-
-    enroute.forEach(e => {
-      const cFrom = CITIES.find(c => c.id === e.from);
-      const cTo = CITIES.find(c => c.id === e.to);
-      if (!cFrom || !cTo) return;
-
-      const pa = hexToXY(cFrom.hx, cFrom.hy);
-      const pb = hexToXY(cTo.hx, cTo.hy);
-
-      let cx, cy;
-      let angle = Math.atan2(pb.y - pa.y, pb.x - pa.x);
-
-      if (e.status === 'sieging' || e.status === 'captured') {
-        const dx = pa.x - pb.x;
-        const dy = pa.y - pb.y;
-        const len = Math.hypot(dx, dy);
-        cx = pb.x + (dx / len) * (HEX_R + 9);
-        cy = pb.y + (dy / len) * (HEX_R + 9);
-      } else if (e.status === 'retreating') {
-        cx = pa.x + (pb.x - pa.x) * 0.28;
-        cy = pa.y + (pb.y - pa.y) * 0.28;
-      } else {
-        let totalTurns = e.totalTurns;
-        if (totalTurns == null) {
-          const dxHex = cFrom.hx - cTo.hx;
-          const dyHex = cFrom.hy - cTo.hy;
-          const dxEucl = pa.x - pb.x;
-          const dyEucl = pa.y - pb.y;
-          const distEucl = Math.hypot(dxEucl, dyEucl);
-          totalTurns = Math.max(2, Math.round((distEucl / HEX_W) / 1.5));
-        }
-        let remain = e.remainTurns == null ? 1 : e.remainTurns;
-        let progress = (totalTurns - remain) / totalTurns;
-        progress = Math.max(0.18, Math.min(0.82, progress));
-        cx = pa.x + (pb.x - pa.x) * progress;
-        cy = pa.y + (pb.y - pa.y) * progress;
-      }
-
-      let routeClass = `troop-route faction-${e.faction}`;
-      if (e.status === 'retreating') {
-        routeClass += ' status-retreating';
-      }
-      routeHtml += `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}" x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}" class="${routeClass}"/>`;
-
-      if (e.status === 'enroute') {
-        const arrowDist = HEX_R + 6;
-        const ax = pb.x - Math.cos(angle) * arrowDist;
-        const ay = pb.y - Math.sin(angle) * arrowDist;
-        const angleDeg = angle * 180 / Math.PI;
-        routeHtml += `<polygon points="0,-2 4,0 0,2" transform="translate(${ax.toFixed(1)},${ay.toFixed(1)}) rotate(${angleDeg.toFixed(1)})" class="troop-arrow faction-${e.faction}"/>`;
-      }
-
-      const troopG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      let tClass = `troop faction-${e.faction}`;
-      if (e.status === 'sieging') tClass += ' status-sieging';
-      if (e.status === 'retreating') tClass += ' status-retreating';
-      if (e.status === 'captured') tClass += ' status-captured';
-      troopG.setAttribute('class', tClass);
-      troopG.setAttribute('transform', `translate(${cx.toFixed(1)}, ${cy.toFixed(1)})`);
-
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', '-6');
-      rect.setAttribute('y', '-6');
-      rect.setAttribute('width', '12');
-      rect.setAttribute('height', '12');
-      rect.setAttribute('rx', '1.8');
-      rect.setAttribute('ry', '1.8');
-      rect.setAttribute('class', 'troop-body');
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', '0');
-      text.setAttribute('y', '2.4');
-      text.setAttribute('class', 'troop-glyph');
-      text.textContent = e.general ? e.general.charAt(0) : '?';
-
-      troopG.appendChild(rect);
-      troopG.appendChild(text);
-
-      if (e.status === 'sieging') {
-        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        dot.setAttribute('cx', '5');
-        dot.setAttribute('cy', '-5');
-        dot.setAttribute('r', '1.5');
-        dot.setAttribute('fill', '#d49830');
-        dot.setAttribute('stroke', 'rgba(0,0,0,.5)');
-        dot.setAttribute('stroke-width', '.4');
-        troopG.appendChild(dot);
-      }
-      if (e.status === 'captured') {
-        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        dot.setAttribute('cx', '5');
-        dot.setAttribute('cy', '5');
-        dot.setAttribute('r', '1.6');
-        dot.setAttribute('fill', '#1a1410');
-        dot.setAttribute('stroke', '#4a3a28');
-        dot.setAttribute('stroke-width', '.5');
-        troopG.appendChild(dot);
-      }
-
-      let statusText = '行军中 · 剩 ' + (e.remainTurns || 1) + ' 回合';
-      let statusColor = '';
-      if (e.status === 'enroute') {
-        statusText = `行军中 · 剩 ${e.remainTurns != null ? e.remainTurns : '?'} 回合`;
-      } else if (e.status === 'sieging') {
-        statusText = '围攻中';
-        statusColor = 'txt-siege';
-      } else if (e.status === 'retreating') {
-        statusText = '撤退中';
-        statusColor = 'txt-retreat';
-      } else if (e.status === 'captured') {
-        statusText = '被俘';
-        statusColor = 'txt-captured';
-      }
-
-      const factionLabels = { 'p0': '甲', 'p1': '乙', 'p2': '丙', 'npc': '群雄' };
-      const fLabel = factionLabels[e.faction] || e.faction;
-
-      const html = `<div class="sgt-head">
-  <span class="sgt-name">${_esc(e.general)}</span>
-  <span class="sgt-badge">${_esc(fLabel)}</span>
-</div>
-<div class="sgt-row"><span class="sgt-lbl">自</span>
-  <span class="sgt-val">${_esc(cFrom.name)}</span></div>
-<div class="sgt-row"><span class="sgt-lbl">向</span>
-  <span class="sgt-val">${_esc(cTo.name)}</span></div>
-<div class="sgt-divider"></div>
-<div class="sgt-row"><span class="sgt-lbl">兵</span>
-  <span class="sgt-val">${_esc(e.troopType)} ${_esc(e.troopCount)}</span></div>
-<div class="sgt-row"><span class="sgt-lbl">状</span>
-  <span class="sgt-val ${_esc(statusColor)}">${_esc(statusText)}</span></div>`;
-
-      troopG.addEventListener('mouseenter', ev => {
-        _tooltip.innerHTML = html;
-        _tooltip.classList.add('visible');
-        _moveTip(ev);
-      });
-      troopG.addEventListener('mousemove', ev => {
-        _moveTip(ev);
-      });
-      troopG.addEventListener('mouseleave', () => {
-        _hideTip();
-      });
-
-      gTroop.appendChild(troopG);
-    });
-
-    gRoute.innerHTML = routeHtml;
-  }
-
   /* ─────────────────────────────────
      公开 API
   ───────────────────────────────── */
   return {
     init,
-    renderBattles,
-    renderSieges,
-    renderTroops,
     getCityMeta(name) {
       const c = CITIES.find(x => x.name === name);
       if (!c) return null;
