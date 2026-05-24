@@ -401,6 +401,7 @@ const BONUS_MULT = {
   let _tooltip = null;
 
   function _esc(s) {
+    if (s == null) return '';
     return String(s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -809,7 +810,7 @@ const BONUS_MULT = {
       }
       return `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}"
         x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}"
-        stroke="rgba(255,255,255,0.02)" stroke-width="0.7"
+        stroke="rgba(175,148,82,0.08)" stroke-width="0.7"
         stroke-dasharray="2,5" stroke-linecap="round"/>`;
     }).join('');
   }
