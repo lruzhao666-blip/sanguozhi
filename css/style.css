@@ -2836,8 +2836,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
   color:#c8b89a;
 }
 .sgmap-tooltip.visible { opacity:1; }
-/* 关闭按钮区域需要响应点击 */
-.sgmap-tooltip .sgt-close-row { pointer-events: auto; }
 .sgmap-tooltip .sgt-header {
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 7px; padding-bottom: 7px;
@@ -3139,13 +3137,16 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgmap-battle-ring-inner {
   fill: none; stroke: rgba(212,168,67,.45); stroke-width: .6;
   stroke-dasharray: 2 3; pointer-events: none;
-  /* animation removed: 不再旋转 */
+  animation: sgmap-battle-ring-rotate 18s linear infinite;
 }
 @keyframes sgmap-battle-aura {
   0%,100% { opacity:0; } 50% { opacity:.22; }
 }
 @keyframes sgmap-battle-ring-pulse {
   0%,100% { opacity:.55; stroke-width:1.6; } 50% { opacity:1; stroke-width:2.0; }
+}
+@keyframes sgmap-battle-ring-rotate {
+  from { stroke-dashoffset:0; } to { stroke-dashoffset:50; }
 }
 
 /* ── 元素二：围攻环 ── */
@@ -3368,44 +3369,3 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgt-transit-st.stt-siege   { color:#e6b840; background:rgba(190,145,0,.14); border:1px solid rgba(200,155,0,.26); }
 .sgt-transit-st.stt-retreat { color:#b89848; background:rgba(150,120,0,.12); border:1px solid rgba(160,125,0,.24); }
 .sgt-transit-st.stt-captured{ color:#e06858; background:rgba(180,40,20,.14); border:1px solid rgba(190,45,25,.26); }
-
-/* ── 城池 tooltip 关闭按键 ── */
-.sgt-close-row {
-  display: flex;
-  justify-content: center;
-  margin-top: 9px;
-  padding-top: 7px;
-  border-top: 1px solid rgba(180,148,68,.14);
-}
-.sgt-close-btn {
-  font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
-  font-size: .65rem;
-  color: rgba(200,184,154,.65);
-  background: rgba(212,168,67,.07);
-  border: 1px solid rgba(212,168,67,.20);
-  border-radius: 12px;
-  padding: 3px 20px;
-  cursor: pointer;
-  letter-spacing: .08em;
-  pointer-events: auto;
-  transition: color .14s, background .14s, border-color .14s;
-  -webkit-tap-highlight-color: transparent;
-}
-.sgt-close-btn:hover,
-.sgt-close-btn:active {
-  color: rgba(240,192,96,.9);
-  background: rgba(212,168,67,.16);
-  border-color: rgba(212,168,67,.42);
-}
-
-/* ── 行军路径方向小三角 ── */
-.sgmap-troop-arrow {
-  pointer-events: none;
-  opacity: .70;
-}
-
-/* ── 战报卡高亮（战斗环点击） ── */
-.battle-card.highlight {
-  box-shadow: 0 0 0 1.5px rgba(232,85,64,.60), 0 6px 22px rgba(232,85,64,.22);
-  transition: box-shadow .2s;
-}
