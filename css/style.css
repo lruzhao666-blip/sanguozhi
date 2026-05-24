@@ -3226,3 +3226,146 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .txt-siege   { color:#d49830; }
 .txt-retreat { color:#8a7c6a; }
 .txt-captured{ color:#8a7868; }
+
+/* ══════════════════════════════════════════════════════
+   在途棋子悬浮卡片 v3.0 — 专属设计
+   ====================================================== */
+
+/* compact 模式：宽度缩小、padding 精简 */
+.sgmap-tooltip.sgmap-tooltip--troop {
+  width: 195px;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* 卡片根容器 */
+.sgt-troop-tip {
+  display: flex; flex-direction: column;
+}
+
+/* 顶部：色条 + 将领名 + 状态 pill */
+.stt-header {
+  display: flex; align-items: stretch;
+  background: rgba(255,255,255,.03);
+  border-bottom: 1px solid rgba(180,148,68,.18);
+}
+.stt-strip {
+  width: 3px; flex-shrink: 0; align-self: stretch;
+}
+.stt-strip-march   { background: linear-gradient(180deg,#3dbe6c,#2a9050); }
+.stt-strip-siege   { background: linear-gradient(180deg,#e6b840,#c09020); }
+.stt-strip-retreat { background: linear-gradient(180deg,#a08848,#806828); }
+.stt-strip-captured{ background: linear-gradient(180deg,#e05040,#b03020); }
+
+.stt-header-main {
+  display: flex; align-items: center; justify-content: space-between;
+  flex: 1; padding: 9px 11px 9px 10px; gap: 6px;
+}
+.stt-name {
+  font-family: 'Noto Serif SC', serif;
+  font-size: .96rem; font-weight: 900;
+  color: #f0e6d3; letter-spacing: .06em;
+  line-height: 1;
+}
+
+/* 状态 pill */
+.stt-status {
+  font-family: 'Noto Serif SC', serif;
+  font-size: .6rem; font-weight: 700;
+  padding: 2px 7px; border-radius: 6px;
+  white-space: nowrap; letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.stt-march   { color:#6dca7d; background:rgba(0,140,60,.16);  border:1px solid rgba(0,150,65,.3); }
+.stt-siege   { color:#e6b840; background:rgba(190,145,0,.16); border:1px solid rgba(200,155,0,.3); }
+.stt-retreat { color:#b89848; background:rgba(150,120,0,.14); border:1px solid rgba(160,125,0,.28); }
+.stt-captured{ color:#e06858; background:rgba(180,40,20,.16); border:1px solid rgba(190,45,25,.3); }
+
+/* 阵营行 */
+.stt-faction {
+  font-size: .68rem; color: var(--text-dim);
+  padding: 4px 13px 0;
+  letter-spacing: .04em;
+}
+
+/* 分割线 */
+.stt-divider {
+  height: 1px; margin: 7px 11px 5px;
+  background: rgba(180,148,68,.15);
+}
+
+/* 路线行：城名 › 城名 */
+.stt-route {
+  display: flex; align-items: center; gap: 4px;
+  padding: 0 11px 6px 13px;
+}
+.stt-city {
+  font-family: 'Noto Serif SC', serif;
+  font-size: .84rem; font-weight: 700;
+  color: #c8b89a; letter-spacing: .03em;
+}
+.stt-arrow {
+  color: var(--gold-dim);
+  font-size: 1rem; font-weight: 700;
+  line-height: 1; flex-shrink: 0;
+}
+
+/* 兵力 chip 行 */
+.stt-troops {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 0 11px 10px 13px;
+}
+.stt-troop-chip {
+  display: inline-flex; align-items: baseline; gap: 3px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(180,148,68,.18);
+  border-radius: 5px; padding: 1px 7px;
+}
+.stt-troop-chip b {
+  font-size: .6rem; color: var(--text-dim);
+  font-weight: 600; letter-spacing: .04em;
+}
+.stt-troop-chip span {
+  font-size: .78rem; color: #c8b89a; font-weight: 700;
+}
+
+/* ── 城池 tooltip 内的在途行（优化版）── */
+.sgt-combat-row.sgt-transit-row {
+  align-items: flex-start;
+  padding: 2px 0;
+}
+.sgt-transit-dir {
+  font-size: .54rem; color: var(--text-dim);
+  letter-spacing: .08em; min-width: 2.2em;
+  text-align: right; flex-shrink: 0;
+  margin-top: 2px;
+}
+.sgt-transit-body {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 3px 6px; flex: 1;
+}
+.sgt-transit-gen {
+  font-size: .78rem; font-weight: 700; color: #f0e6d3;
+  font-family: 'Noto Serif SC', serif; letter-spacing: .03em;
+  flex-shrink: 0;
+}
+.sgt-transit-route {
+  font-size: .7rem; color: var(--text-sub);
+  flex-shrink: 0; white-space: nowrap;
+}
+.stt-arrow-inline {
+  color: var(--gold-dim); margin: 0 2px; font-size: .75rem;
+}
+.sgt-transit-troop {
+  font-size: .64rem; color: var(--gold-dim);
+  flex-shrink: 0; letter-spacing: .01em;
+}
+.sgt-transit-st {
+  font-size: .62rem; font-weight: 600;
+  padding: 1px 5px; border-radius: 5px;
+  flex-shrink: 0; letter-spacing: .03em;
+}
+.sgt-transit-st.stt-march   { color:#6dca7d; background:rgba(0,140,60,.14); border:1px solid rgba(0,150,65,.26); }
+.sgt-transit-st.stt-siege   { color:#e6b840; background:rgba(190,145,0,.14); border:1px solid rgba(200,155,0,.26); }
+.sgt-transit-st.stt-retreat { color:#b89848; background:rgba(150,120,0,.12); border:1px solid rgba(160,125,0,.24); }
+.sgt-transit-st.stt-captured{ color:#e06858; background:rgba(180,40,20,.14); border:1px solid rgba(190,45,25,.26); }
