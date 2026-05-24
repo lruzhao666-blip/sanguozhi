@@ -2992,3 +2992,108 @@ header, nav, main, footer { position: relative; z-index: 1; }
   background: rgba(200,40,0,.12);
   border: 1px solid rgba(200,40,0,.3);
 }
+
+/* ══════════════════════════════════════════════════════
+   战况层 v1.0 — battle-ring / siege-ring / troop-token
+   ====================================================== */
+
+/* ── 元素一：战斗呼吸环 ── */
+.sgmap-battle-aura {
+  fill: none; stroke: #e85540; stroke-width: 1.8;
+  opacity: 0; pointer-events: none;
+  animation: sgmap-battle-aura 2.4s ease-in-out infinite;
+}
+.sgmap-battle-ring {
+  fill: none; stroke: #e85540; stroke-width: 1.6;
+  cursor: pointer;
+  filter: drop-shadow(0 0 3px rgba(232,85,64,.6));
+  animation: sgmap-battle-ring-pulse 2.4s ease-in-out infinite;
+}
+.sgmap-battle-ring-inner {
+  fill: none; stroke: rgba(212,168,67,.45); stroke-width: .6;
+  stroke-dasharray: 2 3; pointer-events: none;
+  animation: sgmap-battle-ring-rotate 18s linear infinite;
+}
+@keyframes sgmap-battle-aura {
+  0%,100% { opacity:0; } 50% { opacity:.22; }
+}
+@keyframes sgmap-battle-ring-pulse {
+  0%,100% { opacity:.55; stroke-width:1.6; } 50% { opacity:1; stroke-width:2.0; }
+}
+@keyframes sgmap-battle-ring-rotate {
+  from { stroke-dashoffset:0; } to { stroke-dashoffset:50; }
+}
+
+/* ── 元素二：围攻环 ── */
+.sgmap-siege-ring {
+  fill: none; stroke: #d49830; stroke-width: 1.4;
+  opacity: .55; pointer-events: none;
+}
+.sgmap-siege-overlay {
+  fill: none; stroke: #d49830; stroke-width: 1.4;
+  stroke-dasharray: 6 14; opacity: .85; pointer-events: none;
+  animation: sgmap-siege-rotate 24s linear infinite;
+  filter: drop-shadow(0 0 2px rgba(212,152,48,.5));
+}
+@keyframes sgmap-siege-rotate {
+  from { stroke-dashoffset:0; } to { stroke-dashoffset:-80; }
+}
+
+/* ── 元素三：行军棋子 ── */
+.sgmap-troop { cursor: pointer; transition: filter .18s; }
+.sgmap-troop:hover { filter: brightness(1.25) drop-shadow(0 2px 6px rgba(0,0,0,.7)); }
+.sgmap-troop-body {
+  stroke-width: 1.2;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.85));
+}
+.sgmap-troop.fp0 .sgmap-troop-body { fill:rgba(80,10,8,.92);  stroke:#e74c3c; }
+.sgmap-troop.fp1 .sgmap-troop-body { fill:rgba(8,55,22,.92);  stroke:#3dbe6c; }
+.sgmap-troop.fp2 .sgmap-troop-body { fill:rgba(8,40,90,.92);  stroke:#3498db; }
+.sgmap-troop.fnpc .sgmap-troop-body{ fill:rgba(35,25,6,.95);  stroke:#c8a020; }
+.sgmap-troop-glyph {
+  font-family:'Noto Sans SC','PingFang SC',sans-serif;
+  font-size:6.5px; font-weight:700;
+  text-anchor:middle; pointer-events:none; dominant-baseline:middle;
+}
+.sgmap-troop.fp0  .sgmap-troop-glyph { fill:#fdeae6; }
+.sgmap-troop.fp1  .sgmap-troop-glyph { fill:#e2f8ec; }
+.sgmap-troop.fp2  .sgmap-troop-glyph { fill:#daeeff; }
+.sgmap-troop.fnpc .sgmap-troop-glyph { fill:#f0dfa0; }
+
+/* 状态修饰 */
+.sgmap-troop.s-siege    .sgmap-troop-body { stroke-width:1.8; }
+.sgmap-troop.s-retreat                    { opacity:.65; }
+.sgmap-troop.s-retreat  .sgmap-troop-body { stroke-dasharray:1.5 1; }
+.sgmap-troop.s-captured .sgmap-troop-body { fill:#2a2018; stroke:#5a4838; }
+.sgmap-troop.s-captured .sgmap-troop-glyph{ fill:#6a5a48; }
+
+/* 行军路径线 */
+.sgmap-troop-route {
+  fill:none; stroke-width:.8; stroke-dasharray:2.5 2; opacity:.42; pointer-events:none;
+}
+.sgmap-troop-route.fp0  { stroke:#e74c3c; }
+.sgmap-troop-route.fp1  { stroke:#3dbe6c; }
+.sgmap-troop-route.fp2  { stroke:#3498db; }
+.sgmap-troop-route.fnpc { stroke:#c8a020; }
+.sgmap-troop-route.s-retreat { opacity:.28; stroke-dasharray:1.5 2.5; }
+
+/* ── Tooltip 战况追加区 ── */
+.sgt-combat-divider {
+  height:1px; margin:7px 0;
+  background:rgba(180,148,68,.18);
+}
+.sgt-combat-row {
+  display:flex; gap:6px; align-items:baseline;
+  font-size:.70rem; line-height:1.65;
+}
+.sgt-combat-lbl {
+  font-size:.56rem; color:var(--text-dim);
+  letter-spacing:.08em; min-width:2.4em;
+  text-align:right; flex-shrink:0;
+}
+.sgt-combat-val { color:var(--text-sub); }
+.sgt-combat-val b { color:var(--text-main); font-weight:700; }
+.txt-battle  { color:#e85540; }
+.txt-siege   { color:#d49830; }
+.txt-retreat { color:#8a7c6a; }
+.txt-captured{ color:#8a7868; }
