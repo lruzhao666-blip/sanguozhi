@@ -1,5 +1,5 @@
 /**
- * main.js — 三国志文字版 v10 (v2.5)
+ * main.js  — 三国志文字版 v3.0.0(战况层接入)
  * 对接规范 v2.0：
  *  - 剧情区 / 数据区分离（36个=号分隔）
  *  - [甲][乙][丙] 含 cities_list（城名+守将）
@@ -411,7 +411,104 @@
 // 熟练度:遍历 state.rounds 反推已挂回合数
 // ─────────────────────────────────────────
   // ── 势力地图 ──
-  function renderMap() {
+
+// ═══ 战况层 v3.0 ═══
+// 城名(中文) → 城池 id 反查表
+function _cityNameToId(name) {
+  if (!window.SGMap || !window.SGMap.cityNameToId) return null;
+  return window.SGMap.cityNameToId(name);
+}
+
+// 武将名 → 阵营 (p0/p1/p2/npc) 反查表
+function _generalToFaction(parsed, generalName) {
+  const slots = ['p0', 'p1', 'p2'];
+  for (let i = 0; i < (parsed.players || []).length; i++) {
+    const p = parsed.players[i];
+    if ((p.generals || []).some(g => g.name === generalName)) {
+      return slots[i];
+    }
+    // 也匹配城池守将
+    if ((p.cities_list || []).some(c =>
+      (c.holder || '').split('/').includes(generalName))) {
+      return slots[i];
+    }
+  }
+  return 'npc';
+}
+
+// 估算行军总程(六边形距离)
+function _estimateTotalTurns(fromId, toId) {
+  if (!window.SGMap || !window.SGMap.hexDistance) return 3;
+  const d = SGMap.hexDistance(fromId, toId);
+  return Math.max(2, Math.round(d / 1.5));
+}
+
+// 构造 battles 入参
+function _buildBattlesForMap(parsed) {
+  const out = [];
+  (parsed.battles || []).forEach((b, idx) => {
+    const cityId = b.city ? _cityNameToId(b.city) : null;
+    if (!cityId) return;   // 无城名(野外战等)不画红圈
+    out.push({
+      id:         'b' + idx,
+      city:       cityId,
+      attacker:   b.attacker,
+      defender:   b.defender,
+      attFaction: _generalToFaction(parsed, _firstName(b.attacker)),
+      defFaction: _generalToFaction(parsed, _firstName(b.defender)),
+      result:     b.result,
+      attLoss:    b.attacker_loss,
+      defLoss:    b.defender_loss,
+    });
+  });
+  return out;
+}
+
+// 构造 enroute 入参
+function _buildEnrouteForMap(parsed) {
+  const out = [];
+  const factionMap = { '甲':'p0', '乙':'p1', '丙':'p2' };
+  (parsed.enroute || []).forEach((t, idx) => {
+    const fromId = _cityNameToId(t.from);
+    const toId   = _cityNameToId(t.to);
+    if (!fromId || !toId) return;   // 城名解析失败的整条丢弃
+
+    let faction = factionMap[t.factionRaw];
+    if (!faction) faction = 'npc';
+
+    let totalTurns = null;
+    if (t.status === 'enroute' && t.remainTurns != null) {
+      totalTurns = _estimateTotalTurns(fromId, toId);
+    }
+
+    out.push({
+      id:          't' + idx,
+      faction,
+      general:     t.general,
+      from:        fromId,
+      to:          toId,
+      troopType:   t.troopType,
+      troopCount:  t.troopCount,
+      status:      t.status,
+      remainTurns: t.remainTurns,
+      totalTurns,
+    });
+  });
+  return out;
+}
+
+// 从攻方/守方字段提取首位武将名
+function _firstName(str) {
+  if (!str) return '';
+  // 去除部队后缀(如"颜良部"→"颜良")
+  let s = str.replace(/部$/, '').trim();
+  // 取前 3 个中文字符内的第一个名字片段
+  // 简化处理:遇到第二个名字分隔符前的整段
+  const m = s.match(/^([一-龥]{2,4})/);
+  return m ? m[1] : s;
+}
+
+function renderMap() {
     const latest       = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
     const latestParsed = latest ? latest.parsed : null;
 
@@ -436,6 +533,16 @@
 
     SGMap.update(state.players, cityMap);
     _renderMapLegend(cityMap);
+
+    // ═══ 战况层 v3.0 ═══
+    const battlesForMap = _buildBattlesForMap(latestParsed || {});
+    const enrouteForMap = _buildEnrouteForMap(latestParsed || {});
+
+    if (window.SGMap) {
+      if (typeof SGMap.renderBattles === 'function') SGMap.renderBattles(battlesForMap);
+      if (typeof SGMap.renderSieges  === 'function') SGMap.renderSieges(enrouteForMap);
+      if (typeof SGMap.renderTroops  === 'function') SGMap.renderTroops(enrouteForMap);
+    }
   }
 
   function _renderMapLegend(cityMap) {

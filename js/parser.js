@@ -1,5 +1,5 @@
 /**
- * parser.js — 三国志文字版 · AI内容解析器 v12
+ * parser.js — 三国志文字版 · AI内容解析器 v11(在途段+战报城名)
  *
  * 规则基准：《三国志文字版》核心引擎 v3.20.1
  *
@@ -97,6 +97,7 @@ window.SGParser = (function () {
       players:       [],      // [{slot,name,gold,food,troop,morale,cities,cities_list,generals}]
       npcCities:     [],      // [{name,holders:[],troops:{}}]
       battles:       [],      // [{attacker,defender,result,attacker_loss,defender_loss,success}]
+      enroute:       [],   // 新增
       battleSummary: '',      // 新增
       transit:       [],      // 新增
       changes:       [],      // [{slot,resources,breakdown,treasury,garrisonOps,troopOps,quarterly,…}]
@@ -156,7 +157,9 @@ window.SGParser = (function () {
 
     // [在途]
     if (blocks['在途']) {
-      result.transit = _parseTransit(blocks['在途']);
+      result.enroute = _parseEnroute(blocks['在途']);
+    } else {
+      result.enroute = [];
     }
 
     // [变动]
@@ -409,7 +412,7 @@ window.SGParser = (function () {
   function _parseBattles(raw) {
     if (!raw || !raw.trim()) return [];
     const battles = [];
-    const re = /^(.+?)[→\->＞]\s*(.+?)\s*[|｜]\s*(胜|平|负)\s*[|｜]\s*伤亡[:：]攻(\d+)守(\d+)/;
+    const re = /^(.+?)[→\->\-＞]\s*(.+?)(?:[（(]([^）)]+)[）)])?\s*[|｜]\s*(胜|平|负)\s*[|｜]\s*伤亡[:：]攻(\d+)守(\d+)/;
     for (const line of raw.split('\n').map(l => l.trim()).filter(Boolean)) {
       if (/^本回合无战事/.test(line)) continue;
       const m = line.match(re);
@@ -417,35 +420,56 @@ window.SGParser = (function () {
         battles.push({
           attacker:      m[1].trim(),
           defender:      m[2].trim(),
-          result:        m[3],
-          attacker_loss: parseInt(m[4]),
-          defender_loss: parseInt(m[5]),
-          success:       m[3] === '胜',
+          city:          m[3] ? m[3].trim() : null,
+          result:        m[4],
+          attacker_loss: parseInt(m[5]),
+          defender_loss: parseInt(m[6]),
+          success:       m[4] === '胜',
         });
       }
     }
     return battles;
   }
 
-  function _parseTransit(raw) {
+  function _parseEnroute(raw) {
     if (!raw || !raw.trim()) return [];
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length === 1 && /无在途/.test(lines[0])) return [];
+    // 空状态: "本回合无在途部队"
+    if (lines.length === 1 && /本回合无在途部队/.test(lines[0])) return [];
+
     const result = [];
-    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|围攻中|撤退中|被俘)$/;
+    // 红线九正则: 阵营字 武将名 出发城→目的城 兵种:数量 状态
+    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)[→\->\-＞](\S+?)\s+([步弓骑水蛮])[:：](\d+)\s+(剩\d+|围攻中|撤退中|被俘)$/;
+
     for (const line of lines) {
       const m = line.match(re);
-      if (m) {
-        result.push({
-          faction: m[1],
-          general: m[2],
-          from: m[3],
-          to: m[4],
-          troopType: m[5],
-          troopCount: parseInt(m[6]),
-          status: m[7],
-        });
+      if (!m) {
+        console.warn('[SGParser] [在途]行解析失败:', line);
+        continue;
       }
+      const factionRaw = m[1];
+      const status = m[7];
+      let statusKey, remainTurns = null;
+      if (/^剩\d+$/.test(status)) {
+        statusKey = 'enroute';
+        remainTurns = parseInt(status.replace('剩', ''));
+      } else if (status === '围攻中') {
+        statusKey = 'sieging';
+      } else if (status === '撤退中') {
+        statusKey = 'retreating';
+      } else if (status === '被俘') {
+        statusKey = 'captured';
+      }
+      result.push({
+        factionRaw,
+        general:    m[2],
+        from:       m[3],
+        to:         m[4],
+        troopType:  m[5],
+        troopCount: parseInt(m[6]),
+        status:     statusKey,
+        remainTurns,
+      });
     }
     return result;
   }
