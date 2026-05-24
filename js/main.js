@@ -1268,18 +1268,25 @@
     if (tranEl) {
       if (hasTransit) {
         tranEl.classList.remove('hidden');
-        tranEl.innerHTML = '<div class="jbt-title">🚩 在途部队</div>' +
+        tranEl.innerHTML =
+          '<div class="jbt-title">在途部队</div>' +
           '<div class="jbt-list">' +
           transit.map(t => {
-            const statusCls = t.status === '被俘' ? 'jbt-captured' :
-                              t.status === '围攻中' ? 'jbt-siege' :
-                              t.status === '撤退中' ? 'jbt-retreat' : 'jbt-march';
+            const statusCls = t.status === '被俘'  ? 'jbt-captured' :
+                              t.status === '围攻中' ? 'jbt-siege'    :
+                              t.status === '撤退中' ? 'jbt-retreat'  : 'jbt-march';
+            const troopStr = (t.troopType && t.troopCount)
+              ? `${esc(t.troopType)} ${t.troopCount}`
+              : (t.troopCount ? `${t.troopCount}` : '');
             return `<div class="jbt-row ${statusCls}">` +
-              `<span class="jbt-faction">${esc(t.faction)}</span>` +
+              `<div class="jbt-inner">` +
               `<span class="jbt-general">${esc(t.general)}</span>` +
-              `<span class="jbt-route">${esc(t.from)}→${esc(t.to)}</span>` +
-              `<span class="jbt-troop">${esc(t.troopType)}:${t.troopCount}</span>` +
+              `<span class="jbt-sep">·</span>` +
+              `<span class="jbt-faction">${esc(t.faction)}</span>` +
+              `<span class="jbt-route">${esc(t.from)}<span class="jbt-arrow">›</span>${esc(t.to)}</span>` +
+              (troopStr ? `<span class="jbt-troop">${troopStr}</span>` : '') +
               `<span class="jbt-status">${esc(t.status)}</span>` +
+              `</div>` +
               `</div>`;
           }).join('') +
           '</div>';
@@ -1310,40 +1317,42 @@
     const isDraw  = isV2 && b.result === '平';
     const cls     = success ? 'success' : (isDraw ? 'draw' : 'fail');
     const resultLabel = isV2
-      ? ({ '胜':'胜利', '平':'平局', '负':'失败' }[b.result] || b.result)
-      : (success ? '成功' : '失败');
-    const resultIcon = success ? '⚔️ 胜' : (isDraw ? '🔶 平' : '💀 败');
+      ? ({ '胜':'胜', '平':'平', '负':'败' }[b.result] || b.result)
+      : (success ? '胜' : '败');
 
     if (isV2) {
-      // ── v2.0 重构卡片 ──
+      // ── v3.0 单行紧凑卡片 ──
       const atkLoss = b.attacker_loss ?? 0;
       const defLoss = b.defender_loss ?? 0;
-      return `<div class="battle-card ${cls}">
-        <div class="bc-sides">
-          <div class="bc-side bc-atk">
-            <span class="bc-role">攻方</span>
-            <span class="bc-name">${esc(b.attacker)}</span>
-            ${atkLoss > 0 ? `<span class="bc-loss loss-atk">-${atkLoss}</span>` : ''}
-          </div>
-          <div class="bc-center">
-            <span class="bc-result-badge ${cls}">${resultIcon}</span>
-          </div>
-          <div class="bc-side bc-def">
-            <span class="bc-role">守方</span>
-            <span class="bc-name">${esc(b.defender)}</span>
-            ${defLoss > 0 ? `<span class="bc-loss loss-def">-${defLoss}</span>` : ''}
-          </div>
-        </div>
-      </div>`;
+      return `<div class="battle-card ${cls}">` +
+        `<div class="bc-strip"></div>` +
+        `<div class="bc-body">` +
+        `<span class="bc-badge">${resultLabel}</span>` +
+        `<div class="bc-versus">` +
+        `<div class="bc-side-v bc-atk-v">` +
+        `<span class="bc-role-v">攻</span>` +
+        `<span class="bc-name-v">${esc(b.attacker)}</span>` +
+        (atkLoss > 0 ? `<span class="bc-loss-v loss-atk-v">-${atkLoss}</span>` : '') +
+        `</div>` +
+        `<span class="bc-vs">vs</span>` +
+        `<div class="bc-side-v bc-def-v">` +
+        `<span class="bc-role-v">守</span>` +
+        `<span class="bc-name-v">${esc(b.defender)}</span>` +
+        (defLoss > 0 ? `<span class="bc-loss-v loss-def-v">-${defLoss}</span>` : '') +
+        `</div>` +
+        `</div>` +
+        `</div>` +
+        `</div>`;
     } else {
       // ── 旧格式兼容 ──
       const icon = success ? '✅' : '❌';
-      let html = `<div class="battle-card ${cls}">
-        <div class="bc-legacy">
-          ${b.player ? `<span class="bc-name">${esc(b.player)}</span>` : ''}
-          <span class="bc-result-badge ${cls}">${icon} ${resultLabel}</span>
-          ${b.dice ? `<span class="bc-dice">🎲 ${esc(b.dice)}</span>` : ''}
-        </div>`;
+      let html = `<div class="battle-card ${cls}">` +
+        `<div class="bc-strip"></div>` +
+        `<div class="bc-legacy">` +
+        (b.player ? `<span class="bc-name-v">${esc(b.player)}</span>` : '') +
+        `<span class="bc-badge">${icon} ${resultLabel}</span>` +
+        (b.dice ? `<span class="bc-dice">🎲 ${esc(b.dice)}</span>` : '') +
+        `</div>`;
       const desc = b.resultTxt || b.narrative || '';
       if (desc) html += `<div class="bc-desc">${esc(desc.slice(0, 100))}</div>`;
       html += `</div>`;
