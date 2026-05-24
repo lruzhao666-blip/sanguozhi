@@ -1,5 +1,6 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v23
+ * map.js — 三国志文字版 · 势力地图 v24
+ * v24 (2026-05): 战况层重做为血脉脉冲方案,五状态独立 CSS 动画;移除燕尾旗与所有旧战况残留
  * v23 (2026-05): 燕尾旗尺寸/位置微调 + 行军悬浮卡回归
  * v22.1 (2026-05): 修复 PR 187 引入的 ReferenceError
  * v22 (2026-05): 战况层重做 — 燕尾旗 + 六边形虚线光环,
@@ -545,6 +546,7 @@ const BONUS_MULT = {
         fill="rgba(5,4,10,0.62)" style="pointer-events:none"/>
 
       ${_allHexes()}
+      <g id="sgmap-path-layer"></g>
       <g id="sgmap-combat-layer"></g>
     </svg>`;
   }
@@ -798,68 +800,6 @@ const BONUS_MULT = {
   }
 
 
-  /* ── 旗帜插入点计算 ── */
-    function flagSlot(cx, cy, count, index, Ri) {
-    if (count === 1) {
-      return { x: cx, y: cy + Ri * 0.05 };
-    } else if (count === 2) {
-      if (index === 0) return { x: cx - Ri * 0.45, y: cy + Ri * 0.05 };
-      if (index === 1) return { x: cx + Ri * 0.45, y: cy + Ri * 0.05 };
-    } else if (count >= 3) {
-      if (index === 0) return { x: cx - Ri * 0.55, y: cy + Ri * 0.15 };
-      if (index === 1) return { x: cx, y: cy - Ri * 0.05 };
-      if (index === 2) return { x: cx + Ri * 0.55, y: cy + Ri * 0.15 };
-    }
-    return null;
-  }
-
-    /* ── 画燕尾旗 ── */
-  function drawFlag(fx, fy, color, flagData) {
-    const g = ce('g', { 'data-ctype': 'flag' });
-    g.style.pointerEvents = 'none';
-
-    if (flagData) {
-      g.setAttribute('data-flag', JSON.stringify(flagData));
-      g.classList.add('sgmap-flag');
-      g.style.cursor = 'pointer';
-    }
-
-    const animG = ce('g');
-    animG.appendChild(ce('animateTransform', {
-      attributeName: 'transform',
-      type: 'rotate',
-      values: `-2 ${fx} ${fy}; 2 ${fx} ${fy}; -2 ${fx} ${fy}`,
-      dur: '2.8s',
-      repeatCount: 'indefinite'
-    }));
-
-    // 旗面 Path：从左上开始，到右上，内凹到中间，到右下，到左下，闭合
-    const d = `M${fx},${fy - 18} L${fx + 14},${fy - 18} L${fx + 14 - 3.6},${fy - 12.5} L${fx + 14},${fy - 7} L${fx},${fy - 7} Z`;
-
-    // 发光层
-    animG.appendChild(ce('path', {
-      d: d,
-      fill: color,
-      opacity: '0.28',
-      style: 'filter: blur(4px)'
-    }));
-
-    // 旗杆
-    animG.appendChild(ce('line', {
-      x1: fx, y1: fy, x2: fx, y2: fy - 18,
-      stroke: color, 'stroke-width': '1.3', 'stroke-linecap': 'round'
-    }));
-
-    // 旗面主体
-    animG.appendChild(ce('path', {
-      d: d,
-      fill: color,
-      opacity: '0.85'
-    }));
-
-    g.appendChild(animG);
-    return g;
-  }
   /* ── 公共城池查找表（_terrainLayer / _neutralGridLayer 共用） ── */
   let _cityMap = {};
 
@@ -951,24 +891,6 @@ const BONUS_MULT = {
       }
     });
 
-    container.querySelectorAll('.sgmap-flag').forEach(g => {
-      g.addEventListener('mouseenter', e => {
-        const raw = g.getAttribute('data-flag');
-        if (!raw) return;
-        let d; try { d = JSON.parse(raw); } catch(_) { return; }
-        _showFlagTip(d, e);
-      });
-      g.addEventListener('mousemove', e => _moveTip(e));
-      g.addEventListener('mouseleave', () => _hideTip());
-      g.addEventListener('touchstart', e => {
-        const t = e.touches[0];
-        const raw = g.getAttribute('data-flag');
-        if (!raw) return;
-        let d; try { d = JSON.parse(raw); } catch(_) { return; }
-        _showFlagTip(d, { clientX: t.clientX, clientY: t.clientY });
-        e.preventDefault();
-      }, { passive: false });
-    });
   }
 
   function _activateRing(g) {
@@ -1489,274 +1411,211 @@ const BONUS_MULT = {
     return 1; // fallback if disconnected
   }
 
-  /* ─────────────────────────────────
-     行军位置计算算法
-  ───────────────────────────────── */
-  function computeMarchPosition(fromXY, toXY, fromCity, toCity, status) {
-    let progress = 0;
-    if (status === '撤退中') {
-      progress = 0.25;
-    } else {
-      const total = _getJumpCount(fromCity, toCity) || 1;
-      const rem = parseInt((status||'').replace('剩','')) || 1;
-      progress = (total - rem) / total;
-      if (progress < 0) progress = 0;
-    }
-    progress = Math.max(0.15, Math.min(0.85, progress));
-
-    const px = fromXY.x + (toXY.x - fromXY.x) * progress;
-    const py = fromXY.y + (toXY.y - fromXY.y) * progress;
-
-    return { px, py };
-  }
-
-  function getClosestEmptyHex(px, py, occupiedHexes, usedFlagHexes) {
-    let best = null;
-    let minDist = Infinity;
-
-    const candidates = [];
-    for (let col = GRID_COL_START; col <= GRID_COL_END; col++) {
-      for (let row = GRID_ROW_START; row <= GRID_ROW_END; row++) {
-        const hKey = `${col},${row}`;
-        if (occupiedHexes.has(hKey)) continue; // 排除城池格
-
-        const {x, y} = hexToXY(col, row);
-        const dx = x - px, dy = y - py;
-        const dist = dx*dx + dy*dy;
-        candidates.push({ hKey, x, y, dist });
-      }
-    }
-    candidates.sort((a,b) => a.dist - b.dist);
-
-    for (let i=0; i<Math.min(4, candidates.length); i++) {
-      if (!usedFlagHexes.has(candidates[i].hKey)) {
-        usedFlagHexes.add(candidates[i].hKey);
-        return candidates[i];
-      }
-    }
-    return candidates[0]; // fallback
-  }
 
   /* ─────────────────────────────────
      战况层渲染（虚线光环 / 燕尾旗）
   ───────────────────────────────── */
   function _renderCombatLayer() {
     const layer = document.getElementById('sgmap-combat-layer');
-    if (!layer) return;
-    layer.innerHTML = '';
+    const pathLayer = document.getElementById('sgmap-path-layer');
+    if (layer) layer.innerHTML = '';
+    if (pathLayer) pathLayer.innerHTML = '';
 
     const cityXY = {};
-    const occupiedHexes = new Set();
     CITIES.forEach(c => {
       cityXY[c.name] = hexToXY(c.hx, c.hy);
-      occupiedHexes.add(`${c.hx},${c.hy}`);
     });
 
-    // ==========================================
-    // 元素一与二：虚线光环 (战斗 > 围攻)
-    // ==========================================
-    const battleCities = new Set();
+    function getFactionColor(facStr, pidx) {
+      if (pidx !== undefined && pidx >= 0 && P_COLOR[pidx]) return P_COLOR[pidx].glow;
+      const fcMap = { '甲': 0, '乙': 1, '丙': 2 };
+      if (facStr in fcMap && P_COLOR[fcMap[facStr]]) return P_COLOR[fcMap[facStr]].glow;
+      let slotIdx;
+      if (window._npcFactionSlots && facStr) slotIdx = window._npcFactionSlots[facStr];
+      return (slotIdx !== undefined && NPC_FACTION_COLORS[slotIdx]) ? NPC_FACTION_COLORS[slotIdx].glow : NPC_C.glow;
+    }
+
+    // 1. 战事 (battle)
+    const battleCities = new Map();
     (_battlesData || []).forEach(b => {
       const m = String(b.defender || '').match(/[（(]([^）)]+)[）)]/);
       const cityName = m ? m[1].trim() : null;
-      if (cityName && cityXY[cityName]) battleCities.add(cityName);
+      if (cityName && cityXY[cityName]) {
+         const attackerName = b.attacker || '';
+         let pidx = -1;
+         for (let i = 0; i < players.length; i++) {
+            if (players[i].name === attackerName) { pidx = i; break; }
+         }
+         let color = getFactionColor(attackerName, pidx);
+         battleCities.set(cityName, color);
+      }
     });
 
-    const siegeCities = new Set();
+    battleCities.forEach((color, cityName) => {
+      const cityGroup = document.querySelector(`.sgmap-city[data-name="${cityName}"]`);
+      if (!cityGroup) return;
+
+      const g = ce('g', { 'data-ctype': 'battle', style: `--p-color: ${color}` });
+      const pOuter = ce('polygon', {
+        class: 'combat-battle-outer',
+        points: hexPoints(0, 0, HEX_R * 1.107)
+      });
+      const pInner = ce('polygon', {
+        class: 'combat-battle-inner',
+        points: hexPoints(0, 0, HEX_R * 0.893)
+      });
+      g.appendChild(pOuter);
+      g.appendChild(pInner);
+
+      const cityText = cityGroup.querySelector('.sgmap-city-text');
+      if (cityText) cityGroup.insertBefore(g, cityText);
+      else cityGroup.appendChild(g);
+    });
+
+    // 2. 围攻 (siege)
+    const siegeCities = new Map();
     (_transitData || []).filter(t => t.status === '围攻中').forEach(t => {
-      if (t.to && cityXY[t.to]) siegeCities.add(t.to);
+      if (t.to && cityXY[t.to] && !battleCities.has(t.to)) {
+         const color = getFactionColor(t.faction, -1);
+         siegeCities.set(t.to, color);
+      }
     });
 
-    const halosGroup = ce('g', { id: 'sgmap-halos' });
+    siegeCities.forEach((color, cityName) => {
+      const cityGroup = document.querySelector(`.sgmap-city[data-name="${cityName}"]`);
+      if (!cityGroup) return;
 
-    function drawHalo(cityName, type) {
-      const {x, y} = cityXY[cityName];
-      const g = ce('g', { 'data-ctype': type });
-      g.style.pointerEvents = 'none';
+      const g = ce('g', { 'data-ctype': 'siege', style: `--p-color: ${color}` });
+      const rFence = HEX_R * 1.25;
 
-      const R_halo = Ri + 5;
-      const R_breath = Ri + 9;
+      const pFence = ce('polygon', {
+        class: 'combat-siege-fence',
+        points: hexPoints(0, 0, rFence)
+      });
+      g.appendChild(pFence);
 
-      let stroke, sw, dash, op, durOffset, durBreath, opValues, swBreath;
-      if (type === 'battle') {
-        stroke = '#ff4444'; sw = 2.2; dash = '5,4'; op = 0.7;
-        durOffset = '1.5s';
-        durBreath = '1.4s'; opValues = '0.35; 0.08; 0.35'; swBreath = 0.8;
-      } else { // siege
-        stroke = '#ffaa00'; sw = 2.0; dash = '8,5'; op = 0.6;
-        durOffset = '2.5s';
-        durBreath = '2.2s'; opValues = '0.25; 0.06; 0.25'; swBreath = 0.6;
+      for (let i = 0; i < 6; i++) {
+        // Flat-top hex vertices
+        const angle_deg = 60 * i;
+        const angle_rad = Math.PI / 180 * angle_deg;
+        const vx = rFence * Math.cos(angle_rad);
+        const vy = rFence * Math.sin(angle_rad);
+        const dot = ce('circle', {
+          class: 'combat-siege-dot',
+          cx: vx.toFixed(1), cy: vy.toFixed(1), r: 2.5
+        });
+        g.appendChild(dot);
       }
 
-      const dashPoly = ce('polygon', {
-        points: hexPoints(x, y, R_halo),
-        fill: 'none', stroke: stroke, 'stroke-width': sw,
-        'stroke-dasharray': dash, opacity: op
-      });
-      const animDash = ce('animate', {
-        attributeName: 'stroke-dashoffset',
-        from: '0', to: type === 'battle' ? '-18' : '-26',
-        dur: durOffset, repeatCount: 'indefinite'
-      });
-      dashPoly.appendChild(animDash);
-      g.appendChild(dashPoly);
-
-      const breathPoly = ce('polygon', {
-        points: hexPoints(x, y, R_breath),
-        fill: 'none', stroke: stroke, 'stroke-width': swBreath
-      });
-      const animBreath = ce('animate', {
-        attributeName: 'opacity',
-        values: opValues,
-        dur: durBreath, repeatCount: 'indefinite'
-      });
-      breathPoly.appendChild(animBreath);
-      g.appendChild(breathPoly);
-
-      halosGroup.appendChild(g);
-    }
-
-    const haloCities = new Set();
-    battleCities.forEach(c => { drawHalo(c, 'battle'); haloCities.add(c); });
-    siegeCities.forEach(c => { if (!haloCities.has(c)) { drawHalo(c, 'siege'); haloCities.add(c); } });
-
-    layer.appendChild(halosGroup);
-
-    // ==========================================
-    // 元素三：燕尾旗
-    // ==========================================
-    const flagsGroup = ce('g', { id: 'sgmap-flags' });
-
-    // key => { x, y, flags: [{color}] }
-    const flagPlacements = {};
-
-    function getFactionColorInfo(facStr, pidx) {
-      if (pidx !== undefined && pidx >= 0 && P_COLOR[pidx]) return P_COLOR[pidx];
-      const fcMap = { '甲': 0, '乙': 1, '丙': 2 };
-      if (facStr in fcMap) return P_COLOR[fcMap[facStr]] || NPC_C;
-      let slotIdx;
-      if (window._npcFactionSlots && facStr) slotIdx = window._npcFactionSlots[facStr];
-      return (slotIdx !== undefined) ? NPC_FACTION_COLORS[slotIdx] : NPC_C;
-    }
-
-    // 场景 A: 驻留非己方城
-    players.forEach((p, pidx) => {
-      (p.generals || []).forEach(gen => {
-        if (!gen.city) return;
-        const ow = cityOwnership[gen.city];
-        if (!ow) return;
-        if (ow.playerIdx !== pidx) {
-          const {x, y} = cityXY[gen.city] || {};
-          if (x && y) {
-            const key = `${x},${y}`;
-            if (!flagPlacements[key]) flagPlacements[key] = { x, y, flags: [] };
-            const cInfo = getFactionColorInfo(p.slot || p.name, pidx);
-            if (!flagPlacements[key].flags.some(f => f.color === cInfo.glow)) {
-              flagPlacements[key].flags.push({ color: cInfo.glow, data: null });
-            }
-          }
-        }
-      });
+      const cityText = cityGroup.querySelector('.sgmap-city-text');
+      if (cityText) cityGroup.insertBefore(g, cityText);
+      else cityGroup.appendChild(g);
     });
 
-    const usedFlagHexes = new Set();
+    const pathsDefs = ce('defs');
+    if (pathLayer) pathLayer.appendChild(pathsDefs);
+    let pathIdCounter = 0;
 
-    // 场景 B, C: 行军中 / 撤退中 / 围攻中
-    const troopGroups = new Map();
+    // 3 & 4. 行军 (march) & 撤退 (retreat)
     (_transitData || []).forEach(t => {
-      if (t.status === '被俘') return; // 场景 D: 被俘不显示旗帜
-      const key = `${t.faction}|${t.from}|${t.to}|${t.status}`;
-      if (!troopGroups.has(key)) troopGroups.set(key, { ...t, troops: [] });
-      troopGroups.get(key).troops.push({ type: t.troopType, count: t.troopCount });
-    });
-
-    troopGroups.forEach(t => {
+      if (t.status === '围攻中' || t.status === '被俘') return;
       const fromXY = cityXY[t.from];
-      const toXY   = cityXY[t.to];
+      const toXY = cityXY[t.to];
       if (!fromXY || !toXY) return;
 
-      const cInfo = getFactionColorInfo(t.faction);
+      const isRetreat = t.status === '撤退中';
+      const ctype = isRetreat ? 'retreat' : 'march';
+      const color = getFactionColor(t.faction, -1);
 
-      let scene = '', remaining = null, via = '';
-      if (t.status === '围攻中') scene = 'siege';
-      else if (t.status === '撤退中') scene = 'retreat';
-      else if (t.status.startsWith('剩')) {
-        scene = 'march';
-        const m = t.status.match(/剩(\d+)/);
-        if (m) remaining = parseInt(m[1]);
-        const mVia = t.status.match(/\(.*?\)/);
-        if (mVia) via = mVia[1];
-        else {
-          const parts = t.status.split(' ');
-          if (parts.length > 1) via = parts.slice(1).join(' ');
-        }
-      }
+      const g = ce('g', { 'data-ctype': ctype, style: `--p-color: ${color}` });
 
-      let factionSlot = -1;
-      if (t.faction === '甲') factionSlot = 0;
-      else if (t.faction === '乙') factionSlot = 1;
-      else if (t.faction === '丙') factionSlot = 2;
+      const dx = toXY.x - fromXY.x;
+      const dy = toXY.y - fromXY.y;
+      const midX = (fromXY.x + toXY.x) / 2 - dy * 0.2;
+      const midY = (fromXY.y + toXY.y) / 2 + dx * 0.2;
 
-      const flagData = {
-        scene: scene,
-        general: t.general,
-        faction: t.faction,
-        factionSlot: factionSlot,
-        from: t.from,
-        to: t.to,
-        remaining: remaining,
-        via: via,
-        troops: t.troops
-      };
+      const d = `M ${fromXY.x},${fromXY.y} Q ${midX},${midY} ${toXY.x},${toXY.y}`;
 
-      if (t.status === '围攻中') {
-        const key = `${toXY.x},${toXY.y}`;
-        if (!flagPlacements[key]) flagPlacements[key] = { x: toXY.x, y: toXY.y, flags: [] };
-        if (!flagPlacements[key].flags.some(f => f.color === cInfo.glow)) {
-          flagPlacements[key].flags.push({ color: cInfo.glow, data: flagData });
-        }
+      if (isRetreat) {
+        const p1 = ce('path', { class: 'combat-retreat-path', d: d });
+        const p2 = ce('path', { class: 'combat-retreat-dash', d: d });
+        g.appendChild(p1);
+        g.appendChild(p2);
       } else {
-        const { px, py } = computeMarchPosition(fromXY, toXY, t.from, t.to, t.status);
-        const closest = getClosestEmptyHex(px, py, occupiedHexes, usedFlagHexes);
-        if (closest) {
-          const key = `${closest.x},${closest.y}`;
-          if (!flagPlacements[key]) flagPlacements[key] = { x: closest.x, y: closest.y, flags: [] };
-          if (!flagPlacements[key].flags.some(f => f.color === cInfo.glow)) {
-            flagPlacements[key].flags.push({ color: cInfo.glow, data: flagData });
-          }
-        }
+        const pathId = `combat-path-${++pathIdCounter}`;
+        const pDef = ce('path', { id: pathId, d: d });
+        pathsDefs.appendChild(pDef);
+
+        const mPath = ce('use', { href: `#${pathId}`, class: 'combat-march-path' });
+        g.appendChild(mPath);
+
+        const durations = [0, -0.8, -1.6];
+        durations.forEach((begin, idx) => {
+          const particle = ce('circle', { class: `combat-march-particle p${idx+1}`, r: 3.5 });
+          const anim = ce('animateMotion', {
+            dur: '2.4s', repeatCount: 'indefinite', begin: `${begin}s`
+          });
+          const mpath = ce('mpath', { href: `#${pathId}` });
+          anim.appendChild(mpath);
+          particle.appendChild(anim);
+          g.appendChild(particle);
+        });
+
+        const gStart = ce('g', { transform: `translate(${fromXY.x},${fromXY.y})` });
+        gStart.appendChild(ce('polygon', { class: 'combat-flash-start', points: hexPoints(0, 0, HEX_R) }));
+        g.appendChild(gStart);
+
+        const gEnd = ce('g', { transform: `translate(${toXY.x},${toXY.y})` });
+        gEnd.appendChild(ce('polygon', { class: 'combat-flash-end', points: hexPoints(0, 0, HEX_R) }));
+        g.appendChild(gEnd);
+      }
+      if (pathLayer) pathLayer.appendChild(g);
+    });
+
+    // 5. 被俘 (captured)
+    const capturedCities = new Map();
+    (_transitData || []).forEach(t => {
+      if (t.status === '被俘' && t.from && cityXY[t.from]) {
+         const color = getFactionColor(t.faction, -1);
+         capturedCities.set(t.from, color);
       }
     });
 
-    Object.values(flagPlacements).forEach(place => {
-      const { x, y, flags } = place;
-      const count = flags.length;
-      flags.forEach((f, i) => {
-        if (i >= 3) return; // 最多3面
-        const pos = flagSlot(x, y, count, i, Ri);
-        if (pos) {
-          const fg = drawFlag(pos.x, pos.y, f.color, f.data);
-          flagsGroup.appendChild(fg);
-        }
-      });
+    capturedCities.forEach((color, cityName) => {
+      const cityGroup = document.querySelector(`.sgmap-city[data-name="${cityName}"]`);
+      if (!cityGroup) return;
+
+      cityGroup.classList.add('combat-captured-veil');
+
+      const g = ce('g', { 'data-ctype': 'captured', style: `--p-color: ${color}` });
+      g.appendChild(ce('polygon', {
+         class: 'combat-captured-mask',
+         points: hexPoints(0, 0, HEX_R)
+      }));
+
+      const cityText = cityGroup.querySelector('.sgmap-city-text');
+      if (cityText) cityGroup.insertBefore(g, cityText);
+      else cityGroup.appendChild(g);
     });
 
-    layer.appendChild(flagsGroup);
-    _syncCombatBar(layer);
+    _syncCombatBar();
   }
 
-  function _syncCombatBar(layer) {
+  function _syncCombatBar() {
     const bar = document.getElementById('sgmap-combat-bar');
-    if (!bar || !layer) return;
+    if (!bar) return;
     bar.querySelectorAll('.scb-chip').forEach(chip => {
       let ctype = chip.dataset.ctype;
-      if (ctype === 'march') ctype = 'flag';
-      if (ctype === 'retreat' || ctype === 'captured') return;
-
       const on = chip.classList.contains('active');
-      layer.querySelectorAll(`[data-ctype="${ctype}"]`).forEach(el => {
+      document.querySelectorAll(`[data-ctype="${ctype}"]`).forEach(el => {
         el.style.display = on ? '' : 'none';
       });
+      if (ctype === 'captured') {
+        document.querySelectorAll(`.combat-captured-veil`).forEach(el => {
+          if (!on) el.classList.remove('combat-captured-veil');
+          else el.classList.add('combat-captured-veil');
+        });
+      }
     });
   }
 
@@ -1768,63 +1627,21 @@ const BONUS_MULT = {
       chip.addEventListener('click', () => {
         chip.classList.toggle('active');
         let ctype = chip.dataset.ctype;
-        if (ctype === 'march') ctype = 'flag';
-        if (ctype === 'retreat' || ctype === 'captured') return;
-
         const on = chip.classList.contains('active');
-        const layer = document.getElementById('sgmap-combat-layer');
-        if (layer) {
-          layer.querySelectorAll(`[data-ctype="${ctype}"]`).forEach(el => {
-            el.style.display = on ? '' : 'none';
+        document.querySelectorAll(`[data-ctype="${ctype}"]`).forEach(el => {
+          el.style.display = on ? '' : 'none';
+        });
+        if (ctype === 'captured') {
+          document.querySelectorAll(`[data-ctype="captured"]`).forEach(el => {
+             const parent = el.closest('.sgmap-city');
+             if (parent) {
+                if (on) parent.classList.add('combat-captured-veil');
+                else parent.classList.remove('combat-captured-veil');
+             }
           });
         }
       });
     });
-  }
-  // 在途棋子专属 tooltip（v3.0 小而美）
-  function _buildTroopTip(t, isSiege, isRetreat, isCaptured, status) {
-    const statusCls = isSiege ? 'stt-siege'
-      : isRetreat   ? 'stt-retreat'
-      : isCaptured  ? 'stt-captured'
-      : 'stt-march';
-    // 左侧色条用势力色（甲/乙/丙/其他），不用状态色
-    const fac = String(t.faction || '');
-    const stripCls = fac === '甲' ? 'stt-strip-p0'
-      : fac === '乙' ? 'stt-strip-p1'
-      : fac === '丙' ? 'stt-strip-p2'
-      : 'stt-strip-npc';
-    const statusTxt = _esc(status || '行军中');
-    const troopChips = t.troops.map(tr =>
-      `<span class="stt-troop-chip"><b>${_esc(tr.type)}</b><span>${tr.count}</span></span>`
-    ).join('');
-    return `<div class="sgt-troop-tip">` +
-      `<div class="stt-header">` +
-      `<div class="stt-strip ${stripCls}"></div>` +
-      `<div class="stt-header-main">` +
-      `<span class="stt-name">${_esc(t.general)}</span>` +
-      `<span class="stt-status ${statusCls}">${statusTxt}</span>` +
-      `</div>` +
-      `</div>` +
-      (t.faction ? `<div class="stt-faction">${_esc(t.faction)}</div>` : '') +
-      `<div class="stt-divider"></div>` +
-      `<div class="stt-route">` +
-      `<span class="stt-city">${_esc(t.from)}</span>` +
-      `<span class="stt-arrow">›</span>` +
-      `<span class="stt-city">${_esc(t.to)}</span>` +
-      `</div>` +
-      (troopChips ? `<div class="stt-troops">${troopChips}</div>` : '') +
-      `</div>`;
-  }
-
-  // 内部辅助：直接用 HTML 显示 tooltip（不走 _showTip 的城池计算逻辑）
-  function _showTipHtml(html, e) {
-    if (!_tooltip) return;
-    _tooltip.innerHTML = html;
-    // 专属在途卡片用 compact 模式（宽度更小）
-    const isTroop = html.indexOf('sgt-troop-tip') !== -1;
-    _tooltip.classList.toggle('sgmap-tooltip--troop', isTroop);
-    _tooltip.classList.add('visible');
-    _moveTip(e);
   }
 
   // 暴露 Ri 供战况层使用（内圈半径，与 _cityLayer 保持一致）
