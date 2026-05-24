@@ -456,9 +456,10 @@
         <span style="color:var(--text-dim);font-size:.65rem"> ${cnt}城</span>
       </span>`;
     }).join('');
-    const playerTotal = Object.values(cm).filter(o => o.owner !== '' && o.owner !== 'npc').length;
-    const npcTotal    = Object.values(cm).filter(o => o.owner === 'npc').length;
-    const qhCnt       = 60 - playerTotal - npcTotal;
+    const playerTotal   = Object.values(cm).filter(o => o.owner !== '' && o.owner !== 'npc').length;
+    const namedNpcTotal = Object.values(cm).filter(o => o.owner === 'npc' && o.faction != null).length;
+    // 群雄 = 总城数 - 玩家城 - 有名NPC势力城（faction有值的），无主/无名城归群雄
+    const qhCnt         = 60 - playerTotal - namedNpcTotal;
     html += `<span class="sgmap-legend-item">
       <span class="sgmap-legend-dot" style="background:#9a7c3e;box-shadow:0 0 4px #c09050"></span>
       <span style="color:#c09050;font-weight:700">群雄</span>
@@ -1609,7 +1610,8 @@
     // 隐藏不需要独立区块显示的锚点：
     //   状态：武将状态由玩家卡片直接展示
     //   季度：季度结算已体现在收支明细的「季度」chip 中，独立区块是重复信息
-    const hiddenAnchors = new Set(['状态', '季度']);
+    //   兵种：兵种变动已在收支明细的「兵」行里展示，锚点区块重复且冗余
+    const hiddenAnchors = new Set(['状态', '季度', '兵种']);
     const knownKeys   = ANCHOR_ORDER.filter(k => groups[k] && !hiddenAnchors.has(k));
     const unknownKeys = Object.keys(groups).filter(k => !ANCHOR_ORDER.includes(k) && !hiddenAnchors.has(k));
     const allKeys     = [...knownKeys, ...unknownKeys];

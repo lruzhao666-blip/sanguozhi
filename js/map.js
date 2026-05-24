@@ -1477,10 +1477,11 @@ const BONUS_MULT = {
         </span>`;
       }
 
-      // 群雄城数 = 总城数(60) - 玩家城数 - 所有NPC城数（命名+无名）
-      const playerCnt = Object.values(cityOwnership).filter(o => o.owner !== '' && o.owner !== 'npc').length;
-      const npcAllCnt = Object.values(cityOwnership).filter(o => o.owner === 'npc').length;
-      const qhCnt     = CITIES.length - playerCnt - npcAllCnt;
+      // 群雄城数 = 总城数(60) - 玩家城数 - 有名NPC势力城数（faction有值）
+      // 无主城（faction=null的npc城）也算群雄，因为没有势力认领
+      const playerCnt   = Object.values(cityOwnership).filter(o => o.owner !== '' && o.owner !== 'npc').length;
+      const namedNpcCnt = Object.values(cityOwnership).filter(o => o.owner === 'npc' && o.faction != null).length;
+      const qhCnt       = CITIES.length - playerCnt - namedNpcCnt;
       html += `<span class="sgmap-legend-item">
         <span class="sgmap-legend-dot" style="background:${NPC_C.stroke}"></span>
         <span style="color:${NPC_C.glow};font-weight:700">群雄</span>
