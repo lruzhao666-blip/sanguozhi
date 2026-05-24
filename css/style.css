@@ -1064,7 +1064,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* 各状态激活态高亮色 */
 .scb-chip--battle.active  { color:#e88070; border-color:rgba(232,85,64,.40); background:rgba(232,85,64,.07); }
 .scb-chip--siege.active   { color:#e6b840; border-color:rgba(212,152,48,.40); background:rgba(212,152,48,.07); }
-.scb-chip--march.active   { color:#a8c8f0; border-color:rgba(100,160,230,.36); background:rgba(80,140,220,.06); }
+.scb-chip--march.active   { color:#6dca7d; border-color:rgba(61,190,108,.38); background:rgba(40,160,80,.06); }
 .scb-chip--retreat.active { color:#a09080; border-color:rgba(140,120,90,.34); background:rgba(120,100,70,.06); }
 .scb-chip--captured.active{ color:#7a6a58; border-color:rgba(100,80,50,.30); background:rgba(80,60,30,.06); }
 /* hover 微微亮起 */
@@ -1081,8 +1081,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .scb-chip.active .scb-swatch { opacity: 1; }
 .scb-sw-battle  { border: 1.5px solid #e85540; border-radius: 50%; }
 .scb-sw-siege   { border: 1.5px solid #d49830; border-radius: 50%; }
-.scb-sw-march   { background: rgba(8,40,90,.9); border: 1.2px solid #3498db; border-radius: 2px; }
-.scb-sw-retreat { background: rgba(8,40,90,.9); border: 1.2px dashed #3498db; border-radius: 2px; opacity:.55; }
+.scb-sw-march   { background: rgba(8,55,22,.9);  border: 1.2px solid #3dbe6c;  border-radius: 2px; }
+.scb-sw-retreat { background: rgba(30,22,12,.9); border: 1.2px dashed #8a7c6a; border-radius: 2px; opacity:.70; }
 .scb-sw-captured{ background: #2a2018; border: 1.2px solid #5a4838; border-radius: 2px; }
 
 @media (max-width: 480px) {
