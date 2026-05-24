@@ -111,7 +111,7 @@
       players_json:        JSON.stringify(rd.parsed.players       || []),
       battles_json:        JSON.stringify(rd.parsed.battles       || []),
       changes_json:        JSON.stringify(rd.parsed.changes        || []),
-      livelihood_json:     JSON.stringify([]),
+      livelihood_json:     JSON.stringify(rd.parsed.transit        || []),
       city_ownership_json: JSON.stringify(rd.parsed.cityOwnership || {}),
     };
     const existId = await findRoundId(rd.round);
@@ -171,10 +171,11 @@
           digest:        row.digest          || '',
           players:       safeJson(row.players_json,          []),
           battles:       safeJson(row.battles_json,          []),
+          transit:       safeJson(row.livelihood_json,        []),
           changes:       safeJson(row.changes_json,          []),
           cityOwnership: safeJson(row.city_ownership_json,  {}),
-          // 兼容旧数据
-          livelihood:    safeJson(row.livelihood_json,       []),
+          // livelihood 列已复用为 transit_json，旧路径置空
+          livelihood:    [],
           situation:     row.situation  || '',
           events:        safeJson(row.events_json, []),
           narration:     row.narration  || '',
