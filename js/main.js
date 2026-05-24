@@ -1325,7 +1325,11 @@
       // ── v3.0 单行紧凑卡片 ──
       const atkLoss = b.attacker_loss ?? 0;
       const defLoss = b.defender_loss ?? 0;
-      return `<div class="battle-card ${cls}">` +
+      // 从 defender 字段提取城名（格式 "守方名(城名)"）用于战斗环点击跳转
+      const _cm = String(b.defender || '').match(/[（(]([^）)]+)[）)]/);
+      const _bcity = _cm ? _cm[1].trim() : '';
+      const _bcAttr = _bcity ? ` data-battlecity="${esc(_bcity)}"` : '';
+      return `<div class="battle-card ${cls}"${_bcAttr}>` +
         `<div class="bc-strip"></div>` +
         `<div class="bc-body">` +
         `<span class="bc-badge">${resultLabel}</span>` +
