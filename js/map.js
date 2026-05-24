@@ -1288,10 +1288,10 @@ const BONUS_MULT = {
     // ── 元素一：战斗呼吸环 ──
     battleCities.forEach(cityName => {
       const {x, y} = cityXY[cityName];
-      const r1 = Ri + 9, r2 = Ri + 5, r3 = Ri + 2.5;  // v18: 基于正确Ri=23，环超出城圈清晰可见
-      // 外晕
-      layer.appendChild(ce('circle', { cx:x, cy:y, r:r1, class:'sgmap-battle-aura' }));
-      // 主环（可交互）
+      const r1 = Ri + 9, r2 = Ri + 5, r3 = Ri + 2.5;
+      // 用 <g data-ctype="battle"> 包裹，便于整组 toggle
+      const bg = ce('g', { 'data-ctype': 'battle' });
+      bg.appendChild(ce('circle', { cx:x, cy:y, r:r1, class:'sgmap-battle-aura' }));
       const ring = ce('circle', { cx:x, cy:y, r:r2, class:'sgmap-battle-ring' });
       ring.style.cursor = 'pointer';
       ring.addEventListener('mouseenter', e => {
@@ -1312,22 +1312,24 @@ const BONUS_MULT = {
       });
       ring.addEventListener('mousemove', _moveTip);
       ring.addEventListener('mouseleave', _hideTip);
-      layer.appendChild(ring);
-      // 内金虚线
-      layer.appendChild(ce('circle', { cx:x, cy:y, r:r3, class:'sgmap-battle-ring-inner' }));
+      ring.addEventListener('click', () => _scrollToBattle(cityName));
+      bg.appendChild(ring);
+      bg.appendChild(ce('circle', { cx:x, cy:y, r:r3, class:'sgmap-battle-ring-inner' }));
+      layer.appendChild(bg);
     });
 
     // ── 元素二：围攻环 ──
     siegeCities.forEach(cityName => {
-      if (battleCities.has(cityName)) return; // 战斗环优先，不叠加
+      if (battleCities.has(cityName)) return;
       const {x, y} = cityXY[cityName];
-      const r = Ri + 5;                       // v18: 围攻环 Ri+5=28px，与战斗环同级
-      layer.appendChild(ce('circle', { cx:x, cy:y, r, class:'sgmap-siege-ring' }));
-      layer.appendChild(ce('circle', { cx:x, cy:y, r, class:'sgmap-siege-overlay' }));
+      const r = Ri + 5;
+      const sg = ce('g', { 'data-ctype': 'siege' });
+      sg.appendChild(ce('circle', { cx:x, cy:y, r, class:'sgmap-siege-ring' }));
+      sg.appendChild(ce('circle', { cx:x, cy:y, r, class:'sgmap-siege-overlay' }));
+      layer.appendChild(sg);
     });
 
     // ── 元素三：行军棋子（按将领分组，同将领多兵种合并为一枚棋子）──
-    // 分组 key = faction+general+from+to+status（同条路线同将领合并）
     const troopGroups = new Map();
     (_transitData || []).forEach(t => {
       const key = `${t.faction}|${t.general}|${t.from}|${t.to}|${t.status}`;
@@ -1345,7 +1347,9 @@ const BONUS_MULT = {
       const isRetreat  = status === '撤退中';
       const isCaptured = status === '被俘';
 
-      // 阵营 class
+      // data-ctype 决定开关分组
+      const ctype = isSiege ? 'siege' : isRetreat ? 'retreat' : isCaptured ? 'captured' : 'march';
+
       const fac = String(t.faction);
       const fc = fac === '甲' ? 'fp0' : fac === '乙' ? 'fp1' : fac === '丙' ? 'fp2' : 'fnpc';
       const sc = isSiege ? 's-siege' : isRetreat ? 's-retreat' : isCaptured ? 's-captured' : '';
@@ -1367,32 +1371,89 @@ const BONUS_MULT = {
         cy = fromXY.y + (toXY.y - fromXY.y) * progress;
       }
 
+      // 用 <g data-ctype> 包裹路径线+棋子，整组一起 toggle
+      const tg = ce('g', { 'data-ctype': ctype });
+
       // 路径虚线
       if (!isCaptured) {
-        layer.appendChild(ce('line', {
+        tg.appendChild(ce('line', {
           x1: fromXY.x, y1: fromXY.y, x2: toXY.x, y2: toXY.y,
           class: `sgmap-troop-route ${fc}${isRetreat?' s-retreat':''}`
         }));
+        // 方向小三角（仅行军中）
+        if (!isRetreat) {
+          const _angle = Math.atan2(toXY.y - fromXY.y, toXY.x - fromXY.x);
+          const _tx = toXY.x - Math.cos(_angle) * (Ri + 6);
+          const _ty = toXY.y - Math.sin(_angle) * (Ri + 6);
+          const _triColor = { '甲':'#e74c3c', '乙':'#3dbe6c', '丙':'#3498db' }[fac] || '#c8a020';
+          tg.appendChild(ce('polygon', {
+            points: '0,-2.2 4.5,0 0,2.2',
+            transform: `translate(${_tx.toFixed(2)},${_ty.toFixed(2)}) rotate(${(_angle*180/Math.PI).toFixed(1)})`,
+            fill: _triColor,
+            class: 'sgmap-troop-arrow'
+          }));
+        }
       }
 
-      // 棋子：显示将军名第一字
-      const hw = 6.5;  // v19: 棋子稍大，手机端更易识别
+      // 棋子
+      const hw = 6.5;
       const g = ce('g', { class: `sgmap-troop ${fc}${sc?' '+sc:''}` });
       g.appendChild(ce('rect', {
         x: cx-hw, y: cy-hw, width: hw*2, height: hw*2, rx: '1.5',
         class: 'sgmap-troop-body'
       }));
       const txt = ce('text', { x: cx, y: cy, class: 'sgmap-troop-glyph' });
-      txt.textContent = (t.general || '将').charAt(0); // v17: 将军名首字
+      txt.textContent = (t.general || '将').charAt(0);
       g.appendChild(txt);
-
-      // tooltip：合并显示所有兵种
+      if (isCaptured) {
+        g.appendChild(ce('circle', { cx: hw, cy: hw, r: '1.6', fill:'#1a1410', stroke:'#4a3a28', 'stroke-width':'.5' }));
+      }
+      if (isSiege) {
+        g.appendChild(ce('circle', { cx: hw, cy: -hw, r: '1.5', fill:'#d49830', stroke:'rgba(0,0,0,.5)', 'stroke-width':'.4' }));
+      }
       g.addEventListener('mouseenter', e => {
         _showTipHtml(_buildTroopTip(t, isSiege, isRetreat, isCaptured, status), e);
       });
       g.addEventListener('mousemove', _moveTip);
       g.addEventListener('mouseleave', _hideTip);
-      layer.appendChild(g);
+      tg.appendChild(g);
+      layer.appendChild(tg);
+    });
+
+    // ── 战况开关栏：恢复各 chip 的显示状态 ──
+    _syncCombatBar(layer);
+  }
+
+  // 读取 bar chip 状态并同步到 SVG 元素
+  function _syncCombatBar(layer) {
+    const bar = document.getElementById('sgmap-combat-bar');
+    if (!bar || !layer) return;
+    bar.querySelectorAll('.scb-chip').forEach(chip => {
+      const ctype = chip.dataset.ctype;
+      const on = chip.classList.contains('active');
+      layer.querySelectorAll(`[data-ctype="${ctype}"]`).forEach(el => {
+        el.style.display = on ? '' : 'none';
+      });
+    });
+  }
+
+  // 绑定战况开关栏点击事件（只绑一次）
+  function _bindCombatBar() {
+    const bar = document.getElementById('sgmap-combat-bar');
+    if (!bar || bar._bound) return;
+    bar._bound = true;
+    bar.querySelectorAll('.scb-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        chip.classList.toggle('active');
+        const ctype = chip.dataset.ctype;
+        const on = chip.classList.contains('active');
+        const layer = document.getElementById('sgmap-combat-layer');
+        if (layer) {
+          layer.querySelectorAll(`[data-ctype="${ctype}"]`).forEach(el => {
+            el.style.display = on ? '' : 'none';
+          });
+        }
+      });
     });
   }
 
@@ -1566,6 +1627,7 @@ const BONUS_MULT = {
       _build(c);
       _updateLegend();
       _renderCombatLayer();
+      _bindCombatBar();
     },
     parseCityOwnership,
     CITIES,
