@@ -1081,8 +1081,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .scb-chip.active .scb-swatch { opacity: 1; }
 .scb-sw-battle  { border: 1.5px solid #e85540; border-radius: 50%; }
 .scb-sw-siege   { border: 1.5px solid #d49830; border-radius: 50%; }
-.scb-sw-march   { background: rgba(8,55,22,.9);  border: 1.2px solid #3dbe6c;  border-radius: 2px; }
-.scb-sw-retreat { background: rgba(30,22,12,.9); border: 1.2px dashed #8a7c6a; border-radius: 2px; opacity:.70; }
+.scb-sw-march   { background: rgba(180,180,180,.08); border: 1.2px solid rgba(200,200,200,.45); border-radius: 2px; }
+.scb-sw-retreat { background: rgba(180,180,180,.05); border: 1.2px dashed rgba(200,200,200,.30); border-radius: 2px; }
 .scb-sw-captured{ background: #2a2018; border: 1.2px solid #5a4838; border-radius: 2px; }
 
 @media (max-width: 480px) {
