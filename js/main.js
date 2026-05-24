@@ -1,5 +1,5 @@
 /**
- * main.js — 三国志文字版 v11 (v2.5)
+ * main.js — 三国志文字版 v12 (v2.5)
  * 对接规范 v2.0：
  *  - 剧情区 / 数据区分离（36个=号分隔）
  *  - [甲][乙][丙] 含 cities_list（城名+守将）
@@ -46,7 +46,22 @@
     bindGMPanel();
     initParticles();
     initTipsCard();
+    _bindMapLayerBtns();
     loadFromCloud();
+  }
+
+  // 地图战况层开关按钮绑定
+  function _bindMapLayerBtns() {
+    const btnRings  = document.getElementById('sgmap-btn-rings');
+    const btnTroops = document.getElementById('sgmap-btn-troops');
+    if (btnRings) btnRings.addEventListener('click', () => {
+      const s = SGMap.toggleLayer('rings');
+      btnRings.classList.toggle('active', s.rings);
+    });
+    if (btnTroops) btnTroops.addEventListener('click', () => {
+      const s = SGMap.toggleLayer('troops');
+      btnTroops.classList.toggle('active', s.troops);
+    });
   }
 
   // ══════════════════════════════════════════
