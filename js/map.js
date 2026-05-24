@@ -1,5 +1,6 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v24
+ * v24.1 (2026-05): 修复战况层装饰因局部坐标错位到 SVG 原点的 bug
  * v24 (2026-05): 战况层重做为血脉脉冲方案,五状态独立 CSS 动画;移除燕尾旗与所有旧战况残留
  * v23 (2026-05): 燕尾旗尺寸/位置微调 + 行军悬浮卡回归
  * v22.1 (2026-05): 修复 PR 187 引入的 ReferenceError
@@ -1453,24 +1454,24 @@ const BONUS_MULT = {
     });
 
     battleCities.forEach((color, cityName) => {
-      const cityGroup = document.querySelector(`.sgmap-city[data-name="${cityName}"]`);
-      if (!cityGroup) return;
+      const xy = cityXY[cityName];
+      if (!xy) return;
 
       const g = ce('g', { 'data-ctype': 'battle', style: `--p-color: ${color}` });
       const pOuter = ce('polygon', {
         class: 'combat-battle-outer',
-        points: hexPoints(0, 0, HEX_R * 1.107)
+        points: hexPoints(xy.x, xy.y, HEX_R * 1.107)
       });
       const pInner = ce('polygon', {
         class: 'combat-battle-inner',
-        points: hexPoints(0, 0, HEX_R * 0.893)
+        points: hexPoints(xy.x, xy.y, HEX_R * 0.893)
       });
       g.appendChild(pOuter);
       g.appendChild(pInner);
 
-      const cityText = cityGroup.querySelector('.sgmap-city-text');
-      if (cityText) cityGroup.insertBefore(g, cityText);
-      else cityGroup.appendChild(g);
+      // 挂到战况层(全局),而不是 cityGroup 内部
+      const layer = document.getElementById('sgmap-combat-layer');
+      if (layer) layer.appendChild(g);
     });
 
     // 2. 围攻 (siege)
@@ -1483,24 +1484,23 @@ const BONUS_MULT = {
     });
 
     siegeCities.forEach((color, cityName) => {
-      const cityGroup = document.querySelector(`.sgmap-city[data-name="${cityName}"]`);
-      if (!cityGroup) return;
+      const xy = cityXY[cityName];
+      if (!xy) return;
 
       const g = ce('g', { 'data-ctype': 'siege', style: `--p-color: ${color}` });
       const rFence = HEX_R * 1.25;
 
       const pFence = ce('polygon', {
         class: 'combat-siege-fence',
-        points: hexPoints(0, 0, rFence)
+        points: hexPoints(xy.x, xy.y, rFence)
       });
       g.appendChild(pFence);
 
       for (let i = 0; i < 6; i++) {
-        // Flat-top hex vertices: angles 30°, 90°, 150°, 210°, 270°, 330°
         const angle_deg = 60 * i - 30;
         const angle_rad = Math.PI / 180 * angle_deg;
-        const vx = rFence * Math.cos(angle_rad);
-        const vy = rFence * Math.sin(angle_rad);
+        const vx = xy.x + rFence * Math.cos(angle_rad);
+        const vy = xy.y + rFence * Math.sin(angle_rad);
         const dot = ce('circle', {
           class: 'combat-siege-dot',
           cx: vx.toFixed(1), cy: vy.toFixed(1), r: 2.5
@@ -1508,9 +1508,8 @@ const BONUS_MULT = {
         g.appendChild(dot);
       }
 
-      const cityText = cityGroup.querySelector('.sgmap-city-text');
-      if (cityText) cityGroup.insertBefore(g, cityText);
-      else cityGroup.appendChild(g);
+      const layer = document.getElementById('sgmap-combat-layer');
+      if (layer) layer.appendChild(g);
     });
 
     const pathsDefs = ce('defs');
@@ -1584,20 +1583,24 @@ const BONUS_MULT = {
 
     capturedCities.forEach((color, cityName) => {
       const cityGroup = document.querySelector(`.sgmap-city[data-name="${cityName}"]`);
-      if (!cityGroup) return;
+      const xy = cityXY[cityName];
+      if (!xy) return;
 
-      cityGroup.classList.add('combat-captured-veil');
-      cityGroup.setAttribute('data-combat-captured', 'true');
+      // 呼吸效果仍打在 cityGroup 上(让整个城池一起呼吸)
+      if (cityGroup) {
+        cityGroup.classList.add('combat-captured-veil');
+        cityGroup.setAttribute('data-combat-captured', 'true');
+      }
 
+      // 遮罩用绝对坐标,挂到战况层
       const g = ce('g', { 'data-ctype': 'captured', style: `--p-color: ${color}` });
       g.appendChild(ce('polygon', {
          class: 'combat-captured-mask',
-         points: hexPoints(0, 0, HEX_R)
+         points: hexPoints(xy.x, xy.y, HEX_R)
       }));
 
-      const cityText = cityGroup.querySelector('.sgmap-city-text');
-      if (cityText) cityGroup.insertBefore(g, cityText);
-      else cityGroup.appendChild(g);
+      const layer = document.getElementById('sgmap-combat-layer');
+      if (layer) layer.appendChild(g);
     });
 
     _syncCombatBar();
