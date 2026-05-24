@@ -1,7 +1,5 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v24
- * v24 (2026-05): 修复旗帜 pointer-events + 居中
- *                + 缩 10% + 新增「访驻」状态
+ * map.js — 三国志文字版 · 势力地图 v23
  * v23 (2026-05): 燕尾旗尺寸/位置微调 + 行军悬浮卡回归
  * v22.1 (2026-05): 修复 PR 187 引入的 ReferenceError
  * v22 (2026-05): 战况层重做 — 燕尾旗 + 六边形虚线光环,
@@ -818,7 +816,7 @@ const BONUS_MULT = {
     /* ── 画燕尾旗 ── */
   function drawFlag(fx, fy, color, flagData) {
     const g = ce('g', { 'data-ctype': 'flag' });
-    // pointer-events 完全由 CSS 控制,不在 JS 内联
+    g.style.pointerEvents = 'none';
 
     if (flagData) {
       g.setAttribute('data-flag', JSON.stringify(flagData));
@@ -836,8 +834,7 @@ const BONUS_MULT = {
     }));
 
     // 旗面 Path：从左上开始，到右上，内凹到中间，到右下，到左下，闭合
-    const HALF_W = 6;
-    const d = `M${fx - HALF_W},${fy - 16} L${fx + HALF_W},${fy - 16} L${fx + HALF_W - 3.0},${fy - 11} L${fx + HALF_W},${fy - 6} L${fx - HALF_W},${fy - 6} Z`;
+    const d = `M${fx},${fy - 18} L${fx + 14},${fy - 18} L${fx + 14 - 3.6},${fy - 12.5} L${fx + 14},${fy - 7} L${fx},${fy - 7} Z`;
 
     // 发光层
     animG.appendChild(ce('path', {
@@ -849,7 +846,7 @@ const BONUS_MULT = {
 
     // 旗杆
     animG.appendChild(ce('line', {
-      x1: fx, y1: fy, x2: fx, y2: fy - 16,
+      x1: fx, y1: fy, x2: fx, y2: fy - 18,
       stroke: color, 'stroke-width': '1.3', 'stroke-linecap': 'round'
     }));
 
@@ -1345,14 +1342,12 @@ const BONUS_MULT = {
     const SCENE_LABEL = {
       march:   '行军中',
       siege:   '围攻中',
-      retreat: '撤退中',
-      visit:   '访驻'
+      retreat: '撤退中'
     };
     const SCENE_ICON = {
       march:   '⚑',
       siege:   '⚔',
-      retreat: '↩',
-      visit:   '⚑'
+      retreat: '↩'
     };
     const sceneLabel = SCENE_LABEL[d.scene] || '';
     const sceneIcon  = SCENE_ICON[d.scene]  || '';
@@ -1395,19 +1390,6 @@ const BONUS_MULT = {
         + '<span class="sgft-from">' + esc(d.to || '?') + '</span>'
         + '<span class="sgft-arrow">→</span>'
         + '<span class="sgft-to">' + esc(d.from || '?') + '</span>'
-        + '</div>'
-      );
-    } else if (d.scene === 'visit') {
-      sceneRows.push(
-        '<div class="sgft-scene">'
-        + '<span class="sgft-scene-icon">' + sceneIcon + '</span>'
-        + '<span class="sgft-scene-label">' + sceneLabel + '</span>'
-        + '<span class="sgft-scene-target">' + esc(d.to || '?') + '</span>'
-        + '</div>'
-        + '<div class="sgft-route">'
-        + '<span class="sgft-from">从 ' + esc(d.from || '?') + '</span>'
-        + '<span class="sgft-arrow">→</span>'
-        + '<span class="sgft-to">驻 ' + esc(d.to || '?') + '</span>'
         + '</div>'
       );
     }
@@ -1697,7 +1679,6 @@ const BONUS_MULT = {
 
       let scene = '', remaining = null, via = '';
       if (t.status === '围攻中') scene = 'siege';
-      else if (t.status === '访驻') scene = 'visit';
       else if (t.status === '撤退中') scene = 'retreat';
       else if (t.status.startsWith('剩')) {
         scene = 'march';
@@ -1728,7 +1709,7 @@ const BONUS_MULT = {
         troops: t.troops
       };
 
-      if (t.status === '围攻中' || t.status === '访驻') {
+      if (t.status === '围攻中') {
         const key = `${toXY.x},${toXY.y}`;
         if (!flagPlacements[key]) flagPlacements[key] = { x: toXY.x, y: toXY.y, flags: [] };
         if (!flagPlacements[key].flags.some(f => f.color === cInfo.glow)) {
