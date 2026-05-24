@@ -1378,25 +1378,17 @@ const BONUS_MULT = {
 
     let html = '';
     enroute.forEach(e => {
-      if (e.status !== 'sieging' && e.status !== 'captured') return;
+      if (e.status !== 'sieging') return;
       const cFrom = CITIES.find(c => c.id === e.from);
       const cTo = CITIES.find(c => c.id === e.to);
       if (!cFrom || !cTo) return;
 
-      const pa = hexToXY(cFrom.hx, cFrom.hy);
       const pb = hexToXY(cTo.hx, cTo.hy);
-      const dx = pa.x - pb.x;
-      const dy = pa.y - pb.y;
-      const len = Math.hypot(dx, dy);
-      if (len === 0) return;
-
-      const cx = pb.x + (dx / len) * (HEX_R + 9);
-      const cy = pb.y + (dy / len) * (HEX_R + 9);
 
       html += `
         <g>
-          <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${HEX_R + 2.2}" class="siege-ring"/>
-          <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${HEX_R + 2.2}" class="siege-ring-overlay"/>
+          <circle cx="${pb.x.toFixed(1)}" cy="${pb.y.toFixed(1)}" r="${HEX_R + 2.2}" class="siege-ring"/>
+          <circle cx="${pb.x.toFixed(1)}" cy="${pb.y.toFixed(1)}" r="${HEX_R + 2.2}" class="siege-ring-overlay"/>
         </g>
       `;
     });
