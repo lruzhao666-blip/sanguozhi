@@ -1213,9 +1213,16 @@ const BONUS_MULT = {
           });
         }
         return combatHtml;
-      })()}`;
+      })()}
+      <div class="sgt-close-row"><button class="sgt-close-btn" type="button">关闭</button></div>`;
     _tooltip.classList.remove('sgmap-tooltip--troop');  // 城池 tooltip 用标准宽度
     _tooltip.classList.add('visible');
+    // 关闭按钮事件（城池 tooltip 专用）
+    const _closeBtn = _tooltip.querySelector('.sgt-close-btn');
+    if (_closeBtn) {
+      _closeBtn.addEventListener('click',     () => _hideTip(), { once: true });
+      _closeBtn.addEventListener('touchstart', e => { e.stopPropagation(); _hideTip(); }, { once: true, passive: false });
+    }
     _moveTip(e);
   }
 
@@ -1245,9 +1252,23 @@ const BONUS_MULT = {
     if (_tooltip) _tooltip.classList.remove('visible');
   }
 
-  /* ─────────────────────────────────
-     战况层渲染（战斗环 / 围攻环 / 行军棋子）
-  ───────────────────────────────── */
+  // 点击战斗环：高亮并滚动到对应战报卡片
+  function _scrollToBattle(cityName) {
+    // 在 battles-list 里找 data-battlecity 匹配的卡片
+    const cards = document.querySelectorAll('.battle-card[data-battlecity]');
+    let target = null;
+    cards.forEach(c => {
+      if (c.dataset.battlecity === cityName) target = target || c;
+    });
+    if (!target) return;
+    // 高亮闪烁
+    document.querySelectorAll('.battle-card').forEach(c => c.classList.remove('highlight'));
+    target.classList.add('highlight');
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => target.classList.remove('highlight'), 1800);
+  }
+
+
   function _renderCombatLayer() {
     const layer = document.getElementById('sgmap-combat-layer');
     if (!layer) return;
@@ -1312,8 +1333,10 @@ const BONUS_MULT = {
       });
       ring.addEventListener('mousemove', _moveTip);
       ring.addEventListener('mouseleave', _hideTip);
+      // 点击战斗环：滚动高亮对应战报卡片
+      ring.addEventListener('click', () => _scrollToBattle(cityName));
       layer.appendChild(ring);
-      // 内金虚线
+      // 内金虚线（静态，无旋转）
       layer.appendChild(ce('circle', { cx:x, cy:y, r:r3, class:'sgmap-battle-ring-inner' }));
     });
 
@@ -1373,6 +1396,22 @@ const BONUS_MULT = {
           x1: fromXY.x, y1: fromXY.y, x2: toXY.x, y2: toXY.y,
           class: `sgmap-troop-route ${fc}${isRetreat?' s-retreat':''}`
         }));
+        // 方向小三角（仅行军中，贴近目的城方向）
+        if (!isRetreat) {
+          const _ax = fromXY.x, _ay = fromXY.y, _bx = toXY.x, _by = toXY.y;
+          const _angle = Math.atan2(_by - _ay, _bx - _ax);
+          const _tx = _bx - Math.cos(_angle) * (Ri + 6);
+          const _ty = _by - Math.sin(_angle) * (Ri + 6);
+          const _triColor = {
+            '甲':'#e74c3c', '乙':'#3dbe6c', '丙':'#3498db'
+          }[String(t.faction)] || '#c8a020';
+          layer.appendChild(ce('polygon', {
+            points: '0,-2.2 4.5,0 0,2.2',
+            transform: `translate(${_tx.toFixed(2)},${_ty.toFixed(2)}) rotate(${(_angle*180/Math.PI).toFixed(1)})`,
+            fill: _triColor,
+            class: 'sgmap-troop-arrow'
+          }));
+        }
       }
 
       // 棋子：显示将军名第一字
@@ -1385,6 +1424,15 @@ const BONUS_MULT = {
       const txt = ce('text', { x: cx, y: cy, class: 'sgmap-troop-glyph' });
       txt.textContent = (t.general || '将').charAt(0); // v17: 将军名首字
       g.appendChild(txt);
+
+      // 角标：被俘右下角锁点
+      if (isCaptured) {
+        g.appendChild(ce('circle', { cx: hw, cy: hw, r: '1.6', fill:'#1a1410', stroke:'#4a3a28', 'stroke-width':'.5' }));
+      }
+      // 角标：围攻右上角金点
+      if (isSiege) {
+        g.appendChild(ce('circle', { cx: hw, cy: -hw, r: '1.5', fill:'#d49830', stroke:'rgba(0,0,0,.5)', 'stroke-width':'.4' }));
+      }
 
       // tooltip：合并显示所有兵种
       g.addEventListener('mouseenter', e => {
