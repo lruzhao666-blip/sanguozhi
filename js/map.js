@@ -1333,32 +1333,32 @@ const BONUS_MULT = {
 
       const resText = b.result === '平' ? '和' : b.result;
       const html = `<div class="sgt-head">
-  <span class="sgt-name txt-battle">${city.name} · 战</span>
-  <span class="sgt-badge">${resText}</span>
+  <span class="sgt-name txt-battle">${_esc(city.name)} · 战</span>
+  <span class="sgt-badge">${_esc(resText)}</span>
 </div>
 <div class="sgt-row"><span class="sgt-lbl">攻</span>
-  <span class="sgt-val"><b>${b.attacker}</b></span></div>
+  <span class="sgt-val"><b>${_esc(b.attacker)}</b></span></div>
 <div class="sgt-row"><span class="sgt-lbl">守</span>
-  <span class="sgt-val"><b>${b.defender}</b></span></div>
+  <span class="sgt-val"><b>${_esc(b.defender)}</b></span></div>
 <div class="sgt-divider"></div>
 <div class="sgt-row"><span class="sgt-lbl">伤亡</span>
-  <span class="sgt-val">攻 ${b.attLoss} · 守 ${b.defLoss}</span></div>`;
+  <span class="sgt-val">攻 ${_esc(b.attLoss)} · 守 ${_esc(b.defLoss)}</span></div>`;
 
       middleRing.addEventListener('mouseenter', e => {
         _tooltip.innerHTML = html;
-        _tooltip.style.display = 'block';
+        _tooltip.classList.add('visible');
         _moveTip(e);
       });
       middleRing.addEventListener('mousemove', e => {
         _moveTip(e);
       });
       middleRing.addEventListener('mouseleave', () => {
-        _tooltip.style.display = 'none';
+        _hideTip();
       });
       // Click bound to the same show tip logic as requested
       middleRing.addEventListener('click', e => {
         _tooltip.innerHTML = html;
-        _tooltip.style.display = 'block';
+        _tooltip.classList.add('visible');
         _moveTip(e);
       });
     });
@@ -1527,29 +1527,29 @@ const BONUS_MULT = {
       const fLabel = factionLabels[e.faction] || e.faction;
 
       const html = `<div class="sgt-head">
-  <span class="sgt-name">${e.general}</span>
-  <span class="sgt-badge">${fLabel}</span>
+  <span class="sgt-name">${_esc(e.general)}</span>
+  <span class="sgt-badge">${_esc(fLabel)}</span>
 </div>
 <div class="sgt-row"><span class="sgt-lbl">自</span>
-  <span class="sgt-val">${cFrom.name}</span></div>
+  <span class="sgt-val">${_esc(cFrom.name)}</span></div>
 <div class="sgt-row"><span class="sgt-lbl">向</span>
-  <span class="sgt-val">${cTo.name}</span></div>
+  <span class="sgt-val">${_esc(cTo.name)}</span></div>
 <div class="sgt-divider"></div>
 <div class="sgt-row"><span class="sgt-lbl">兵</span>
-  <span class="sgt-val">${e.troopType} ${e.troopCount}</span></div>
+  <span class="sgt-val">${_esc(e.troopType)} ${_esc(e.troopCount)}</span></div>
 <div class="sgt-row"><span class="sgt-lbl">状</span>
-  <span class="sgt-val ${statusColor}">${statusText}</span></div>`;
+  <span class="sgt-val ${_esc(statusColor)}">${_esc(statusText)}</span></div>`;
 
       troopG.addEventListener('mouseenter', ev => {
         _tooltip.innerHTML = html;
-        _tooltip.style.display = 'block';
+        _tooltip.classList.add('visible');
         _moveTip(ev);
       });
       troopG.addEventListener('mousemove', ev => {
         _moveTip(ev);
       });
       troopG.addEventListener('mouseleave', () => {
-        _tooltip.style.display = 'none';
+        _hideTip();
       });
 
       gTroop.appendChild(troopG);
