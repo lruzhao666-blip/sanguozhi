@@ -1,5 +1,5 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v19
+ * map.js — 三国志文字版 · 势力地图 v20
  *
  * ✦ 60 座城池，十二大州区
  * ✦ flat-top 六边形，整个矩形网格完整铺满（无空白）
@@ -1464,11 +1464,14 @@ const BONUS_MULT = {
         </span>`;
       }
 
-      const npcCnt = Object.values(cityOwnership).filter(o => o.owner === 'npc').length;
+      // 群雄城数 = 总城数(60) - 玩家城数 - 所有NPC城数（命名+无名）
+      const playerCnt = Object.values(cityOwnership).filter(o => o.owner !== '' && o.owner !== 'npc').length;
+      const npcAllCnt = Object.values(cityOwnership).filter(o => o.owner === 'npc').length;
+      const qhCnt     = CITIES.length - playerCnt - npcAllCnt;
       html += `<span class="sgmap-legend-item">
         <span class="sgmap-legend-dot" style="background:${NPC_C.stroke}"></span>
-        <span style="color:${NPC_C.glow};font-weight:700">NPC</span>
-        <span style="color:var(--text-dim);font-size:.65rem"> ${npcCnt}城</span>
+        <span style="color:${NPC_C.glow};font-weight:700">群雄</span>
+        <span style="color:var(--text-dim);font-size:.65rem"> ${qhCnt}城</span>
       </span>`;
       el.innerHTML = html;
     }, 0);
