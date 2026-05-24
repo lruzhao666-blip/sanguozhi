@@ -3269,16 +3269,13 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* 行军路径线 — 加粗+流动动画 */
 .sgmap-troop-route {
   fill:none; stroke-width:1.5; stroke-dasharray:5 4; opacity:.60; pointer-events:none;
-  animation: sgmap-route-flow 1.8s linear infinite;
 }
 .sgmap-troop-route.fp0  { stroke:#e74c3c; }
 .sgmap-troop-route.fp1  { stroke:#3dbe6c; }
 .sgmap-troop-route.fp2  { stroke:#3498db; }
 .sgmap-troop-route.fnpc { stroke:#c8a020; }
-.sgmap-troop-route.s-retreat { opacity:.35; stroke-dasharray:2 4; animation:none; }
-@keyframes sgmap-route-flow {
-  from { stroke-dashoffset: 0; } to { stroke-dashoffset: -18; }
-}
+.sgmap-troop-route.s-retreat { opacity:.35; stroke-dasharray:2 4; }
+/* @keyframes sgmap-route-flow removed: 路径流动动画已取消，静态虚线更克制 */
 
 /* ── Tooltip 战况追加区 ── */
 .sgt-combat-divider {
