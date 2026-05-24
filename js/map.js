@@ -1,5 +1,5 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v16
+ * map.js — 三国志文字版 · 势力地图 v17
  *
  * ✦ 60 座城池，十二大州区
  * ✦ flat-top 六边形，整个矩形网格完整铺满（无空白）
@@ -1310,22 +1310,29 @@ const BONUS_MULT = {
     siegeCities.forEach(cityName => {
       if (battleCities.has(cityName)) return; // 战斗环优先，不叠加
       const {x, y} = cityXY[cityName];
-      const r = Ri + 2.2;
+      const r = Ri + 7;                       // v17: 扩大至 Ri+7，围攻环清晰可见
       layer.appendChild(ce('circle', { cx:x, cy:y, r, class:'sgmap-siege-ring' }));
       layer.appendChild(ce('circle', { cx:x, cy:y, r, class:'sgmap-siege-overlay' }));
     });
 
-    // ── 元素三：行军棋子 ──
+    // ── 元素三：行军棋子（按将领分组，同将领多兵种合并为一枚棋子）──
+    // 分组 key = faction+general+from+to+status（同条路线同将领合并）
+    const troopGroups = new Map();
     (_transitData || []).forEach(t => {
+      const key = `${t.faction}|${t.general}|${t.from}|${t.to}|${t.status}`;
+      if (!troopGroups.has(key)) troopGroups.set(key, { ...t, troops: [] });
+      troopGroups.get(key).troops.push({ type: t.troopType, count: t.troopCount });
+    });
+
+    troopGroups.forEach(t => {
       const fromXY = cityXY[t.from];
       const toXY   = cityXY[t.to];
       if (!fromXY || !toXY) return;
 
-      const status = t.status; // 剩N / 围攻中 / 撤退中 / 被俘
+      const status = t.status;
       const isSiege    = status === '围攻中';
       const isRetreat  = status === '撤退中';
       const isCaptured = status === '被俘';
-      const isMarch    = !isSiege && !isRetreat && !isCaptured;
 
       // 阵营 class
       const fac = String(t.faction);
@@ -1335,51 +1342,46 @@ const BONUS_MULT = {
       // 棋子位置
       let cx, cy;
       if (isSiege) {
-        // 围攻：停在目标城外缘
         const dx = toXY.x - fromXY.x, dy = toXY.y - fromXY.y;
         const dist = Math.sqrt(dx*dx+dy*dy) || 1;
         cx = toXY.x - (dx/dist)*(Ri+5);
         cy = toXY.y - (dy/dist)*(Ri+5);
       } else if (isRetreat) {
-        // 撤退：靠近出发城 1/4 处
         cx = fromXY.x + (toXY.x - fromXY.x) * 0.25;
         cy = fromXY.y + (toXY.y - fromXY.y) * 0.25;
       } else {
-        // 行军：按剩余回合估算进度
-        const remStr = status || '';
-        const rem = parseInt(remStr.replace('剩','')) || 1;
+        const rem = parseInt((status||'').replace('剩','')) || 1;
         const progress = Math.max(0.2, Math.min(0.82, 1 - rem / Math.max(rem, 4)));
         cx = fromXY.x + (toXY.x - fromXY.x) * progress;
         cy = fromXY.y + (toXY.y - fromXY.y) * progress;
       }
 
-      // 路径虚线（被俘不画路径）
+      // 路径虚线
       if (!isCaptured) {
-        const route = ce('line', {
+        layer.appendChild(ce('line', {
           x1: fromXY.x, y1: fromXY.y, x2: toXY.x, y2: toXY.y,
           class: `sgmap-troop-route ${fc}${isRetreat?' s-retreat':''}`
-        });
-        layer.appendChild(route);
+        }));
       }
 
-      // 棋子（小方印 7×7）
+      // 棋子：显示将军名第一字
       const hw = 5.5;
       const g = ce('g', { class: `sgmap-troop ${fc}${sc?' '+sc:''}` });
       g.appendChild(ce('rect', {
         x: cx-hw, y: cy-hw, width: hw*2, height: hw*2, rx: '1.5',
         class: 'sgmap-troop-body'
       }));
-      // 兵种字符
       const txt = ce('text', { x: cx, y: cy, class: 'sgmap-troop-glyph' });
-      txt.textContent = t.troopType || '兵';
+      txt.textContent = (t.general || '将').charAt(0); // v17: 将军名首字
       g.appendChild(txt);
 
-      // tooltip
+      // tooltip：合并显示所有兵种
       g.addEventListener('mouseenter', e => {
         const statusLabel = isSiege ? '<span class="txt-siege">围攻中</span>'
           : isRetreat ? '<span class="txt-retreat">撤退中</span>'
           : isCaptured ? '<span class="txt-captured">被俘</span>'
           : `<span style="color:#7ddd7d">${_esc(status)}</span>`;
+        const troopStr = t.troops.map(tr => `${_esc(tr.type)}:${tr.count}`).join(' · ');
         const html = `<div class="sgt-combat-divider"></div>
           <div class="sgt-combat-row">
             <span class="sgt-combat-lbl">将领</span>
@@ -1391,7 +1393,7 @@ const BONUS_MULT = {
           </div>
           <div class="sgt-combat-row">
             <span class="sgt-combat-lbl">兵力</span>
-            <span class="sgt-combat-val">${_esc(t.troopType)}:${t.troopCount||0}</span>
+            <span class="sgt-combat-val">${troopStr}</span>
           </div>
           <div class="sgt-combat-row">
             <span class="sgt-combat-lbl">状态</span>
