@@ -1,5 +1,5 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v20
+ * map.js — 三国志文字版 · 势力地图 v21
  *
  * ✦ 60 座城池，十二大州区
  * ✦ flat-top 六边形，整个矩形网格完整铺满（无空白）
@@ -417,8 +417,6 @@ const BONUS_MULT = {
   let _transitData = [];  // [{faction,general,from,to,troopType,troopCount,status}]
   let _battlesData  = []; // [{attacker,defender,result,attacker_loss,defender_loss,city?}]
   let _tooltip = null;
-  // 战况层显示开关（默认全开）
-  let _layerVis = { rings: true, troops: true };
 
   function _esc(s) {
     return String(s)
@@ -1243,8 +1241,6 @@ const BONUS_MULT = {
     const layer = document.getElementById('sgmap-combat-layer');
     if (!layer) return;
     layer.innerHTML = '';
-    // 两个子层都隐藏时直接返回
-    if (!_layerVis.rings && !_layerVis.troops) return;
 
     const NS = 'http://www.w3.org/2000/svg';
     function ce(tag, attrs) {
@@ -1279,7 +1275,7 @@ const BONUS_MULT = {
     });
 
     // ── 元素一：战斗呼吸环 ──
-    if (_layerVis.rings) battleCities.forEach(cityName => {
+    battleCities.forEach(cityName => {
       const {x, y} = cityXY[cityName];
       const r1 = Ri + 9, r2 = Ri + 5, r3 = Ri + 2.5;  // v18: 基于正确Ri=23，环超出城圈清晰可见
       // 外晕
@@ -1311,7 +1307,7 @@ const BONUS_MULT = {
     });
 
     // ── 元素二：围攻环 ──
-    if (_layerVis.rings) siegeCities.forEach(cityName => {
+    siegeCities.forEach(cityName => {
       if (battleCities.has(cityName)) return; // 战斗环优先，不叠加
       const {x, y} = cityXY[cityName];
       const r = Ri + 5;                       // v18: 围攻环 Ri+5=28px，与战斗环同级
@@ -1320,7 +1316,6 @@ const BONUS_MULT = {
     });
 
     // ── 元素三：行军棋子（按将领分组，同将领多兵种合并为一枚棋子）──
-    if (!_layerVis.troops) return;
     // 分组 key = faction+general+from+to+status（同条路线同将领合并）
     const troopGroups = new Map();
     (_transitData || []).forEach(t => {
@@ -1556,14 +1551,6 @@ const BONUS_MULT = {
     parseCityOwnership,
     CITIES,
     P_COLOR,
-    // 战况层显示开关：key='rings'|'troops'，val=true/false，返回当前状态
-    toggleLayer(key, val) {
-      if (key in _layerVis) {
-        _layerVis[key] = val !== undefined ? !!val : !_layerVis[key];
-        _renderCombatLayer();
-      }
-      return { ..._layerVis };
-    },
   };
 
 })();
