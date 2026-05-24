@@ -3323,10 +3323,10 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .stt-strip {
   width: 3px; flex-shrink: 0; align-self: stretch;
 }
-.stt-strip-march   { background: linear-gradient(180deg,#3dbe6c,#2a9050); }
-.stt-strip-siege   { background: linear-gradient(180deg,#e6b840,#c09020); }
-.stt-strip-retreat { background: linear-gradient(180deg,#a08848,#806828); }
-.stt-strip-captured{ background: linear-gradient(180deg,#e05040,#b03020); }
+.stt-strip-p0      { background: linear-gradient(180deg,#e74c3c,#c03020); }
+.stt-strip-p1      { background: linear-gradient(180deg,#3dbe6c,#2a9050); }
+.stt-strip-p2      { background: linear-gradient(180deg,#3498db,#1a78bb); }
+.stt-strip-npc     { background: linear-gradient(180deg,#c8a020,#a07818); }
 
 .stt-header-main {
   display: flex; align-items: center; justify-content: space-between;

@@ -1464,10 +1464,12 @@ const BONUS_MULT = {
       : isRetreat   ? 'stt-retreat'
       : isCaptured  ? 'stt-captured'
       : 'stt-march';
-    const stripCls = isSiege ? 'stt-strip-siege'
-      : isRetreat   ? 'stt-strip-retreat'
-      : isCaptured  ? 'stt-strip-captured'
-      : 'stt-strip-march';
+    // 左侧色条用势力色（甲/乙/丙/其他），不用状态色
+    const fac = String(t.faction || '');
+    const stripCls = fac === '甲' ? 'stt-strip-p0'
+      : fac === '乙' ? 'stt-strip-p1'
+      : fac === '丙' ? 'stt-strip-p2'
+      : 'stt-strip-npc';
     const statusTxt = _esc(status || '行军中');
     const troopChips = t.troops.map(tr =>
       `<span class="stt-troop-chip"><b>${_esc(tr.type)}</b><span>${tr.count}</span></span>`
