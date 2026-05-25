@@ -3,6 +3,7 @@
    精简 · 高级 · 呼吸感
    ============================================ */
 /* v20260525e (2026-05-25): chip 未激活态对比度提升 + 移动端缩小一档 */
+/* v20260525f (2026-05-25): chip display 加 !important 防御 */
 :root {
   --red-deep:    #6b0000;
   --red-mid:     #a93226;
@@ -3543,7 +3544,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   flex-shrink: 0;
 }
 .scb-chip {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   font-family: var(--font-sans);
   font-size: .68rem;
