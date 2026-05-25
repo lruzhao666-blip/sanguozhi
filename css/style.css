@@ -2,6 +2,7 @@
    三国志文字版 — 战旗赤红风 CSS v9
    精简 · 高级 · 呼吸感
    ============================================ */
+/* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
 /* v20260525h (2026-05-25): fx-off-* 选择器对齐 sgmap-pulse/combat 实际类名 */
 /* v20260525g (2026-05-25): 特效开关栏重做 — 旧 .scb-chip 全删 */
@@ -3415,31 +3416,31 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 .combat-battle-outer {
   stroke: var(--p-color, #e74c3c);
-  animation: combatBattleOuter .8s ease-in-out infinite;
+  animation: combatBattleOuter 2s ease-in-out infinite;
 }
 .combat-battle-inner {
   stroke: #d4a843;
   stroke-width: 1.5;
-  animation: combatBattleInner .8s ease-in-out infinite .2s;
+  animation: combatBattleInner 2s ease-in-out infinite .2s;
 }
 @keyframes combatBattleOuter {
   0%, 100% { opacity: .4; transform: scale(1); }
-  50%      { opacity: 1;  transform: scale(1.18); }
+  50%      { opacity: 1;  transform: scale(1.05); }
 }
 @keyframes combatBattleInner {
   0%, 100% { opacity: .3; transform: scale(.95); }
-  50%      { opacity: .9; transform: scale(1.08); }
+  50%      { opacity: .9; transform: scale(1.02); }
 }
 
 /* 围攻 — 静止虚线六边形 + 顺时针流转 */
 .combat-siege-fence {
   fill: none;
-  stroke: var(--p-color, #3dbe6c);
+  stroke: rgba(220,140,60,0.55);
   stroke-width: 1.6;
   stroke-dasharray: 4 5;
   transform-origin: center;
   transform-box: fill-box;
-  animation: combatSiegeRotate 3s linear infinite;
+  animation: combatSiegeRotate 8s linear infinite;
   pointer-events: none;
 }
 @keyframes combatSiegeRotate {
@@ -3456,14 +3457,14 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .combat-march-path {
   fill: none;
   stroke: var(--p-color, #3498db);
-  stroke-width: 1.2;
+  stroke-width: 1.5;
   stroke-dasharray: 3 3;
-  opacity: .45;
+  opacity: .7;
   pointer-events: none;
 }
 .combat-march-particle {
   fill: var(--p-color, #3498db);
-  filter: drop-shadow(0 0 4px var(--p-color, #3498db));
+  filter: drop-shadow(0 0 2px var(--p-color, #3498db));
   pointer-events: none;
 }
 .combat-flash-start,
