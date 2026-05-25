@@ -2,6 +2,7 @@
    三国志文字版 — 战旗赤红风 CSS v9
    精简 · 高级 · 呼吸感
    ============================================ */
+/* v20260528b (2026-05-28): tooltip — 移除底部 sgt-combat-section / sgt-transit-* / stt-* 在途战况段 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
 /* v20260525h (2026-05-25): fx-off-* 选择器对齐 sgmap-pulse/combat 实际类名 */
@@ -3130,27 +3131,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
    战况层 v1.0 — battle-ring / siege-ring / troop-token
    ====================================================== */
 
-/* ── Tooltip 战况追加区 ── */
-.sgt-combat-divider {
-  height:1px; margin:7px 0;
-  background:rgba(180,148,68,.18);
-}
-.sgt-combat-row {
-  display:flex; gap:6px; align-items:baseline;
-  font-size:.70rem; line-height:1.65;
-}
-.sgt-combat-lbl {
-  font-size:.56rem; color:var(--text-dim);
-  letter-spacing:.08em; min-width:2.4em;
-  text-align:right; flex-shrink:0;
-}
-.sgt-combat-val { color:var(--text-sub); }
-.sgt-combat-val b { color:var(--text-main); font-weight:700; }
-.txt-battle  { color:#e85540; }
-.txt-siege   { color:#d49830; }
-.txt-retreat { color:#8a7c6a; }
-.txt-captured{ color:#8a7868; }
-
 /* ══════════════════════════════════════════════════════
    在途棋子悬浮卡片 v3.0 — 专属设计
    ====================================================== */
@@ -3252,47 +3232,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .stt-troop-chip span {
   font-size: .78rem; color: #c8b89a; font-weight: 700;
 }
-
-/* ── 城池 tooltip 内的在途行（优化版）── */
-.sgt-combat-row.sgt-transit-row {
-  align-items: flex-start;
-  padding: 2px 0;
-}
-.sgt-transit-dir {
-  font-size: .54rem; color: var(--text-dim);
-  letter-spacing: .08em; min-width: 2.2em;
-  text-align: right; flex-shrink: 0;
-  margin-top: 2px;
-}
-.sgt-transit-body {
-  display: flex; flex-wrap: wrap; align-items: center;
-  gap: 3px 6px; flex: 1;
-}
-.sgt-transit-gen {
-  font-size: .78rem; font-weight: 700; color: #f0e6d3;
-  font-family: 'Noto Serif SC', serif; letter-spacing: .03em;
-  flex-shrink: 0;
-}
-.sgt-transit-route {
-  font-size: .7rem; color: var(--text-sub);
-  flex-shrink: 0; white-space: nowrap;
-}
-.stt-arrow-inline {
-  color: var(--gold-dim); margin: 0 2px; font-size: .75rem;
-}
-.sgt-transit-troop {
-  font-size: .64rem; color: var(--gold-dim);
-  flex-shrink: 0; letter-spacing: .01em;
-}
-.sgt-transit-st {
-  font-size: .62rem; font-weight: 600;
-  padding: 1px 5px; border-radius: 5px;
-  flex-shrink: 0; letter-spacing: .03em;
-}
-.sgt-transit-st.stt-march   { color:#6dca7d; background:rgba(0,140,60,.14); border:1px solid rgba(0,150,65,.26); }
-.sgt-transit-st.stt-siege   { color:#e6b840; background:rgba(190,145,0,.14); border:1px solid rgba(200,155,0,.26); }
-.sgt-transit-st.stt-retreat { color:#b89848; background:rgba(150,120,0,.12); border:1px solid rgba(160,125,0,.24); }
-.sgt-transit-st.stt-captured{ color:#e06858; background:rgba(180,40,20,.14); border:1px solid rgba(190,45,25,.26); }
 
 /* ══════════════════════════════════════════
    行军悬浮卡 v1 — 沿用 #sgmap-tooltip 容器
