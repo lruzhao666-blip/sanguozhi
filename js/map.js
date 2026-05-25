@@ -1,5 +1,7 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v24
+ * v24.6 (2026-05-26): 围攻贴 6 角 + 战事/行军视觉降幅,
+ *                     不改结构纯调数值
  * v24.4 (2026-05): 删除旧战况开关栏事件绑定(已迁移到 main.js)
  * v24.3 (2026-05): chip 点击防御 — 主动清除 inline display
  * v24.2 (2026-05): 战况层 5 个开关 chip 接入,统一暗金 UI
@@ -1490,23 +1492,22 @@ const BONUS_MULT = {
       if (!xy) return;
 
       const g = ce('g', { 'data-ctype': 'siege', style: `--p-color: ${color}` });
-      const rFence = HEX_R * 1.25;
 
       const pFence = ce('polygon', {
         class: 'combat-siege-fence',
-        points: hexPoints(xy.x, xy.y, rFence)
+        points: hexPoints(xy.x, xy.y, HEX_R)
       });
       g.appendChild(pFence);
 
       for (let i = 0; i < 6; i++) {
         // Flat-top hex vertices: angles 30°, 90°, 150°, 210°, 270°, 330°
-        const angle_deg = 60 * i - 30;
+        const angle_deg = 60 * i;
         const angle_rad = Math.PI / 180 * angle_deg;
-        const vx = xy.x + rFence * Math.cos(angle_rad);
-        const vy = xy.y + rFence * Math.sin(angle_rad);
+        const vx = xy.x + HEX_R * Math.cos(angle_rad);
+        const vy = xy.y + HEX_R * Math.sin(angle_rad);
         const dot = ce('circle', {
           class: 'combat-siege-dot',
-          cx: vx.toFixed(1), cy: vy.toFixed(1), r: 2.5
+          cx: vx.toFixed(1), cy: vy.toFixed(1), r: 3.5
         });
         g.appendChild(dot);
       }
@@ -1556,7 +1557,7 @@ const BONUS_MULT = {
         durations.forEach((begin, idx) => {
           const particle = ce('circle', { class: 'combat-march-particle', r: 3.5 });
           const anim = ce('animateMotion', {
-            dur: '2.4s', repeatCount: 'indefinite', begin: `${begin}s`
+            dur: '4s', repeatCount: 'indefinite', begin: `${begin}s`
           });
           const mpath = ce('mpath', { href: `#${pathId}` });
           anim.appendChild(mpath);
