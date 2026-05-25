@@ -1016,79 +1016,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
   width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
 }
 
-/* ────────────────────────────────
-   战况层开关栏（地图正下方）
-──────────────────────────────── */
-.sgmap-combat-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 8px;
-  padding: 7px 12px 8px;
-  border-top: 1px solid rgba(200,160,70,.10);
-  background: rgba(5,4,10,.55);
-}
-.scb-label {
-  font-family: var(--font-sans);
-  font-size: .60rem;
-  color: var(--text-dim);
-  letter-spacing: .12em;
-  margin-right: 2px;
-  flex-shrink: 0;
-}
-/* chip 基础 */
-.scb-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-family: var(--font-sans);
-  font-size: .63rem;
-  letter-spacing: .04em;
-  padding: 2px 9px 2px 6px;
-  border-radius: 10px;
-  border: 1px solid rgba(200,160,70,.16);
-  background: rgba(0,0,0,.28);
-  color: rgba(200,184,154,.38);
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  transition: color .14s, background .14s, border-color .14s, opacity .14s;
-  position: relative;
-}
-/* 激活态 */
-.scb-chip.active {
-  color: rgba(220,200,164,.85);
-  border-color: rgba(200,160,70,.28);
-  background: rgba(212,168,67,.06);
-}
-/* 各状态激活态高亮色 */
-.scb-chip--battle.active  { color:#e88070; border-color:rgba(232,85,64,.40); background:rgba(232,85,64,.07); }
-.scb-chip--siege.active   { color:#e6b840; border-color:rgba(212,152,48,.40); background:rgba(212,152,48,.07); }
-.scb-chip--march.active   { color:#6dca7d; border-color:rgba(61,190,108,.38); background:rgba(40,160,80,.06); }
-.scb-chip--retreat.active { color:#a09080; border-color:rgba(140,120,90,.34); background:rgba(120,100,70,.06); }
-.scb-chip--captured.active{ color:#7a6a58; border-color:rgba(100,80,50,.30); background:rgba(80,60,30,.06); }
-/* hover 微微亮起 */
-.scb-chip:hover { opacity: .9; filter: brightness(1.12); }
 
-/* 色标小方块/圆 */
-.scb-swatch {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  opacity: .5;
-  transition: opacity .14s;
-}
-.scb-chip.active .scb-swatch { opacity: 1; }
-.scb-sw-battle  { border: 1.5px solid #e85540; border-radius: 50%; }
-.scb-sw-siege   { border: 1.5px solid #d49830; border-radius: 50%; }
-.scb-sw-march   { background: rgba(180,180,180,.08); border: 1.2px solid rgba(200,200,200,.45); border-radius: 2px; }
-.scb-sw-retreat { background: rgba(180,180,180,.05); border: 1.2px dashed rgba(200,200,200,.30); border-radius: 2px; }
-.scb-sw-captured{ background: #2a2018; border: 1.2px solid #5a4838; border-radius: 2px; }
-
-@media (max-width: 480px) {
-  .sgmap-combat-bar { gap: 5px 6px; padding: 6px 10px 7px; }
-  .scb-chip { font-size: .60rem; padding: 2px 8px 2px 5px; }
-}
 
 /* ── 城格交互 — Hover 细微抬升 ── */
 .sgmap-city {
@@ -3587,3 +3515,113 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 
 /* ===== 战况层 v24 end ===== */
+
+/* ══════════════════════════════════════════
+   战况层开关栏 v2(统一暗金调,2026-05-25)
+══════════════════════════════════════════ */
+.sgmap-combat-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-top: 10px;
+  background: linear-gradient(180deg, rgba(20,12,4,.55), rgba(10,6,3,.4));
+  border: 1px solid rgba(180,148,72,.22);
+  border-radius: var(--r);
+}
+.scb-label {
+  font-family: var(--font-serif);
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  letter-spacing: .18em;
+  padding-right: 8px;
+  border-right: 1px solid rgba(180,148,72,.2);
+  margin-right: 4px;
+}
+.scb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: .76rem;
+  font-weight: 500;
+  color: var(--text-sub);
+  background: linear-gradient(180deg, rgba(40,22,10,.55), rgba(20,10,5,.7));
+  border: 1px solid rgba(180,148,72,.28);
+  border-radius: 14px;
+  padding: 5px 14px;
+  cursor: pointer;
+  letter-spacing: .08em;
+  transition: all .22s ease;
+  user-select: none;
+}
+.scb-chip:hover {
+  border-color: rgba(212,168,67,.55);
+  color: var(--gold-light);
+  background: linear-gradient(180deg, rgba(60,32,12,.7), rgba(30,16,6,.85));
+}
+.scb-chip.active {
+  color: var(--text-main);
+  border-color: var(--gold);
+  background: linear-gradient(180deg, rgba(80,52,12,.6), rgba(30,18,6,.85));
+  box-shadow:
+    0 0 10px rgba(212,168,67,.32),
+    inset 0 1px 0 rgba(255,220,140,.1);
+}
+.scb-chip:not(.active) {
+  opacity: .45;
+  color: var(--text-dim);
+  border-color: rgba(180,148,72,.18);
+  background: linear-gradient(180deg, rgba(20,14,8,.5), rgba(10,6,3,.6));
+  box-shadow: none;
+}
+.scb-chip:not(.active):hover {
+  opacity: .75;
+}
+/* 隐藏旧版颜色 swatch(保留 DOM 但不显示) */
+.scb-swatch { display: none; }
+
+/* 战况层显隐 — 通过 #map-svg-container 上的 data-hide-* 属性切换 */
+#map-svg-container[data-hide-battle="1"]   .sgmap-pulse-battle,
+#map-svg-container[data-hide-battle="1"]   .sgmap-combat-battle,
+#map-svg-container[data-hide-siege="1"]    .sgmap-pulse-siege,
+#map-svg-container[data-hide-siege="1"]    .sgmap-combat-siege,
+#map-svg-container[data-hide-march="1"]    .sgmap-pulse-march,
+#map-svg-container[data-hide-march="1"]    .sgmap-combat-march,
+#map-svg-container[data-hide-retreat="1"]  .sgmap-pulse-retreat,
+#map-svg-container[data-hide-retreat="1"]  .sgmap-combat-retreat,
+#map-svg-container[data-hide-captured="1"] .sgmap-pulse-captured,
+#map-svg-container[data-hide-captured="1"] .sgmap-combat-captured {
+  display: none !important;
+}
+
+/* 手机端适配 */
+@media (max-width: 720px) {
+  .sgmap-combat-bar {
+    gap: 7px;
+    padding: 11px 12px;
+  }
+  .scb-label {
+    font-size: .78rem;
+    letter-spacing: .14em;
+    padding-right: 7px;
+    margin-right: 2px;
+  }
+  .scb-chip {
+    font-size: .82rem;
+    padding: 7px 14px;
+    border-radius: 16px;
+    letter-spacing: .06em;
+  }
+}
+@media (max-width: 420px) {
+  .scb-label {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(180,148,72,.2);
+    padding: 0 0 6px;
+    margin: 0 0 2px;
+  }
+}
