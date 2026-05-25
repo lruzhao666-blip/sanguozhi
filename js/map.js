@@ -1,5 +1,6 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v25
+ * map.js — 三国志文字版 · 势力地图 v25.1
+ * v25.1 (2026-05-27): 补回 PR#204 误删的 _moveTip / _hideTip
  * v25 (2026-05-27): 任事系统删除 + 战况特效全量删除 + 在途新增「客驻」状态
  * v24.6 (2026-05-26): 围攻贴 6 角 + 战事/行军视觉降幅,
  *                     不改结构纯调数值
@@ -1107,6 +1108,32 @@ const BONUS_MULT = {
     _tooltip.classList.remove('sgmap-tooltip--troop');  // 城池 tooltip 用标准宽度
     _tooltip.classList.add('visible');
     _moveTip(e);
+  }
+
+  function _moveTip(e) {
+    if (!_tooltip) return;
+    const PAD = 10, tw = _tooltip.offsetWidth || 230, th = _tooltip.offsetHeight || 130;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    if (window.matchMedia('(pointer:coarse)').matches) {
+      _tooltip.style.left   = PAD + 'px';
+      _tooltip.style.right  = PAD + 'px';
+      _tooltip.style.width  = 'auto';
+      _tooltip.style.bottom = (PAD + 10) + 'px';
+      _tooltip.style.top    = 'auto';
+      return;
+    }
+    _tooltip.style.right = ''; _tooltip.style.bottom = ''; _tooltip.style.width = '';
+    let lx = e.clientX + 14, ty = e.clientY + 14;
+    if (lx + tw > vw - PAD) lx = e.clientX - tw - 14;
+    if (ty + th > vh - PAD) ty = e.clientY - th - 14;
+    if (lx < PAD) lx = PAD;
+    if (ty < PAD) ty = PAD;
+    _tooltip.style.left = lx + 'px';
+    _tooltip.style.top  = ty + 'px';
+  }
+
+  function _hideTip() {
+    if (_tooltip) _tooltip.classList.remove('visible');
   }
 
   // 暴露 Ri 供战况层使用（内圈半径，与 _cityLayer 保持一致）
