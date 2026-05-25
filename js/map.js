@@ -1,5 +1,6 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v24
+ * map.js — 三国志文字版 · 势力地图 v25
+ * v25 (2026-05-27): 任事系统删除 + 战况特效全量删除 + 在途新增「客驻」状态
  * v24.6 (2026-05-26): 围攻贴 6 角 + 战事/行军视觉降幅,
  *                     不改结构纯调数值
  * v24.4 (2026-05): 删除旧战况开关栏事件绑定(已迁移到 main.js)
@@ -21,47 +22,6 @@
  */
 window.SGMap = (function () {
   'use strict';
-
-
-  const SVG_NS = 'http://www.w3.org/2000/svg';
-  function ce(tag, attrs) {
-    const e = document.createElementNS(SVG_NS, tag);
-    if (attrs) Object.entries(attrs).forEach(([k,v]) =>
-      e.setAttribute(k, v));
-    return e;
-  }
-
-  var _SUPA_URL = 'https://smiifcbmmtolimtaxpip.supabase.co';
-  var _SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaWlmY2JtbXRvbGltdGF4cGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTM4MzgsImV4cCI6MjA5Mzg4OTgzOH0.9pMRTaWDqXqWb_Ttti93dj8-FXgQMjAAbIZL5E-zN54';
-
-  function _ensureGeneralCached(name, callback) {
-    if (!name) return;
-    window._generalsCache = window._generalsCache || {};
-    if (window._generalsCache.hasOwnProperty(name)) {
-      if (callback) callback();
-      return;
-    }
-    var url = _SUPA_URL + '/rest/v1/generals_static'
-      + '?name=eq.' + encodeURIComponent(name)
-      + '&select=name,courtesy_name,nickname,faction_hint,tier,biography,suitable_roles'
-      + '&limit=1';
-    fetch(url, {
-      headers: {
-        'apikey': _SUPA_KEY,
-        'Authorization': 'Bearer ' + _SUPA_KEY,
-        'Content-Type': 'application/json',
-      }
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(rows) {
-      var data = (rows && rows.length > 0) ? rows[0] : null;
-      window._generalsCache[name] = data;
-      if (callback) callback();
-    })
-    .catch(function() {
-      window._generalsCache[name] = null;
-    });
-  }
 
   /* ─────────────────────────────────
      六边形参数（flat-top 横尖）
@@ -534,11 +494,7 @@ const BONUS_MULT = {
       viewBox="${b.x.toFixed(1)} ${b.y.toFixed(1)} ${b.w.toFixed(1)} ${b.h.toFixed(1)}"
       preserveAspectRatio="xMidYMid meet"
       style="display:block;width:100%;height:auto;">
-      <defs>
-    <!-- 燕尾旗发光滤镜 -->
-    <filter id="fblur3" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3" />
-    </filter>${_defs()}</defs>
+      <defs>${_defs()}</defs>
 
       <!-- ── 最底层：水墨战略底图 ── -->
       <image href="images/map-bg2.jpg"
@@ -552,8 +508,6 @@ const BONUS_MULT = {
         fill="rgba(5,4,10,0.62)" style="pointer-events:none"/>
 
       ${_allHexes()}
-      <g id="sgmap-path-layer"></g>
-      <g id="sgmap-combat-layer"></g>
     </svg>`;
   }
 
@@ -1019,53 +973,7 @@ const BONUS_MULT = {
       if (m.food) { food *= m.food; mults.push({k, type:'food', v:m.food}); }
     });
     const isPlayer = ow && ow.owner && ow.owner !== 'npc' && ow.owner !== '';
-    const chain = { base, tier, mults, policy: null };
-    if (isPlayer) {
-      const buffs = ow.productionBuffs ? Object.values(ow.productionBuffs) : [];
-      const hasTun = buffs.some(b => b.emoji === '🌾');
-      const hasShi = buffs.some(b => b.emoji === '💰');
-      if (hasTun) { food *= 1.3; chain.policy = {type:'food', name:'屯田', v:1.3}; }
-      if (hasShi) { gold *= 1.3; chain.policy = {type:'gold', name:'开市', v:1.3}; }
-
-      if (!chain.policy && isPlayer) {
-        var EMOJI_TO_POLICY = {'⚔️':'军训', '🤝':'招贤', '🔨':'工造', '🌾':'屯田', '💰':'开市'};
-        var buffs2 = ow.productionBuffs ? Object.values(ow.productionBuffs) : [];
-        var mainBuff2 = buffs2.find(function(b) { return b.general && b.action; });
-        if (mainBuff2 && mainBuff2.emoji) {
-          var pName = EMOJI_TO_POLICY[mainBuff2.emoji];
-          if (pName && pName !== '屯田' && pName !== '开市') {
-            // 军训/招贤/工造没有产出乘算，但记录主政名供太守契合判定
-            chain.nonProdPolicy = { name: pName, general: mainBuff2.general };
-          }
-        }
-      }
-
-      if (isPlayer && !chain.adept) {
-        chain.adepts = [];
-        var POLICY_MAP = {'⚔️':'军训', '🤝':'招贤', '🔨':'工造', '🌾':'屯田', '💰':'开市'};
-        var allBuffs = ow.productionBuffs ? Object.values(ow.productionBuffs) : [];
-        allBuffs.forEach(function(b) {
-          if (!b.general || !b.emoji) return;
-          var pName = POLICY_MAP[b.emoji];
-          if (!pName) return;
-          if (window._generalsCache) {
-            var gd = window._generalsCache[b.general];
-            if (gd && gd.suitable_roles && gd.suitable_roles.includes('擅长' + pName)) {
-              chain.adepts.push({ general: b.general, policy: pName });
-            }
-          }
-        });
-
-        if (chain.adepts.length > 0) {
-          chain.adept = chain.adepts[0];
-          var hasProdAdept = chain.adepts.some(function(a) { return chain.policy && a.policy === chain.policy.name; });
-          if (hasProdAdept && chain.policy) {
-            if (chain.policy.type === 'gold') gold *= 1.2;
-            else food *= 1.2;
-          }
-        }
-      }
-    }
+    const chain = { base, tier, mults };
     return { gold: Math.round(gold), food: Math.round(food), chain, isPlayer };
   }
 
@@ -1078,25 +986,6 @@ const BONUS_MULT = {
     const isNPC   = ow?.owner === 'npc';
     const isEmpty = !ow || ow.owner === '';
     const isPlayer= !isNPC && !isEmpty;
-
-    // 预加载主守数据，加载完后刷新 tooltip 产出区域
-    var _mainGeneral = null;
-    if (isPlayer) {
-      var buffs = ow.productionBuffs ? Object.values(ow.productionBuffs) : [];
-      var mainBuff = buffs.find(function(b) { return b.general && b.action; });
-      if (mainBuff) _mainGeneral = mainBuff.general;
-    }
-    if (_mainGeneral && !(window._generalsCache || {}).hasOwnProperty(_mainGeneral)) {
-      _ensureGeneralCached(_mainGeneral, function() {
-        // 数据到了，如果 tooltip 还在显示同一城，重新渲染
-        if (_tooltip && _tooltip.classList.contains('visible')) {
-          var curName = _tooltip.querySelector('.sgt-name');
-          if (curName && curName.textContent === name) {
-            _showTip(g, e); // 递归调用一次刷新内容
-          }
-        }
-      });
-    }
 
     // 阵营 chip
     let factionChip = '';
@@ -1123,7 +1012,7 @@ const BONUS_MULT = {
     const rawHolder = (ow?.holder || '').trim();
     const holderDisp = (rawHolder && rawHolder !== '无')
       ? rawHolder
-      : (isNPC ? (city.npcGuard || '未知') : '暂无');
+      : (isNPC ? (city.npcGuard || '无') : '无');
 
     // 兵力
     const troops = ow?.troops || {};
@@ -1147,32 +1036,8 @@ const BONUS_MULT = {
     }).join(' · ');
     let chainHtml = `<span class="ch-step">基础 <b>${prod.chain.base.gold}金/${prod.chain.base.food}粮</b></span>`;
     if (multStr) chainHtml += `<span class="ch-arrow">›</span><span class="ch-step">${multStr}</span>`;
-    if (prod.chain.policy) {
-      const icon = prod.chain.policy.type === 'gold' ? '💰' : '🌾';
-      chainHtml += `<span class="ch-arrow">›</span><span class="ch-policy">${icon} ${prod.chain.policy.name} ${icon}+30%</span>`;
-    }
 
-    const policyEmojiMap = {
-      '屯田': '🌾','开市': '💰','招贤': '🤝',
-      '军训': '⚔️','工造': '🔨'
-    };
-
-    // 屯田/开市仍走嵌入产出链分支（保留现有行为，不要改）
-    const chainAdepts = (prod.chain.adepts || []).filter(
-      a => a.policy === '屯田' || a.policy === '开市'
-    );
-    chainAdepts.forEach(a => {
-      chainHtml += `<span class="ch-arrow">›</span><span class="ch-adept">太守契合 +20%</span>`;
-    });
-
-    // 主政 badge
-    let badgeRow = '';
-    if (isPlayer) {
-      const buffs = ow?.productionBuffs ? Object.values(ow.productionBuffs) : [];
-      badgeRow = buffs.filter(b => b.general && b.action).map(b =>
-        `<span class="sgt-prod-mini-badge policy">${_esc(b.emoji||'')} ${_esc(b.general)} · ${_esc(b.action)}</span>`
-      ).join('');
-    }
+    const badgeRow = '';
 
     const prodTitle = isPlayer ? '📊 预计本回合产出' : '📊 攻下后基础产出';
     const prodTag = isPlayer ? '含修正' : '仅基础+地利';
@@ -1218,15 +1083,13 @@ const BONUS_MULT = {
         // 检查是否有在途部队
         const cityTransit = (_transitData||[]).filter(t => t.to === cn || t.from === cn);
         if (cityTransit.length) {
-          // 只在战报区为空时才加分割线，避免连续两条线
-          if (!combatHtml) combatHtml += '<div class="sgt-combat-divider"></div>';
+          // 不再为 transit 区追加分割线
           cityTransit.forEach(t => {
             const stCls = t.status==='围攻中' ? 'stt-siege'
-              : t.status==='撤退中' ? 'stt-retreat'
-              : t.status==='被俘'   ? 'stt-captured'
+              : t.status==='客驻'   ? 'stt-guest'
               : 'stt-march';
             const stTxt = _esc(t.status || '行军中');
-            const dir = t.to===cn ? '入城' : '出发';
+            const dir = t.to===cn ? '前往' : '出发';
             const routeTxt = `${_esc(t.from)}<span class="stt-arrow-inline">›</span>${_esc(t.to)}`;
             combatHtml += `<div class="sgt-combat-row sgt-transit-row">` +
               `<span class="sgt-transit-dir">${dir}</span>` +
@@ -1246,413 +1109,7 @@ const BONUS_MULT = {
     _moveTip(e);
   }
 
-  function _showFlagTip(d, e) {
-    if (!_tooltip || !d) return;
-    const esc = _esc;
-
-    // 标题区: 武将名 + 阵营 chip
-    const titleParts = [];
-    titleParts.push('<span class="sgft-name">'
-      + esc(d.general || '(无名部队)') + '</span>');
-    if (d.faction) {
-      let slotCls = 'sgft-faction-npc';
-      if (d.factionSlot === 0) slotCls = 'sgft-faction-p0';
-      else if (d.factionSlot === 1) slotCls = 'sgft-faction-p1';
-      else if (d.factionSlot === 2) slotCls = 'sgft-faction-p2';
-      titleParts.push('<span class="sgft-chip sgft-faction '
-        + slotCls + '">' + esc(d.faction) + '</span>');
-    }
-    const titleHtml = '<div class="sgft-title">'
-      + titleParts.join('') + '</div>';
-
-    // 场景副标题 + 路线/目标
-    const SCENE_LABEL = {
-      march:   '行军中',
-      siege:   '围攻中',
-      retreat: '撤退中'
-    };
-    const SCENE_ICON = {
-      march:   '⚑',
-      siege:   '⚔',
-      retreat: '↩'
-    };
-    const sceneLabel = SCENE_LABEL[d.scene] || '';
-    const sceneIcon  = SCENE_ICON[d.scene]  || '';
-
-    const sceneRows = [];
-    if (d.scene === 'march') {
-      sceneRows.push(
-        '<div class="sgft-scene">'
-        + '<span class="sgft-scene-icon">' + sceneIcon + '</span>'
-        + '<span class="sgft-scene-label">' + sceneLabel + '</span>'
-        + '<span class="sgft-scene-remaining">剩 '
-          + (d.remaining != null ? d.remaining : '?') + ' 回合</span>'
-        + '</div>'
-        + '<div class="sgft-route">'
-        + '<span class="sgft-from">' + esc(d.from || '?') + '</span>'
-        + '<span class="sgft-arrow">→</span>'
-        + '<span class="sgft-to">' + esc(d.to || '?') + '</span>'
-        + '</div>'
-      );
-      if (d.via) {
-        sceneRows.push(
-          '<div class="sgft-via">' + esc(d.via) + '</div>'
-        );
-      }
-    } else if (d.scene === 'siege') {
-      sceneRows.push(
-        '<div class="sgft-scene">'
-        + '<span class="sgft-scene-icon">' + sceneIcon + '</span>'
-        + '<span class="sgft-scene-label">' + sceneLabel + '</span>'
-        + '<span class="sgft-scene-target">' + esc(d.to || '?') + '</span>'
-        + '</div>'
-      );
-    } else if (d.scene === 'retreat') {
-      sceneRows.push(
-        '<div class="sgft-scene">'
-        + '<span class="sgft-scene-icon">' + sceneIcon + '</span>'
-        + '<span class="sgft-scene-label">' + sceneLabel + '</span>'
-        + '</div>'
-        + '<div class="sgft-route">'
-        + '<span class="sgft-from">' + esc(d.to || '?') + '</span>'
-        + '<span class="sgft-arrow">→</span>'
-        + '<span class="sgft-to">' + esc(d.from || '?') + '</span>'
-        + '</div>'
-      );
-    }
-
-    // 兵力分项 chips
-    let troopsHtml = '';
-    if (d.troops && d.troops.length) {
-      const chips = d.troops.map(t =>
-        '<span class="sgft-troop-chip">'
-        + '<span class="sgft-troop-type">' + esc(t.type) + '</span>'
-        + '<span class="sgft-troop-count">' + (t.count || 0) + '</span>'
-        + '</span>').join('');
-      troopsHtml =
-        '<div class="sgft-section">'
-        + '<div class="sgft-section-title">兵力</div>'
-        + '<div class="sgft-troops">' + chips + '</div>'
-        + '</div>';
-    }
-
-    _tooltip.innerHTML = titleHtml
-      + '<div class="sgft-body">'
-      +   sceneRows.join('')
-      +   troopsHtml
-      + '</div>';
-    // 不再清除 compact class（因为沿用已有样式），但如果不带--troop不影响
-    _tooltip.classList.remove('sgmap-tooltip--troop');
-    _tooltip.classList.add('visible');
-    _moveTip(e);
-  }
-
-
-  function _moveTip(e) {
-    if (!_tooltip) return;
-    const PAD = 10, tw = _tooltip.offsetWidth || 230, th = _tooltip.offsetHeight || 130;
-    const vw = window.innerWidth, vh = window.innerHeight;
-    if (window.matchMedia('(pointer:coarse)').matches) {
-      _tooltip.style.left   = PAD + 'px';
-      _tooltip.style.right  = PAD + 'px';
-      _tooltip.style.width  = 'auto';
-      _tooltip.style.bottom = (PAD + 10) + 'px';
-      _tooltip.style.top    = 'auto';
-      return;
-    }
-    _tooltip.style.right = ''; _tooltip.style.bottom = ''; _tooltip.style.width = '';
-    let lx = e.clientX + 14, ty = e.clientY + 14;
-    if (lx + tw > vw - PAD) lx = e.clientX - tw - 14;
-    if (ty + th > vh - PAD) ty = e.clientY - th - 14;
-    if (lx < PAD) lx = PAD;
-    if (ty < PAD) ty = PAD;
-    _tooltip.style.left = lx + 'px';
-    _tooltip.style.top  = ty + 'px';
-  }
-
-  function _hideTip() {
-    if (_tooltip) _tooltip.classList.remove('visible');
-  }
-
-  /* ─────────────────────────────────
-     道路系统 & BFS 最短路径缓存
-  ───────────────────────────────── */
-  const _distCache = {};
-  function _getJumpCount(from, to) {
-    if (from === to) return 0;
-    const key = `${from}|${to}`;
-    if (_distCache[key]) return _distCache[key];
-
-    // build adjacency list lazily
-    if (!window._adjList) {
-      window._adjList = {};
-      ROADS.forEach(([a, b]) => {
-        if (!window._adjList[a]) window._adjList[a] = [];
-        if (!window._adjList[b]) window._adjList[b] = [];
-        window._adjList[a].push(b);
-        window._adjList[b].push(a);
-      });
-    }
-
-    const adj = window._adjList;
-    if (!adj[from] || !adj[to]) return 1; // fallback
-
-    const q = [[from, 0]];
-    const visited = new Set([from]);
-
-    while (q.length > 0) {
-      const [curr, dist] = q.shift();
-      if (curr === to) {
-        _distCache[key] = dist;
-        return dist;
-      }
-      for (const nxt of (adj[curr] || [])) {
-        if (!visited.has(nxt)) {
-          visited.add(nxt);
-          q.push([nxt, dist + 1]);
-        }
-      }
-    }
-    return 1; // fallback if disconnected
-  }
-
-
-  /* ─────────────────────────────────
-     战况层渲染 v24 — 血脉脉冲五状态
-     战事/围攻/行军/撤退/被俘
-  ───────────────────────────────── */
-  function _renderCombatLayer() {
-    const layer = document.getElementById('sgmap-combat-layer');
-    const pathLayer = document.getElementById('sgmap-path-layer');
-    if (layer) layer.innerHTML = '';
-    if (pathLayer) pathLayer.innerHTML = '';
-
-    const cityXY = {};
-    CITIES.forEach(c => {
-      cityXY[c.name] = hexToXY(c.hx, c.hy);
-    });
-
-    function getFactionColor(facStr, pidx) {
-      if (pidx !== undefined && pidx >= 0 && P_COLOR[pidx]) return P_COLOR[pidx].glow;
-      const fcMap = { '甲': 0, '乙': 1, '丙': 2 };
-      if (facStr in fcMap && P_COLOR[fcMap[facStr]]) return P_COLOR[fcMap[facStr]].glow;
-      let slotIdx;
-      if (window._npcFactionSlots && facStr) slotIdx = window._npcFactionSlots[facStr];
-      return (slotIdx !== undefined && NPC_FACTION_COLORS[slotIdx]) ? NPC_FACTION_COLORS[slotIdx].glow : NPC_C.glow;
-    }
-
-    // 1. 战事 (battle)
-    const battleCities = new Map();
-    (_battlesData || []).forEach(b => {
-      const m = String(b.defender || '').match(/[（(]([^）)]+)[）)]/);
-      const cityName = m ? m[1].trim() : null;
-      if (cityName && cityXY[cityName]) {
-         const attackerName = b.attacker || '';
-         let pidx = -1;
-         for (let i = 0; i < players.length; i++) {
-            if (players[i].name === attackerName) { pidx = i; break; }
-         }
-         let color = getFactionColor(attackerName, pidx);
-         battleCities.set(cityName, color);
-      }
-    });
-
-    battleCities.forEach((color, cityName) => {
-      const xy = cityXY[cityName];
-      if (!xy) return;
-
-      const g = ce('g', { 'data-ctype': 'battle', style: `--p-color: ${color}` });
-      const pOuter = ce('polygon', {
-        class: 'combat-battle-outer',
-        points: hexPoints(xy.x, xy.y, HEX_R * 1.107)
-      });
-      const pInner = ce('polygon', {
-        class: 'combat-battle-inner',
-        points: hexPoints(xy.x, xy.y, HEX_R * 0.893)
-      });
-      g.appendChild(pOuter);
-      g.appendChild(pInner);
-
-      // 挂到战况层(全局),而不是 cityGroup 内部
-      const layer = document.getElementById('sgmap-combat-layer');
-      if (layer) layer.appendChild(g);
-    });
-
-    // 2. 围攻 (siege)
-    const siegeCities = new Map();
-    (_transitData || []).filter(t => t.status === '围攻中').forEach(t => {
-      if (t.to && cityXY[t.to] && !battleCities.has(t.to)) {
-         const color = getFactionColor(t.faction, -1);
-         siegeCities.set(t.to, color);
-      }
-    });
-
-    siegeCities.forEach((color, cityName) => {
-      const xy = cityXY[cityName];
-      if (!xy) return;
-
-      const g = ce('g', { 'data-ctype': 'siege', style: `--p-color: ${color}` });
-
-      const pFence = ce('polygon', {
-        class: 'combat-siege-fence',
-        points: hexPoints(xy.x, xy.y, HEX_R)
-      });
-      g.appendChild(pFence);
-
-      for (let i = 0; i < 6; i++) {
-        // Flat-top hex vertices: angles 30°, 90°, 150°, 210°, 270°, 330°
-        const angle_deg = 60 * i;
-        const angle_rad = Math.PI / 180 * angle_deg;
-        const vx = xy.x + HEX_R * Math.cos(angle_rad);
-        const vy = xy.y + HEX_R * Math.sin(angle_rad);
-        const dot = ce('circle', {
-          class: 'combat-siege-dot',
-          cx: vx.toFixed(1), cy: vy.toFixed(1), r: 3.5
-        });
-        g.appendChild(dot);
-      }
-
-      const layer = document.getElementById('sgmap-combat-layer');
-      if (layer) layer.appendChild(g);
-    });
-
-    const pathsDefs = ce('defs');
-    if (pathLayer) pathLayer.appendChild(pathsDefs);
-    let pathIdCounter = 0;
-
-    // 3 & 4. 行军 (march) & 撤退 (retreat)
-    (_transitData || []).forEach(t => {
-      if (t.status === '围攻中' || t.status === '被俘') return;
-      const fromXY = cityXY[t.from];
-      const toXY = cityXY[t.to];
-      if (!fromXY || !toXY) return;
-
-      const isRetreat = t.status === '撤退中';
-      const ctype = isRetreat ? 'retreat' : 'march';
-      const color = getFactionColor(t.faction, -1);
-
-      const g = ce('g', { 'data-ctype': ctype, style: `--p-color: ${color}` });
-
-      const dx = toXY.x - fromXY.x;
-      const dy = toXY.y - fromXY.y;
-      const midX = (fromXY.x + toXY.x) / 2 - dy * 0.2;
-      const midY = (fromXY.y + toXY.y) / 2 + dx * 0.2;
-
-      const d = `M ${fromXY.x},${fromXY.y} Q ${midX},${midY} ${toXY.x},${toXY.y}`;
-
-      if (isRetreat) {
-        const p1 = ce('path', { class: 'combat-retreat-path', d: d });
-        const p2 = ce('path', { class: 'combat-retreat-dash', d: d });
-        g.appendChild(p1);
-        g.appendChild(p2);
-      } else {
-        const pathId = `combat-path-${++pathIdCounter}`;
-        const pDef = ce('path', { id: pathId, d: d });
-        pathsDefs.appendChild(pDef);
-
-        const mPath = ce('use', { href: `#${pathId}`, class: 'combat-march-path' });
-        g.appendChild(mPath);
-
-        const durations = [0, -0.8, -1.6];
-        durations.forEach((begin, idx) => {
-          const particle = ce('circle', { class: 'combat-march-particle', r: 3.5 });
-          const anim = ce('animateMotion', {
-            dur: '4s', repeatCount: 'indefinite', begin: `${begin}s`
-          });
-          const mpath = ce('mpath', { href: `#${pathId}` });
-          anim.appendChild(mpath);
-          particle.appendChild(anim);
-          g.appendChild(particle);
-        });
-
-        const gStart = ce('g', { transform: `translate(${fromXY.x},${fromXY.y})` });
-        gStart.appendChild(ce('polygon', { class: 'combat-flash-start', points: hexPoints(0, 0, HEX_R) }));
-        g.appendChild(gStart);
-
-        const gEnd = ce('g', { transform: `translate(${toXY.x},${toXY.y})` });
-        gEnd.appendChild(ce('polygon', { class: 'combat-flash-end', points: hexPoints(0, 0, HEX_R) }));
-        g.appendChild(gEnd);
-      }
-      if (pathLayer) pathLayer.appendChild(g);
-    });
-
-    // 5. 被俘 (captured)
-    const capturedCities = new Map();
-    (_transitData || []).forEach(t => {
-      if (t.status === '被俘' && t.from && cityXY[t.from]) {
-         const color = getFactionColor(t.faction, -1);
-         capturedCities.set(t.from, color);
-      }
-    });
-
-    capturedCities.forEach((color, cityName) => {
-      const cityGroup = document.querySelector(`.sgmap-city[data-name="${cityName}"]`);
-      const xy = cityXY[cityName];
-      if (!xy) return;
-
-      // 呼吸效果仍打在 cityGroup 上(让整个城池一起呼吸)
-      if (cityGroup) {
-        cityGroup.classList.add('combat-captured-veil');
-        cityGroup.setAttribute('data-combat-captured', 'true');
-      }
-
-      // 遮罩用绝对坐标,挂到战况层
-      const g = ce('g', { 'data-ctype': 'captured', style: `--p-color: ${color}` });
-      g.appendChild(ce('polygon', {
-         class: 'combat-captured-mask',
-         points: hexPoints(xy.x, xy.y, HEX_R)
-      }));
-
-      const layer = document.getElementById('sgmap-combat-layer');
-      if (layer) layer.appendChild(g);
-    });
-
-    _syncCombatBar();
-  }
-
-  function _syncCombatBar() {
-    const bar = document.getElementById('sgmap-combat-bar');
-    if (!bar) return;
-    bar.querySelectorAll('.scb-chip').forEach(chip => {
-      let ctype = chip.dataset.ctype;
-      const on = chip.classList.contains('active');
-      document.querySelectorAll(`[data-ctype="${ctype}"]`).forEach(el => {
-        el.style.display = on ? '' : 'none';
-      });
-      if (ctype === 'captured') {
-        document.querySelectorAll('[data-combat-captured="true"]').forEach(el => {
-          if (on) el.classList.add('combat-captured-veil');
-          else el.classList.remove('combat-captured-veil');
-        });
-      }
-    });
-  }
-
-  function _bindCombatBar() {
-    const bar = document.getElementById('sgmap-combat-bar');
-    if (!bar || bar._bound) return;
-    bar._bound = true;
-    bar.querySelectorAll('.scb-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        chip.classList.toggle('active');
-        let ctype = chip.dataset.ctype;
-        const on = chip.classList.contains('active');
-        document.querySelectorAll(`[data-ctype="${ctype}"]`).forEach(el => {
-          el.style.display = on ? '' : 'none';
-        });
-        if (ctype === 'captured') {
-          document.querySelectorAll('[data-combat-captured="true"]').forEach(el => {
-             if (on) el.classList.add('combat-captured-veil');
-             else el.classList.remove('combat-captured-veil');
-          });
-        }
-      });
-    });
-  }
-
   // 暴露 Ri 供战况层使用（内圈半径，与 _cityLayer 保持一致）
-  const Ri = HEX_R - 5;  // v18 fix: 23px，之前错误写死为 13.5
-
   /* ─────────────────────────────────
      图例
   ───────────────────────────────── */
@@ -1775,8 +1232,6 @@ const BONUS_MULT = {
       if (!c) return;
       _build(c);
       _updateLegend();
-      _renderCombatLayer();
-      _bindCombatBar();
     },
     parseCityOwnership,
     CITIES,

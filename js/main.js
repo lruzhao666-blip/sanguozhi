@@ -300,7 +300,6 @@
       await Promise.all(ids.map(r => deleteRoundById(r.id)));
       state.rounds = []; state.players = defaultPlayers();
       state.lastUpdatedAt = 0;
-      if (window.clearAllGeneralDuties) window.clearAllGeneralDuties();
       renderAll();
       updateUndoBtn();
       showToast('🗑️ 所有记录已清空');
