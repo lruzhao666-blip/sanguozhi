@@ -1,5 +1,6 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v24
+ * v24.3 (2026-05): chip 点击防御 — 主动清除 inline display
  * v24.2 (2026-05): 战况层 5 个开关 chip 接入,统一暗金 UI
  * v24.1 (2026-05): 修复战况层装饰因局部坐标错位到 SVG 原点的 bug
  * v24 (2026-05): 战况层重做为血脉脉冲方案,五状态独立 CSS 动画;移除燕尾旗与所有旧战况残留
@@ -901,6 +902,8 @@ const BONUS_MULT = {
       combatBar.addEventListener('click', function (e) {
         const chip = e.target.closest('.scb-chip');
         if (!chip) return;
+        // 防御:清除可能被其他代码设置的 inline display,确保 chip 永不消失
+        chip.style.removeProperty('display');
         const ctype = chip.dataset.ctype;
         if (!ctype) return;
         chip.classList.toggle('active');
