@@ -1,5 +1,6 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v25.1
+ * v25.2 (2026-05-28): 移除 _showTip 内 sgt-combat-section 在途/战况段渲染,该信息迁移至军报板块
  * v25.1 (2026-05-27): 补回 PR#204 误删的 _moveTip / _hideTip
  * v25 (2026-05-27): 任事系统删除 + 战况特效全量删除 + 在途新增「客驻」状态
  * v24.6 (2026-05-26): 围攻贴 6 角 + 战事/行军视觉降幅,
@@ -1063,48 +1064,7 @@ const BONUS_MULT = {
         </div>
         <div class="sgt-prod-chain">${chainHtml}</div>
         ${badgeRow ? `<div class="sgt-prod-badge-row">${badgeRow}</div>` : ''}
-      </div>`}
-      ${(() => {
-        // 战况信息注入
-        const cn = city.name;
-        let combatHtml = '';
-        // 检查是否有战报
-        const cityBattles = (_battlesData||[]).filter(b => {
-          const m = String(b.defender||'').match(/[（(]([^）)]+)[）)]/);
-          return m && m[1].trim() === cn;
-        });
-        if (cityBattles.length) {
-          combatHtml += '<div class="sgt-combat-divider"></div>';
-          cityBattles.forEach(b => {
-            const icon = b.result==='胜'?'⚔️ 胜': b.result==='负'?'💀 败':'🔶 平';
-            combatHtml += `<div class="sgt-combat-row"><span class="sgt-combat-lbl">战报</span><span class="sgt-combat-val txt-battle"><b>${_esc(icon)}</b> ${_esc(b.attacker)}→${_esc(b.defender)}</span></div>`;
-            combatHtml += `<div class="sgt-combat-row"><span class="sgt-combat-lbl">伤亡</span><span class="sgt-combat-val">攻<b>-${b.attacker_loss||0}</b> 守<b>-${b.defender_loss||0}</b></span></div>`;
-          });
-        }
-        // 检查是否有在途部队
-        const cityTransit = (_transitData||[]).filter(t => t.to === cn || t.from === cn);
-        if (cityTransit.length) {
-          // 不再为 transit 区追加分割线
-          cityTransit.forEach(t => {
-            const stCls = t.status==='围攻中' ? 'stt-siege'
-              : t.status==='客驻'   ? 'stt-guest'
-              : 'stt-march';
-            const stTxt = _esc(t.status || '行军中');
-            const dir = t.to===cn ? '前往' : '出发';
-            const routeTxt = `${_esc(t.from)}<span class="stt-arrow-inline">›</span>${_esc(t.to)}`;
-            combatHtml += `<div class="sgt-combat-row sgt-transit-row">` +
-              `<span class="sgt-transit-dir">${dir}</span>` +
-              `<div class="sgt-transit-body">` +
-              `<span class="sgt-transit-gen">${_esc(t.general)}</span>` +
-              `<span class="sgt-transit-route">${routeTxt}</span>` +
-              (t.troopType ? `<span class="sgt-transit-troop">${_esc(t.troopType)}·${t.troopCount}</span>` : '') +
-              `<span class="sgt-transit-st ${stCls}">${stTxt}</span>` +
-              `</div>` +
-              `</div>`;
-          });
-        }
-        return combatHtml;
-      })()}`;
+      </div>`}`;
     _tooltip.classList.remove('sgmap-tooltip--troop');  // 城池 tooltip 用标准宽度
     _tooltip.classList.add('visible');
     _moveTip(e);
