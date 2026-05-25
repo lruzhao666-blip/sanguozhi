@@ -1,5 +1,6 @@
 /**
  * main.js — 三国志文字版 v14 (v2.5)
+ * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * 对接规范 v2.0：
  *  - 剧情区 / 数据区分离（36个=号分隔）
  *  - [甲][乙][丙] 含 cities_list（城名+守将）
@@ -2281,4 +2282,32 @@
   }
 
   document.addEventListener('DOMContentLoaded', init);
+})();
+
+/* ════════════════════════════════════════
+   特效开关栏 v2 事件绑定 (2026-05-25)
+   独立 IIFE,不与 SGMap 模块耦合
+════════════════════════════════════════ */
+(function () {
+  'use strict';
+  function bindFxToggles() {
+    const bar = document.getElementById('fx-toggles');
+    if (!bar || bar.dataset.bound) return;
+    bar.dataset.bound = '1';
+    bar.addEventListener('click', function (e) {
+      const btn = e.target.closest('.fx-btn');
+      if (!btn || !bar.contains(btn)) return;
+      const fx = btn.dataset.fx;
+      if (!fx) return;
+      const pressed = btn.getAttribute('aria-pressed') !== 'false';
+      const next = !pressed;
+      btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+      document.body.classList.toggle('fx-off-' + fx, !next);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindFxToggles);
+  } else {
+    bindFxToggles();
+  }
 })();
