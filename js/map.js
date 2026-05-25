@@ -1,5 +1,6 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v24
+ * v24.2 (2026-05): 战况层 5 个开关 chip 接入,统一暗金 UI
  * v24.1 (2026-05): 修复战况层装饰因局部坐标错位到 SVG 原点的 bug
  * v24 (2026-05): 战况层重做为血脉脉冲方案,五状态独立 CSS 动画;移除燕尾旗与所有旧战况残留
  * v23 (2026-05): 燕尾旗尺寸/位置微调 + 行军悬浮卡回归
@@ -892,7 +893,27 @@ const BONUS_MULT = {
       }
     });
 
-  }
+
+    /* ── 战况层开关栏:点击 chip 切换 data-hide-{ctype} ── */
+    const combatBar = document.getElementById('sgmap-combat-bar');
+    if (combatBar && !combatBar.dataset.bound) {
+      combatBar.dataset.bound = '1';
+      combatBar.addEventListener('click', function (e) {
+        const chip = e.target.closest('.scb-chip');
+        if (!chip) return;
+        const ctype = chip.dataset.ctype;
+        if (!ctype) return;
+        chip.classList.toggle('active');
+        const mapHost = document.getElementById('map-svg-container');
+        if (!mapHost) return;
+        if (chip.classList.contains('active')) {
+          mapHost.removeAttribute('data-hide-' + ctype);
+        } else {
+          mapHost.setAttribute('data-hide-' + ctype, '1');
+        }
+      });
+    }
+}
 
   function _activateRing(g) {
     const ring = g.querySelector('.sgmap-city-ring');
