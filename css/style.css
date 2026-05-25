@@ -2,6 +2,7 @@
    三国志文字版 — 战旗赤红风 CSS v9
    精简 · 高级 · 呼吸感
    ============================================ */
+/* v20260525e (2026-05-25): chip 未激活态对比度提升 + 移动端缩小一档 */
 :root {
   --red-deep:    #6b0000;
   --red-mid:     #a93226;
@@ -3570,10 +3571,11 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 /* 关闭态:灰沉但仍可见,有明显"熄灭"对比 */
 .scb-chip:not(.active) {
-  color: rgba(160,140,100,.55);
-  border-color: rgba(120,95,55,.32);
-  background: linear-gradient(180deg, rgba(18,12,6,.6), rgba(8,5,3,.75));
-  box-shadow: inset 0 1px 2px rgba(0,0,0,.45);
+  opacity: .72;
+  color: rgba(205,180,130,.78);
+  border-color: rgba(170,135,70,.45);
+  background: linear-gradient(180deg, rgba(40,26,12,.55), rgba(20,12,6,.7));
+  box-shadow: none;
 }
 .scb-chip:not(.active):hover {
   color: rgba(200,170,120,.75);
@@ -3606,7 +3608,10 @@ header, nav, main, footer { position: relative; z-index: 1; }
     letter-spacing: .12em;
   }
   .scb-chip {
-    font-size: .72rem;
-    padding: 4px 12px;
+    font-size: .62rem;
+    padding: 2px 9px;
+    border-radius: 9px;
+    gap: 4px;
+    letter-spacing: .04em;
   }
 }
