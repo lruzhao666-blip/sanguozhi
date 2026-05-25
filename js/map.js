@@ -1,5 +1,7 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v24
+ * v24.5 (2026-05-26): 围攻特效贴角重做,战事/行军特效精简,
+ *                     删除撤退/被俘特效及按钮
  * v24.4 (2026-05): 删除旧战况开关栏事件绑定(已迁移到 main.js)
  * v24.3 (2026-05): chip 点击防御 — 主动清除 inline display
  * v24.2 (2026-05): 战况层 5 个开关 chip 接入,统一暗金 UI
@@ -1460,15 +1462,10 @@ const BONUS_MULT = {
       if (!xy) return;
 
       const g = ce('g', { 'data-ctype': 'battle', style: `--p-color: ${color}` });
-      const pOuter = ce('polygon', {
-        class: 'combat-battle-outer',
-        points: hexPoints(xy.x, xy.y, HEX_R * 1.107)
-      });
       const pInner = ce('polygon', {
-        class: 'combat-battle-inner',
-        points: hexPoints(xy.x, xy.y, HEX_R * 0.893)
+        class: 'combat-battle',
+        points: hexPoints(xy.x, xy.y, HEX_R - 2)
       });
-      g.appendChild(pOuter);
       g.appendChild(pInner);
 
       // 挂到战况层(全局),而不是 cityGroup 内部
@@ -1490,23 +1487,21 @@ const BONUS_MULT = {
       if (!xy) return;
 
       const g = ce('g', { 'data-ctype': 'siege', style: `--p-color: ${color}` });
-      const rFence = HEX_R * 1.25;
 
       const pFence = ce('polygon', {
         class: 'combat-siege-fence',
-        points: hexPoints(xy.x, xy.y, rFence)
+        points: hexPoints(xy.x, xy.y, HEX_R)
       });
       g.appendChild(pFence);
 
       for (let i = 0; i < 6; i++) {
-        // Flat-top hex vertices: angles 30°, 90°, 150°, 210°, 270°, 330°
-        const angle_deg = 60 * i - 30;
+        const angle_deg = 60 * i;
         const angle_rad = Math.PI / 180 * angle_deg;
-        const vx = xy.x + rFence * Math.cos(angle_rad);
-        const vy = xy.y + rFence * Math.sin(angle_rad);
+        const vx = xy.x + HEX_R * Math.cos(angle_rad);
+        const vy = xy.y + HEX_R * Math.sin(angle_rad);
         const dot = ce('circle', {
-          class: 'combat-siege-dot',
-          cx: vx.toFixed(1), cy: vy.toFixed(1), r: 2.5
+          class: `combat-siege-dot combat-siege-dot-${i}`,
+          cx: vx.toFixed(1), cy: vy.toFixed(1), r: 3.5
         });
         g.appendChild(dot);
       }
@@ -1521,13 +1516,12 @@ const BONUS_MULT = {
 
     // 3 & 4. 行军 (march) & 撤退 (retreat)
     (_transitData || []).forEach(t => {
-      if (t.status === '围攻中' || t.status === '被俘') return;
+      if (t.status === '围攻中' || t.status === '被俘' || t.status === '撤退中') return;
       const fromXY = cityXY[t.from];
       const toXY = cityXY[t.to];
       if (!fromXY || !toXY) return;
 
-      const isRetreat = t.status === '撤退中';
-      const ctype = isRetreat ? 'retreat' : 'march';
+      const ctype = 'march';
       const color = getFactionColor(t.faction, -1);
 
       const g = ce('g', { 'data-ctype': ctype, style: `--p-color: ${color}` });
@@ -1539,71 +1533,14 @@ const BONUS_MULT = {
 
       const d = `M ${fromXY.x},${fromXY.y} Q ${midX},${midY} ${toXY.x},${toXY.y}`;
 
-      if (isRetreat) {
-        const p1 = ce('path', { class: 'combat-retreat-path', d: d });
-        const p2 = ce('path', { class: 'combat-retreat-dash', d: d });
-        g.appendChild(p1);
-        g.appendChild(p2);
-      } else {
-        const pathId = `combat-path-${++pathIdCounter}`;
-        const pDef = ce('path', { id: pathId, d: d });
-        pathsDefs.appendChild(pDef);
+      const pathId = `combat-path-${++pathIdCounter}`;
+      const pDef = ce('path', { id: pathId, d: d });
+      pathsDefs.appendChild(pDef);
 
-        const mPath = ce('use', { href: `#${pathId}`, class: 'combat-march-path' });
-        g.appendChild(mPath);
+      const mPath = ce('use', { href: `#${pathId}`, class: 'combat-march-path' });
+      g.appendChild(mPath);
 
-        const durations = [0, -0.8, -1.6];
-        durations.forEach((begin, idx) => {
-          const particle = ce('circle', { class: 'combat-march-particle', r: 3.5 });
-          const anim = ce('animateMotion', {
-            dur: '2.4s', repeatCount: 'indefinite', begin: `${begin}s`
-          });
-          const mpath = ce('mpath', { href: `#${pathId}` });
-          anim.appendChild(mpath);
-          particle.appendChild(anim);
-          g.appendChild(particle);
-        });
-
-        const gStart = ce('g', { transform: `translate(${fromXY.x},${fromXY.y})` });
-        gStart.appendChild(ce('polygon', { class: 'combat-flash-start', points: hexPoints(0, 0, HEX_R) }));
-        g.appendChild(gStart);
-
-        const gEnd = ce('g', { transform: `translate(${toXY.x},${toXY.y})` });
-        gEnd.appendChild(ce('polygon', { class: 'combat-flash-end', points: hexPoints(0, 0, HEX_R) }));
-        g.appendChild(gEnd);
-      }
       if (pathLayer) pathLayer.appendChild(g);
-    });
-
-    // 5. 被俘 (captured)
-    const capturedCities = new Map();
-    (_transitData || []).forEach(t => {
-      if (t.status === '被俘' && t.from && cityXY[t.from]) {
-         const color = getFactionColor(t.faction, -1);
-         capturedCities.set(t.from, color);
-      }
-    });
-
-    capturedCities.forEach((color, cityName) => {
-      const cityGroup = document.querySelector(`.sgmap-city[data-name="${cityName}"]`);
-      const xy = cityXY[cityName];
-      if (!xy) return;
-
-      // 呼吸效果仍打在 cityGroup 上(让整个城池一起呼吸)
-      if (cityGroup) {
-        cityGroup.classList.add('combat-captured-veil');
-        cityGroup.setAttribute('data-combat-captured', 'true');
-      }
-
-      // 遮罩用绝对坐标,挂到战况层
-      const g = ce('g', { 'data-ctype': 'captured', style: `--p-color: ${color}` });
-      g.appendChild(ce('polygon', {
-         class: 'combat-captured-mask',
-         points: hexPoints(xy.x, xy.y, HEX_R)
-      }));
-
-      const layer = document.getElementById('sgmap-combat-layer');
-      if (layer) layer.appendChild(g);
     });
 
     _syncCombatBar();
@@ -1618,12 +1555,6 @@ const BONUS_MULT = {
       document.querySelectorAll(`[data-ctype="${ctype}"]`).forEach(el => {
         el.style.display = on ? '' : 'none';
       });
-      if (ctype === 'captured') {
-        document.querySelectorAll('[data-combat-captured="true"]').forEach(el => {
-          if (on) el.classList.add('combat-captured-veil');
-          else el.classList.remove('combat-captured-veil');
-        });
-      }
     });
   }
 
@@ -1639,12 +1570,6 @@ const BONUS_MULT = {
         document.querySelectorAll(`[data-ctype="${ctype}"]`).forEach(el => {
           el.style.display = on ? '' : 'none';
         });
-        if (ctype === 'captured') {
-          document.querySelectorAll('[data-combat-captured="true"]').forEach(el => {
-             if (on) el.classList.add('combat-captured-veil');
-             else el.classList.remove('combat-captured-veil');
-          });
-        }
       });
     });
   }
