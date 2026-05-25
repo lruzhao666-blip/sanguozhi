@@ -2,6 +2,7 @@
    三国志文字版 — 战旗赤红风 CSS v9
    精简 · 高级 · 呼吸感
    ============================================ */
+/* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
 /* v20260525h (2026-05-25): fx-off-* 选择器对齐 sgmap-pulse/combat 实际类名 */
 /* v20260525g (2026-05-25): 特效开关栏重做 — 旧 .scb-chip 全删 */
 /* v20260525e (2026-05-25): chip 未激活态对比度提升 + 移动端缩小一档 */
@@ -3582,16 +3583,12 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 
 /* v20260525h: 对齐 map.js 实际写入的 SVG class 名 */
-body.fx-off-battle .sgmap-pulse-battle,
-body.fx-off-battle .sgmap-combat-battle,
-body.fx-off-siege .sgmap-pulse-siege,
-body.fx-off-siege .sgmap-combat-siege,
-body.fx-off-march .sgmap-pulse-march,
-body.fx-off-march .sgmap-combat-march,
-body.fx-off-retreat .sgmap-pulse-retreat,
-body.fx-off-retreat .sgmap-combat-retreat,
-body.fx-off-captured .sgmap-pulse-captured,
-body.fx-off-captured .sgmap-combat-captured {
+/* v20260525i: 战况层 SVG 元素由 map.js 写入 data-ctype 属性,以此为锚 */
+body.fx-off-battle   [data-ctype="battle"],
+body.fx-off-siege    [data-ctype="siege"],
+body.fx-off-march    [data-ctype="march"],
+body.fx-off-retreat  [data-ctype="retreat"],
+body.fx-off-captured [data-ctype="captured"] {
   display: none !important;
 }
 
