@@ -1,5 +1,6 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v25.1
+ * v25.2 (2026-05-28): 在途/战况行注入势力色 CSS 变量 --fac-stroke/--fac-glow
  * v25.1 (2026-05-27): 补回 PR#204 误删的 _moveTip / _hideTip
  * v25 (2026-05-27): 任事系统删除 + 战况特效全量删除 + 在途新增「客驻」状态
  * v24.6 (2026-05-26): 围攻贴 6 角 + 战事/行军视觉降幅,
@@ -1085,6 +1086,19 @@ const BONUS_MULT = {
         const cityTransit = (_transitData||[]).filter(t => t.to === cn || t.from === cn);
         if (cityTransit.length) {
           // 不再为 transit 区追加分割线
+                  function _transitColor(t) {
+          const SLOT_MAP = { '甲': 0, '乙': 1, '丙': 2 };
+          if (t.slot != null) {
+            const i = typeof t.slot === 'number' ? t.slot : SLOT_MAP[t.slot];
+            if (i != null && P_COLOR[i]) return P_COLOR[i];
+          }
+          if (t.faction) {
+            const si = _npcFactionSlots[t.faction];
+            if (si !== undefined && NPC_FACTION_COLORS[si]) return NPC_FACTION_COLORS[si];
+            return NPC_C;
+          }
+          return NPC_C;
+        }
           cityTransit.forEach(t => {
             const stCls = t.status==='围攻中' ? 'stt-siege'
               : t.status==='客驻'   ? 'stt-guest'
@@ -1092,7 +1106,8 @@ const BONUS_MULT = {
             const stTxt = _esc(t.status || '行军中');
             const dir = t.to===cn ? '前往' : '出发';
             const routeTxt = `${_esc(t.from)}<span class="stt-arrow-inline">›</span>${_esc(t.to)}`;
-            combatHtml += `<div class="sgt-combat-row sgt-transit-row">` +
+            const c = _transitColor(t);
+            combatHtml += `<div class="sgt-combat-row sgt-transit-row" style="--fac-stroke:${c.stroke};--fac-glow:${c.glow}">` +
               `<span class="sgt-transit-dir">${dir}</span>` +
               `<div class="sgt-transit-body">` +
               `<span class="sgt-transit-gen">${_esc(t.general)}</span>` +

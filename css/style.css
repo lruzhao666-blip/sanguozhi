@@ -2,6 +2,7 @@
    三国志文字版 — 战旗赤红风 CSS v9
    精简 · 高级 · 呼吸感
    ============================================ */
+/* v20260528a (2026-05-28): tooltip v3 — 补齐城池悬浮卡 sgt-*/.sgt-transit-* 全套样式 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
 /* v20260525h (2026-05-25): fx-off-* 选择器对齐 sgmap-pulse/combat 实际类名 */
@@ -1055,35 +1056,174 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 
 /* ══ 城池弹窗 Tooltip（v3）══ */
-
-@media (pointer: coarse) {
-
+.sgmap-tooltip {
+  position: fixed; z-index: 9999;
+  width: 360px; max-width: calc(100vw - 24px);
+  background: linear-gradient(180deg, rgba(18,8,10,.97), rgba(10,4,6,.98));
+  border: 1px solid rgba(212,168,67,.35);
+  border-radius: 8px;
+  padding: 14px 16px 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.4), inset 0 1px 0 rgba(212,168,67,.08);
+  font-size: .82rem; line-height: 1.6;
+  color: var(--text-main);
+  pointer-events: none;
+  opacity: 0; transition: opacity .12s;
+}
+.sgmap-tooltip.show { opacity: 1; }
+@media (max-width: 480px) {
+  .sgmap-tooltip { width: calc(100vw - 24px); padding: 12px 14px 10px; }
 }
 
 /* ── 弹窗头部 ── */
+.sgt-header {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap; margin-bottom: 6px;
+}
+.sgt-name {
+  font-family: var(--font-serif);
+  font-size: 1.05rem; font-weight: 700;
+  color: #e8c870; letter-spacing: .04em;
+}
+.sgt-faction-chip {
+  font-family: var(--font-serif); font-size: .68rem;
+  padding: 1px 8px; border-radius: 3px;
+  background: rgba(160,40,140,.18);
+  border: 1px solid rgba(180,80,160,.45);
+  color: #d4a0e0; letter-spacing: .04em;
+}
+.sgt-badges { margin-left: auto; display: flex; gap: 4px; }
+.sgt-badge {
+  font-family: var(--font-sans); font-size: .6rem;
+  padding: 1px 7px; border-radius: 3px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.12);
+  color: var(--text-sub); letter-spacing: .04em;
+}
 
 /* ── 地形描述 ── */
-
-/* ── 通用行 ── */
-
-/* ── 标签（驻将/兵力 前的小字） ── */
-
-/* ── 暗淡占位文字（无兵/未知） ── */
-
-/* ── 归属行 ── */
-
-/* ── 分隔线 ── */
+.sgt-desc {
+  font-family: var(--font-serif); font-size: .75rem;
+  color: var(--text-dim); line-height: 1.7;
+  padding: 4px 0 8px;
+  border-bottom: 1px dashed rgba(212,168,67,.08);
+  margin-bottom: 10px; font-style: italic;
+}
 
 /* ── 驻将 / 兵力 信息块 ── */
-
-/* ── 驻将行 ── */
-
-/* ── 兵力行 ── */
-
-/* 兵种 + 数量：轻描边分组，简洁高级 */
+.sgt-info-block {
+  background: rgba(0,0,0,.28);
+  border: 1px solid rgba(255,255,255,.04);
+  border-radius: 5px;
+  padding: 7px 11px; margin-bottom: 9px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.sgt-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .78rem;
+}
+.sgt-lbl {
+  font-family: var(--font-sans); font-size: .6rem;
+  color: var(--text-dim); letter-spacing: .08em;
+  min-width: 28px; flex-shrink: 0;
+}
+.sgt-row b {
+  color: var(--text-main); font-weight: 500;
+  font-family: var(--font-serif);
+}
 
 /* ── 当前产业段（productionBuffs） ── */
+.sgt-prod-block {
+  background: rgba(0,0,0,.28);
+  border: 1px solid rgba(255,255,255,.04);
+  border-radius: 5px;
+  padding: 7px 11px; margin-bottom: 9px;
+}
 
+/* ══ 在途/战况行（含势力色绑定） ══
+   势力色由 JS 渲染时 inline 注入 --fac-stroke / --fac-glow
+   状态颜色由 .stt-march / .stt-siege / .stt-guest 类控制 */
+.sgt-combat-section {
+  margin-top: 10px; padding-top: 9px;
+  border-top: 1px dashed rgba(212,168,67,.10);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.sgt-transit-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center; gap: 9px;
+  padding: 7px 10px;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--fac-stroke, #888) 14%, transparent) 0%,
+    rgba(0,0,0,.32) 18%,
+    rgba(0,0,0,.32) 100%);
+  border: 1px solid rgba(255,255,255,.05);
+  border-left: 3px solid var(--fac-stroke, rgba(120,150,200,.6));
+  border-radius: 4px;
+  transition: background .15s;
+}
+.sgt-transit-row:hover {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--fac-stroke, #888) 22%, transparent) 0%,
+    rgba(0,0,0,.42) 18%,
+    rgba(0,0,0,.42) 100%);
+}
+.sgt-transit-dir {
+  font-family: var(--font-sans); font-size: .58rem; font-weight: 500;
+  color: var(--fac-glow, var(--text-sub));
+  background: rgba(0,0,0,.25);
+  border: 1px solid currentColor; border-radius: 3px;
+  padding: 1px 7px; letter-spacing: .14em;
+  opacity: .9; flex-shrink: 0; line-height: 1.5;
+}
+.sgt-transit-body {
+  display: flex; align-items: baseline; gap: 7px;
+  min-width: 0; flex-wrap: wrap;
+}
+.sgt-transit-gen {
+  font-family: var(--font-serif); font-size: .9rem; font-weight: 600;
+  color: var(--fac-glow, #e8c870); letter-spacing: .02em;
+  white-space: nowrap;
+  text-shadow: 0 0 6px color-mix(in srgb, var(--fac-glow, #d4a843) 35%, transparent);
+}
+.sgt-transit-route {
+  font-family: var(--font-serif); font-size: .75rem;
+  color: var(--text-sub); letter-spacing: .01em;
+  white-space: nowrap;
+  display: inline-flex; align-items: baseline;
+}
+.stt-arrow-inline {
+  display: inline-block; margin: 0 5px;
+  color: var(--text-dim); opacity: .7;
+  font-size: .85em; transform: translateY(-1px);
+}
+.sgt-transit-troop {
+  font-family: var(--font-sans); font-size: .62rem;
+  color: var(--text-sub);
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 3px;
+  padding: 1px 6px; letter-spacing: .04em; line-height: 1.55;
+}
+.sgt-transit-st {
+  font-family: var(--font-sans); font-size: .66rem; font-weight: 600;
+  padding: 2px 9px; border-radius: 11px;
+  letter-spacing: .08em; line-height: 1.4;
+  flex-shrink: 0; white-space: nowrap;
+  background: var(--st-bg);
+  border: 1px solid var(--st-border);
+  color: var(--st-color);
+}
+.stt-march { --st-color: #7fb4e8; --st-bg: rgba(70,130,200,.14); --st-border: rgba(110,160,220,.45); }
+.stt-siege { --st-color: #e8b54a; --st-bg: rgba(200,140,30,.16); --st-border: rgba(220,170,60,.50); }
+.stt-guest { --st-color: #6dd0b4; --st-bg: rgba(50,180,140,.14); --st-border: rgba(90,210,170,.45); }
+@media (max-width: 480px) {
+  .sgt-transit-row {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 4px;
+  }
+  .sgt-transit-st { grid-column: 2; justify-self: start; }
+}
 /* ══════════════════════════════════════════
    战斗结算
 ══════════════════════════════════════════ */
