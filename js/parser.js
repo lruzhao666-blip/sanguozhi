@@ -183,20 +183,6 @@ window.SGParser = (function () {
       });
     });
 
-    // 应用 productionOps（产出△ buff）到 cityOwnership
-    result.changes.forEach(ch => {
-      (ch.productionOps || []).forEach(op => {
-        const entry = result.cityOwnership[op.city];
-        if (!entry) return;
-        if (!entry.productionBuffs) entry.productionBuffs = {};
-        op.buffs.forEach(b => {
-          const key = `${b.general}_${b.type}`;
-          entry.productionBuffs[key] = {
-            type: b.type, emoji: b.emoji, general: b.general, action: b.action
-          };
-        });
-      });
-    });
   }
 
   // ─────────────────────────────────────────
@@ -317,7 +303,7 @@ window.SGParser = (function () {
       result.push({
         name,
         faction,
-        holder:  holderEmpty ? '暂无守将' : (holders.join('/') || '暂无守将'),
+        holder:  holderEmpty ? '无' : (holders.join('/') || '无'),
         holders,
         holderEmpty,
         troops:  _parseTroops(troopsRaw),
@@ -328,7 +314,7 @@ window.SGParser = (function () {
     if (!result.length) {
       raw.split(/[,，、\s]+/).forEach(s => {
         const n = s.trim();
-        if (n) result.push({ name: n, faction: null, holder: '暂无守将', holders: [], holderEmpty: true, troops: {} });
+        if (n) result.push({ name: n, faction: null, holder: '无', holders: [], holderEmpty: true, troops: {} });
       });
     }
     return result;
@@ -432,7 +418,7 @@ window.SGParser = (function () {
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
     if (lines.length === 1 && /无在途/.test(lines[0])) return [];
     const result = [];
-    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|围攻中|撤退中|被俘)$/;
+    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|围攻中|客驻)$/;
     for (const line of lines) {
       const m = line.match(re);
       if (m) {
