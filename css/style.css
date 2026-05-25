@@ -2,7 +2,6 @@
    三国志文字版 — 战旗赤红风 CSS v9
    精简 · 高级 · 呼吸感
    ============================================ */
-/* v20260526a (2026-05-26): 围攻贴角脉冲 + 战事内描边脉冲 + 行军虚线流动 + 删除撤退/被俘特效 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
 /* v20260525h (2026-05-25): fx-off-* 选择器对齐 sgmap-pulse/combat 实际类名 */
 /* v20260525g (2026-05-25): 特效开关栏重做 — 旧 .scb-chip 全删 */
@@ -3405,75 +3404,120 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ===== 战况层 v24 血脉脉冲 ===== */
 
-/* 战事 — 内缘脉冲 */
-.combat-battle {
-  stroke: #c83828;
-  stroke-width: 1.8;
+/* 战事 — 双层光环急促脉冲 */
+.combat-battle-outer,
+.combat-battle-inner {
   fill: none;
+  stroke-width: 2.2;
   transform-origin: center;
   transform-box: fill-box;
   pointer-events: none;
-  animation: combatBattleInner 2s ease-in-out infinite;
+}
+.combat-battle-outer {
+  stroke: var(--p-color, #e74c3c);
+  animation: combatBattleOuter .8s ease-in-out infinite;
+}
+.combat-battle-inner {
+  stroke: #d4a843;
+  stroke-width: 1.5;
+  animation: combatBattleInner .8s ease-in-out infinite .2s;
+}
+@keyframes combatBattleOuter {
+  0%, 100% { opacity: .4; transform: scale(1); }
+  50%      { opacity: 1;  transform: scale(1.18); }
 }
 @keyframes combatBattleInner {
-  0%, 100% { opacity: 0.4; stroke-width: 1.5; }
-  50%      { opacity: 0.75; stroke-width: 2; }
+  0%, 100% { opacity: .3; transform: scale(.95); }
+  50%      { opacity: .9; transform: scale(1.08); }
 }
 
-/* 围攻 — 贴角虚线六边形 + 顺时针流转 */
+/* 围攻 — 静止虚线六边形 + 顺时针流转 */
 .combat-siege-fence {
-  stroke: rgba(220,140,60,0.55);
-  stroke-width: 1.5;
-  stroke-dasharray: 4 6;
   fill: none;
+  stroke: var(--p-color, #3dbe6c);
+  stroke-width: 1.6;
+  stroke-dasharray: 4 5;
   transform-origin: center;
   transform-box: fill-box;
-  animation: combatSiegeRotate 8s linear infinite;
+  animation: combatSiegeRotate 3s linear infinite;
   pointer-events: none;
 }
 @keyframes combatSiegeRotate {
   from { stroke-dashoffset: 0;   }
-  to   { stroke-dashoffset: -50; }
+  to   { stroke-dashoffset: -54; }
 }
 .combat-siege-dot {
-  fill: #e8a85a;
+  fill: var(--p-color, #3dbe6c);
+  opacity: .85;
   pointer-events: none;
-  transform-origin: center;
-  transform-box: fill-box;
-}
-.combat-siege-dot-0 { animation: combatSiegeDotPulse 2.4s ease-in-out infinite 0s; }
-.combat-siege-dot-1 { animation: combatSiegeDotPulse 2.4s ease-in-out infinite 0.4s; }
-.combat-siege-dot-2 { animation: combatSiegeDotPulse 2.4s ease-in-out infinite 0.8s; }
-.combat-siege-dot-3 { animation: combatSiegeDotPulse 2.4s ease-in-out infinite 1.2s; }
-.combat-siege-dot-4 { animation: combatSiegeDotPulse 2.4s ease-in-out infinite 1.6s; }
-.combat-siege-dot-5 { animation: combatSiegeDotPulse 2.4s ease-in-out infinite 2.0s; }
-@keyframes combatSiegeDotPulse {
-  0%, 100% { transform: scale(1); opacity: 0.65; }
-  50%      { transform: scale(1.15); opacity: 1; }
-}
-@media (max-width: 720px) {
-  .combat-siege-dot { r: 4px; }
 }
 
-/* 行军 — 短虚线流动 */
+/* 行军 — 路径粒子 + 两端闪光 */
 .combat-march-path {
   fill: none;
-  stroke: #b89858;
-  stroke-width: 1.5;
-  stroke-dasharray: 5 7;
-  stroke-linecap: round;
-  animation: combatMarchPathMove 8s linear infinite;
+  stroke: var(--p-color, #3498db);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+  opacity: .45;
   pointer-events: none;
 }
-@keyframes combatMarchPathMove {
+.combat-march-particle {
+  fill: var(--p-color, #3498db);
+  filter: drop-shadow(0 0 4px var(--p-color, #3498db));
+  pointer-events: none;
+}
+.combat-flash-start,
+.combat-flash-end {
+  fill: none;
+  stroke: var(--p-color, #3498db);
+  stroke-width: 2;
+  opacity: 0;
+  transform-origin: center;
+  transform-box: fill-box;
+  pointer-events: none;
+}
+.combat-flash-start { animation: combatFlash 2.4s ease-out infinite; }
+.combat-flash-end   { animation: combatFlash 2.4s ease-out infinite -1.6s; }
+@keyframes combatFlash {
+  0%   { opacity: .9; transform: scale(1); }
+  60%  { opacity: 0;  transform: scale(1.5); }
+  100% { opacity: 0; }
+}
+
+/* 撤退 — 断续短线反向漂移 */
+.combat-retreat-path {
+  fill: none;
+  stroke: #7d6f5e;
+  stroke-width: 1.4;
+  stroke-dasharray: 2 8;
+  opacity: .6;
+  pointer-events: none;
+}
+.combat-retreat-dash {
+  fill: none;
+  stroke: #a89882;
+  stroke-width: 1.6;
+  stroke-dasharray: 6 10;
+  animation: combatRetreatDrift 3.6s linear infinite;
+  pointer-events: none;
+}
+@keyframes combatRetreatDrift {
   from { stroke-dashoffset: 0;  }
-  to   { stroke-dashoffset: -60; }
-}
-@media (max-width: 720px) {
-  .combat-march-path { stroke-width: 1.8; }
+  to   { stroke-dashoffset: 48; }
 }
 
-
+/* 被俘 — 整体降亮 + 慢呼吸 */
+.combat-captured-veil {
+  animation: combatCapturedBreath 4s ease-in-out infinite;
+}
+@keyframes combatCapturedBreath {
+  0%, 100% { opacity: .55; }
+  50%      { opacity: .82; }
+}
+.combat-captured-mask {
+  fill: rgba(20, 15, 10, .45);
+  pointer-events: none;
+}
 
 /* ===== 战况层 v24 end ===== */
 
@@ -3542,7 +3586,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* v20260525i: 战况层 SVG 元素由 map.js 写入 data-ctype 属性,以此为锚 */
 body.fx-off-battle   [data-ctype="battle"],
 body.fx-off-siege    [data-ctype="siege"],
-body.fx-off-march    [data-ctype="march"] {
+body.fx-off-march    [data-ctype="march"],
+body.fx-off-retreat  [data-ctype="retreat"],
+body.fx-off-captured [data-ctype="captured"] {
   display: none !important;
 }
 
