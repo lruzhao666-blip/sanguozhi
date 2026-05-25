@@ -2,6 +2,7 @@
    三国志文字版 — 战旗赤红风 CSS v9
    精简 · 高级 · 呼吸感
    ============================================ */
+/* v20260525h (2026-05-25): fx-off-* 选择器对齐 sgmap-pulse/combat 实际类名 */
 /* v20260525g (2026-05-25): 特效开关栏重做 — 旧 .scb-chip 全删 */
 /* v20260525e (2026-05-25): chip 未激活态对比度提升 + 移动端缩小一档 */
 /* v20260525f (2026-05-25): chip display 加 !important 防御 */
@@ -3580,22 +3581,17 @@ header, nav, main, footer { position: relative; z-index: 1; }
   border-color: rgba(180,140,80,.55);
 }
 
-/* 特效图层开关:body class 控制 */
-body.fx-off-battle   .combat-fx-battle,
-body.fx-off-siege    .combat-fx-siege,
-body.fx-off-march    .combat-fx-march,
-body.fx-off-retreat  .combat-fx-retreat,
-body.fx-off-captured .combat-fx-captured {
-  display: none !important;
-}
-
-/* 兼容旧选择器:旧特效层 SVG 类名可能仍叫 .scb-battle / 等,
-   如果旧 SVG 元素的 class 名不是 .combat-fx-*,以下规则同时生效 */
-body.fx-off-battle   [data-fx-layer="battle"],
-body.fx-off-siege    [data-fx-layer="siege"],
-body.fx-off-march    [data-fx-layer="march"],
-body.fx-off-retreat  [data-fx-layer="retreat"],
-body.fx-off-captured [data-fx-layer="captured"] {
+/* v20260525h: 对齐 map.js 实际写入的 SVG class 名 */
+body.fx-off-battle .sgmap-pulse-battle,
+body.fx-off-battle .sgmap-combat-battle,
+body.fx-off-siege .sgmap-pulse-siege,
+body.fx-off-siege .sgmap-combat-siege,
+body.fx-off-march .sgmap-pulse-march,
+body.fx-off-march .sgmap-combat-march,
+body.fx-off-retreat .sgmap-pulse-retreat,
+body.fx-off-retreat .sgmap-combat-retreat,
+body.fx-off-captured .sgmap-pulse-captured,
+body.fx-off-captured .sgmap-combat-captured {
   display: none !important;
 }
 
