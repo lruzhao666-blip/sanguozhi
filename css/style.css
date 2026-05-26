@@ -5,6 +5,7 @@
 /* v20260529a 军报UI方案2:.jbt-faction-badge / .bc-faction-badge / .jbt-strip-faction 与城池悬浮卡呼应 */
 /* v20260530a 军报UI方案2落地:补全 .jbt-* 系列基础样式 + .bc-faction-badge */
 /* v20260531a 军报UI微调:色条纯化(JS 端) + .jbt-title 去虚线 */
+/* v20260601a 军报UI终极清理:.jbt-faction-badge 去底色 + .jbt-title 强制去横线 */
 /* v20260528b (2026-05-28): tooltip — 移除底部 sgt-combat-section / sgt-transit-* / stt-* 在途战况段 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
@@ -1110,6 +1111,17 @@ header, nav, main, footer { position: relative; z-index: 1; }
     letter-spacing: .12em;
     padding: 2px 0 8px;
     margin-bottom: 4px;
+    display: block !important;
+    text-align: left !important;
+    border: none !important;
+    background: none !important;
+  }
+  .jbt-title::before,
+  .jbt-title::after {
+    content: none !important;
+    display: none !important;
+    background: none !important;
+    border: none !important;
   }
   .jbt-list { display: flex; flex-direction: column; gap: 6px; }
   .jbt-row {
@@ -1136,6 +1148,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
     border: 1px solid;
     flex-shrink: 0;
     font-family: var(--font-serif);
+    background: transparent !important;
   }
   .jbt-general {
     font-weight: 700; color: var(--text-main);
