@@ -10,6 +10,7 @@
 /* v20260603a 军报板块方案二推倒重做:删除 #junbao-summary 摘要段 + 调度/战报间增加小灰字标题分隔 + 武将名彻底中性白 */
 /* v20260604a 军报板块整体下线:HTML/CSS/JS 三处清空,等待重建 */
 /* v20260605a 军报板块重建(方案二) — 调度部队 + 战报,势力徽章 + 左侧色条,色源走 SGMap.P_COLOR / getFactionColor */
+/* v20260613b 军报板块视觉对齐：.junbao-block / .junbao-block .ib-header / .ib-title / .junbao-body */
 /* v20260528b (2026-05-28): tooltip — 移除底部 sgt-combat-section / sgt-transit-* / stt-* 在途战况段 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
@@ -1246,6 +1247,26 @@ header, nav, main, footer { position: relative; z-index: 1; }
   color: var(--gold); letter-spacing: .09em;
 }
 .ib-body { padding: 16px 18px; }
+
+/* ══════════════════════════════════════════
+   军报板块（调度部队 + 战报）—— 视觉对齐 block-changes-detail
+══════════════════════════════════════════ */
+.junbao-block {
+  border-color: rgba(160,115,35,.20);
+  box-shadow: 0 2px 24px rgba(0,0,0,.38);
+}
+.junbao-block .ib-header {
+  background: linear-gradient(90deg, rgba(40,24,2,.70) 0%, rgba(16,8,2,.40) 70%, transparent);
+  border-bottom: 1px solid rgba(160,115,35,.16);
+  padding: 11px 20px;
+}
+.junbao-block .ib-title {
+  font-size: .9rem;
+  letter-spacing: .1em;
+}
+.junbao-body {
+  padding: 16px 18px 18px;
+}
 
 /* ══════════════════════════════════════════
    历史回合
