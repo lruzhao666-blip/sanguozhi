@@ -11,6 +11,7 @@
 /* v20260604a 军报板块整体下线:HTML/CSS/JS 三处清空,等待重建 */
 /* v20260605a 军报板块重建(方案二) — 调度部队 + 战报,势力徽章 + 左侧色条,色源走 SGMap.P_COLOR / getFactionColor */
 /* v20260613b 军报板块视觉对齐：.junbao-block / .junbao-block .ib-header / .ib-title / .junbao-body */
+/* v20260613c 军报板块 UI 终稿：去"军情"徽 + 军报标题对称金光晕 + body 28px 内边距 + 小标题改色块标签 + 分段线/空态对称金渐变 */
 /* v20260528b (2026-05-28): tooltip — 移除底部 sgt-combat-section / sgt-transit-* / stt-* 在途战况段 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
@@ -4117,4 +4118,155 @@ body.fx-off-captured [data-ctype="captured"] {
   width: 48px;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(212,168,67,.28), transparent);
+}
+
+/* ══════════════════════════════════════════
+   军报板块 v20260613c — UI 终稿
+   设计：对齐站点暗金高级感，去除廉价渐变线
+══════════════════════════════════════════ */
+
+/* 头部：隐藏"军情"小徽章，让主标题独立站住 */
+.junbao-block .ib-icon--text {
+  display: none !important;
+}
+
+/* 头部容器：对称式暖金光晕，对应站点 .header-divider 设计语言 */
+.junbao-block .ib-header {
+  padding: 13px 26px;
+  background:
+    radial-gradient(ellipse at center, rgba(80,52,8,.55) 0%, rgba(40,24,2,.30) 55%, transparent 100%);
+  border-bottom: 1px solid transparent;
+  position: relative;
+}
+/* 头部底部对称金线（中间亮两端透明）*/
+.junbao-block .ib-header::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(180,120,40,.4),
+    rgba(212,168,67,.65),
+    rgba(180,120,40,.4),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* "军报"主标题：暗金 + 光晕，分量感对齐回合标题条 */
+.junbao-block .ib-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 900;
+  color: var(--gold-light);
+  letter-spacing: .14em;
+  text-shadow: 0 0 10px rgba(212,168,67,.35), 0 2px 4px rgba(0,0,0,.8);
+}
+
+/* body 内边距：呼吸感 */
+.junbao-body {
+  padding: 18px 26px 22px !important;
+}
+
+/* 段内小标题（"调度部队" / "战报"）—— 色块标签风，对齐站点设计语言 */
+.junbao-body .jbt-title,
+.junbao-body .battle-list-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: .1em;
+  text-transform: none;
+  padding: 5px 14px 5px 12px;
+  margin: 0 0 12px;
+  background: linear-gradient(90deg, rgba(100,65,0,.18), transparent 70%);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 var(--r) var(--r) 0;
+}
+/* 去掉旧的标题右侧拖尾渐变长线 */
+.junbao-body .jbt-title::after,
+.junbao-body .battle-list-title::after,
+.junbao-body .jbt-title::before,
+.junbao-body .battle-list-title::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+
+/* 武将行：内边距更舒展 */
+.junbao-body .jbt-inner {
+  padding: 11px 20px 11px 22px;
+  gap: 10px 14px;
+}
+
+/* 调度↔战报 分段：保留分段线，但改成对称金渐变细线 */
+.junbao-body .battle-list {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: none;
+  position: relative;
+}
+.junbao-body .battle-list::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(180,120,40,.35),
+    rgba(212,168,67,.55),
+    rgba(180,120,40,.35),
+    transparent
+  );
+  pointer-events: none;
+}
+/* 段间标题与分段线之间的呼吸 */
+.junbao-body .battle-list-title {
+  margin-top: 4px;
+}
+
+/* "本回合无战事" 空态：去两侧短金线，纯居中衬线字 + 极小装饰 */
+.junbao-body .jbt-empty,
+.junbao-body .battle-empty {
+  display: block;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  color: var(--gold-dim);
+  letter-spacing: .22em;
+  padding: 20px 0 18px;
+  opacity: .7;
+}
+.junbao-body .jbt-empty::before,
+.junbao-body .jbt-empty::after,
+.junbao-body .battle-empty::before,
+.junbao-body .battle-empty::after {
+  content: '❖';
+  display: inline-block;
+  width: auto;
+  height: auto;
+  background: none;
+  font-size: .7rem;
+  color: rgba(212,168,67,.45);
+  opacity: .9;
+  margin: 0 14px;
+  vertical-align: middle;
+  transform: translateY(-1px);
+}
+
+/* 移动端微调 */
+@media (max-width: 700px) {
+  .junbao-block .ib-header { padding: 12px 18px; }
+  .junbao-body { padding: 14px 18px 16px !important; }
+  .junbao-body .jbt-inner { padding: 9px 14px 9px 16px; gap: 8px 10px; }
+  .junbao-body .jbt-empty,
+  .junbao-body .battle-empty { font-size: .76rem; letter-spacing: .18em; padding: 16px 0 14px; }
+  .junbao-body .jbt-empty::before,
+  .junbao-body .jbt-empty::after,
+  .junbao-body .battle-empty::before,
+  .junbao-body .battle-empty::after { margin: 0 10px; }
 }
