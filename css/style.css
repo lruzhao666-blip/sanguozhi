@@ -6,6 +6,7 @@
 /* v20260530a 军报UI方案2落地:补全 .jbt-* 系列基础样式 + .bc-faction-badge */
 /* v20260531a 军报UI微调:色条纯化(JS 端) + .jbt-title 去虚线 */
 /* v20260601a 军报UI终极清理:.jbt-faction-badge 去底色 + .jbt-title 强制去横线 */
+/* v20260602a 军报布局修正:route 撑开占满中段,status 真正贴右;徽章已由 JS 端去底色 */
 /* v20260528b (2026-05-28): tooltip — 移除底部 sgt-combat-section / sgt-transit-* / stt-* 在途战况段 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
@@ -1138,7 +1139,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
   }
   .jbt-inner {
     flex: 1; display: flex; align-items: center; gap: 12px;
-    padding: 8px 12px; font-size: .84rem; flex-wrap: wrap;
+    padding: 8px 12px; font-size: .84rem; flex-wrap: nowrap;
+    min-width: 0;
   }
   .jbt-faction-badge {
     display: inline-flex; align-items: center;
@@ -1158,6 +1160,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
   .jbt-route {
     color: var(--text-sub); font-size: .8rem;
     display: inline-flex; align-items: center; gap: 5px;
+    margin-right: auto;
+    min-width: 0;
   }
   .jbt-arrow { color: var(--gold-dim); font-size: .85rem; }
   .jbt-troop {
@@ -1168,7 +1172,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
     font-family: var(--font-sans);
   }
   .jbt-status {
-    margin-left: auto; font-size: .74rem;
+    font-size: .74rem;
     padding: 1px 9px; border-radius: 8px;
     letter-spacing: .04em; font-family: var(--font-sans);
   }
