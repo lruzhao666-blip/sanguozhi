@@ -3715,3 +3715,354 @@ body.fx-off-captured [data-ctype="captured"] {
   .junbao-body .jbt-inner { gap: 8px; padding: 7px 10px; font-size: .8rem; }
   .junbao-body .bc-body   { gap: 10px; padding: 9px 12px; }
 }
+
+/* ══════════════════════════════════════════
+   军报板块 v1.0(2026-06-12)
+   设计:对齐站点 UI(暗红+暗金,info-block 范式)
+   - 调度行/战报卡:3px 势力色条 + 暗背景 + 暗金线框徽章
+   - 中间分隔:金色渐变细线
+   - 移动端:战报攻守上下两行 + 水平金线
+   消费 main.js renderJunbao() 已注入的 CSS 变量:
+   --strip-color / --badge-bg / --badge-border / --badge-color
+══════════════════════════════════════════ */
+
+/* ── 板块外壳:换暗金边,与红色 info-block 区分 ── */
+.junbao-block {
+  border-color: rgba(160,115,35,.22);
+  background: rgba(8,4,2,.94);
+}
+.junbao-block .ib-header {
+  background: linear-gradient(90deg, rgba(40,24,2,.7) 0%, rgba(16,8,2,.4) 70%, transparent);
+  border-bottom-color: rgba(160,115,35,.18);
+}
+.junbao-body { padding: 4px 14px 14px; }
+
+/* ── 段落小标题:对齐 .gen-section-title(细字 + 渐变线收尾)── */
+.jbt-title,
+.battle-list-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: .58rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: .18em;
+  margin: 14px 0 10px;
+  text-transform: uppercase;
+}
+.jbt-title::after,
+.battle-list-title::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,.08), transparent);
+}
+
+/* ── 空态文字 ── */
+.jbt-empty {
+  font-size: .74rem; color: var(--text-dim);
+  padding: 6px 2px 12px;
+  opacity: .55;
+  letter-spacing: .04em;
+}
+
+/* ══════════ 调度行 ══════════ */
+.jbt-list { display: flex; flex-direction: column; gap: 6px; }
+
+.jbt-row {
+  position: relative;
+  display: flex;
+  background: rgba(18,10,6,.78);
+  border: 1px solid rgba(255,255,255,.04);
+  border-left: none;
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: background .18s, transform .18s;
+}
+.jbt-row:hover {
+  background: rgba(28,16,8,.9);
+  transform: translateX(1px);
+}
+/* 色条:伪元素绝对定位,3px 紧贴左边,彻底避免双色夹层 */
+.jbt-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--strip-color, var(--gold-dim));
+}
+/* main.js 旧节点 .jbt-strip 不渲染,只作占位 */
+.jbt-strip { display: none; }
+
+.jbt-inner {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 9px 14px 9px 16px;
+  min-height: 38px;
+}
+
+/* 势力徽章 */
+.jbt-faction-badge {
+  font-family: var(--font-serif);
+  font-size: .72rem; font-weight: 700;
+  letter-spacing: .04em;
+  padding: 2px 10px;
+  border-radius: 4px;
+  background: var(--badge-bg, rgba(120,90,30,.18));
+  border: 1px solid var(--badge-border, rgba(155,120,45,.55));
+  color: var(--badge-color, var(--gold-dim));
+  white-space: nowrap;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+/* 武将名 */
+.jbt-general {
+  font-family: var(--font-serif);
+  font-size: .92rem; font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: .03em;
+  flex-shrink: 0;
+}
+
+/* 出发→目的路线 */
+.jbt-route {
+  font-size: .8rem;
+  color: var(--text-sub);
+  font-family: var(--font-serif);
+  flex-shrink: 0;
+  letter-spacing: .02em;
+}
+.jbt-arrow {
+  color: var(--text-dim);
+  margin: 0 5px;
+  font-size: .82rem;
+  opacity: .65;
+}
+
+/* 兵种(JS 当前输出单一文本节点,作为整体显示) */
+.jbt-troop {
+  font-family: var(--font-sans);
+  font-size: .72rem;
+  color: var(--gold-dim);
+  background: rgba(212,168,67,.05);
+  border: 1px solid rgba(212,168,67,.14);
+  border-radius: 10px;
+  padding: 2px 9px;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 状态徽章:推到行尾 */
+.jbt-status {
+  font-family: var(--font-sans);
+  font-size: .68rem; font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+  line-height: 1.6;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.jbt-row.jbt-march .jbt-status {
+  color: #b89868;
+  background: rgba(140,100,30,.14);
+  border: 1px solid rgba(180,140,60,.32);
+}
+.jbt-row.jbt-siege .jbt-status {
+  color: #e8884c;
+  background: rgba(160,60,10,.16);
+  border: 1px solid rgba(200,90,30,.42);
+}
+.jbt-row.jbt-resident .jbt-status {
+  color: #b890d8;
+  background: rgba(80,40,120,.18);
+  border: 1px solid rgba(140,90,200,.40);
+}
+
+/* ══════════ 战报卡 ══════════ */
+/* 注:.battle-card.success/.fail/.draw + ::before 在 style.css 已有定义
+   (位于"战斗结算"段,行号约 ~3xx),那里仅是 1px border 与色条,本段会被覆盖且强化 */
+.junbao-body .battle-list { display: flex; flex-direction: column; gap: 7px; }
+
+.junbao-body .battle-card {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  background: rgba(18,10,6,.78);
+  border: 1px solid rgba(255,255,255,.04);
+  border-left: none;
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: background .18s;
+}
+.junbao-body .battle-card:hover { background: rgba(28,16,8,.9); }
+.junbao-body .battle-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.junbao-body .battle-card.success::before { background: #3dbe6c; }
+.junbao-body .battle-card.draw::before    { background: #d4a843; }
+.junbao-body .battle-card.fail::before    { background: #e74c3c; }
+.junbao-body .bc-strip { display: none; }
+
+/* 档位徽章:暗金线框风,状态色仅作用于文字 */
+.junbao-body .bc-badge {
+  flex-shrink: 0;
+  font-family: var(--font-serif);
+  font-size: .82rem; font-weight: 900;
+  width: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin: 8px 0 8px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(212,168,67,.22);
+  background: rgba(212,168,67,.06);
+  letter-spacing: 0;
+  line-height: 1;
+}
+.junbao-body .battle-card.success .bc-badge {
+  color: #7dd87d;
+  border-color: rgba(61,190,108,.35);
+  background: rgba(0,60,22,.18);
+}
+.junbao-body .battle-card.draw .bc-badge {
+  color: #e8c560;
+  border-color: rgba(200,155,0,.35);
+  background: rgba(60,42,0,.18);
+}
+.junbao-body .battle-card.fail .bc-badge {
+  color: #e87060;
+  border-color: rgba(220,80,40,.35);
+  background: rgba(60,10,2,.18);
+}
+
+/* 主体:桌面端单行三段 */
+.junbao-body .bc-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 9px 16px 9px 14px;
+  min-height: 42px;
+}
+.junbao-body .bc-versus {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.junbao-body .bc-side-v {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 1;
+  min-width: 0;
+  flex: 1;
+}
+.junbao-body .bc-side-v:last-child { justify-content: flex-end; }
+
+.junbao-body .bc-role-v {
+  font-family: var(--font-serif);
+  font-size: .64rem; font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: .06em;
+  flex-shrink: 0;
+}
+
+.junbao-body .bc-faction-badge {
+  font-family: var(--font-serif);
+  font-size: .7rem; font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 4px;
+  background: var(--badge-bg, rgba(120,90,30,.18));
+  border: 1px solid var(--badge-border, rgba(155,120,45,.55));
+  color: var(--badge-color, var(--gold-dim));
+  white-space: nowrap;
+  letter-spacing: .03em;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.junbao-body .bc-name-v {
+  font-family: var(--font-serif);
+  font-size: .9rem; font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  letter-spacing: .03em;
+  flex-shrink: 0;
+}
+
+.junbao-body .bc-loss-v {
+  font-family: var(--font-sans);
+  font-size: .74rem; font-weight: 700;
+  color: #e07060;
+  background: rgba(80,12,4,.22);
+  border: 1px solid rgba(180,40,20,.32);
+  border-radius: 9px;
+  padding: 1px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 中间分隔:金色细渐变竖线(对齐站点 .gen-section-title::after 视觉语言)*/
+.junbao-body .bc-vs {
+  flex-shrink: 0;
+  width: 1px;
+  align-self: stretch;
+  margin: 6px 0;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(212,168,67,.22) 30%,
+    rgba(212,168,67,.22) 70%,
+    transparent 100%
+  );
+  font-size: 0;
+  color: transparent;
+}
+.junbao-body .bc-vs > * { display: none; }
+
+/* ══════════ 移动端响应式 ══════════ */
+@media (max-width: 700px) {
+  .junbao-body .jbt-route { font-size: .76rem; }
+  .junbao-body .jbt-troop { font-size: .68rem; padding: 1px 7px; }
+
+  .junbao-body .bc-badge {
+    width: 28px; font-size: .78rem;
+    margin: 8px 0 8px 8px;
+  }
+  .junbao-body .bc-body { padding: 0; }
+  .junbao-body .bc-versus {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+  }
+  .junbao-body .bc-side-v {
+    padding: 7px 14px;
+    gap: 7px;
+    justify-content: flex-start !important;
+    flex: none;
+  }
+  /* 攻守之间:水平金色渐变细线 */
+  .junbao-body .bc-vs {
+    width: auto;
+    height: 1px;
+    margin: 0 14px;
+    align-self: auto;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(212,168,67,.22) 30%,
+      rgba(212,168,67,.22) 70%,
+      transparent 100%
+    );
+  }
+  /* 伤亡推到行尾 */
+  .junbao-body .bc-loss-v { margin-left: auto; }
+}
