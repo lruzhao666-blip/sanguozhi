@@ -2854,249 +2854,185 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgt-adept-row .adept-val { color: var(--gold); font-weight: 700; }
 
 /* ══════════════════════════════════════════════════════
-   军报 v4.0 · 势力徽章 + 色条(方案二最终版)
+   军报模块 v3.0 — 小而美重设计
    ====================================================== */
 
+/* 覆盖 ib-body 默认 padding，让子区域自控间距 */
 .junbao-body { padding: 0 !important; }
 
-.jb-section {
-  padding: 10px 14px 12px;
+/* 战报列表区 */
+.junbao-battles {
+  padding: 8px 12px 10px;
+}
+.junbao-battles:empty { display: none; }
+
+/* ── 军报摘要 ── */
+.junbao-summary {
+  padding: 10px 16px 10px 14px;
   border-bottom: 1px solid rgba(160,120,40,.15);
+  background: linear-gradient(90deg, rgba(50,32,0,.28), transparent);
+  display: flex; align-items: flex-start; gap: 8px;
 }
-.jb-section:last-child { border-bottom: none; }
-
-.jb-sec-title {
-  font-family: var(--font-serif);
-  font-size: .72rem;
-  letter-spacing: .14em;
-  color: var(--text-dim);
-  margin-bottom: 8px;
-  padding-left: 2px;
-  position: relative;
+.junbao-summary::before {
+  content: ''; flex-shrink: 0;
+  width: 2px; height: auto; min-height: 16px; align-self: stretch;
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim));
+  border-radius: 2px; margin-top: 2px;
 }
-.jb-sec-title::after {
-  content: '';
-  display: block;
-  height: 1px;
-  margin-top: 5px;
-  background: linear-gradient(90deg, rgba(160,120,40,.45), rgba(160,120,40,0));
-}
-
-.jb-list {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-/* ── 通用行容器 ── */
-.jb-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px 6px 14px;
-  background: rgba(0,0,0,.22);
-  border: 1px solid rgba(100,70,30,.2);
-  border-radius: var(--r);
-  font-size: .8rem;
-  min-width: 0;
-  overflow: hidden;
-}
-.jb-row .jb-strip {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: var(--jb-strip, #caa050);
-  border-radius: 0;
-}
-
-/* ── 势力小徽章 ── */
-.jb-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px; height: 22px;
-  border-radius: 5px;
+.jbs-text {
   font-family: var(--font-serif);
   font-size: .82rem;
-  font-weight: 800;
-  background: var(--jb-badge-bg, rgba(202,160,80,.14));
-  border: 1px solid var(--jb-badge-bd, rgba(202,160,80,.55));
-  color: var(--jb-badge-fg, #caa050);
-  flex-shrink: 0;
-}
-.jb-badge--atk {
-  background: var(--jb-atk-bg);
-  border-color: var(--jb-atk-bd);
-  color: var(--jb-atk-fg);
-}
-.jb-badge--def {
-  background: var(--jb-def-bg);
-  border-color: var(--jb-def-bd);
-  color: var(--jb-def-fg);
-}
-
-/* ── 武将名 ── */
-.jb-general {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: .84rem;
-  color: var(--text-main);
-  letter-spacing: .03em;
-  flex-shrink: 0;
-}
-
-/* ── 路线 ── */
-.jb-route {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
   color: var(--text-sub);
-  font-size: .76rem;
-  flex: 1 1 auto;
+  letter-spacing: .03em;
+  line-height: 1.65;
+}
+
+/* ── 在途部队区域 ── */
+.junbao-transit {
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(160,120,40,.15);
+}
+.jbt-title {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-serif);
+  font-size: .7rem;
+  color: var(--text-dim);
+  letter-spacing: .08em;
+  margin-bottom: 7px;
+}
+.jbt-title::before {
+  content: '';
+  display: inline-block;
+  width: 14px; height: 1px;
+  background: linear-gradient(90deg, var(--gold-dim), transparent);
+}
+.jbt-title::after {
+  content: '';
+  display: inline-block;
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(160,120,40,.2), transparent);
+}
+.jbt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 在途行：左色条 + 内容 */
+.jbt-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  border-radius: var(--r);
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(100,70,30,.18);
+  font-size: .78rem;
   min-width: 0;
   overflow: hidden;
+  transition: background .15s;
+}
+.jbt-row:hover { background: rgba(0,0,0,.38); }
+
+/* 左侧状态色条 */
+.jbt-row::before {
+  content: ''; flex-shrink: 0;
+  width: 3px; align-self: stretch;
+  border-radius: 0;
+}
+.jbt-march::before   { background: rgba(61,190,108,.75); }
+.jbt-siege::before   { background: rgba(230,180,60,.85); }
+.jbt-retreat::before { background: rgba(180,140,0,.65); }
+.jbt-captured::before{ background: rgba(200,60,40,.75); }
+
+/* 行内容包装 */
+.jbt-inner {
+  display: flex; align-items: center; flex-wrap: nowrap;
+  gap: 5px; padding: 5px 8px 5px 7px;
+  flex: 1; min-width: 0;
+}
+
+/* 将领名 chip */
+.jbt-general {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: .78rem;
+  color: var(--text-main);
+  flex-shrink: 0;
+  letter-spacing: .02em;
+}
+
+/* 阵营 */
+.jbt-faction {
+  font-size: .68rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  letter-spacing: .02em;
+}
+
+/* 分隔点 */
+.jbt-sep {
+  color: var(--text-dim);
+  font-size: .6rem;
+  flex-shrink: 0;
+  opacity: .5;
+}
+
+/* 路线箭头 */
+.jbt-route {
+  color: var(--text-sub);
+  font-size: .74rem;
+  flex: 1 1 0;
+  min-width: 0;
   white-space: nowrap;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
-.jb-route i {
-  font-style: normal;
-  color: #c8b89a;
-  letter-spacing: .02em;
-}
-.jb-route em {
-  font-style: normal;
+.jbt-arrow {
   color: var(--gold-dim);
-  font-size: .9rem;
-  line-height: 1;
-}
-
-/* ── 兵种 chip ── */
-.jb-troop {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-  padding: 1px 7px;
-  background: rgba(60,90,130,.18);
-  border: 1px solid rgba(90,130,170,.35);
-  border-radius: 5px;
-  flex-shrink: 0;
-}
-.jb-troop b {
-  font-weight: 700;
+  margin: 0 2px;
   font-size: .7rem;
-  color: #9bb6d4;
-  letter-spacing: .02em;
-}
-.jb-troop i {
-  font-style: normal;
-  font-size: .76rem;
-  color: #cfe0f2;
-  font-weight: 700;
 }
 
-/* ── 状态 pill ── */
-.jb-status {
-  font-family: var(--font-serif);
+/* 兵种:数量 */
+.jbt-troop {
+  color: var(--gold-dim);
   font-size: .68rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 8px;
-  letter-spacing: .04em;
+  flex-shrink: 0;
+  letter-spacing: .01em;
+  opacity: .85;
+}
+
+/* 状态 pill */
+.jbt-status {
   flex-shrink: 0;
   white-space: nowrap;
-}
-.jb-status--march {
-  color: #7fb4e0;
-  background: rgba(50,110,170,.16);
-  border: 1px solid rgba(80,140,200,.38);
-}
-.jb-status--siege {
-  color: #e8a050;
-  background: rgba(180,110,30,.16);
-  border: 1px solid rgba(200,130,40,.4);
-}
-.jb-status--guest {
-  color: #b890d8;
-  background: rgba(110,70,150,.16);
-  border: 1px solid rgba(140,95,180,.4);
-}
-
-/* ── 战报专用 ── */
-.jb-battle-row {
-  gap: 10px;
-}
-.jb-battle--win  .jb-strip { background: #3dbe6c; }
-.jb-battle--draw .jb-strip { background: #d4a843; }
-.jb-battle--lose .jb-strip { background: #c84030; }
-
-.jb-result {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px; height: 24px;
-  border-radius: 6px;
-  font-family: var(--font-serif);
-  font-size: .9rem;
-  font-weight: 900;
-  flex-shrink: 0;
-}
-.jb-result--win {
-  color: #6dca7d;
-  background: rgba(0,140,60,.14);
-  border: 1px solid rgba(0,150,65,.5);
-}
-.jb-result--draw {
-  color: #e6b850;
-  background: rgba(190,145,0,.14);
-  border: 1px solid rgba(200,155,0,.5);
-}
-.jb-result--lose {
-  color: #e07070;
-  background: rgba(180,35,20,.14);
-  border: 1px solid rgba(195,45,25,.5);
-}
-
-.jb-side {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-.jb-side-tag {
   font-family: var(--font-serif);
   font-size: .66rem;
-  font-weight: 700;
-  color: var(--text-dim);
-  letter-spacing: .06em;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 6px;
+  letter-spacing: .04em;
 }
-.jb-loss {
-  font-size: .76rem;
-  font-weight: 700;
+.jbt-march .jbt-status {
+  color: #6dca7d;
+  background: rgba(0,140,60,.14);
+  border: 1px solid rgba(0,150,65,.28);
+}
+.jbt-siege .jbt-status {
+  color: #e6b850;
+  background: rgba(190,145,0,.14);
+  border: 1px solid rgba(200,155,0,.3);
+}
+.jbt-retreat .jbt-status {
+  color: #c8a838;
+  background: rgba(160,125,0,.12);
+  border: 1px solid rgba(170,130,0,.25);
+}
+.jbt-captured .jbt-status {
   color: #e07070;
-  letter-spacing: .02em;
-}
-.jb-vs {
-  font-family: var(--font-serif);
-  font-size: .74rem;
-  font-weight: 700;
-  color: var(--gold-dim);
-  letter-spacing: .08em;
-  flex-shrink: 0;
-}
-
-/* ── 移动端 ── */
-@media (max-width: 640px) {
-  .jb-row {
-    flex-wrap: wrap;
-    gap: 6px 8px;
-    padding: 7px 10px 7px 14px;
-  }
-  .jb-route { flex-basis: 100%; order: 5; }
-  .jb-status { order: 4; }
-  .jb-section { padding: 8px 10px 10px; }
-  .jb-result { width: 22px; height: 22px; font-size: .82rem; }
-  .jb-badge { width: 20px; height: 20px; font-size: .76rem; }
+  background: rgba(180,35,20,.14);
+  border: 1px solid rgba(195,45,25,.3);
 }
 
 /* ══════════════════════════════════════════════════════
