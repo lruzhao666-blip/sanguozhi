@@ -7,6 +7,7 @@
  * v19 (2026-05-26): 徽章去除外发光 box-shadow,消除色条邻接处的"渐变/混色"错觉
  * v20 (2026-05-26): 军报徽章不再注入 background,改为线框样式;阵营色仅由 border+text 表达
  * v21 (2026-06-03): 军报推倒重做 — 删除军报摘要段渲染 + 简化 renderBattlesBlock + 战报卡 buildBattleCard 攻守双方徽章中性白
+ * v22 (2026-06-04): 军报板块整体下线 — 删除 renderBattlesBlock / buildBattleCard / renderAll 中的调用
  * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
@@ -406,7 +407,6 @@
       renderRoundBar(latest);
       renderDigest(latest);
       renderPlayerCards();
-      renderBattlesBlock(latest.parsed);
       renderMap();
       renderChangesDetail();
       renderHistorySection();
@@ -1240,180 +1240,6 @@
   }
 
   // ══════════════════════════════════════════
-  //  战斗结算 v21
-  // ══════════════════════════════════════════
-  function renderBattlesBlock(parsed) {
-    const block = document.getElementById('block-battles');
-    if (!block) return;
-
-    const battles = parsed.battles || [];
-    const transit = parsed.transit || [];
-
-    const hasBattles = battles.length > 0;
-    const hasTransit = transit.length > 0;
-
-    // 两者皆空 → 隐藏军报块
-    if (!hasBattles && !hasTransit) {
-      block.classList.add('hidden');
-      return;
-    }
-    block.classList.remove('hidden');
-
-    // 调度部队(v3.23 [在途] 改名 [调度])
-    const tranEl = document.getElementById('junbao-transit');
-    if (tranEl) {
-      if (hasTransit) {
-        tranEl.classList.remove('hidden');
-        tranEl.innerHTML =
-          '<div class="jbt-title">调度部队</div>' +
-          '<div class="jbt-list">' +
-          transit.map(t => {
-            const statusCls =
-              /^剩\d+/.test(t.status)   ? 'jbt-march'    :
-              t.status === '围攻中'      ? 'jbt-siege'    :
-              t.status === '客驻'        ? 'jbt-resident' :
-              t.status === '被俘'        ? 'jbt-captured' :
-              t.status === '撤退中'      ? 'jbt-retreat'  : 'jbt-march';
-
-            // 势力徽章 + 左侧色条
-            let factionLabel = '';
-            let badgeStyle   = '';
-            let stripStyle   = '';
-            if (t.slot != null && SGMap.P_COLOR && SGMap.P_COLOR[t.slot]) {
-              const c = SGMap.P_COLOR[t.slot];
-              const pName = (state.players[t.slot] && state.players[t.slot].name) || ('甲乙丙'[t.slot] || '');
-              factionLabel = pName;
-              badgeStyle = `border-color:${c.stroke};color:${c.glow};`;
-              stripStyle = `background:${c.stroke};`;
-            } else if (t.faction && typeof SGMap.getFactionColor === 'function') {
-              const fc = SGMap.getFactionColor(t.faction);
-              if (fc) {
-                factionLabel = t.faction;
-                badgeStyle = `border-color:${fc.stroke};color:${fc.glow};`;
-                stripStyle = `background:${fc.stroke};`;
-              }
-            }
-            const badgeHtml = factionLabel
-              ? `<span class="jbt-faction-badge" style="${badgeStyle}">${esc(factionLabel)}</span>`
-              : '';
-            const stripHtml = stripStyle
-              ? `<span class="jbt-strip-faction" style="${stripStyle}"></span>`
-              : '';
-
-            const troopStr = (t.troopType && t.troopCount)
-              ? `${esc(t.troopType)} ${t.troopCount}`
-              : (t.troopCount ? `${t.troopCount}` : '');
-            return `<div class="jbt-row ${statusCls}">` +
-              stripHtml +
-              `<div class="jbt-inner">` +
-              badgeHtml +
-              `<span class="jbt-general">${esc(t.general)}</span>` +
-              `<span class="jbt-route">${esc(t.from)}<span class="jbt-arrow">›</span>${esc(t.to)}</span>` +
-              (troopStr ? `<span class="jbt-troop">${troopStr}</span>` : '') +
-              `<span class="jbt-status">${esc(t.status)}</span>` +
-              `</div>` +
-              `</div>`;
-          }).join('') +
-          '</div>';
-      } else {
-        tranEl.classList.add('hidden');
-        tranEl.innerHTML = '';
-      }
-    }
-
-    // 战报
-    const list = document.getElementById('battles-list');
-    if (list) {
-      if (hasBattles) {
-        list.innerHTML =
-          '<div class="battle-list">' +
-          '<div class="battle-list-title">战报</div>' +
-          battles.map(b => buildBattleCard(b)).join('') +
-          '</div>';
-      } else {
-        list.innerHTML = '';
-      }
-    }
-  }
-
-  function buildBattleCard(b) {
-    const _sideBadge = (slot, faction) => {
-      let c = null, label = '';
-      if (slot != null && SGMap.P_COLOR && SGMap.P_COLOR[slot]) {
-        c = SGMap.P_COLOR[slot];
-        label = (state.players[slot] && state.players[slot].name) || ('甲乙丙'[slot] || '');
-      } else if (faction && typeof SGMap.getFactionColor === 'function') {
-        const fc = SGMap.getFactionColor(faction);
-        if (fc) { c = fc; label = faction; }
-      }
-      if (!c || !label) return '';
-      return `<span class="bc-faction-badge" style="border-color:${c.stroke};color:${c.glow};">${esc(label)}</span>`;
-    };
-    const attackerBadgeHtml = _sideBadge(b.attackerSlot, b.attackerFaction);
-    const defenderBadgeHtml = _sideBadge(b.defenderSlot, b.defenderFaction);
-
-    const isV2    = b.attacker !== undefined;
-    const success = isV2 ? b.result === '胜' : (b.success ?? true);
-    const isDraw  = isV2 && b.result === '平';
-    const cls     = success ? 'success' : (isDraw ? 'draw' : 'fail');
-    const resultLabel = isV2
-      ? ({ '胜':'胜', '平':'平', '负':'败' }[b.result] || b.result)
-      : (success ? '胜' : '败');
-
-    if (isV2) {
-      const atkLoss = b.attacker_loss ?? 0;
-      const defLoss = b.defender_loss ?? 0;
-
-      // 武将名保持中性白;若 attacker/defender 字面以"甲乙丙"开头,剥离单字仅留武将名
-      const _displayName = (txt, slot) => {
-        if (!txt) return '';
-        const t = txt.trim();
-        if (slot != null && /^[甲乙丙]/.test(t)) {
-          const rest = t.replace(/^[甲乙丙][\s·\u30fb\u2022]*/, '').trim();
-          return rest || '';
-        }
-        return t;
-      };
-      const atkDisplay = _displayName(b.attacker, b.attackerSlot);
-      const defDisplay = _displayName(b.defender, b.defenderSlot);
-
-      return `<div class="battle-card ${cls}">` +
-        `<div class="bc-strip"></div>` +
-        `<div class="bc-body">` +
-        `<span class="bc-badge">${resultLabel}</span>` +
-        `<div class="bc-versus">` +
-        `<div class="bc-side-v bc-atk-v">` +
-        `<span class="bc-role-v">攻</span>` +
-        `${attackerBadgeHtml}` +
-        `<span class="bc-name-v">${esc(atkDisplay)}</span>` +
-        (atkLoss > 0 ? `<span class="bc-loss-v loss-atk-v">-${atkLoss}</span>` : '') +
-        `</div>` +
-        `<span class="bc-vs">vs</span>` +
-        `<div class="bc-side-v bc-def-v">` +
-        `<span class="bc-role-v">守</span>` +
-        `${defenderBadgeHtml}` +
-        `<span class="bc-name-v">${esc(defDisplay)}</span>` +
-        (defLoss > 0 ? `<span class="bc-loss-v loss-def-v">-${defLoss}</span>` : '') +
-        `</div>` +
-        `</div>` +
-        `</div>` +
-        `</div>`;
-    } else {
-      // 旧格式兼容
-      const icon = success ? '✅' : '❌';
-      let html = `<div class="battle-card ${cls}">` +
-        `<div class="bc-strip"></div>` +
-        `<div class="bc-legacy">` +
-        (b.player ? `<span class="bc-name-v">${esc(b.player)}</span>` : '') +
-        `<span class="bc-badge">${icon} ${resultLabel}</span>` +
-        (b.dice ? `<span class="bc-dice">🎲 ${esc(b.dice)}</span>` : '') +
-        `</div>`;
-      const desc = b.resultTxt || b.narrative || '';
-      if (desc) html += `<div class="bc-desc">${esc(desc.slice(0, 100))}</div>`;
-      html += `</div>`;
-      return html;
-    }
-  }
 
   // ══════════════════════════════════════════
   //  玩家势力卡 + 行动选项
