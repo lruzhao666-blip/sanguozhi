@@ -1878,6 +1878,19 @@
     const transit = Array.isArray(parsed.transit) ? parsed.transit : [];
     const battles = Array.isArray(parsed.battles) ? parsed.battles : [];
 
+    // v27 (2026-05-26): 调度+战报均为空时隐藏整块
+    const _block = document.getElementById('block-junbao');
+    if (_block) {
+      const _hasTransit = (transit && transit.length > 0);
+      const _hasBattles = (battles && battles.length > 0);
+      if (!_hasTransit && !_hasBattles) {
+        _block.classList.add('hidden');
+        return;
+      } else {
+        _block.classList.remove('hidden');
+      }
+    }
+
     // 无调度也无战报 → 整块隐藏
     if (!transit.length && !battles.length) {
       block.classList.add('hidden');
@@ -1889,7 +1902,7 @@
     const html = [];
 
     // ── 调度部队段 ──
-    html.push('<div class="jbt-title">调度部队</div>');
+    html.push('<div class="jbt-title">调度</div>');
     if (transit.length) {
       html.push('<div class="jbt-list">');
       transit.forEach(t => {
@@ -1913,6 +1926,8 @@
               <span class="jbt-route">${esc(t.from || '')}<span class="jbt-arrow">›</span>${esc(t.to || '')}</span>
               <span class="jbt-troop">${esc(t.troopType || '')} ${t.troopCount || 0}</span>
               <span class="jbt-status">${esc(t.status || '')}</span>
+              <!-- v27 (2026-05-26): note 字段透出 — 显示在状态徽章后 -->
+              ${t.note ? `<span class="jbt-note">${esc(t.note)}</span>` : ''}
             </div>
           </div>
         `);
@@ -1923,9 +1938,9 @@
     }
 
     // ── 战报段 ──
-    html.push('<div class="battle-list">');
-    html.push('<div class="battle-list-title">战报</div>');
     if (battles.length) {
+      html.push('<div class="battle-list">');
+      html.push('<div class="battle-list-title">战报</div>');
       battles.forEach(b => {
         const cardCls = b.result === '胜' ? 'success'
                       : b.result === '平' ? 'draw'
@@ -1962,10 +1977,12 @@
           </div>
         `);
       });
+      html.push('</div>');
     } else {
-      html.push('<div class="jbt-empty">本回合无战事</div>');
+      // [legacy v23] html.push('<div class="jbt-empty">本回合无战事</div>');
+      // v27 (2026-05-26): 套 .battle-list 外壳,配合 CSS :has() 选择器整段隐藏
+      html.push('<div class="battle-list"><div class="battle-list-title">战报</div><div class="battle-empty">本回合无战事</div></div>');
     }
-    html.push('</div>');
 
     body.innerHTML = html.join('');
   }
