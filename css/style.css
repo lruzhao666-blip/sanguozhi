@@ -4,6 +4,7 @@
    ============================================ */
 /* v20260529a 军报UI方案2:.jbt-faction-badge / .bc-faction-badge / .jbt-strip-faction 与城池悬浮卡呼应 */
 /* v20260530a 军报UI方案2落地:补全 .jbt-* 系列基础样式 + .bc-faction-badge */
+/* v20260531a 军报UI微调:色条纯化(JS 端) + .jbt-title 去虚线 */
 /* v20260528b (2026-05-28): tooltip — 移除底部 sgt-combat-section / sgt-transit-* / stt-* 在途战况段 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
@@ -1107,9 +1108,8 @@ header, nav, main, footer { position: relative; z-index: 1; }
   .jbt-title {
     font-size: .8rem; color: var(--gold-dim);
     letter-spacing: .12em;
-    padding: 2px 0 10px;
-    border-bottom: 1px dashed rgba(160,120,40,.18);
-    margin-bottom: 10px;
+    padding: 2px 0 8px;
+    margin-bottom: 4px;
   }
   .jbt-list { display: flex; flex-direction: column; gap: 6px; }
   .jbt-row {
