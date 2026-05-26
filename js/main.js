@@ -6,6 +6,7 @@
  * v18 (变更): 色条移除 box-shadow,避免相邻行颜色互渗
  * v19 (2026-05-26): 徽章去除外发光 box-shadow,消除色条邻接处的"渐变/混色"错觉
  * v20 (2026-05-26): 军报徽章不再注入 background,改为线框样式;阵营色仅由 border+text 表达
+ * v21 (2026-06-03): 军报推倒重做 — 删除军报摘要段渲染 + 简化 renderBattlesBlock + 战报卡 buildBattleCard 攻守双方徽章中性白
  * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
@@ -1239,40 +1240,26 @@
   }
 
   // ══════════════════════════════════════════
-  //  战斗结算
+  //  战斗结算 v21
   // ══════════════════════════════════════════
   function renderBattlesBlock(parsed) {
     const block = document.getElementById('block-battles');
     if (!block) return;
 
     const battles = parsed.battles || [];
-    const summary = parsed.battleSummary || '';
     const transit = parsed.transit || [];
 
     const hasBattles = battles.length > 0;
-    const hasSummary = !!summary;
     const hasTransit = transit.length > 0;
 
-    // 只要三者任一有内容就显示军报块
-    if (!hasBattles && !hasSummary && !hasTransit) {
+    // 两者皆空 → 隐藏军报块
+    if (!hasBattles && !hasTransit) {
       block.classList.add('hidden');
       return;
     }
     block.classList.remove('hidden');
 
-    // 军报摘要
-    const sumEl = document.getElementById('junbao-summary');
-    if (sumEl) {
-      if (hasSummary) {
-        sumEl.classList.remove('hidden');
-        sumEl.innerHTML = `<div class="jbs-text">${esc(summary)}</div>`;
-      } else {
-        sumEl.classList.add('hidden');
-        sumEl.innerHTML = '';
-      }
-    }
-
-    // 调度武将(v3.23 [在途] 改名 [调度])
+    // 调度部队(v3.23 [在途] 改名 [调度])
     const tranEl = document.getElementById('junbao-transit');
     if (tranEl) {
       if (hasTransit) {
@@ -1281,7 +1268,6 @@
           '<div class="jbt-title">调度部队</div>' +
           '<div class="jbt-list">' +
           transit.map(t => {
-            // 状态 CSS(规则 v3.23 状态仅三种: 剩N / 围攻中 / 客驻;旧值保留兼容)
             const statusCls =
               /^剩\d+/.test(t.status)   ? 'jbt-march'    :
               t.status === '围攻中'      ? 'jbt-siege'    :
@@ -1289,10 +1275,7 @@
               t.status === '被俘'        ? 'jbt-captured' :
               t.status === '撤退中'      ? 'jbt-retreat'  : 'jbt-march';
 
-            // 方案二:武将名保持中性白,势力归属由徽章 + 色条承担
-            const nameStyle = '';
-
-            // 势力徽章（与城池悬浮卡呼应）
+            // 势力徽章 + 左侧色条
             let factionLabel = '';
             let badgeStyle   = '';
             let stripStyle   = '';
@@ -1324,7 +1307,7 @@
               stripHtml +
               `<div class="jbt-inner">` +
               badgeHtml +
-              `<span class="jbt-general"${nameStyle}>${esc(t.general)}</span>` +
+              `<span class="jbt-general">${esc(t.general)}</span>` +
               `<span class="jbt-route">${esc(t.from)}<span class="jbt-arrow">›</span>${esc(t.to)}</span>` +
               (troopStr ? `<span class="jbt-troop">${troopStr}</span>` : '') +
               `<span class="jbt-status">${esc(t.status)}</span>` +
@@ -1338,11 +1321,13 @@
       }
     }
 
-    // 战报（原有逻辑）
+    // 战报
     const list = document.getElementById('battles-list');
     if (list) {
       if (hasBattles) {
-        list.innerHTML = '<div class="battle-list">' +
+        list.innerHTML =
+          '<div class="battle-list">' +
+          '<div class="battle-list-title">战报</div>' +
           battles.map(b => buildBattleCard(b)).join('') +
           '</div>';
       } else {
@@ -1366,8 +1351,7 @@
     };
     const attackerBadgeHtml = _sideBadge(b.attackerSlot, b.attackerFaction);
     const defenderBadgeHtml = _sideBadge(b.defenderSlot, b.defenderFaction);
-    // 兼容 v2.0（attacker/defender/result/attacker_loss/defender_loss）
-    // 和旧格式（player/dice/resultTxt/narrative/success）
+
     const isV2    = b.attacker !== undefined;
     const success = isV2 ? b.result === '胜' : (b.success ?? true);
     const isDraw  = isV2 && b.result === '平';
@@ -1377,19 +1361,16 @@
       : (success ? '胜' : '败');
 
     if (isV2) {
-      // ── v3.0 单行紧凑卡片 ──
       const atkLoss = b.attacker_loss ?? 0;
       const defLoss = b.defender_loss ?? 0;
 
-      // 方案二:武将名保持中性白(不再按势力染色);
-      // 名字字面如果是"甲/乙/丙",在显示层移除该字仅留武将名(若有)
-      // 这里返回纯展示文本:剥离"甲/乙/丙"开头,保留余下部分
+      // 武将名保持中性白;若 attacker/defender 字面以"甲乙丙"开头,剥离单字仅留武将名
       const _displayName = (txt, slot) => {
         if (!txt) return '';
         const t = txt.trim();
         if (slot != null && /^[甲乙丙]/.test(t)) {
           const rest = t.replace(/^[甲乙丙][\s·\u30fb\u2022]*/, '').trim();
-          return rest || '';  // 若仅有"甲"无后续武将名,返回空字符串
+          return rest || '';
         }
         return t;
       };
@@ -1418,7 +1399,7 @@
         `</div>` +
         `</div>`;
     } else {
-      // ── 旧格式兼容 ──
+      // 旧格式兼容
       const icon = success ? '✅' : '❌';
       let html = `<div class="battle-card ${cls}">` +
         `<div class="bc-strip"></div>` +
