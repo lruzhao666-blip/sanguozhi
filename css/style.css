@@ -9,6 +9,7 @@
 /* v20260602a 军报布局修正:route 撑开占满中段,status 真正贴右;徽章已由 JS 端去底色 */
 /* v20260603a 军报板块方案二推倒重做:删除 #junbao-summary 摘要段 + 调度/战报间增加小灰字标题分隔 + 武将名彻底中性白 */
 /* v20260604a 军报板块整体下线:HTML/CSS/JS 三处清空,等待重建 */
+/* v20260605a 军报板块重建(方案二) — 调度部队 + 战报,势力徽章 + 左侧色条,色源走 SGMap.P_COLOR / getFactionColor */
 /* v20260528b (2026-05-28): tooltip — 移除底部 sgt-combat-section / sgt-transit-* / stt-* 在途战况段 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
@@ -3506,3 +3507,211 @@ body.fx-off-captured [data-ctype="captured"] {
 
 /* 守方徽章靠右对齐(攻方在左 守方在右) */
 .bc-def-v .bc-faction-badge { margin-right: 4px; }
+/* ══════════════════════════════════════════
+   军报板块 v1 · 方案二(势力徽章 + 色条)
+   调度部队 + 战报,色源由 JS 注入 CSS 变量
+   ══════════════════════════════════════════ */
+
+.junbao-body {
+  padding: 14px 16px 16px;
+}
+
+/* ── 段标题 ── */
+.junbao-body .jbt-title {
+  font-size: .8rem;
+  color: var(--gold-dim);
+  letter-spacing: .12em;
+  padding: 2px 0 10px;
+  margin-bottom: 10px;
+}
+.junbao-body .battle-list-title {
+  font-size: .8rem;
+  color: var(--gold-dim);
+  letter-spacing: .12em;
+  margin-bottom: 6px;
+}
+
+/* ── 空态提示 ── */
+.junbao-body .jbt-empty {
+  font-size: .76rem;
+  color: var(--text-dim);
+  letter-spacing: .06em;
+  padding: 6px 0 4px;
+}
+
+/* ══ 调度部队 ══ */
+.junbao-body .jbt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.junbao-body .jbt-row {
+  display: flex;
+  align-items: stretch;
+  background: rgba(20,14,10,.4);
+  border: 1px solid rgba(120,90,40,.18);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: background .15s;
+}
+.junbao-body .jbt-row:hover {
+  background: rgba(30,22,16,.55);
+}
+.junbao-body .jbt-strip {
+  width: 3px;
+  flex-shrink: 0;
+  background: var(--strip-color, var(--gold-dim));
+}
+.junbao-body .jbt-inner {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  font-size: .84rem;
+  flex-wrap: wrap;
+}
+.junbao-body .jbt-faction-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 4px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  background: var(--badge-bg, rgba(120,90,30,.18));
+  border: 1px solid var(--badge-border, rgba(155,120,45,.4));
+  color: var(--badge-color, #d4a843);
+  flex-shrink: 0;
+}
+.junbao-body .jbt-general {
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: .03em;
+}
+.junbao-body .jbt-route {
+  color: var(--text-sub);
+  font-size: .8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.junbao-body .jbt-arrow {
+  color: var(--gold-dim);
+  font-size: .85rem;
+  margin: 0 2px;
+}
+.junbao-body .jbt-troop {
+  color: #a8b8d0;
+  font-size: .76rem;
+  background: rgba(40,60,90,.25);
+  padding: 1px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(80,120,180,.25);
+}
+.junbao-body .jbt-status {
+  margin-left: auto;
+  font-size: .74rem;
+  padding: 1px 9px;
+  border-radius: 8px;
+  letter-spacing: .04em;
+}
+.junbao-body .jbt-march    .jbt-status { background: rgba(70,130,180,.2);  color: #8cbedc; border: 1px solid rgba(70,130,180,.35); }
+.junbao-body .jbt-siege    .jbt-status { background: rgba(200,80,40,.2);   color: #e69870; border: 1px solid rgba(200,80,40,.4);  }
+.junbao-body .jbt-resident .jbt-status { background: rgba(140,100,200,.2); color: #b89cd8; border: 1px solid rgba(140,100,200,.4); }
+
+/* ══ 战报 ══ */
+.junbao-body .battle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(160,120,40,.18);
+}
+.junbao-body .battle-card {
+  display: flex;
+  align-items: stretch;
+  background: rgba(20,14,10,.4);
+  border: 1px solid rgba(120,90,40,.18);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.junbao-body .bc-strip {
+  width: 4px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(220,80,40,.7), rgba(160,40,20,.5));
+}
+.junbao-body .battle-card.success .bc-strip { background: linear-gradient(180deg, rgba(80,180,100,.7), rgba(40,120,60,.5)); }
+.junbao-body .battle-card.draw    .bc-strip { background: linear-gradient(180deg, rgba(200,160,60,.7), rgba(140,110,40,.5)); }
+.junbao-body .bc-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  flex-wrap: wrap;
+}
+.junbao-body .bc-badge {
+  font-size: .74rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 4px;
+  letter-spacing: .04em;
+}
+.junbao-body .battle-card.success .bc-badge { background: rgba(80,180,100,.22); color: #88dd9c; border: 1px solid rgba(80,180,100,.4); }
+.junbao-body .battle-card.fail    .bc-badge { background: rgba(220,80,40,.22);  color: #e89472; border: 1px solid rgba(220,80,40,.4); }
+.junbao-body .battle-card.draw    .bc-badge { background: rgba(200,160,60,.22); color: #d8be60; border: 1px solid rgba(200,160,60,.4); }
+.junbao-body .bc-versus {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.junbao-body .bc-side-v {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.junbao-body .bc-role-v {
+  font-size: .68rem;
+  color: var(--text-dim);
+  padding: 1px 6px;
+  border: 1px solid rgba(120,90,40,.3);
+  border-radius: 3px;
+}
+.junbao-body .bc-faction-badge {
+  display: inline-flex;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: .68rem;
+  font-weight: 700;
+  background: var(--badge-bg, rgba(120,90,30,.18));
+  border: 1px solid var(--badge-border, rgba(155,120,45,.4));
+  color: var(--badge-color, #d4a843);
+  margin-right: 2px;
+}
+.junbao-body .bc-name-v {
+  font-weight: 700;
+  font-size: .88rem;
+  color: var(--text-main);
+}
+.junbao-body .bc-loss-v {
+  font-size: .72rem;
+  color: #e08070;
+  padding: 1px 6px;
+  background: rgba(180,50,30,.15);
+  border-radius: 3px;
+}
+.junbao-body .bc-vs {
+  color: var(--text-dim);
+  font-size: .72rem;
+  letter-spacing: .15em;
+}
+
+/* 移动端紧凑 */
+@media (max-width: 640px) {
+  .junbao-body { padding: 12px 12px 14px; }
+  .junbao-body .jbt-inner { gap: 8px; padding: 7px 10px; font-size: .8rem; }
+  .junbao-body .bc-body   { gap: 10px; padding: 9px 12px; }
+}
