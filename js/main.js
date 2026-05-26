@@ -10,10 +10,6 @@
  * v22 (2026-06-04): 军报板块整体下线 — 删除 renderBattlesBlock / buildBattleCard / renderAll 中的调用
  * v23 (2026-06-05): 军报板块重建(方案二) — 新增 renderJunbao(),挂载于地图与三方势力之间;读取 transit + battles,徽章色走 P_COLOR / SGMap.getFactionColor()
  * v24 (2026-06-05): 修复 PR#220 renderJunbao 误置于特效开关栏 IIFE 内 — 迁回主 IIFE,恢复 renderChangesDetail/renderHistorySection 调用链
- * v24 (2026-06-06): 军报 UI 重做(方案二·势力徽章+色条 最终版)
- *                   — 重写 renderJunbao 的 HTML 模板,采用左色条 + 势力小徽章 +
- *                     武将名 + 路线 + 兵种 chip + 状态 pill 的横向布局;
- *                     战报采用胜/平/负色条 + 攻/守双徽章对决布局。
  * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
@@ -1875,10 +1871,11 @@
     const body  = document.getElementById('junbao-body');
     if (!block || !body) return;
 
-    const parsed  = (latest && latest.parsed) || {};
+    const parsed  = latest && latest.parsed ? latest.parsed : {};
     const transit = Array.isArray(parsed.transit) ? parsed.transit : [];
     const battles = Array.isArray(parsed.battles) ? parsed.battles : [];
 
+    // 无调度也无战报 → 整块隐藏
     if (!transit.length && !battles.length) {
       block.classList.add('hidden');
       body.innerHTML = '';
@@ -1886,130 +1883,124 @@
     }
     block.classList.remove('hidden');
 
-    // ── 调度部队 ──
-    let transitHtml = '';
+    const html = [];
+
+    // ── 调度部队段 ──
+    html.push('<div class="jbt-title">调度部队</div>');
     if (transit.length) {
-      const rows = transit.map(t => {
-        const c = _junbaoGetSideColor(t.slot, t.faction);
-        const badgeText = _junbaoGetBadgeText(t.slot, t.faction, latest);
-        const general   = esc(_junbaoStripPrefix(t.general || '—'));
-        const from      = esc(t.from || '—');
-        const to        = esc(t.to   || '—');
-        const troopType = esc(t.troopType || '');
-        const troopCnt  = (t.troopCount == null ? '' : String(t.troopCount));
-        const troopHtml = troopType
-          ? `<span class="jb-troop"><b>${troopType}</b>${troopCnt ? `<i>${esc(troopCnt)}</i>` : ''}</span>`
-          : '';
-        const status   = esc(t.status || '');
-        const statusKey = /围攻/.test(status) ? 'siege'
-                        : /客驻/.test(status) ? 'guest'
-                        : /剩/.test(status)   ? 'march'
-                        : 'march';
-        const style = `--jb-strip:${c.glow};--jb-badge-bg:${c.bg};--jb-badge-bd:${c.border};--jb-badge-fg:${c.fg};`;
-        return `<div class="jb-row jb-transit-row" style="${style}">
-          <span class="jb-strip"></span>
-          <span class="jb-badge">${esc(badgeText)}</span>
-          <span class="jb-general">${general}</span>
-          <span class="jb-route"><i>${from}</i><em>›</em><i>${to}</i></span>
-          ${troopHtml}
-          <span class="jb-status jb-status--${statusKey}">${status || '—'}</span>
-        </div>`;
-      }).join('');
-      transitHtml = `<div class="jb-section jb-section--transit">
-        <div class="jb-sec-title">调度部队</div>
-        <div class="jb-list">${rows}</div>
-      </div>`;
+      html.push('<div class="jbt-list">');
+      transit.forEach(t => {
+        const sideColor = _junbaoGetSideColor(t.slot, t.faction);
+        const badgeText = _junbaoGetBadgeText(t.slot, t.faction);
+        const statusCls = t.status === '围攻中' ? 'jbt-siege'
+                        : t.status === '客驻'   ? 'jbt-resident'
+                        : 'jbt-march';
+        const styleStr = [
+          `--strip-color:${sideColor.glow}`,
+          `--badge-bg:${sideColor.film}`,
+          `--badge-border:${sideColor.stroke}`,
+          `--badge-color:${sideColor.glow}`
+        ].join(';');
+        html.push(`
+          <div class="jbt-row ${statusCls}" style="${styleStr}">
+            <div class="jbt-strip"></div>
+            <div class="jbt-inner">
+              <span class="jbt-faction-badge">${esc(badgeText)}</span>
+              <span class="jbt-general">${esc(t.general || '')}</span>
+              <span class="jbt-route">${esc(t.from || '')}<span class="jbt-arrow">›</span>${esc(t.to || '')}</span>
+              <span class="jbt-troop">${esc(t.troopType || '')} ${t.troopCount || 0}</span>
+              <span class="jbt-status">${esc(t.status || '')}</span>
+            </div>
+          </div>
+        `);
+      });
+      html.push('</div>');
+    } else {
+      html.push('<div class="jbt-empty">本回合无调度部队</div>');
     }
 
-    // ── 战报 ──
-    let battlesHtml = '';
+    // ── 战报段 ──
+    html.push('<div class="battle-list">');
+    html.push('<div class="battle-list-title">战报</div>');
     if (battles.length) {
-      const rows = battles.map(b => {
-        const result = b.result || '';
-        const resKey = result === '胜' ? 'win' : result === '负' ? 'lose' : 'draw';
-        const ca = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
-        const cd = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
-        const aBadge = esc(_junbaoGetBadgeText(b.attackerSlot, b.attackerFaction, latest));
-        const dBadge = esc(_junbaoGetBadgeText(b.defenderSlot, b.defenderFaction, latest));
-        const aName  = esc(_junbaoStripPrefix(b.attacker || '—'));
-        const dName  = esc(_junbaoStripPrefix(b.defender || '—'));
-        const aLoss  = (b.attacker_loss == null ? '—' : String(b.attacker_loss));
-        const dLoss  = (b.defender_loss == null ? '—' : String(b.defender_loss));
-        const style = `--jb-atk-bg:${ca.bg};--jb-atk-bd:${ca.border};--jb-atk-fg:${ca.fg};`
-                    + `--jb-def-bg:${cd.bg};--jb-def-bd:${cd.border};--jb-def-fg:${cd.fg};`;
-        return `<div class="jb-row jb-battle-row jb-battle--${resKey}" style="${style}">
-          <span class="jb-strip"></span>
-          <span class="jb-result jb-result--${resKey}">${esc(result || '?')}</span>
-          <span class="jb-side jb-side--atk">
-            <span class="jb-side-tag">攻</span>
-            <span class="jb-badge jb-badge--atk">${aBadge}</span>
-            <span class="jb-general">${aName}</span>
-            <span class="jb-loss">-${esc(aLoss)}</span>
-          </span>
-          <span class="jb-vs">vs</span>
-          <span class="jb-side jb-side--def">
-            <span class="jb-side-tag">守</span>
-            <span class="jb-badge jb-badge--def">${dBadge}</span>
-            <span class="jb-general">${dName}</span>
-            <span class="jb-loss">-${esc(dLoss)}</span>
-          </span>
-        </div>`;
-      }).join('');
-      battlesHtml = `<div class="jb-section jb-section--battles">
-        <div class="jb-sec-title">战报</div>
-        <div class="jb-list">${rows}</div>
-      </div>`;
+      battles.forEach(b => {
+        const cardCls = b.result === '胜' ? 'success'
+                      : b.result === '平' ? 'draw'
+                      : 'fail';
+        const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
+        const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
+        const atkBadge = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+        const defBadge = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+        const atkName  = _junbaoStripPrefix(b.attacker, atkBadge);
+        const defName  = _junbaoStripPrefix(b.defender, defBadge);
+        const atkStyle = `--badge-bg:${atkColor.film};--badge-border:${atkColor.stroke};--badge-color:${atkColor.glow}`;
+        const defStyle = `--badge-bg:${defColor.film};--badge-border:${defColor.stroke};--badge-color:${defColor.glow}`;
+        html.push(`
+          <div class="battle-card ${cardCls}">
+            <div class="bc-strip"></div>
+            <div class="bc-body">
+              <span class="bc-badge">${esc(b.result || '')}</span>
+              <div class="bc-versus">
+                <div class="bc-side-v">
+                  <span class="bc-role-v">攻</span>
+                  <span class="bc-faction-badge" style="${atkStyle}">${esc(atkBadge)}</span>
+                  <span class="bc-name-v">${esc(atkName)}</span>
+                  <span class="bc-loss-v">-${b.attacker_loss || 0}</span>
+                </div>
+                <span class="bc-vs">vs</span>
+                <div class="bc-side-v">
+                  <span class="bc-role-v">守</span>
+                  <span class="bc-faction-badge" style="${defStyle}">${esc(defBadge)}</span>
+                  <span class="bc-name-v">${esc(defName)}</span>
+                  <span class="bc-loss-v">-${b.defender_loss || 0}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+      });
+    } else {
+      html.push('<div class="jbt-empty">本回合无战事</div>');
     }
+    html.push('</div>');
 
-    body.innerHTML = transitHtml + battlesHtml;
+    body.innerHTML = html.join('');
   }
 
   // 取势力色:玩家走 SGMap.P_COLOR,NPC 走 SGMap.getFactionColor;兜底暗金
   function _junbaoGetSideColor(slot, faction) {
-    // 返回 {glow, bg, border, fg}:玩家用 SGMap.P_COLOR,NPC 用 SGMap.getFactionColor,兜底暗金
-    if (typeof slot === 'number' && slot >= 0 && slot <= 2
-        && window.SGMap && SGMap.P_COLOR && SGMap.P_COLOR[slot]) {
-      const g = SGMap.P_COLOR[slot].glow || '#caa050';
-      return {
-        glow:   g,
-        bg:     g + '22',
-        border: g + '88',
-        fg:     g
-      };
+    const FALLBACK = { glow:'#a07830', film:'rgba(120,90,30,.18)', stroke:'rgba(155,120,45,0.55)' };
+    if (slot === 0 || slot === 1 || slot === 2) {
+      const pc = (window.SGMap && SGMap.P_COLOR) ? SGMap.P_COLOR[slot] : null;
+      return pc ? { glow: pc.glow, film: pc.film, stroke: pc.stroke } : FALLBACK;
     }
     if (faction && window.SGMap && typeof SGMap.getFactionColor === 'function') {
       const fc = SGMap.getFactionColor(faction);
-      if (fc) {
-        const g = fc.glow || fc.fill || '#caa050';
-        return {
-          glow:   g,
-          bg:     g + '22',
-          border: g + '88',
-          fg:     g
-        };
-      }
+      if (fc) return { glow: fc.glow, film: fc.film, stroke: fc.stroke };
     }
-    return { glow:'#caa050', bg:'rgba(202,160,80,.14)', border:'rgba(202,160,80,.55)', fg:'#caa050' };
+    return FALLBACK;
   }
 
   // 徽章文字:玩家取名号首字,NPC 取阵营名原文
-  function _junbaoGetBadgeText(slot, faction, latest) {
-    // 玩家:取玩家名首字;NPC:取势力名首字
-    if (typeof slot === 'number' && slot >= 0 && slot <= 2) {
-      const players = (latest && latest.parsed && latest.parsed.players) || [];
-      const p = players[slot];
-      const nm = (p && (p.name || p.playerName)) || '';
-      if (nm) return nm.charAt(0);
-      return ['甲','乙','丙'][slot];
+  function _junbaoGetBadgeText(slot, faction) {
+    if (slot === 0 || slot === 1 || slot === 2) {
+      const pname = (state.players[slot] && state.players[slot].name) || '甲乙丙'[slot];
+      return pname.charAt(0);
     }
-    if (faction) return String(faction).charAt(0);
-    return '·';
+    return faction || '?';
   }
 
-  function _junbaoStripPrefix(name) {
-    // 去掉武将名前缀的"甲/乙/丙/势力名:"等修饰
-    if (!name) return '';
-    return String(name).replace(/^[甲乙丙]\s*[:：]\s*/, '').replace(/^[^:：]{1,6}[:：]\s*/, '');
+  // 战报 attacker/defender 原文里可能含"甲/乙/丙"或阵营名前缀,渲染时要去掉只留武将名
+  function _junbaoStripPrefix(raw, badgeText) {
+    if (!raw) return '';
+    let s = String(raw).trim();
+    // 去掉开头的 甲/乙/丙
+    s = s.replace(/^[甲乙丙]\s*/, '');
+    // 去掉开头的阵营名(如"袁绍 颜良" → "颜良")
+    if (badgeText && badgeText.length >= 2 && s.indexOf(badgeText) === 0) {
+      s = s.slice(badgeText.length).trim();
+    }
+    return s || raw;
   }
 
   window.__showHistoryRound = function (roundNum) {
