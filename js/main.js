@@ -5,6 +5,7 @@
  *             调度部队/战报均移除"甲乙丙"字面展示
  * v18 (变更): 色条移除 box-shadow,避免相邻行颜色互渗
  * v19 (2026-05-26): 徽章去除外发光 box-shadow,消除色条邻接处的"渐变/混色"错觉
+ * v20 (2026-05-26): 军报徽章不再注入 background,改为线框样式;阵营色仅由 border+text 表达
  * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
@@ -1299,13 +1300,13 @@
               const c = SGMap.P_COLOR[t.slot];
               const pName = (state.players[t.slot] && state.players[t.slot].name) || ('甲乙丙'[t.slot] || '');
               factionLabel = pName;
-              badgeStyle = `background:${c.fill};border-color:${c.stroke};color:${c.glow};`;
+              badgeStyle = `border-color:${c.stroke};color:${c.glow};`;
               stripStyle = `background:${c.stroke};`;
             } else if (t.faction && typeof SGMap.getFactionColor === 'function') {
               const fc = SGMap.getFactionColor(t.faction);
               if (fc) {
                 factionLabel = t.faction;
-                badgeStyle = `background:${fc.fill};border-color:${fc.stroke};color:${fc.glow};`;
+                badgeStyle = `border-color:${fc.stroke};color:${fc.glow};`;
                 stripStyle = `background:${fc.stroke};`;
               }
             }
@@ -1361,7 +1362,7 @@
         if (fc) { c = fc; label = faction; }
       }
       if (!c || !label) return '';
-      return `<span class="bc-faction-badge" style="background:${c.fill};border-color:${c.stroke};color:${c.glow};">${esc(label)}</span>`;
+      return `<span class="bc-faction-badge" style="border-color:${c.stroke};color:${c.glow};">${esc(label)}</span>`;
     };
     const attackerBadgeHtml = _sideBadge(b.attackerSlot, b.attackerFaction);
     const defenderBadgeHtml = _sideBadge(b.defenderSlot, b.defenderFaction);
