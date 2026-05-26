@@ -3,6 +3,7 @@
    精简 · 高级 · 呼吸感
    ============================================ */
 /* v20260529a 军报UI方案2:.jbt-faction-badge / .bc-faction-badge / .jbt-strip-faction 与城池悬浮卡呼应 */
+/* v20260530a 军报UI方案2落地:补全 .jbt-* 系列基础样式 + .bc-faction-badge */
 /* v20260528b (2026-05-28): tooltip — 移除底部 sgt-combat-section / sgt-transit-* / stt-* 在途战况段 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
@@ -1089,6 +1090,100 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══════════════════════════════════════════
    战斗结算
 ══════════════════════════════════════════ */
+  /* ══════════════════════════════════════════
+     军报 · 方案二 — 调度部队 + 势力徽章 + 色条
+     v20260530a:.jbt-* 系列与 .bc-faction-badge 完整定义
+     ══════════════════════════════════════════ */
+  .junbao-body { padding: 14px 16px 16px; }
+  .junbao-summary {
+    font-size: .82rem; color: var(--text-sub);
+    padding: 8px 12px; margin-bottom: 12px;
+    background: rgba(20,14,10,.4); border-radius: var(--r);
+    border-left: 2px solid rgba(180,140,50,.32);
+  }
+  .junbao-summary .jbs-text { line-height: 1.7; }
+
+  /* ── 调度部队 ── */
+  .jbt-title {
+    font-size: .8rem; color: var(--gold-dim);
+    letter-spacing: .12em;
+    padding: 2px 0 10px;
+    border-bottom: 1px dashed rgba(160,120,40,.18);
+    margin-bottom: 10px;
+  }
+  .jbt-list { display: flex; flex-direction: column; gap: 6px; }
+  .jbt-row {
+    display: flex; align-items: stretch;
+    background: rgba(20,14,10,.4);
+    border: 1px solid rgba(120,90,40,.18);
+    border-radius: var(--r);
+    overflow: hidden;
+    transition: background .15s;
+  }
+  .jbt-row:hover { background: rgba(30,22,16,.55); }
+  .jbt-strip-faction {
+    width: 3px; flex-shrink: 0; align-self: stretch;
+  }
+  .jbt-inner {
+    flex: 1; display: flex; align-items: center; gap: 12px;
+    padding: 8px 12px; font-size: .84rem; flex-wrap: wrap;
+  }
+  .jbt-faction-badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 9px; border-radius: 4px;
+    font-size: .72rem; font-weight: 700;
+    letter-spacing: .04em;
+    border: 1px solid;
+    flex-shrink: 0;
+    font-family: var(--font-serif);
+  }
+  .jbt-general {
+    font-weight: 700; color: var(--text-main);
+    letter-spacing: .03em;
+    font-family: var(--font-serif);
+  }
+  .jbt-route {
+    color: var(--text-sub); font-size: .8rem;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .jbt-arrow { color: var(--gold-dim); font-size: .85rem; }
+  .jbt-troop {
+    color: #a8b8d0; font-size: .76rem;
+    background: rgba(40,60,90,.25);
+    padding: 1px 8px; border-radius: 8px;
+    border: 1px solid rgba(80,120,180,.25);
+    font-family: var(--font-sans);
+  }
+  .jbt-status {
+    margin-left: auto; font-size: .74rem;
+    padding: 1px 9px; border-radius: 8px;
+    letter-spacing: .04em; font-family: var(--font-sans);
+  }
+  .jbt-march    .jbt-status { background: rgba(70,130,180,.2);  color: #8cbedc; border: 1px solid rgba(70,130,180,.35); }
+  .jbt-siege    .jbt-status { background: rgba(200,80,40,.2);   color: #e69870; border: 1px solid rgba(200,80,40,.4);  }
+  .jbt-resident .jbt-status { background: rgba(140,100,200,.2); color: #b89cd8; border: 1px solid rgba(140,100,200,.4); }
+  .jbt-captured .jbt-status { background: rgba(120,40,40,.2);   color: #d88080; border: 1px solid rgba(160,60,60,.4);  }
+  .jbt-retreat  .jbt-status { background: rgba(120,120,120,.2); color: #b8b8b8; border: 1px solid rgba(140,140,140,.35); }
+
+  /* ── 战报卡片 · 攻守徽章 ── */
+  .bc-faction-badge {
+    display: inline-flex; align-items: center;
+    padding: 1px 7px; border-radius: 3px;
+    font-size: .66rem; font-weight: 700;
+    letter-spacing: .04em;
+    border: 1px solid;
+    flex-shrink: 0;
+    margin-right: 3px;
+    font-family: var(--font-serif);
+  }
+
+  /* 手机端紧凑 */
+  @media (max-width: 560px) {
+    .jbt-inner { gap: 8px; padding: 7px 10px; font-size: .8rem; }
+    .jbt-status { font-size: .7rem; padding: 1px 7px; }
+    .jbt-troop  { font-size: .72rem; padding: 1px 6px; }
+  }
+
 .block-battles { border-color: rgba(180,45,15,.3); }
 .block-battles .ib-header {
   background: linear-gradient(110deg, rgba(70,8,0,.42), rgba(35,4,0,.22));

@@ -1,6 +1,8 @@
 /**
  * parser.js — 三国志文字版 · AI内容解析器 v13
  * v13 (变更): [在途] 标签更名为 [调度],双名兼容;_parseTransit 输出新增 slot 字段(0/1/2|null)
+ * v14 (变更): _parseBattles 输出新增 attackerSlot/defenderSlot/
+ *             attackerFaction/defenderFaction,供军报方案二徽章渲染
  *
  * 规则基准：《三国志文字版》核心引擎 v3.20.1
  *
@@ -399,10 +401,26 @@ window.SGParser = (function () {
     if (!raw || !raw.trim()) return [];
     const battles = [];
     const re = /^(.+?)[→\->＞]\s*(.+?)\s*[|｜]\s*(胜|平|负)\s*[|｜]\s*伤亡[:：]攻(\d+)守(\d+)/;
+    // 从一段名字字面值推断 slot / faction
+    // 规则:开头是"甲/乙/丙" → slot=0/1/2;否则视为 NPC 阵营名(faction)
+    // 兼容写法:"甲→宛城NPC"、"甲 关羽 → 曹操 夏侯惇" 等
+    const _inferSide = (txt) => {
+      const t = (txt || '').trim();
+      if (!t) return { slot: null, faction: null };
+      const first = t.charAt(0);
+      if (first === '甲') return { slot: 0, faction: null };
+      if (first === '乙') return { slot: 1, faction: null };
+      if (first === '丙') return { slot: 2, faction: null };
+      // NPC:取首段非空白非分隔为阵营名,长度 1-6 字
+      const m = t.match(/^([^\s\/|,，、(()）]{1,6})/);
+      return { slot: null, faction: m ? m[1] : null };
+    };
     for (const line of raw.split('\n').map(l => l.trim()).filter(Boolean)) {
       if (/^本回合无战事/.test(line)) continue;
       const m = line.match(re);
       if (m) {
+        const atkSide = _inferSide(m[1]);
+        const defSide = _inferSide(m[2]);
         battles.push({
           attacker:      m[1].trim(),
           defender:      m[2].trim(),
@@ -410,6 +428,10 @@ window.SGParser = (function () {
           attacker_loss: parseInt(m[4]),
           defender_loss: parseInt(m[5]),
           success:       m[3] === '胜',
+          attackerSlot:    atkSide.slot,
+          attackerFaction: atkSide.faction,
+          defenderSlot:    defSide.slot,
+          defenderFaction: defSide.faction,
         });
       }
     }

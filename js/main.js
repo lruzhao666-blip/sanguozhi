@@ -1,5 +1,8 @@
 /**
  * main.js — 三国志文字版 v14 (v2.5)
+ * v17 (变更): 方案二最终落地 — 武将名去染色保持中性白;战报卡 v3.0
+ *             调用新增 attackerSlot/defenderSlot/Faction 字段渲染徽章;
+ *             调度部队/战报均移除"甲乙丙"字面展示
  * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
@@ -1283,15 +1286,8 @@
               t.status === '被俘'        ? 'jbt-captured' :
               t.status === '撤退中'      ? 'jbt-retreat'  : 'jbt-march';
 
-            // 武将名势力色:玩家走 SGMap.P_COLOR[slot],NPC 走 SGMap.getFactionColor(faction)
-            let nameColor = '';
-            if (t.slot != null && SGMap.P_COLOR && SGMap.P_COLOR[t.slot]) {
-              nameColor = SGMap.P_COLOR[t.slot].glow;
-            } else if (typeof SGMap.getFactionColor === 'function') {
-              const fc = SGMap.getFactionColor(t.faction);
-              if (fc) nameColor = fc.glow;
-            }
-            const nameStyle = nameColor ? ` style="color:${nameColor}"` : '';
+            // 方案二:武将名保持中性白,势力归属由徽章 + 色条承担
+            const nameStyle = '';
 
             // 势力徽章（与城池悬浮卡呼应）
             let factionLabel = '';
@@ -1382,22 +1378,20 @@
       const atkLoss = b.attacker_loss ?? 0;
       const defLoss = b.defender_loss ?? 0;
 
-      // 按攻方/守方名号取势力色:甲乙丙→玩家色,其他→尝试 NPC 阵营色,再不行返回空字符串
-      const _sideColor = (sideName) => {
-        if (!sideName) return '';
-        if (sideName === '甲' && SGMap.P_COLOR && SGMap.P_COLOR[0]) return SGMap.P_COLOR[0].glow;
-        if (sideName === '乙' && SGMap.P_COLOR && SGMap.P_COLOR[1]) return SGMap.P_COLOR[1].glow;
-        if (sideName === '丙' && SGMap.P_COLOR && SGMap.P_COLOR[2]) return SGMap.P_COLOR[2].glow;
-        if (typeof SGMap.getFactionColor === 'function') {
-          const fc = SGMap.getFactionColor(sideName);
-          if (fc) return fc.glow;
+      // 方案二:武将名保持中性白(不再按势力染色);
+      // 名字字面如果是"甲/乙/丙",在显示层移除该字仅留武将名(若有)
+      // 这里返回纯展示文本:剥离"甲/乙/丙"开头,保留余下部分
+      const _displayName = (txt, slot) => {
+        if (!txt) return '';
+        const t = txt.trim();
+        if (slot != null && /^[甲乙丙]/.test(t)) {
+          const rest = t.replace(/^[甲乙丙][\s·\u30fb\u2022]*/, '').trim();
+          return rest || '';  // 若仅有"甲"无后续武将名,返回空字符串
         }
-        return '';
+        return t;
       };
-      const atkColor = _sideColor(b.attacker);
-      const defColor = _sideColor(b.defender);
-      const atkStyle = atkColor ? ` style="color:${atkColor}"` : '';
-      const defStyle = defColor ? ` style="color:${defColor}"` : '';
+      const atkDisplay = _displayName(b.attacker, b.attackerSlot);
+      const defDisplay = _displayName(b.defender, b.defenderSlot);
 
       return `<div class="battle-card ${cls}">` +
         `<div class="bc-strip"></div>` +
@@ -1407,14 +1401,14 @@
         `<div class="bc-side-v bc-atk-v">` +
         `<span class="bc-role-v">攻</span>` +
         `${attackerBadgeHtml}` +
-        `<span class="bc-name-v"${atkStyle}>${esc(b.attacker)}</span>` +
+        `<span class="bc-name-v">${esc(atkDisplay)}</span>` +
         (atkLoss > 0 ? `<span class="bc-loss-v loss-atk-v">-${atkLoss}</span>` : '') +
         `</div>` +
         `<span class="bc-vs">vs</span>` +
         `<div class="bc-side-v bc-def-v">` +
         `<span class="bc-role-v">守</span>` +
         `${defenderBadgeHtml}` +
-        `<span class="bc-name-v"${defStyle}>${esc(b.defender)}</span>` +
+        `<span class="bc-name-v">${esc(defDisplay)}</span>` +
         (defLoss > 0 ? `<span class="bc-loss-v loss-def-v">-${defLoss}</span>` : '') +
         `</div>` +
         `</div>` +
