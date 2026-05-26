@@ -1,5 +1,6 @@
 /**
  * main.js — 三国志文字版 v14 (v2.5)
+ * v17 (2026-05-29) 军报调度行状态标签跟随势力色,一行一色纯势力色语言
  * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
@@ -1297,18 +1298,21 @@
             let factionLabel = '';
             let badgeStyle   = '';
             let stripStyle   = '';
+            let statusStyle  = '';
             if (t.slot != null && SGMap.P_COLOR && SGMap.P_COLOR[t.slot]) {
               const c = SGMap.P_COLOR[t.slot];
               const pName = (state.players[t.slot] && state.players[t.slot].name) || ('甲乙丙'[t.slot] || '');
               factionLabel = pName;
-              badgeStyle = `background:${c.fill};border-color:${c.stroke};color:${c.glow};box-shadow:0 0 4px ${c.glow}55;`;
-              stripStyle = `background:${c.stroke};box-shadow:0 0 4px ${c.glow}66;`;
+              badgeStyle  = `background:${c.fill};border-color:${c.stroke};color:${c.glow};box-shadow:0 0 4px ${c.glow}55;`;
+              stripStyle  = `background:${c.stroke};box-shadow:0 0 4px ${c.glow}66;`;
+              statusStyle = `background:${c.fill};border-color:${c.stroke};color:${c.glow};box-shadow:0 0 4px ${c.glow}55;`;
             } else if (t.faction && typeof SGMap.getFactionColor === 'function') {
               const fc = SGMap.getFactionColor(t.faction);
               if (fc) {
                 factionLabel = t.faction;
-                badgeStyle = `background:${fc.fill};border-color:${fc.stroke};color:${fc.glow};box-shadow:0 0 4px ${fc.glow}55;`;
-                stripStyle = `background:${fc.stroke};box-shadow:0 0 4px ${fc.glow}66;`;
+                badgeStyle  = `background:${fc.fill};border-color:${fc.stroke};color:${fc.glow};box-shadow:0 0 4px ${fc.glow}55;`;
+                stripStyle  = `background:${fc.stroke};box-shadow:0 0 4px ${fc.glow}66;`;
+                statusStyle = `background:${fc.fill};border-color:${fc.stroke};color:${fc.glow};box-shadow:0 0 4px ${fc.glow}55;`;
               }
             }
             const badgeHtml = factionLabel
@@ -1328,7 +1332,7 @@
               `<span class="jbt-general"${nameStyle}>${esc(t.general)}</span>` +
               `<span class="jbt-route">${esc(t.from)}<span class="jbt-arrow">›</span>${esc(t.to)}</span>` +
               (troopStr ? `<span class="jbt-troop">${troopStr}</span>` : '') +
-              `<span class="jbt-status">${esc(t.status)}</span>` +
+              `<span class="jbt-status"${statusStyle ? ` style="${statusStyle}"` : ''}>${esc(t.status)}</span>` +
               `</div>` +
               `</div>`;
           }).join('') +
