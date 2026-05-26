@@ -1,5 +1,6 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v25.1
+ * map.js — 三国志文字版 · 势力地图 v25.3
+ * v25.3 (变更): 公开 API 追加 getFactionColor(factionName),供军报/战报读取 NPC 阵营色
  * v25.2 (2026-05-28): 移除 _showTip 内 sgt-combat-section 在途/战况段渲染,该信息迁移至军报板块
  * v25.1 (2026-05-27): 补回 PR#204 误删的 _moveTip / _hideTip
  * v25 (2026-05-27): 任事系统删除 + 战况特效全量删除 + 在途新增「客驻」状态
@@ -1223,6 +1224,18 @@ const BONUS_MULT = {
     parseCityOwnership,
     CITIES,
     P_COLOR,
+    /**
+     * 按阵营名取色。
+     * @param {string} factionName - 阵营主公名,如「袁绍」「曹操」
+     * @returns {object|null} - 命中返回 NPC_FACTION_COLORS 中对应配色对象({fill,film,stroke,glow,text});未命中返回 null。
+     * 注:调用此方法前需确保 SGMap.update(...) 已被调用过至少一次(_npcFactionSlots 在 _build 内更新)。
+     */
+    getFactionColor(factionName) {
+      if (!factionName) return null;
+      const slot = _npcFactionSlots[factionName];
+      if (slot === undefined || slot === null) return null;
+      return NPC_FACTION_COLORS[slot] || null;
+    },
   };
 
 })();

@@ -1,5 +1,6 @@
 /**
- * parser.js — 三国志文字版 · AI内容解析器 v12
+ * parser.js — 三国志文字版 · AI内容解析器 v13
+ * v13 (变更): [在途] 标签更名为 [调度],双名兼容;_parseTransit 输出新增 slot 字段(0/1/2|null)
  *
  * 规则基准：《三国志文字版》核心引擎 v3.20.1
  *
@@ -154,8 +155,10 @@ window.SGParser = (function () {
       result.battleSummary = blocks['军报摘要'].trim();
     }
 
-    // [在途]
-    if (blocks['在途']) {
+    // [调度](v3.23 契约升级,原 [在途] 同义);双名兼容,优先 [调度]
+    if (blocks['调度']) {
+      result.transit = _parseTransit(blocks['调度']);
+    } else if (blocks['在途']) {
       result.transit = _parseTransit(blocks['在途']);
     }
 
@@ -189,7 +192,7 @@ window.SGParser = (function () {
   //  按方括号标签切块
   // ─────────────────────────────────────────
   function _splitBlocks(text) {
-    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','变动','驻城']);
+    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','调度','变动','驻城']);
     const lines  = text.split('\n');
     const blocks = {};
     let curKey = null, curBuf = [];
@@ -422,8 +425,14 @@ window.SGParser = (function () {
     for (const line of lines) {
       const m = line.match(re);
       if (m) {
+        const factionRaw = m[1];
+        // slot: 玩家槽位 0/1/2(甲乙丙) 或 null(NPC 阵营)
+        const slot = factionRaw === '甲' ? 0 :
+                     factionRaw === '乙' ? 1 :
+                     factionRaw === '丙' ? 2 : null;
         result.push({
-          faction: m[1],
+          faction: factionRaw,
+          slot,
           general: m[2],
           from: m[3],
           to: m[4],
