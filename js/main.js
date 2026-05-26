@@ -1,6 +1,7 @@
 /**
  * main.js — 三国志文字版 v14 (v2.5)
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
+ * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
  * 对接规范 v2.0：
  *  - 剧情区 / 数据区分离（36个=号分隔）
  *  - [甲][乙][丙] 含 cities_list（城名+守将）
@@ -1264,26 +1265,39 @@
       }
     }
 
-    // 在途武将
+    // 调度武将(v3.23 [在途] 改名 [调度])
     const tranEl = document.getElementById('junbao-transit');
     if (tranEl) {
       if (hasTransit) {
         tranEl.classList.remove('hidden');
         tranEl.innerHTML =
-          '<div class="jbt-title">在途部队</div>' +
+          '<div class="jbt-title">调度部队</div>' +
           '<div class="jbt-list">' +
           transit.map(t => {
-            const statusCls = t.status === '被俘'  ? 'jbt-captured' :
-                              t.status === '围攻中' ? 'jbt-siege'    :
-                              t.status === '撤退中' ? 'jbt-retreat'  : 'jbt-march';
+            // 状态 CSS(规则 v3.23 状态仅三种: 剩N / 围攻中 / 客驻;旧值保留兼容)
+            const statusCls =
+              /^剩\d+/.test(t.status)   ? 'jbt-march'    :
+              t.status === '围攻中'      ? 'jbt-siege'    :
+              t.status === '客驻'        ? 'jbt-resident' :
+              t.status === '被俘'        ? 'jbt-captured' :
+              t.status === '撤退中'      ? 'jbt-retreat'  : 'jbt-march';
+
+            // 武将名势力色:玩家走 SGMap.P_COLOR[slot],NPC 走 SGMap.getFactionColor(faction)
+            let nameColor = '';
+            if (t.slot != null && SGMap.P_COLOR && SGMap.P_COLOR[t.slot]) {
+              nameColor = SGMap.P_COLOR[t.slot].glow;
+            } else if (typeof SGMap.getFactionColor === 'function') {
+              const fc = SGMap.getFactionColor(t.faction);
+              if (fc) nameColor = fc.glow;
+            }
+            const nameStyle = nameColor ? ` style="color:${nameColor}"` : '';
+
             const troopStr = (t.troopType && t.troopCount)
               ? `${esc(t.troopType)} ${t.troopCount}`
               : (t.troopCount ? `${t.troopCount}` : '');
             return `<div class="jbt-row ${statusCls}">` +
               `<div class="jbt-inner">` +
-              `<span class="jbt-general">${esc(t.general)}</span>` +
-              `<span class="jbt-sep">·</span>` +
-              `<span class="jbt-faction">${esc(t.faction)}</span>` +
+              `<span class="jbt-general"${nameStyle}>${esc(t.general)}</span>` +
               `<span class="jbt-route">${esc(t.from)}<span class="jbt-arrow">›</span>${esc(t.to)}</span>` +
               (troopStr ? `<span class="jbt-troop">${troopStr}</span>` : '') +
               `<span class="jbt-status">${esc(t.status)}</span>` +
@@ -1325,6 +1339,24 @@
       // ── v3.0 单行紧凑卡片 ──
       const atkLoss = b.attacker_loss ?? 0;
       const defLoss = b.defender_loss ?? 0;
+
+      // 按攻方/守方名号取势力色:甲乙丙→玩家色,其他→尝试 NPC 阵营色,再不行返回空字符串
+      const _sideColor = (sideName) => {
+        if (!sideName) return '';
+        if (sideName === '甲' && SGMap.P_COLOR && SGMap.P_COLOR[0]) return SGMap.P_COLOR[0].glow;
+        if (sideName === '乙' && SGMap.P_COLOR && SGMap.P_COLOR[1]) return SGMap.P_COLOR[1].glow;
+        if (sideName === '丙' && SGMap.P_COLOR && SGMap.P_COLOR[2]) return SGMap.P_COLOR[2].glow;
+        if (typeof SGMap.getFactionColor === 'function') {
+          const fc = SGMap.getFactionColor(sideName);
+          if (fc) return fc.glow;
+        }
+        return '';
+      };
+      const atkColor = _sideColor(b.attacker);
+      const defColor = _sideColor(b.defender);
+      const atkStyle = atkColor ? ` style="color:${atkColor}"` : '';
+      const defStyle = defColor ? ` style="color:${defColor}"` : '';
+
       return `<div class="battle-card ${cls}">` +
         `<div class="bc-strip"></div>` +
         `<div class="bc-body">` +
@@ -1332,13 +1364,13 @@
         `<div class="bc-versus">` +
         `<div class="bc-side-v bc-atk-v">` +
         `<span class="bc-role-v">攻</span>` +
-        `<span class="bc-name-v">${esc(b.attacker)}</span>` +
+        `<span class="bc-name-v"${atkStyle}>${esc(b.attacker)}</span>` +
         (atkLoss > 0 ? `<span class="bc-loss-v loss-atk-v">-${atkLoss}</span>` : '') +
         `</div>` +
         `<span class="bc-vs">vs</span>` +
         `<div class="bc-side-v bc-def-v">` +
         `<span class="bc-role-v">守</span>` +
-        `<span class="bc-name-v">${esc(b.defender)}</span>` +
+        `<span class="bc-name-v"${defStyle}>${esc(b.defender)}</span>` +
         (defLoss > 0 ? `<span class="bc-loss-v loss-def-v">-${defLoss}</span>` : '') +
         `</div>` +
         `</div>` +
