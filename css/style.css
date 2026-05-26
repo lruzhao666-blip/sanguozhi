@@ -2,6 +2,7 @@
    三国志文字版 — 战旗赤红风 CSS v9
    精简 · 高级 · 呼吸感
    ============================================ */
+/* v20260529a 军报UI方案2:.jbt-faction-badge / .bc-faction-badge / .jbt-strip-faction 与城池悬浮卡呼应 */
 /* v20260528b (2026-05-28): tooltip — 移除底部 sgt-combat-section / sgt-transit-* / stt-* 在途战况段 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
@@ -3549,3 +3550,53 @@ body.fx-off-captured [data-ctype="captured"] {
     letter-spacing: .04em;
   }
 }
+
+/* ══════════════════════════════════════════
+   军报 · 势力色徽章 + 左侧势力色条 v1 (2026-05-29)
+   与城池悬浮卡徽章呼应:同一套配色语言
+   ══════════════════════════════════════════ */
+
+/* 调度行:row 改为 relative,容纳左侧势力色条 */
+.jbt-row { position: relative; }
+
+/* 调度行左侧势力色条:2px 宽,贴左边缘 */
+.jbt-strip-faction {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  border-radius: 2px 0 0 2px;
+  pointer-events: none;
+}
+
+/* 调度行势力徽章(短标签,字体偏小,与城池悬浮卡呼应) */
+.jbt-faction-badge {
+  display: inline-flex; align-items: center;
+  flex-shrink: 0;
+  font-family: var(--font-serif);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+  margin-right: 6px;
+}
+
+/* 战报卡攻守势力徽章:更紧凑 */
+.bc-faction-badge {
+  display: inline-flex; align-items: center;
+  flex-shrink: 0;
+  font-family: var(--font-serif);
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+/* 守方徽章靠右对齐(攻方在左 守方在右) */
+.bc-def-v .bc-faction-badge { margin-right: 4px; }
