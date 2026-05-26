@@ -12,6 +12,7 @@
 /* v20260605a 军报板块重建(方案二) — 调度部队 + 战报,势力徽章 + 左侧色条,色源走 SGMap.P_COLOR / getFactionColor */
 /* v20260613b 军报板块视觉对齐：.junbao-block / .junbao-block .ib-header / .ib-title / .junbao-body */
 /* v20260613c 军报板块 UI 终稿：去"军情"徽 + 军报标题对称金光晕 + body 28px 内边距 + 小标题改色块标签 + 分段线/空态对称金渐变 */
+/* v20260613d 军报板块极致紧凑：外壳回归素颜 info-block + 全板块字号缩小 + 去除空态❖装饰 + 无战报时整段隐藏 */
 /* v20260528b (2026-05-28): tooltip — 移除底部 sgt-combat-section / sgt-transit-* / stt-* 在途战况段 */
 /* v20260526b (2026-05-26): 围攻贴角 + 战事/行军降夸张,纯数值调整 */
 /* v20260525i (2026-05-25): 战况开关 CSS 选择器改用 data-ctype */
@@ -4269,4 +4270,263 @@ body.fx-off-captured [data-ctype="captured"] {
   .junbao-body .jbt-empty::after,
   .junbao-body .battle-empty::before,
   .junbao-body .battle-empty::after { margin: 0 10px; }
+}
+
+/* ══════════════════════════════════════════════════════
+   军报板块 v20260613d — 极致紧凑 · 素颜外壳
+   外壳完全对齐"三方势力" .info-block 默认款（暗红边 / 深黑底）
+   ══════════════════════════════════════════════════════ */
+
+/* ── 外壳：剥光上一版的暖金定制，回归素颜 info-block ── */
+.junbao-block {
+  border-color: var(--border-red) !important;
+  box-shadow: none !important;
+  background: rgba(10,4,4,.92) !important;
+}
+.junbao-block .ib-header {
+  background: rgba(50,0,0,.3) !important;
+  border-bottom: 1px solid rgba(255,255,255,.04) !important;
+  padding: 10px 18px !important;
+}
+.junbao-block .ib-header::after { content: none !important; }
+.junbao-block .ib-icon--text { display: none !important; }
+.junbao-block .ib-title {
+  font-family: var(--font-serif);
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: .09em;
+  text-shadow: none;
+}
+
+/* ── body：极致紧凑 padding ── */
+.junbao-body {
+  padding: 9px 12px 11px !important;
+}
+
+/* ── 段内小标题（"调度" / "战报"）── */
+.junbao-body .jbt-title,
+.junbao-body .battle-list-title {
+  display: inline-block !important;
+  font-family: var(--font-serif);
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: .08em;
+  text-transform: none;
+  padding: 2px 10px 2px 8px;
+  margin: 0 0 6px;
+  background: linear-gradient(90deg, rgba(100,65,0,.14), transparent 70%);
+  border-left: 2px solid var(--gold);
+  border-radius: 0 var(--r) var(--r) 0;
+}
+.junbao-body .jbt-title::before,
+.junbao-body .jbt-title::after,
+.junbao-body .battle-list-title::before,
+.junbao-body .battle-list-title::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+
+/* ── 调度部队列表 ── */
+.junbao-body .jbt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.junbao-body .jbt-row {
+  position: relative;
+  display: flex;
+  background: rgba(18,10,6,.78);
+  border: 1px solid rgba(255,255,255,.04);
+  border-left: none;
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: background .15s, transform .15s;
+}
+.junbao-body .jbt-row:hover {
+  background: rgba(38,22,10,.95);
+  transform: translateX(1px);
+}
+.junbao-body .jbt-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--strip-color, var(--gold-dim));
+}
+.junbao-body .jbt-strip { display: none; }
+
+.junbao-body .jbt-inner {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 9px;
+  padding: 4px 11px 4px 11px;
+  min-height: 24px;
+}
+
+.junbao-body .jbt-faction-badge {
+  font-family: var(--font-serif);
+  font-size: .56rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  padding: 0 6px;
+  border-radius: 3px;
+  background: var(--badge-bg, rgba(120,90,30,.18));
+  border: 1px solid var(--badge-border, rgba(155,120,45,.55));
+  color: var(--badge-color, var(--gold-dim));
+  line-height: 1.5;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.junbao-body .jbt-general {
+  font-family: var(--font-serif);
+  font-size: .76rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: .02em;
+  flex-shrink: 0;
+}
+
+.junbao-body .jbt-route {
+  font-family: var(--font-serif);
+  font-size: .66rem;
+  color: var(--text-sub);
+  letter-spacing: .02em;
+  flex-shrink: 0;
+}
+.junbao-body .jbt-arrow {
+  color: var(--text-dim);
+  margin: 0 3px;
+  font-size: .68rem;
+  opacity: .65;
+}
+
+.junbao-body .jbt-troop {
+  font-family: var(--font-sans);
+  font-size: .58rem;
+  color: var(--gold-dim);
+  background: rgba(212,168,67,.05);
+  border: 1px solid rgba(212,168,67,.14);
+  border-radius: 8px;
+  padding: 0 7px;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.junbao-body .jbt-status {
+  font-family: var(--font-sans);
+  font-size: .56rem;
+  font-weight: 600;
+  padding: 0 8px;
+  border-radius: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.junbao-body .jbt-row.jbt-march .jbt-status {
+  color: #b89868;
+  background: rgba(140,100,30,.14);
+  border: 1px solid rgba(180,140,60,.32);
+}
+.junbao-body .jbt-row.jbt-siege .jbt-status {
+  color: #e8884c;
+  background: rgba(160,60,10,.16);
+  border: 1px solid rgba(200,90,30,.42);
+}
+.junbao-body .jbt-row.jbt-resident .jbt-status {
+  color: #b890d8;
+  background: rgba(80,40,120,.18);
+  border: 1px solid rgba(140,90,200,.40);
+}
+
+/* ── 调度↔战报 分段线（保留：对称金渐变细线）── */
+.junbao-body .battle-list {
+  margin-top: 10px;
+  padding-top: 7px;
+  border-top: none !important;
+  position: relative;
+}
+.junbao-body .battle-list::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(180,120,40,.35),
+    rgba(212,168,67,.55),
+    rgba(180,120,40,.35),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* ── 空态文字：去掉两侧 ❖ 装饰，纯居中衬线字 ── */
+.junbao-body .jbt-empty,
+.junbao-body .battle-empty {
+  display: block;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: .66rem;
+  color: var(--gold-dim);
+  letter-spacing: .18em;
+  padding: 8px 0 4px;
+  opacity: .7;
+}
+.junbao-body .jbt-empty::before,
+.junbao-body .jbt-empty::after,
+.junbao-body .battle-empty::before,
+.junbao-body .battle-empty::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  margin: 0 !important;
+}
+
+/* ── 无战报时整个"战报"段隐藏（含标题+分段线）── */
+/* 当 .battle-list 内只有 .battle-empty（即没有任何 .battle-card）时，整段隐藏 */
+.junbao-body .battle-list:has(.battle-empty):not(:has(.battle-card)) {
+  display: none !important;
+}
+
+/* ══════════ 移动端 ══════════ */
+@media (max-width: 700px) {
+  .junbao-block .ib-header { padding: 9px 14px !important; }
+  .junbao-block .ib-title { font-size: .78rem; letter-spacing: .08em; }
+  .junbao-body { padding: 7px 9px 9px !important; }
+
+  .junbao-body .jbt-title,
+  .junbao-body .battle-list-title {
+    font-size: .62rem;
+    padding: 2px 8px 2px 7px;
+    margin: 0 0 5px;
+  }
+
+  .junbao-body .jbt-list { gap: 2px; }
+  .junbao-body .jbt-inner {
+    gap: 3px 7px;
+    padding: 3px 9px 3px 9px;
+    min-height: 22px;
+  }
+  .junbao-body .jbt-faction-badge { font-size: .52rem; padding: 0 5px; }
+  .junbao-body .jbt-general { font-size: .7rem; }
+  .junbao-body .jbt-route { font-size: .6rem; }
+  .junbao-body .jbt-arrow { font-size: .62rem; margin: 0 2px; }
+  .junbao-body .jbt-troop { font-size: .54rem; padding: 0 6px; }
+  .junbao-body .jbt-status { font-size: .52rem; padding: 0 7px; }
+
+  .junbao-body .battle-list { margin-top: 8px; padding-top: 6px; }
+  .junbao-body .jbt-empty,
+  .junbao-body .battle-empty {
+    font-size: .6rem;
+    letter-spacing: .14em;
+    padding: 6px 0 2px;
+  }
 }
