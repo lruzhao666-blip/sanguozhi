@@ -4530,3 +4530,26 @@ body.fx-off-captured [data-ctype="captured"] {
     padding: 6px 0 2px;
   }
 }
+
+/* ══════════════════════════════════════════
+   v20260526a 军报:调度行尾备注小灰字
+   ══════════════════════════════════════════ */
+.junbao-body .jbt-note {
+  font-family: var(--font-serif);
+  font-size: .56rem;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+  margin-left: 6px;
+  opacity: .75;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.junbao-body .jbt-note::before {
+  content: '·';
+  margin-right: 5px;
+  opacity: .55;
+}
+@media (max-width: 700px) {
+  .junbao-body .jbt-note { font-size: .52rem; margin-left: 4px; }
+  .junbao-body .jbt-note::before { margin-right: 3px; }
+}
