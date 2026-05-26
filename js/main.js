@@ -3,6 +3,7 @@
  * v17 (变更): 方案二最终落地 — 武将名去染色保持中性白;战报卡 v3.0
  *             调用新增 attackerSlot/defenderSlot/Faction 字段渲染徽章;
  *             调度部队/战报均移除"甲乙丙"字面展示
+ * v18 (变更): 色条移除 box-shadow,避免相邻行颜色互渗
  * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
@@ -1298,13 +1299,13 @@
               const pName = (state.players[t.slot] && state.players[t.slot].name) || ('甲乙丙'[t.slot] || '');
               factionLabel = pName;
               badgeStyle = `background:${c.fill};border-color:${c.stroke};color:${c.glow};box-shadow:0 0 4px ${c.glow}55;`;
-              stripStyle = `background:${c.stroke};box-shadow:0 0 4px ${c.glow}66;`;
+              stripStyle = `background:${c.stroke};`;
             } else if (t.faction && typeof SGMap.getFactionColor === 'function') {
               const fc = SGMap.getFactionColor(t.faction);
               if (fc) {
                 factionLabel = t.faction;
                 badgeStyle = `background:${fc.fill};border-color:${fc.stroke};color:${fc.glow};box-shadow:0 0 4px ${fc.glow}55;`;
-                stripStyle = `background:${fc.stroke};box-shadow:0 0 4px ${fc.glow}66;`;
+                stripStyle = `background:${fc.stroke};`;
               }
             }
             const badgeHtml = factionLabel
