@@ -1012,10 +1012,28 @@ const BONUS_MULT = {
       .map(k => `<span class="sgt-badge">${_esc(k)}</span>`).join('');
 
     // 驻将
+    // [legacy v13] 当 holder 为空时无条件回退到 city.npcGuard,
+    // 导致 "谯郡(空)" 被自动填成 "夏侯渊"
+    // const rawHolder = (ow?.holder || '').trim();
+    // const holderDisp = (rawHolder && rawHolder !== '无')
+    //   ? rawHolder
+    //   : (isNPC ? (city.npcGuard || '无') : '无');
+
+    // v14 (2026-05-26): 尊重用户录入的"空"标记。
+    // 仅当本回合数据完全没有该城的 NPC 条目 (ow 为 undefined) 时,
+    // 才回退到 city.npcGuard 作为静态展示;
+    // 一旦 ow 存在且 holder 为空/'无',必定显示 "无",不再自动补 npcGuard。
     const rawHolder = (ow?.holder || '').trim();
-    const holderDisp = (rawHolder && rawHolder !== '无')
-      ? rawHolder
-      : (isNPC ? (city.npcGuard || '无') : '无');
+    let holderDisp;
+    if (rawHolder && rawHolder !== '无') {
+      holderDisp = rawHolder;
+    } else if (ow) {
+      // 用户明确录入了该城但 holder 为空 → 必须显示 "无"
+      holderDisp = '无';
+    } else {
+      // 本回合数据中根本没有该城条目 → 退回静态默认值
+      holderDisp = isNPC ? (city.npcGuard || '无') : '无';
+    }
 
     // 兵力
     const troops = ow?.troops || {};
