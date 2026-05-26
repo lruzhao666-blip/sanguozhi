@@ -3728,14 +3728,14 @@ body.fx-off-captured [data-ctype="captured"] {
 
 /* ── 板块外壳:换暗金边,与红色 info-block 区分 ── */
 .junbao-block {
-  border-color: rgba(160,115,35,.22);
-  background: rgba(8,4,2,.94);
+  border-color: rgba(212,168,67,.28);
+  background: rgba(10,4,4,.92);
 }
 .junbao-block .ib-header {
-  background: linear-gradient(90deg, rgba(40,24,2,.7) 0%, rgba(16,8,2,.4) 70%, transparent);
-  border-bottom-color: rgba(160,115,35,.18);
+  background: rgba(40,24,2,.55);
+  border-bottom-color: rgba(212,168,67,.18);
 }
-.junbao-body { padding: 4px 14px 14px; }
+.junbao-body { padding: 14px 18px 16px; }
 
 /* ── 段落小标题:对齐 .gen-section-title(细字 + 渐变线收尾)── */
 .jbt-title,
@@ -3748,7 +3748,7 @@ body.fx-off-captured [data-ctype="captured"] {
   font-weight: 600;
   color: var(--text-dim);
   letter-spacing: .18em;
-  margin: 14px 0 10px;
+  margin: 0 0 10px;
   text-transform: uppercase;
 }
 .jbt-title::after,
@@ -3757,6 +3757,7 @@ body.fx-off-captured [data-ctype="captured"] {
   flex: 1; height: 1px;
   background: linear-gradient(90deg, rgba(255,255,255,.08), transparent);
 }
+.battle-list-title { margin-top: 18px; }
 
 /* ── 空态文字 ── */
 .jbt-empty {
@@ -3767,7 +3768,7 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ══════════ 调度行 ══════════ */
-.jbt-list { display: flex; flex-direction: column; gap: 6px; }
+.jbt-list { display: flex; flex-direction: column; gap: 4px; }
 
 .jbt-row {
   position: relative;
@@ -3780,8 +3781,11 @@ body.fx-off-captured [data-ctype="captured"] {
   transition: background .18s, transform .18s;
 }
 .jbt-row:hover {
-  background: rgba(28,16,8,.9);
-  transform: translateX(1px);
+  background: rgba(38,22,10,.95);
+  transform: translateX(2px);
+}
+.jbt-row:hover::before {
+  width: 4px;
 }
 /* 色条:伪元素绝对定位,3px 紧贴左边,彻底避免双色夹层 */
 .jbt-row::before {
@@ -3900,7 +3904,8 @@ body.fx-off-captured [data-ctype="captured"] {
   overflow: hidden;
   transition: background .18s;
 }
-.junbao-body .battle-card:hover { background: rgba(28,16,8,.9); }
+.junbao-body .battle-card:hover { background: rgba(38,22,10,.95); }
+.junbao-body .battle-card:hover::before { width: 4px; }
 .junbao-body .battle-card::before {
   content: '';
   position: absolute;
@@ -4065,4 +4070,30 @@ body.fx-off-captured [data-ctype="captured"] {
   }
   /* 伤亡推到行尾 */
   .junbao-body .bc-loss-v { margin-left: auto; }
+}
+
+/* ── 空态占位:金色衬线居中字 + 上下细金线 ── */
+.junbao-body .jbt-empty,
+.junbao-body .battle-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-serif);
+  font-size: .78rem;
+  color: var(--gold-dim);
+  letter-spacing: .14em;
+  padding: 16px 0;
+  opacity: .65;
+  text-align: center;
+}
+.junbao-body .jbt-empty::before,
+.junbao-body .jbt-empty::after,
+.junbao-body .battle-empty::before,
+.junbao-body .battle-empty::after {
+  content: '';
+  display: inline-block;
+  width: 48px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,168,67,.28), transparent);
 }
