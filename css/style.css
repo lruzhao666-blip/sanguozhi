@@ -4534,7 +4534,8 @@ body.fx-off-captured [data-ctype="captured"] {
 /* ══════════════════════════════════════════
    v20260526a 军报:调度行尾备注小灰字
    ══════════════════════════════════════════ */
-.junbao-body .jbt-note {
+/* [legacy v14] note 作为右侧附属徽章 */
+/* .junbao-body .jbt-note {
   font-family: var(--font-serif);
   font-size: .56rem;
   color: var(--text-dim);
@@ -4552,4 +4553,16 @@ body.fx-off-captured [data-ctype="captured"] {
 @media (max-width: 700px) {
   .junbao-body .jbt-note { font-size: .52rem; margin-left: 4px; }
   .junbao-body .jbt-note::before { margin-right: 3px; }
+} */
+
+/* v15 (2026-05-26): note 作为路径注释,紧贴 → 目的地,无边框无背景 */
+.jbt-note {
+  display: inline;
+  margin-left: 6px;
+  margin-right: 4px;
+  font-size: .84em;
+  color: #a89880;
+  font-weight: 400;
+  letter-spacing: .01em;
+  white-space: nowrap;
 }

@@ -1924,10 +1924,14 @@
               <span class="jbt-faction-badge">${esc(badgeText)}</span>
               <span class="jbt-general">${esc(t.general || '')}</span>
               <span class="jbt-route">${esc(t.from || '')}<span class="jbt-arrow">›</span>${esc(t.to || '')}</span>
+              <!-- [legacy v14] note 追加在徽章群之后,语义错位 -->
+              <!-- <span class="jbt-troop">\${esc(t.troopType || '')} \${t.troopCount || 0}</span> -->
+              <!-- <span class="jbt-status">\${esc(t.status || '')}</span> -->
+              <!-- \${t.note ? \`<span class="jbt-note">\${esc(t.note)}</span>\` : ''} -->
+              <!-- v15 (2026-05-26): note 紧贴路径,使用 ↪ 引导符,语义自洽 -->
+              ${t.note ? `<span class="jbt-note">↪ ${esc(t.note)}</span>` : ''}
               <span class="jbt-troop">${esc(t.troopType || '')} ${t.troopCount || 0}</span>
               <span class="jbt-status">${esc(t.status || '')}</span>
-              <!-- v27 (2026-05-26): note 字段透出 — 显示在状态徽章后 -->
-              ${t.note ? `<span class="jbt-note">${esc(t.note)}</span>` : ''}
             </div>
           </div>
         `);
