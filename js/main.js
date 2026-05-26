@@ -1,5 +1,6 @@
 /**
  * main.js — 三国志文字版 v14 (v2.5)
+ * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
  * 对接规范 v2.0：
@@ -1292,11 +1293,38 @@
             }
             const nameStyle = nameColor ? ` style="color:${nameColor}"` : '';
 
+            // 势力徽章（与城池悬浮卡呼应）
+            let factionLabel = '';
+            let badgeStyle   = '';
+            let stripStyle   = '';
+            if (t.slot != null && SGMap.P_COLOR && SGMap.P_COLOR[t.slot]) {
+              const c = SGMap.P_COLOR[t.slot];
+              const pName = (state.players[t.slot] && state.players[t.slot].name) || ('甲乙丙'[t.slot] || '');
+              factionLabel = pName;
+              badgeStyle = `background:${c.fill};border-color:${c.stroke};color:${c.glow};box-shadow:0 0 4px ${c.glow}55;`;
+              stripStyle = `background:${c.stroke};box-shadow:0 0 4px ${c.glow}66;`;
+            } else if (t.faction && typeof SGMap.getFactionColor === 'function') {
+              const fc = SGMap.getFactionColor(t.faction);
+              if (fc) {
+                factionLabel = t.faction;
+                badgeStyle = `background:${fc.fill};border-color:${fc.stroke};color:${fc.glow};box-shadow:0 0 4px ${fc.glow}55;`;
+                stripStyle = `background:${fc.stroke};box-shadow:0 0 4px ${fc.glow}66;`;
+              }
+            }
+            const badgeHtml = factionLabel
+              ? `<span class="jbt-faction-badge" style="${badgeStyle}">${esc(factionLabel)}</span>`
+              : '';
+            const stripHtml = stripStyle
+              ? `<span class="jbt-strip-faction" style="${stripStyle}"></span>`
+              : '';
+
             const troopStr = (t.troopType && t.troopCount)
               ? `${esc(t.troopType)} ${t.troopCount}`
               : (t.troopCount ? `${t.troopCount}` : '');
             return `<div class="jbt-row ${statusCls}">` +
+              stripHtml +
               `<div class="jbt-inner">` +
+              badgeHtml +
               `<span class="jbt-general"${nameStyle}>${esc(t.general)}</span>` +
               `<span class="jbt-route">${esc(t.from)}<span class="jbt-arrow">›</span>${esc(t.to)}</span>` +
               (troopStr ? `<span class="jbt-troop">${troopStr}</span>` : '') +
@@ -1325,6 +1353,20 @@
   }
 
   function buildBattleCard(b) {
+    const _sideBadge = (slot, faction) => {
+      let c = null, label = '';
+      if (slot != null && SGMap.P_COLOR && SGMap.P_COLOR[slot]) {
+        c = SGMap.P_COLOR[slot];
+        label = (state.players[slot] && state.players[slot].name) || ('甲乙丙'[slot] || '');
+      } else if (faction && typeof SGMap.getFactionColor === 'function') {
+        const fc = SGMap.getFactionColor(faction);
+        if (fc) { c = fc; label = faction; }
+      }
+      if (!c || !label) return '';
+      return `<span class="bc-faction-badge" style="background:${c.fill};border-color:${c.stroke};color:${c.glow};box-shadow:0 0 4px ${c.glow}55;">${esc(label)}</span>`;
+    };
+    const attackerBadgeHtml = _sideBadge(b.attackerSlot, b.attackerFaction);
+    const defenderBadgeHtml = _sideBadge(b.defenderSlot, b.defenderFaction);
     // 兼容 v2.0（attacker/defender/result/attacker_loss/defender_loss）
     // 和旧格式（player/dice/resultTxt/narrative/success）
     const isV2    = b.attacker !== undefined;
@@ -1364,12 +1406,14 @@
         `<div class="bc-versus">` +
         `<div class="bc-side-v bc-atk-v">` +
         `<span class="bc-role-v">攻</span>` +
+        `${attackerBadgeHtml}` +
         `<span class="bc-name-v"${atkStyle}>${esc(b.attacker)}</span>` +
         (atkLoss > 0 ? `<span class="bc-loss-v loss-atk-v">-${atkLoss}</span>` : '') +
         `</div>` +
         `<span class="bc-vs">vs</span>` +
         `<div class="bc-side-v bc-def-v">` +
         `<span class="bc-role-v">守</span>` +
+        `${defenderBadgeHtml}` +
         `<span class="bc-name-v"${defStyle}>${esc(b.defender)}</span>` +
         (defLoss > 0 ? `<span class="bc-loss-v loss-def-v">-${defLoss}</span>` : '') +
         `</div>` +
