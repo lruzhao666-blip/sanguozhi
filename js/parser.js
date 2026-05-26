@@ -443,7 +443,9 @@ window.SGParser = (function () {
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
     if (lines.length === 1 && /无在途/.test(lines[0])) return [];
     const result = [];
-    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|围攻中|客驻)$/;
+    // [legacy v13] const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|围攻中|客驻)$/;
+    // v14 (2026-05-26): 末尾去 $ 锚定,新增可选尾部备注捕获组 m[8]
+    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|围攻中|客驻)(?:\s+(.+))?\s*$/;
     for (const line of lines) {
       const m = line.match(re);
       if (m) {
@@ -461,6 +463,7 @@ window.SGParser = (function () {
           troopType: m[5],
           troopCount: parseInt(m[6]),
           status: m[7],
+          note: m[8] ? m[8].trim() : '',
         });
       }
     }
