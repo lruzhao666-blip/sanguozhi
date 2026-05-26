@@ -2,7 +2,6 @@
    三国志文字版 — 战旗赤红风 CSS v9
    精简 · 高级 · 呼吸感
    ============================================ */
-/* v20260613e "军报"标题颜色回归 .ib-title 通用 + "调度部队"CSS改名"调度" + 空战报整段隐藏 */
 /* v20260529a 军报UI方案2:.jbt-faction-badge / .bc-faction-badge / .jbt-strip-faction 与城池悬浮卡呼应 */
 /* v20260530a 军报UI方案2落地:补全 .jbt-* 系列基础样式 + .bc-faction-badge */
 /* v20260531a 军报UI微调:色条纯化(JS 端) + .jbt-title 去虚线 */
@@ -4530,45 +4529,4 @@ body.fx-off-captured [data-ctype="captured"] {
     letter-spacing: .14em;
     padding: 6px 0 2px;
   }
-}
-
-/* ══════════════════════════════════════════════════════
-   军报板块 v20260613e（精简补丁）
-   ① "军报"标题颜色/字号/字重 完全回归 .ib-title 通用
-   ② "调度部队" → "调度"（CSS 伪元素替换，不动 JS）
-   ③ 无战报时整个 .battle-list 隐藏（含分段线）
-   ══════════════════════════════════════════════════════ */
-
-/* ── ① "军报"标题强制回归 .ib-title 通用样式，与"三方势力"完全一致 ── */
-.junbao-block .ib-title {
-  font-family: var(--font-serif) !important;
-  font-size: .85rem !important;
-  font-weight: 700 !important;
-  color: var(--gold) !important;
-  letter-spacing: .09em !important;
-  text-shadow: none !important;
-}
-
-/* ── ② "调度部队" → "调度" 的 CSS 视觉替换 ──
-   原 main.js 输出 <div class="jbt-title">调度部队</div>，
-   这里把原文字号设为 0 隐藏，再用 ::before 注入"调度"二字。
-   "战报"小标题原文本无需改动。
-*/
-.junbao-body .jbt-title {
-  font-size: 0 !important;
-  letter-spacing: 0 !important;
-}
-.junbao-body .jbt-title::before {
-  content: '调度';
-  font-family: var(--font-serif);
-  font-size: .68rem;
-  font-weight: 700;
-  color: var(--gold-light);
-  letter-spacing: .1em;
-  display: inline-block;
-}
-
-/* ── ③ 无战报时整个战报段隐藏（含标题 + 分段线 + 空态文字）── */
-.junbao-body .battle-list:has(.battle-empty):not(:has(.battle-card)) {
-  display: none !important;
 }
