@@ -870,6 +870,7 @@ const BONUS_MULT = {
         }, 200);
       });
       g.addEventListener('touchstart', e => {
+        e.preventDefault();
         const t = e.touches[0];
         _showTip(g, { clientX: t.clientX, clientY: t.clientY });
         _moveTip({ clientX: t.clientX, clientY: t.clientY });
