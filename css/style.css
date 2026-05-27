@@ -3,6 +3,7 @@
    精简 · 高级 · 呼吸感
    ============================================ */
 /* v20260617a 工单#map-tooltip-1:城池悬浮卡守将区极简化 — 黑体+暖白+flex gap,去势力色inline+去状态后缀 */
+/* v20260617a 工单#pcard-v3-fix-1:玩家卡 v3 视觉精修 — emoji 恢复彩色 + 资源格紧凑 + hover 反馈 + 战况/调度空态隐藏 + 默认折叠 */
 /* v20260529a 军报UI方案2:.jbt-faction-badge / .bc-faction-badge / .jbt-strip-faction 与城池悬浮卡呼应 */
 /* v20260530a 军报UI方案2落地:补全 .jbt-* 系列基础样式 + .bc-faction-badge */
 /* v20260531a 军报UI微调:色条纯化(JS 端) + .jbt-title 去虚线 */
@@ -5233,30 +5234,61 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 .pcard.pcard-v3 .pc-identity { flex: 1; min-width: 0; }
 
-/* ── 2. 资源格紧凑化:emoji 缩到 .7rem 在数字上方 ── */
+/* ── 2. 资源格紧凑化 v2 (v20260617a)
+   对齐预览页(图1)视觉:
+   - .pc-resources 外层 padding 抹平(覆盖 v9 旧规则 11px 14px 10px)
+   - .pc-res-grid 用 1px gap + 半透明背景模拟分割线,无外圈圆角
+   - res-cell 单元彩色 emoji(opacity:1,filter:none)
+   - hover 微暖反馈(预览页 .new-res-cell:hover 同源)
+   ── */
+.pcard.pcard-v3 .pc-resources {
+  padding: 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.pcard.pcard-v3 .pc-res-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px !important;
+  background: rgba(255,255,255,.04);
+  padding: 1px;
+  margin: 0;
+}
 .pcard.pcard-v3 .pc-res-grid .res-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
-  padding: 7px 2px 6px;
+  gap: 0;
+  padding: 8px 2px 7px;
+  background: rgba(8,3,3,.94);
+  border: none;
+  border-radius: 0;
+  transition: background .15s;
+}
+.pcard.pcard-v3 .pc-res-grid .res-cell:hover {
+  background: rgba(35,18,2,.6);
 }
 .pcard.pcard-v3 .pc-res-grid .res-cell .res-emoji {
-  font-size: .7rem;
-  opacity: .55;
+  font-size: .82rem;
+  opacity: 1;
+  filter: none;
   line-height: 1;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
 }
 .pcard.pcard-v3 .pc-res-grid .res-cell b {
-  font-size: .92rem;
-  line-height: 1.1;
+  font-family: var(--font-serif);
+  font-size: .94rem;
+  line-height: 1.15;
   font-weight: 700;
+  color: var(--gold-light);
+  font-feature-settings: 'tnum';
 }
 .pcard.pcard-v3 .pc-res-grid .res-cell .res-name {
   font-size: .55rem;
   letter-spacing: .1em;
-  margin-top: 2px;
+  margin-top: 3px;
   opacity: .7;
+  color: var(--text-dim);
+  font-family: var(--font-sans);
 }
 
 /* ── 3. 武将列表区(已删麾下武将标题) ── */

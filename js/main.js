@@ -13,6 +13,7 @@
  * v25 (2026-06-12): 军报板块 UI 重做 — CSS 全量补齐,头部去 emoji 与 tag,
  *                   消费已注入的 --strip-color / --badge-* 变量
  * v26 (2026-06-13): 军报板块对齐修复 — 边框/padding/头部 对齐兄弟板块, 小标签改"军情",空态占位加金线装饰
+ * v27 (2026-06-17): 工单#pcard-v3-fix-1 玩家卡 v3 视觉精修 — renderPlayerBattles/renderPlayerTransit 空态整段隐藏,移除 pc-battle-empty/pc-transit-empty 占位
  * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
@@ -429,19 +430,31 @@
 
 
   // 战况嫁接渲染（按攻方 slot 归到对应玩家卡）
+  // v20260617a 工单#pcard-v3-fix-1:
+  //  - 空态:整个 <details> 加 .hidden,连标题都不显示
+  //  - 有内容:显示但不主动 open(默认 closed,由 HTML 已删 open 属性保证)
+  //  - 不再渲染 .pc-battle-empty 占位
   function renderPlayerBattles(slot, battles) {
+    const wrapEl  = document.getElementById(`pc-battles-${slot}`);
     const listEl  = document.getElementById(`pc-battles-list-${slot}`);
     const countEl = document.getElementById(`pc-battles-count-${slot}`);
-    if (!listEl || !countEl) return;
+    if (!wrapEl || !listEl || !countEl) return;
 
     // 过滤：本玩家作为攻方的战斗
     const mine = (battles || []).filter(b => b.attackerSlot === slot);
-    countEl.textContent = `${mine.length} 场`;
 
+    // 空态:整段隐藏
     if (!mine.length) {
-      listEl.innerHTML = '<div class="pc-battle-empty">— 本回合无战事 —</div>';
+      wrapEl.classList.add('hidden');
+      wrapEl.removeAttribute('open');
+      listEl.innerHTML = '';
+      countEl.textContent = '';
       return;
     }
+
+    // 有内容:显示 details(由 HTML 默认 closed,这里不主动 open)
+    wrapEl.classList.remove('hidden');
+    countEl.textContent = `${mine.length} 场`;
 
     listEl.innerHTML = mine.map(b => {
       const resultCls = b.result === '胜' ? 'win'
@@ -462,18 +475,30 @@
   }
 
   // 在途部队嫁接渲染（按 slot 归到对应玩家卡）
+  // v20260617a 工单#pcard-v3-fix-1:
+  //  - 空态:整个 <details> 加 .hidden,连标题都不显示
+  //  - 有内容:显示但不主动 open(默认 closed,由 HTML 已删 open 属性保证)
+  //  - 不再渲染 .pc-transit-empty 占位
   function renderPlayerTransit(slot, transit) {
+    const wrapEl  = document.getElementById(`pc-transit-${slot}`);
     const listEl  = document.getElementById(`pc-transit-list-${slot}`);
     const countEl = document.getElementById(`pc-transit-count-${slot}`);
-    if (!listEl || !countEl) return;
+    if (!wrapEl || !listEl || !countEl) return;
 
     const mine = (transit || []).filter(t => t.slot === slot);
-    countEl.textContent = `${mine.length} 支`;
 
+    // 空态:整段隐藏
     if (!mine.length) {
-      listEl.innerHTML = '<div class="pc-transit-empty">— 本回合无调度 —</div>';
+      wrapEl.classList.add('hidden');
+      wrapEl.removeAttribute('open');
+      listEl.innerHTML = '';
+      countEl.textContent = '';
       return;
     }
+
+    // 有内容:显示 details(由 HTML 默认 closed,这里不主动 open)
+    wrapEl.classList.remove('hidden');
+    countEl.textContent = `${mine.length} 支`;
 
     listEl.innerHTML = mine.map(t => {
       const statusCls = t.status === '围攻中' ? 'siege'
