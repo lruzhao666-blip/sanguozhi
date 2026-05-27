@@ -4567,34 +4567,41 @@ body.fx-off-captured [data-ctype="captured"] {
   white-space: nowrap;
 }
 
-/* v20260527a 武将胶囊徽章:驻将列表升级,接入 .gen-tag 武将悬浮卡委托 */
-/* 仅新增 .sgt-gen-pill 系列,不修改任何现有 .sgt-* 规则 */
+/* v20260527a 武将胶囊徽章(初版,已被 v20260528a 覆盖) */
+/* v20260528a 武将胶囊微调:贴齐 .gen-tag 视觉族系 */
+/*   - 字号 .82rem → .74rem(对齐 .gen-tag)
+     - 圆角 12px → 5px(对齐 .gen-tag,印章感)
+     - padding 4px 10px 4px 11px → 3px 9px 3px 10px(整体瘦身)
+     - gap 6px → 5px 6px(对齐 .gen-list)
+     - 状态字 .72rem → .62rem(与小胶囊比例协调)
+     - hover transform: translateY(-1px) → -2px(对齐 .gen-tag)
+   仅修改 .sgt-gen-pill 系列,不影响任何其他 .sgt-* 与 .gen-tag */
 
 .sgt-gen-pill-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px 6px;
   line-height: 1.4;
 }
 
 .sgt-gen-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px 4px 11px;
+  gap: 3px;
+  padding: 3px 9px 3px 10px;
   font-family: var(--font-serif);
-  font-size: .82rem;
+  font-size: .74rem;
   color: var(--text-main);
   background: rgba(40,22,14,.5);
   border: 1px solid rgba(180,140,60,.28);
-  border-radius: 12px;
+  border-radius: 5px;
   cursor: pointer;
   transition: color .15s ease-out,
               background .15s ease-out,
               border-color .15s ease-out,
               transform .15s ease-out,
               box-shadow .15s ease-out;
-  letter-spacing: .03em;
+  letter-spacing: .025em;
   line-height: 1.4;
   user-select: none;
   white-space: nowrap;
@@ -4604,14 +4611,14 @@ body.fx-off-captured [data-ctype="captured"] {
   color: var(--gold-light);
   background: rgba(70,38,15,.7);
   border-color: rgba(212,168,67,.65);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,.4),
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,.45),
               0 0 12px rgba(212,168,67,.15);
 }
 
 .sgt-gen-state {
   color: #d49435;
-  font-size: .72rem;
+  font-size: .62rem;
   margin-left: 1px;
   opacity: .9;
 }
@@ -4629,14 +4636,14 @@ body.fx-off-captured [data-ctype="captured"] {
 .sgt-gen-pill[data-state="阵亡"]:hover {
   color: var(--text-sub);
   background: rgba(40,20,15,.5);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .sgt-gen-empty {
   color: var(--text-dim);
-  font-size: .82rem;
+  font-size: .74rem;
   font-style: italic;
   letter-spacing: .12em;
   opacity: .55;
-  padding: 4px 0;
+  padding: 3px 0;
 }
