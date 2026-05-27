@@ -856,16 +856,17 @@ const BONUS_MULT = {
     container.querySelectorAll('.sgmap-city').forEach(g => {
       g.addEventListener('click', _onCityClick);
       g.addEventListener('mouseenter', e => {
+        _activateRing(g);
         if (_pinnedCity) return;
         clearTimeout(_hoverHideTimer);
         _showTip(g, e);
-        _activateRing(g);
       });
       g.addEventListener('mousemove',  e => _moveTip(e));
       g.addEventListener('mouseleave', () => {
+        _deactivateRing(g);
+        if (_pinnedCity) return;
         _hoverHideTimer = setTimeout(() => {
           _hideTip();
-          _deactivateRing(g);
         }, 200);
       });
       g.addEventListener('touchstart', e => {
@@ -1180,15 +1181,19 @@ const BONUS_MULT = {
     _tooltip.style.top  = ty + 'px';
   }
 
-  function _pinTooltip(cityName) {
-    _pinnedCity = cityName;
+  function _pinTooltip(cityEl) {
+    const cityId = cityEl.dataset.id;
+    if (!cityId) return;
+    _pinnedCity = cityId;
     clearTimeout(_hoverHideTimer);
     if (_tooltip) _tooltip.classList.add('sgmap-tooltip--pinned');
-    // We pass a fake event just in case `_showTip` expects one, but we mainly care about `cityName`.
-    const el = document.querySelector(`.sgmap-city[data-name="${cityName}"]`);
-    if (el) {
-      _showTip(el, null);
-    }
+
+    const rect = cityEl.getBoundingClientRect();
+    const fakeEvent = {
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    };
+    _showTip(cityEl, fakeEvent);
   }
 
   function _unpinTooltip() {
@@ -1201,13 +1206,13 @@ const BONUS_MULT = {
     e.stopPropagation();
     const cityEl = e.target.closest('.sgmap-city');
     if (!cityEl) return;
-    const cityName = cityEl.dataset.name;
-    if (!cityName) return;
+    const cityId = cityEl.dataset.id;
+    if (!cityId) return;
 
-    if (_pinnedCity === cityName) {
+    if (_pinnedCity === cityId) {
       _unpinTooltip();
     } else {
-      _pinTooltip(cityName);
+      _pinTooltip(cityEl);
     }
   }
 
