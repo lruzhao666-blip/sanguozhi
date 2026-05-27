@@ -4647,3 +4647,73 @@ body.fx-off-captured [data-ctype="captured"] {
   opacity: .55;
   padding: 3px 0;
 }
+
+/* v20260529a 城池悬浮卡点击钉住:hover 预览 + click 钉住双态 */
+/* 仅新增 .sgmap-tooltip--pinned 与 .sgt-pin-close 相关样式,
+   不修改任何现有规则 */
+
+/* 钉住态:金边微亮,克制提示 */
+.sgmap-tooltip.sgmap-tooltip--pinned {
+  border-color: rgba(212,168,67,.55);
+  box-shadow:
+    0 14px 40px rgba(0,0,0,.7),
+    0 0 0 1px rgba(212,168,67,.12) inset,
+    0 0 18px rgba(212,168,67,.10);
+  /* 钉住时 z-index 略高,确保武将悬浮卡能正常叠在更上面 */
+  /* (武将悬浮卡 #gen-tooltip 自己有更高 z-index) */
+}
+
+/* 钉住时,tooltip 内部恢复正常 pointer-events
+   (避免某些 .sgmap-tooltip 默认设了 pointer-events:none)*/
+.sgmap-tooltip.sgmap-tooltip--pinned {
+  pointer-events: auto;
+}
+
+/* 关闭按钮:右上角小 × */
+.sgt-pin-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(180,140,60,.32);
+  background: rgba(20,10,8,.65);
+  color: var(--text-sub);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color .15s, background .15s, border-color .15s, transform .15s;
+  z-index: 2;
+}
+.sgt-pin-close:hover {
+  color: var(--gold-light);
+  background: rgba(70,38,15,.7);
+  border-color: rgba(212,168,67,.65);
+}
+.sgt-pin-close:active {
+  transform: scale(0.92);
+}
+
+/* 钉住时,卡内若已有标题,顶部留出一点给 [×] 不挡内容 */
+/* (用极小的 padding 调整,如已足够则可省) */
+.sgmap-tooltip.sgmap-tooltip--pinned {
+  /* 给右上角 [×] 让出空间,不破坏内部既有 padding */
+  /* 如果现有 padding-right 已足够大,本规则可不生效 */
+}
+
+/* 移动端:[×] 区域加大,方便手指点 */
+@media (pointer: coarse) {
+  .sgt-pin-close {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+    top: 6px;
+    right: 6px;
+  }
+}
