@@ -4717,3 +4717,11 @@ body.fx-off-captured [data-ctype="captured"] {
     right: 6px;
   }
 }
+
+/* ═══════════════════════════════════════
+   v20260531a 武将悬浮卡层级修复
+   #gen-tooltip 必须高于 .sgmap-tooltip--pinned (z-index:9999)
+   ═══════════════════════════════════════ */
+#gen-tooltip {
+  z-index: 10000;
+}
