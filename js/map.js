@@ -400,7 +400,6 @@ const BONUS_MULT = {
   let _transitData = [];  // [{faction,general,from,to,troopType,troopCount,status}]
   let _battlesData  = []; // [{attacker,defender,result,attacker_loss,defender_loss,city?}]
   let _tooltip = null;
-  let _pinnedCity = null;
 
   function _esc(s) {
     return String(s)
@@ -828,18 +827,12 @@ const BONUS_MULT = {
   ───────────────────────────────── */
   function _bindEvents(container) {
     container.querySelectorAll('.sgmap-city').forEach(g => {
-      g.addEventListener('click', _onCityClick);
       g.addEventListener('mouseenter', e => {
-        if (_pinnedCity) return;
         _showTip(g, e);
         _activateRing(g);
       });
-      g.addEventListener('mousemove', e => {
-        if (_pinnedCity) return;
-        _moveTip(e);
-      });
+      g.addEventListener('mousemove',  e => _moveTip(e));
       g.addEventListener('mouseleave', () => {
-        if (_pinnedCity) return;
         _hideTip();
         _deactivateRing(g);
       });
@@ -849,34 +842,19 @@ const BONUS_MULT = {
         _showTip(g, { clientX: t.clientX, clientY: t.clientY });
         _moveTip({ clientX: t.clientX, clientY: t.clientY });
         _activateRing(g);
+        e.preventDefault();
       }, { passive: false });
     });
-
-    // 全局 touchstart 关闭(已有逻辑保留,在原有判定基础上追加钉住豁免)
     document.addEventListener('touchstart', e => {
       if (!e.target.closest('.sgmap-city') && !e.target.closest('#sgmap-tooltip')) {
-        if (_pinnedCity) _unpinTooltip();
-        else _hideTip();
+        _hideTip();
         container.querySelectorAll('.sgmap-city-ring').forEach(r => {
           r.style.opacity = '0';
           r.classList.remove('sgmap-ring-pulse');
         });
       }
     });
-
-    // 全局 click 关闭(桌面端钉住模式专用)
-    document.addEventListener('click', e => {
-      if (!_pinnedCity) return;
-      if (e.target.closest('.sgmap-city')) return;
-      if (e.target.closest('#sgmap-tooltip')) return;
-      _unpinTooltip();
-    });
-
-    // Esc 关闭
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && _pinnedCity) _unpinTooltip();
-    });
-  }
+}
 
   function _activateRing(g) {
     const ring = g.querySelector('.sgmap-city-ring');
@@ -890,38 +868,6 @@ const BONUS_MULT = {
     if (!ring) return;
     ring.style.opacity = '0';
     ring.classList.remove('sgmap-ring-pulse');
-  }
-
-  function _onCityClick(e) {
-    e.stopPropagation();
-    const cityEl = e.currentTarget;
-    const cityId = cityEl.dataset.id;
-    if (!cityId) return;
-    if (_pinnedCity === cityId) {
-      _unpinTooltip();
-    } else {
-      _pinTooltip(cityEl);
-    }
-  }
-
-  function _pinTooltip(cityEl) {
-    _pinnedCity = cityEl.dataset.id;
-    if (_tooltip) _tooltip.classList.add('sgmap-tooltip--pinned');
-    // 用城池中心定位 tooltip
-    const hex = cityEl.querySelector('polygon') || cityEl;
-    const rect = hex.getBoundingClientRect();
-    const fakeEvent = {
-      clientX: rect.left + rect.width / 2,
-      clientY: rect.top + rect.height / 2,
-    };
-    _showTip(cityEl, fakeEvent);
-    _activateRing(cityEl);
-  }
-
-  function _unpinTooltip() {
-    _pinnedCity = null;
-    if (_tooltip) _tooltip.classList.remove('sgmap-tooltip--pinned');
-    _hideTip();
   }
 
   /* ─────────────────────────────────

@@ -4648,21 +4648,3 @@ body.fx-off-captured [data-ctype="captured"] {
   padding: 3px 0;
 }
 
-
-/* ═══════════════════════════════════════
-   v20260602a 城池悬浮卡:极简点击钉住
-   - .sgmap-tooltip--pinned:钉住态金边微亮
-   - #gen-tooltip:武将卡 z-index 高于钉住卡
-   ═══════════════════════════════════════ */
-.sgmap-tooltip.sgmap-tooltip--pinned {
-  border-color: rgba(212,168,67,.55);
-  box-shadow:
-    0 14px 40px rgba(0,0,0,.7),
-    0 0 0 1px rgba(212,168,67,.12) inset,
-    0 0 18px rgba(212,168,67,.10);
-  pointer-events: auto;
-}
-
-#gen-tooltip {
-  z-index: 10000;
-}
