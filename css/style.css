@@ -4648,3 +4648,53 @@ body.fx-off-captured [data-ctype="captured"] {
   padding: 3px 0;
 }
 
+
+/* ════════════════════════════════
+   v20260601b 历史板块战斗结算降级样式
+   (替代已删除的 buildBattleCard)
+   ════════════════════════════════ */
+.hist-battle-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.hist-bt-row{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px 12px;
+  padding:6px 10px;
+  background:rgba(20,18,28,.45);
+  border:1px solid rgba(175,148,82,.18);
+  border-radius:4px;
+  font-size:.82rem;
+  line-height:1.5;
+  color:var(--text-main,#d8cdb0);
+}
+.hist-bt-pair{ flex:1 1 auto; }
+.hist-bt-arrow{
+  color:rgba(200,155,80,.6);
+  margin:0 2px;
+}
+.hist-bt-city{
+  color:rgba(195,162,95,.55);
+  margin-left:4px;
+  font-size:.78rem;
+}
+.hist-bt-result{
+  font-weight:700;
+  padding:1px 8px;
+  border-radius:3px;
+  font-size:.78rem;
+}
+.hist-bt-win  { color:#7ddd7d; border:1px solid rgba(0,160,70,.45); background:rgba(0,50,0,.30); }
+.hist-bt-lose { color:#e07070; border:1px solid rgba(200,40,0,.45); background:rgba(70,0,0,.30); }
+.hist-bt-draw { color:#d4b040; border:1px solid rgba(200,155,0,.45); background:rgba(70,50,0,.30); }
+.hist-bt-loss{
+  color:rgba(195,162,95,.7);
+  font-size:.76rem;
+  font-variant-numeric:tabular-nums;
+}
