@@ -5067,3 +5067,57 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ══ v20260614c END ══ */
+
+/* ══════════════════════════════════════════════════
+   v20260614d 军报板块永久上下排列(回退双栏)
+   - 调度永远在上、战报永远在下,桌面+手机统一行为
+   - 取消 v20260614a 的 grid 双栏 + 中间金竖线
+   - 保留调度↔战报之间金渐变细横线分隔
+   - 战报空态隐藏沿用 v20260613d 的 :has 规则,无需追加
+   - 仅追加,不删除任何旧规则
+   ══════════════════════════════════════════════════ */
+
+.junbao-body {
+  display: block !important;
+  grid-template-columns: none !important;
+  column-gap: 0 !important;
+  row-gap: 0 !important;
+}
+/* 取消 v20260614a 的中间金渐变竖线 */
+.junbao-body::before {
+  display: none !important;
+  content: none !important;
+}
+/* 取消 v20260614a 的 grid-column 显式指定 */
+.junbao-body > .jbt-title,
+.junbao-body > .jbt-list,
+.junbao-body > .jbt-empty,
+.junbao-body > .battle-list {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  min-width: 0;
+}
+
+/* 调度↔战报之间金渐变细横线分隔 */
+.junbao-body > .battle-list {
+  margin-top: 10px !important;
+  padding-top: 8px !important;
+  position: relative;
+}
+.junbao-body > .battle-list::before {
+  content: '' !important;
+  display: block !important;
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(180,120,40,.3),
+    rgba(212,168,67,.5),
+    rgba(180,120,40,.3),
+    transparent) !important;
+  width: auto;
+  pointer-events: none;
+}
+
+/* ══ v20260614d END ══ */
