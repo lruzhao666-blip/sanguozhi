@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=v20260615c" />
+  <link rel="stylesheet" href="css/style.css?v=v20260616a" />
 </head>
 <body>
 
@@ -86,14 +86,7 @@
         </div>
       </div>
 
-      <!-- ══ 行C2:军报板块(调度部队 + 战报)══ -->
-      <div class="info-block junbao-block hidden" id="block-junbao">
-        <div class="ib-header">
-          <span class="ib-icon--text">军情</span>
-          <span class="ib-title">军报</span>
-        </div>
-        <div class="ib-body junbao-body" id="junbao-body"></div>
-      </div>
+
 
       <!-- ══ 行D：三方势力横排 ══ -->
       <div class="info-block players-block">
@@ -105,14 +98,12 @@
           <div class="players-row" id="players-col">
 
             <!-- 玩家卡 0 -->
-            <div class="pcard" id="pcard-0">
+            <div class="pcard pcard-v3" id="pcard-0" data-slot="0">
               <div class="pcard-header p0-header">
-                <span class="pc-color-strip p0-strip"></span>
                 <div class="pc-identity">
                   <span class="pc-name" id="pname-0">城主甲</span>
                   <span class="pc-city" id="pcity-0"></span>
                 </div>
-                <div class="pc-status-badges" id="pc-badges-0"></div>
               </div>
               <div class="pc-resources">
                 <div class="pc-res-grid">
@@ -122,26 +113,28 @@
                   <div class="res-cell"><span class="res-emoji">❤️</span><b id="pmorale-0">—</b><span class="res-name">民心</span></div>
                   <div class="res-cell"><span class="res-emoji">🏯</span><b id="pcities-0">—</b><span class="res-name">城</span></div>
                 </div>
-                <div class="morale-bar-wrap">
-                  <div class="morale-bar-track"><div class="morale-bar-fill p0-fill" id="mbar-0"></div></div>
-                </div>
               </div>
               <div class="pc-generals" id="pc-generals-0">
-                <div class="gen-section-title">麾下武将</div>
                 <div class="gen-list gen-list-expand" id="gen-list-0">——</div>
               </div>
+              <details class="pc-battles" id="pc-battles-0" open>
+                <summary>本回合战况<span class="pc-battles-count" id="pc-battles-count-0">0 场</span></summary>
+                <div class="pc-battles-list" id="pc-battles-list-0"></div>
+              </details>
+              <details class="pc-transit" id="pc-transit-0" open>
+                <summary>在途部队<span class="pc-transit-count" id="pc-transit-count-0">0 支</span></summary>
+                <div class="pc-transit-list" id="pc-transit-list-0"></div>
+              </details>
               <div class="pc-situation-note hidden" id="pc-note-0"></div>
             </div>
 
             <!-- 玩家卡 1 -->
-            <div class="pcard" id="pcard-1">
+            <div class="pcard pcard-v3" id="pcard-1" data-slot="1">
               <div class="pcard-header p1-header">
-                <span class="pc-color-strip p1-strip"></span>
                 <div class="pc-identity">
                   <span class="pc-name" id="pname-1">城主乙</span>
                   <span class="pc-city" id="pcity-1"></span>
                 </div>
-                <div class="pc-status-badges" id="pc-badges-1"></div>
               </div>
               <div class="pc-resources">
                 <div class="pc-res-grid">
@@ -151,26 +144,28 @@
                   <div class="res-cell"><span class="res-emoji">❤️</span><b id="pmorale-1">—</b><span class="res-name">民心</span></div>
                   <div class="res-cell"><span class="res-emoji">🏯</span><b id="pcities-1">—</b><span class="res-name">城</span></div>
                 </div>
-                <div class="morale-bar-wrap">
-                  <div class="morale-bar-track"><div class="morale-bar-fill p1-fill" id="mbar-1"></div></div>
-                </div>
               </div>
               <div class="pc-generals" id="pc-generals-1">
-                <div class="gen-section-title">麾下武将</div>
                 <div class="gen-list gen-list-expand" id="gen-list-1">——</div>
               </div>
+              <details class="pc-battles" id="pc-battles-1" open>
+                <summary>本回合战况<span class="pc-battles-count" id="pc-battles-count-1">0 场</span></summary>
+                <div class="pc-battles-list" id="pc-battles-list-1"></div>
+              </details>
+              <details class="pc-transit" id="pc-transit-1" open>
+                <summary>在途部队<span class="pc-transit-count" id="pc-transit-count-1">0 支</span></summary>
+                <div class="pc-transit-list" id="pc-transit-list-1"></div>
+              </details>
               <div class="pc-situation-note hidden" id="pc-note-1"></div>
             </div>
 
             <!-- 玩家卡 2 -->
-            <div class="pcard" id="pcard-2">
+            <div class="pcard pcard-v3" id="pcard-2" data-slot="2">
               <div class="pcard-header p2-header">
-                <span class="pc-color-strip p2-strip"></span>
                 <div class="pc-identity">
                   <span class="pc-name" id="pname-2">城主丙</span>
                   <span class="pc-city" id="pcity-2"></span>
                 </div>
-                <div class="pc-status-badges" id="pc-badges-2"></div>
               </div>
               <div class="pc-resources">
                 <div class="pc-res-grid">
@@ -180,14 +175,18 @@
                   <div class="res-cell"><span class="res-emoji">❤️</span><b id="pmorale-2">—</b><span class="res-name">民心</span></div>
                   <div class="res-cell"><span class="res-emoji">🏯</span><b id="pcities-2">—</b><span class="res-name">城</span></div>
                 </div>
-                <div class="morale-bar-wrap">
-                  <div class="morale-bar-track"><div class="morale-bar-fill p2-fill" id="mbar-2"></div></div>
-                </div>
               </div>
               <div class="pc-generals" id="pc-generals-2">
-                <div class="gen-section-title">麾下武将</div>
                 <div class="gen-list gen-list-expand" id="gen-list-2">——</div>
               </div>
+              <details class="pc-battles" id="pc-battles-2" open>
+                <summary>本回合战况<span class="pc-battles-count" id="pc-battles-count-2">0 场</span></summary>
+                <div class="pc-battles-list" id="pc-battles-list-2"></div>
+              </details>
+              <details class="pc-transit" id="pc-transit-2" open>
+                <summary>在途部队<span class="pc-transit-count" id="pc-transit-count-2">0 支</span></summary>
+                <div class="pc-transit-list" id="pc-transit-list-2"></div>
+              </details>
               <div class="pc-situation-note hidden" id="pc-note-2"></div>
             </div>
 

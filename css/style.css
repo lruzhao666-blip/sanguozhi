@@ -5203,3 +5203,220 @@ body.fx-off-captured [data-ctype="captured"] {
   opacity: .55;
   filter: grayscale(0.4);
 }
+
+/* ══════════════════════════════════════════════════════════════
+   v20260616a · 工单#2 · 玩家卡 v3 紧凑化 + 战况/调度嫁接
+   ----------------------------------------------------------------
+   配合本版本 HTML 结构 .pcard.pcard-v3 + JS renderPlayerBattles/Transit。
+   旧 .pc-color-strip / .pc-status-badges / .morale-bar-wrap /
+   .gen-section-title 已从 HTML 移除,对应规则失效不再生效。
+   武将胶囊势力色由 main.js 内联控制（GEN_FACTION_STYLES）。
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 1. 玩家卡根容器 v3:左 3px 势力色条由 border-left 实现 ── */
+.pcard.pcard-v3 {
+  border-left-width: 3px;
+  border-left-style: solid;
+  position: relative;
+  overflow: hidden;
+}
+.pcard.pcard-v3[data-slot="0"] { border-left-color: #e74c3c; }
+.pcard.pcard-v3[data-slot="1"] { border-left-color: #3dbe6c; }
+.pcard.pcard-v3[data-slot="2"] { border-left-color: #3498db; }
+
+/* 头部:删除 status-badges 后让 identity 占满 */
+.pcard.pcard-v3 .pcard-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pcard.pcard-v3 .pc-identity { flex: 1; min-width: 0; }
+
+/* ── 2. 资源格紧凑化:emoji 缩到 .7rem 在数字上方 ── */
+.pcard.pcard-v3 .pc-res-grid .res-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 7px 2px 6px;
+}
+.pcard.pcard-v3 .pc-res-grid .res-cell .res-emoji {
+  font-size: .7rem;
+  opacity: .55;
+  line-height: 1;
+  margin-bottom: 1px;
+}
+.pcard.pcard-v3 .pc-res-grid .res-cell b {
+  font-size: .92rem;
+  line-height: 1.1;
+  font-weight: 700;
+}
+.pcard.pcard-v3 .pc-res-grid .res-cell .res-name {
+  font-size: .55rem;
+  letter-spacing: .1em;
+  margin-top: 2px;
+  opacity: .7;
+}
+
+/* ── 3. 武将列表区(已删麾下武将标题) ── */
+.pcard.pcard-v3 .pc-generals {
+  padding: 10px 12px 11px;
+}
+.pcard.pcard-v3 .gen-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 5px;
+}
+
+/* ── 4. 战况折叠区 ── */
+.pcard.pcard-v3 .pc-battles,
+.pcard.pcard-v3 .pc-transit {
+  border-top: 1px solid rgba(212,168,67,.12);
+  background: rgba(0,0,0,.22);
+}
+.pcard.pcard-v3 .pc-battles > summary,
+.pcard.pcard-v3 .pc-transit > summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .68rem;
+  color: var(--text-sub, #c8b89a);
+  letter-spacing: .08em;
+  transition: color .15s, background .15s;
+}
+.pcard.pcard-v3 .pc-battles > summary::-webkit-details-marker,
+.pcard.pcard-v3 .pc-transit > summary::-webkit-details-marker {
+  display: none;
+}
+.pcard.pcard-v3 .pc-battles > summary::before,
+.pcard.pcard-v3 .pc-transit > summary::before {
+  content: '▸';
+  font-size: .6rem;
+  opacity: .6;
+  transition: transform .2s;
+}
+.pcard.pcard-v3 .pc-battles[open] > summary::before,
+.pcard.pcard-v3 .pc-transit[open] > summary::before {
+  transform: rotate(90deg);
+}
+.pcard.pcard-v3 .pc-battles > summary:hover,
+.pcard.pcard-v3 .pc-transit > summary:hover {
+  color: #f0e6d3;
+  background: rgba(212,168,67,.05);
+}
+.pcard.pcard-v3 .pc-battles-count,
+.pcard.pcard-v3 .pc-transit-count {
+  margin-left: auto;
+  font-size: .58rem;
+  padding: 1px 7px;
+  background: rgba(212,168,67,.1);
+  border: 1px solid rgba(212,168,67,.25);
+  border-radius: 8px;
+  color: #a07830;
+  letter-spacing: .04em;
+}
+
+/* ── 5. 战况条目 ── */
+.pcard.pcard-v3 .pc-battles-list,
+.pcard.pcard-v3 .pc-transit-list {
+  padding: 4px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pcard.pcard-v3 .pc-battle-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(0,0,0,.35);
+  border-left: 2px solid var(--bi-tone, #888);
+  border-radius: 0 4px 4px 0;
+  font-size: .72rem;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="win"]  { --bi-tone: #6dce6d; }
+.pcard.pcard-v3 .pc-battle-item[data-result="lose"] { --bi-tone: #e05858; }
+.pcard.pcard-v3 .pc-battle-item[data-result="draw"] { --bi-tone: #a07830; }
+.pcard.pcard-v3 .pc-battle-flow {
+  color: #f0e6d3;
+  letter-spacing: .03em;
+}
+.pcard.pcard-v3 .pc-battle-arrow {
+  color: #7a6a5a;
+  margin: 0 5px;
+}
+.pcard.pcard-v3 .pc-battle-city {
+  font-size: .62rem;
+  color: #7a6a5a;
+  padding: 1px 6px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.pcard.pcard-v3 .pc-battle-result {
+  font-weight: 700;
+  font-size: .72rem;
+  color: var(--bi-tone, #888);
+  letter-spacing: .05em;
+}
+.pcard.pcard-v3 .pc-battle-casu {
+  grid-column: 1 / -1;
+  font-size: .62rem;
+  color: #7a6a5a;
+  padding-top: 2px;
+  letter-spacing: .02em;
+}
+.pcard.pcard-v3 .pc-battle-empty,
+.pcard.pcard-v3 .pc-transit-empty {
+  padding: 8px 12px 12px;
+  font-size: .68rem;
+  color: #7a6a5a;
+  text-align: center;
+  opacity: .55;
+  letter-spacing: .08em;
+}
+
+/* ── 6. 在途部队条目 ── */
+.pcard.pcard-v3 .pc-transit-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(0,0,0,.35);
+  border-left: 2px solid var(--ti-tone, #888);
+  border-radius: 0 4px 4px 0;
+  font-size: .68rem;
+  color: #c8b89a;
+}
+.pcard.pcard-v3 .pc-transit-item[data-status="march"]    { --ti-tone: #a07830; }
+.pcard.pcard-v3 .pc-transit-item[data-status="siege"]    { --ti-tone: #e05858; }
+.pcard.pcard-v3 .pc-transit-item[data-status="resident"] { --ti-tone: #8ec5e8; }
+.pcard.pcard-v3 .pc-transit-general {
+  font-weight: 600;
+  color: #f0e6d3;
+}
+.pcard.pcard-v3 .pc-transit-arrow {
+  color: #7a6a5a;
+  margin: 0 4px;
+}
+.pcard.pcard-v3 .pc-transit-note {
+  font-size: .6rem;
+  color: #7a6a5a;
+  opacity: .8;
+}
+.pcard.pcard-v3 .pc-transit-troop,
+.pcard.pcard-v3 .pc-transit-status {
+  margin-left: auto;
+  font-size: .62rem;
+  color: #a07830;
+  letter-spacing: .04em;
+}
+.pcard.pcard-v3 .pc-transit-status {
+  margin-left: 0;
+}
