@@ -2088,12 +2088,31 @@
     }
 
     // 战斗结算
+    // [legacy v22] buildBattleCard 已删除,此处降级为纯文本列表
+    // 字段来源: parser 产物 battles[] = { attacker, defender, result,
+    //   attacker_loss, defender_loss, city? }
     if (p.battles && p.battles.length) {
+      const _resultCls = r => r === '胜' ? 'hist-bt-win'
+                            : r === '负' ? 'hist-bt-lose'
+                            : 'hist-bt-draw';
       html += `<div class="info-block block-battles" style="margin:0 0 10px">
         <div class="ib-header"><span class="ib-icon ib-icon--text">战斗</span><span class="ib-title">战斗结算</span></div>
-        <div class="ib-body"><div class="battle-list">` +
-        p.battles.map(b => buildBattleCard(b)).join('') +
-        `</div></div></div>`;
+        <div class="ib-body"><ul class="hist-battle-list">` +
+        p.battles.map(b => {
+          const atk = esc(b.attacker || '');
+          const def = esc(b.defender || '');
+          const city = b.city ? `<span class="hist-bt-city">(${esc(b.city)})</span>` : '';
+          const res = esc(b.result || '');
+          const al = b.attacker_loss != null ? `攻-${b.attacker_loss}` : '';
+          const dl = b.defender_loss != null ? `守-${b.defender_loss}` : '';
+          const losses = [al, dl].filter(Boolean).join(' / ');
+          return `<li class="hist-bt-row">
+            <span class="hist-bt-pair">${atk} <span class="hist-bt-arrow">›</span> ${def}${city}</span>
+            <span class="hist-bt-result ${_resultCls(b.result)}">${res}</span>
+            ${losses ? `<span class="hist-bt-loss">${losses}</span>` : ''}
+          </li>`;
+        }).join('') +
+        `</ul></div></div>`;
     }
 
     html += `</div>`;
