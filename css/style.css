@@ -4748,3 +4748,307 @@ body.fx-off-captured [data-ctype="captured"] {
 .sgmap-tooltip .sgt-prod-chain {
   font-weight: 400;
 }
+
+/* ══════════════════════════════════════════════════
+   v20260614a 军报板块方案A落地:左右双栏 · 单行流
+   - 桌面 grid 1fr 1fr + 中间金渐变竖线
+   - 移动 ≤820px 上下堆叠 + 横线分隔
+   - .jbt-row / .battle-card 压成单行流:无外框无底色,
+     1px 金属丝色条,徽章纯线框,状态/伤亡去胶囊
+   - 仅追加规则,不删旧规则,确保可回滚
+   ══════════════════════════════════════════════════ */
+
+/* ── 桌面双栏布局 ── */
+.junbao-body {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 24px;
+  position: relative;
+  padding: 10px 14px 12px !important;
+}
+.junbao-body::before {
+  content: '';
+  position: absolute;
+  top: 14px; bottom: 14px; left: 50%;
+  width: 1px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(212,168,67,.18) 20%,
+    rgba(212,168,67,.32) 50%,
+    rgba(212,168,67,.18) 80%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+/* 左右栏容器(由 JS 输出的 .jbt-title 与 .battle-list 直接子元素承担,
+   无需新增 DOM,通过 :nth-child / order / grid-column 控制即可)
+   实际 DOM 顺序:
+     1. .jbt-title       (调度标题)
+     2. .jbt-list 或 .jbt-empty
+     3. .battle-list     (含 .battle-list-title + .battle-card / .battle-empty)
+   桌面:1+2 进左栏,3 进右栏,通过 grid-column 显式指定 */
+.junbao-body > .jbt-title         { grid-column: 1; align-self: start; }
+.junbao-body > .jbt-list,
+.junbao-body > .jbt-empty         { grid-column: 1; min-width: 0; }
+.junbao-body > .battle-list       { grid-column: 2; grid-row: 1 / span 99; min-width: 0; margin-top: 0 !important; padding-top: 0 !important; }
+.junbao-body > .battle-list::before { content: none !important; display: none !important; }
+
+/* ── 段内小标题:沿用 v20260613d 风格,微调外边距 ── */
+.junbao-body .jbt-title,
+.junbao-body .battle-list-title {
+  margin: 0 0 8px !important;
+}
+
+/* ════════════ 单行流:.jbt-row(调度) ════════════ */
+.junbao-body .jbt-list {
+  display: flex !important;
+  flex-direction: column;
+  gap: 0 !important;
+}
+.junbao-body .jbt-row {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px dotted rgba(255,255,255,.06) !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  transition: background .15s;
+}
+.junbao-body .jbt-row:last-child {
+  border-bottom: none !important;
+}
+.junbao-body .jbt-row:hover {
+  background: rgba(255,255,255,.018) !important;
+  transform: none !important;
+}
+.junbao-body .jbt-row::before {
+  width: 1px !important;
+  top: 4px !important;
+  bottom: 4px !important;
+  opacity: .85;
+}
+
+.junbao-body .jbt-inner {
+  align-items: baseline !important;
+  gap: 3px 7px !important;
+  padding: 5px 4px 5px 9px !important;
+  min-height: 0 !important;
+  font-family: var(--font-serif);
+  font-size: .78rem;
+  line-height: 1.6;
+}
+
+/* 徽章:无底色,纯线框 */
+.junbao-body .jbt-faction-badge {
+  font-size: .6rem !important;
+  padding: 0 5px !important;
+  border-radius: 2px !important;
+  background: transparent !important;
+  line-height: 1.6 !important;
+}
+
+.junbao-body .jbt-general {
+  font-size: .82rem !important;
+}
+
+.junbao-body .jbt-route {
+  font-size: .74rem !important;
+}
+.junbao-body .jbt-arrow {
+  margin: 0 2px !important;
+  font-size: .78rem !important;
+  opacity: .7;
+}
+
+/* 兵种:去胶囊,降为暗色小字 */
+.junbao-body .jbt-troop {
+  font-size: .66rem !important;
+  color: var(--text-dim) !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+/* 状态:去胶囊,纯字色 */
+.junbao-body .jbt-status {
+  font-size: .66rem !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  letter-spacing: .06em !important;
+}
+.junbao-body .jbt-row.jbt-march    .jbt-status { color: #b89868 !important; background: transparent !important; border: none !important; }
+.junbao-body .jbt-row.jbt-siege    .jbt-status { color: #e8884c !important; background: transparent !important; border: none !important; }
+.junbao-body .jbt-row.jbt-resident .jbt-status { color: #b890d8 !important; background: transparent !important; border: none !important; }
+
+/* note 灰字小注 */
+.junbao-body .jbt-note {
+  font-size: .66rem !important;
+  color: var(--text-dim) !important;
+  opacity: .7;
+}
+
+/* ════════════ 单行流:.battle-card(战报) ════════════ */
+.junbao-body .battle-list {
+  display: flex !important;
+  flex-direction: column;
+  gap: 0 !important;
+  border-top: none !important;
+}
+.junbao-body .battle-card {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px dotted rgba(255,255,255,.06) !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  transition: background .15s;
+}
+.junbao-body .battle-card:last-child {
+  border-bottom: none !important;
+}
+.junbao-body .battle-card:hover {
+  background: rgba(255,255,255,.018) !important;
+}
+.junbao-body .battle-card::before {
+  width: 1px !important;
+  top: 4px !important;
+  bottom: 4px !important;
+  opacity: .85;
+}
+.junbao-body .battle-card.success::before { background: rgba(125,216,125,.7) !important; }
+.junbao-body .battle-card.draw   ::before { background: rgba(232,197,96,.7)  !important; }
+.junbao-body .battle-card.fail   ::before { background: rgba(232,112,96,.7)  !important; }
+
+/* 胜/平/负:纯字色,无框无底,字号略大 */
+.junbao-body .bc-badge {
+  font-size: .88rem !important;
+  font-weight: 900 !important;
+  width: 18px !important;
+  margin: 0 0 0 9px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  line-height: 1 !important;
+  align-self: center !important;
+}
+.junbao-body .battle-card.success .bc-badge { color: #7dd87d !important; background: transparent !important; border: none !important; }
+.junbao-body .battle-card.draw    .bc-badge { color: #e8c560 !important; background: transparent !important; border: none !important; }
+.junbao-body .battle-card.fail    .bc-badge { color: #e87060 !important; background: transparent !important; border: none !important; }
+
+.junbao-body .bc-body {
+  align-items: baseline !important;
+  padding: 5px 4px 5px 6px !important;
+  min-height: 0 !important;
+  font-size: .78rem;
+  line-height: 1.6;
+}
+.junbao-body .bc-versus {
+  align-items: baseline !important;
+  gap: 3px 7px !important;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.junbao-body .bc-side-v {
+  align-items: baseline !important;
+  gap: 5px !important;
+  flex-shrink: 1;
+  min-width: 0;
+  flex: none !important;
+}
+.junbao-body .bc-side-v:last-child {
+  margin-left: auto !important;
+  justify-content: flex-end !important;
+}
+
+/* 攻/守 角色字:暗色小字,去框去底 */
+.junbao-body .bc-role-v {
+  font-size: .6rem !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+/* 徽章:与调度徽章同款线框 */
+.junbao-body .bc-faction-badge {
+  font-size: .6rem !important;
+  padding: 0 5px !important;
+  border-radius: 2px !important;
+  background: transparent !important;
+  line-height: 1.6 !important;
+}
+
+.junbao-body .bc-name-v {
+  font-size: .82rem !important;
+}
+
+/* 伤亡:去胶囊,纯红字 */
+.junbao-body .bc-loss-v {
+  font-size: .7rem !important;
+  color: rgba(224,112,96,.85) !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 中间 vs 字:暗淡小字,覆盖原"金渐变竖线"实现 */
+.junbao-body .bc-vs {
+  width: auto !important;
+  align-self: baseline !important;
+  margin: 0 !important;
+  background: none !important;
+  font-size: .6rem !important;
+  color: var(--text-dim) !important;
+  letter-spacing: .1em !important;
+  opacity: .5;
+}
+.junbao-body .bc-vs > * { display: inline !important; }
+
+/* ── 空态:沿用 v20260613d 居中衬线字,无需调整 ── */
+
+/* ══════════════ 移动端 ≤820px:上下堆叠 ══════════════ */
+@media (max-width: 820px) {
+  .junbao-body {
+    grid-template-columns: 1fr !important;
+    column-gap: 0 !important;
+    row-gap: 0 !important;
+    padding: 9px 12px 11px !important;
+  }
+  .junbao-body::before { display: none !important; }
+  .junbao-body > .jbt-title,
+  .junbao-body > .jbt-list,
+  .junbao-body > .jbt-empty,
+  .junbao-body > .battle-list {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+  }
+  /* 战报段顶部金渐变横线分隔 */
+  .junbao-body > .battle-list {
+    margin-top: 10px !important;
+    padding-top: 8px !important;
+    position: relative;
+  }
+  .junbao-body > .battle-list::before {
+    content: '' !important;
+    display: block !important;
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(180,120,40,.3),
+      rgba(212,168,67,.5),
+      rgba(180,120,40,.3),
+      transparent) !important;
+    width: auto;
+    pointer-events: none;
+  }
+}
+
+/* ── 无战报时整段隐藏(沿用 :has 规则,无需追加) ── */
+
+/* ══ v20260614a END ══ */
