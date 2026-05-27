@@ -3,7 +3,6 @@
    精简 · 高级 · 呼吸感
    ============================================ */
 /* v20260617a 工单#map-tooltip-1:城池悬浮卡守将区极简化 — 黑体+暖白+flex gap,去势力色inline+去状态后缀 */
-/* v20260618a 工单#map-tooltip-1B:城池悬浮卡守将区切换方案 C — 细竖线分隔 + 字重 600 + 字号 .8rem(其余沿用 v20260617a) */
 /* v20260617a 工单#pcard-v3-fix-1:玩家卡 v3 视觉精修 — emoji 恢复彩色 + 资源格紧凑 + hover 反馈 + 战况/调度空态隐藏 + 默认折叠 */
 /* v20260529a 军报UI方案2:.jbt-faction-badge / .bc-faction-badge / .jbt-strip-faction 与城池悬浮卡呼应 */
 /* v20260530a 军报UI方案2落地:补全 .jbt-* 系列基础样式 + .bc-faction-badge */
@@ -5456,35 +5455,25 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   v20260618a · 工单#map-tooltip-1B · 城池悬浮卡守将区切换方案 C
+   v20260617a · 工单#map-tooltip-1 · 城池悬浮卡守将区极简化(方案 A)
    ----------------------------------------------------------------
-   配合 v25.4 map.js _showTip(JS 端无变动):
-   - 守将 span 已无 inline color(由本段 CSS 统一控制)
-   - 守将名后无 (伤)/(病)/(亡) 状态后缀
+   配合 v25.4 map.js _showTip:
+   - 守将 span 已移除 inline style="color:..."(势力色硬编码已删)
+   - 守将名后已不再追加 (伤)/(病)/(亡) 状态后缀
    - 阵亡武将已在 JS 端过滤,不进入 DOM
-   设计语言:黑体 / 字重 600 / 统一暖白 / 细竖线分隔 / 信息密度款
-   - flex 内联,gap:0(分隔靠 border-left)
-   - 首项无 border-left,其余项各加 1px 暗金竖线
-   - 字号 .8rem,字重 600(对比 A 款的 .82rem/500)
+   设计语言:黑体 / 字重 500 / 统一暖白 / flex gap 8px / 无分隔符
    ══════════════════════════════════════════════════════════════ */
 .sgt-holder-names {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0;
+  gap: 4px 8px;
   font-family: var(--font-sans);
 }
 .sgt-holder-name {
   color: var(--text-main);
-  font-weight: 600;
-  font-size: .8rem;
+  font-weight: 500;
+  font-size: .82rem;
   letter-spacing: .02em;
   line-height: 1.6;
-  padding: 0 7px;
-}
-.sgt-holder-name:first-child {
-  padding-left: 0;
-}
-.sgt-holder-name + .sgt-holder-name {
-  border-left: 1px solid rgba(180,140,60,.28);
 }
