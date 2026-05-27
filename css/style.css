@@ -2,6 +2,7 @@
    三国志文字版 — 战旗赤红风 CSS v9
    精简 · 高级 · 呼吸感
    ============================================ */
+/* v20260617a 工单#map-tooltip-1:城池悬浮卡守将区极简化 — 黑体+暖白+flex gap,去势力色inline+去状态后缀 */
 /* v20260529a 军报UI方案2:.jbt-faction-badge / .bc-faction-badge / .jbt-strip-faction 与城池悬浮卡呼应 */
 /* v20260530a 军报UI方案2落地:补全 .jbt-* 系列基础样式 + .bc-faction-badge */
 /* v20260531a 军报UI微调:色条纯化(JS 端) + .jbt-title 去虚线 */
@@ -5422,17 +5423,25 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   v20260616b · 工单#1-FIX-v3 · 城池悬浮卡守将字重间距优化
+   v20260617a · 工单#map-tooltip-1 · 城池悬浮卡守将区极简化(方案 A)
    ----------------------------------------------------------------
-   配合 map.js _showTip 守将 span 加 class .sgt-holder-name + 外层 .sgt-holder-names。
-   字重统一 600,间距用 word-spacing 6px 控制(半角空格分隔)。
-   颜色仍由 JS 内联控制(NPC 暗金 / 玩家势力浅色)。
+   配合 v25.4 map.js _showTip:
+   - 守将 span 已移除 inline style="color:..."(势力色硬编码已删)
+   - 守将名后已不再追加 (伤)/(病)/(亡) 状态后缀
+   - 阵亡武将已在 JS 端过滤,不进入 DOM
+   设计语言:黑体 / 字重 500 / 统一暖白 / flex gap 8px / 无分隔符
    ══════════════════════════════════════════════════════════════ */
 .sgt-holder-names {
-  display: inline-block;
-  word-spacing: 6px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-family: var(--font-sans);
 }
 .sgt-holder-name {
-  font-weight: 600;
+  color: var(--text-main);
+  font-weight: 500;
+  font-size: .82rem;
   letter-spacing: .02em;
+  line-height: 1.6;
 }
