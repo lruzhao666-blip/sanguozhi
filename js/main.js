@@ -413,7 +413,6 @@
       renderDigest(latest);
       renderPlayerCards();
       renderMap();
-      renderJunbao(latest);
       renderChangesDetail();
       renderHistorySection();
     }
@@ -427,6 +426,69 @@
 // 熟练度:遍历 state.rounds 反推已挂回合数
 // ─────────────────────────────────────────
   // ── 势力地图 ──
+
+
+  // 战况嫁接渲染（按攻方 slot 归到对应玩家卡）
+  function renderPlayerBattles(slot, battles) {
+    const listEl  = document.getElementById(`pc-battles-list-${slot}`);
+    const countEl = document.getElementById(`pc-battles-count-${slot}`);
+    if (!listEl || !countEl) return;
+
+    // 过滤：本玩家作为攻方的战斗
+    const mine = (battles || []).filter(b => b.attackerSlot === slot);
+    countEl.textContent = `${mine.length} 场`;
+
+    if (!mine.length) {
+      listEl.innerHTML = '<div class="pc-battle-empty">— 本回合无战事 —</div>';
+      return;
+    }
+
+    listEl.innerHTML = mine.map(b => {
+      const resultCls = b.result === '胜' ? 'win'
+                      : b.result === '负' ? 'lose'
+                      : 'draw';
+      const atk = esc(b.attacker || '');
+      const def = esc(b.defender || '');
+      const city = b.city ? `<span class="pc-battle-city">${esc(b.city)}</span>` : '';
+      const al = b.attacker_loss != null ? b.attacker_loss : 0;
+      const dl = b.defender_loss != null ? b.defender_loss : 0;
+      return `<div class="pc-battle-item" data-result="${resultCls}">
+        <span class="pc-battle-flow">${atk}<span class="pc-battle-arrow">→</span>${def}</span>
+        ${city}
+        <span class="pc-battle-result">${esc(b.result || '')}</span>
+        <span class="pc-battle-casu">伤亡 攻 ${al} · 守 ${dl}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // 在途部队嫁接渲染（按 slot 归到对应玩家卡）
+  function renderPlayerTransit(slot, transit) {
+    const listEl  = document.getElementById(`pc-transit-list-${slot}`);
+    const countEl = document.getElementById(`pc-transit-count-${slot}`);
+    if (!listEl || !countEl) return;
+
+    const mine = (transit || []).filter(t => t.slot === slot);
+    countEl.textContent = `${mine.length} 支`;
+
+    if (!mine.length) {
+      listEl.innerHTML = '<div class="pc-transit-empty">— 本回合无调度 —</div>';
+      return;
+    }
+
+    listEl.innerHTML = mine.map(t => {
+      const statusCls = t.status === '围攻中' ? 'siege'
+                      : t.status === '客驻'   ? 'resident'
+                      : 'march';
+      const noteHtml = t.note ? `<span class="pc-transit-note">↪ ${esc(t.note)}</span>` : '';
+      return `<div class="pc-transit-item" data-status="${statusCls}">
+        <span class="pc-transit-general">${esc(t.general || '')}</span>
+        <span class="pc-transit-route">${esc(t.from || '')}<span class="pc-transit-arrow">›</span>${esc(t.to || '')}</span>
+        ${noteHtml}
+        <span class="pc-transit-troop">${esc(t.troopType || '')} ${t.troopCount || 0}</span>
+        <span class="pc-transit-status">${esc(t.status || '')}</span>
+      </div>`;
+    }).join('');
+  }
   function renderMap() {
     const latest       = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
     const latestParsed = latest ? latest.parsed : null;
@@ -1254,6 +1316,9 @@
     const latestPlayers = state.rounds.length
       ? (state.rounds[state.rounds.length - 1].parsed.players || [])
       : [];
+    const latest = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
+    const battles = latest && latest.parsed.battles ? latest.parsed.battles : [];
+    const transit = latest && latest.parsed.transit ? latest.parsed.transit : [];
 
     state.players.forEach((p, i) => {
       setTxt(`pname-${i}`, p.name || `城主${['甲','乙','丙'][i]}`);
@@ -1270,26 +1335,12 @@
       setTxt(`pmorale-${i}`, p.morale != null ? p.morale : '—');
       setTxt(`pcities-${i}`, p.cities != null ? p.cities : '—');
 
-      const bar = document.getElementById(`mbar-${i}`);
-      if (bar) {
-        const pct = Math.max(0, Math.min(100, p.morale ?? 60));
-        bar.style.width   = `${pct}%`;
-        bar.style.opacity = pct < 40 ? '.65' : pct > 80 ? '1' : '.85';
-      }
-
-      const badgeEl = document.getElementById(`pc-badges-${i}`);
-      if (badgeEl) {
-        const m = p.morale;
-        let bhtml = '';
-        if (m != null) {
-          if (m <= 0)       bhtml = `<span class="status-badge sb-danger">⚠️ 叛乱风险</span>`;
-          else if (m < 40)  bhtml = `<span class="status-badge sb-warn">❗ 民心低落</span>`;
-          else if (m >= 80) bhtml = `<span class="status-badge sb-alive">✨ 万民拥戴</span>`;
-        }
-        badgeEl.innerHTML = bhtml;
-      }
-
       renderGenList(i, p.generals);
+
+      // 战况嫁接到本卡底部
+      renderPlayerBattles(i, battles);
+      // 在途部队嫁接到本卡底部
+      renderPlayerTransit(i, transit);
 
       const noteEl = document.getElementById(`pc-note-${i}`);
       if (noteEl) {
@@ -1300,7 +1351,6 @@
           noteEl.classList.add('hidden');
         }
       }
-
     });
   }
 
@@ -1311,7 +1361,7 @@
       listEl.innerHTML = '<span class="gen-empty">——</span>';
       return;
     }
-    listEl.innerHTML = generals.map(g => buildGenTag(g)).join('');
+    listEl.innerHTML = generals.map(g => buildGenTag(g, idx)).join('');
   }
 
   // ── 武将状态颜色（按钮颜色完全由状态决定，不区分稀有度）
@@ -1323,6 +1373,13 @@
     dead:   { bg:'rgba(18,18,18,.42)',  bd:'rgba(60,60,60,.35)',   c:'#686868',  bc:'rgba(60,60,60,.15)'  }
   };
 
+  // 武将胶囊势力色（v20260616a：胶囊背景按 slot，状态由左色条 CSS 表达）
+  var GEN_FACTION_STYLES = {
+    0: { bg:'rgba(231,76,60,.10)',  bd:'rgba(231,76,60,.40)',  c:'#ec9a8e' },  // 红
+    1: { bg:'rgba(61,190,108,.10)', bd:'rgba(61,190,108,.40)', c:'#9ad9b3' },  // 绿
+    2: { bg:'rgba(52,152,219,.10)', bd:'rgba(52,152,219,.40)', c:'#8ec5e8' },  // 蓝
+  };
+
   function genStatusKey(s) {
     if (!s) return 'healthy';
     if (/疲劳|疲/.test(s))    return 'tired';
@@ -1332,21 +1389,22 @@
     return 'healthy';
   }
 
-  function buildGenTag(g) {
+  function buildGenTag(g, slot) {
     var statusKey = genStatusKey(g.status);
-    var sc        = GEN_STATUS_STYLES[statusKey] || GEN_STATUS_STYLES.healthy;
     var isDead    = statusKey === 'dead';
 
     // 状态文字映射（仅用于 title tooltip）
     var STATUS_LABEL = { healthy:'健康', tired:'疲劳', injured:'受伤', sick:'患病', dead:'阵亡' };
     var statusLabel  = STATUS_LABEL[statusKey] || (g.status || '健康');
 
-    // ── 容器样式：颜色表示状态，只显示名字 ──
-    var wrapStyle = 'background-color:' + sc.bg + ';'
-      + 'border:1px solid ' + sc.bd + ';'
-      + 'color:' + sc.c + ';';
+    // 势力色：slot 0/1/2 → 红/绿/蓝；其他兜底用旧状态色
+    var fc = GEN_FACTION_STYLES[slot] || GEN_STATUS_STYLES.healthy;
 
-    // 结构：仅名字，状态通过颜色体现；title 已移除（使用自定义 tooltip）
+    // inline 仅注入颜色三项（背景/边框/字色），形态与状态色条由 CSS 负责
+    var wrapStyle = 'background-color:' + fc.bg + ';'
+      + 'border:1px solid ' + fc.bd + ';'
+      + 'color:' + fc.c + ';';
+
     return '<span class="gen-tag" data-status="' + statusKey
       + '" data-name="' + esc(g.name) + '"'
       + ' style="' + wrapStyle + '">'
