@@ -4698,3 +4698,53 @@ body.fx-off-captured [data-ctype="captured"] {
   font-size:.76rem;
   font-variant-numeric:tabular-nums;
 }
+
+/* ════════════════════════════════════════════════
+   v20260601c 城池悬浮卡 · 武将胶囊极简化 + 描述行微加粗
+   覆盖前置:
+   - .sgt-gen-pill (定义在 v20260528a 段)
+   - .sgt-desc      (定义在城池悬浮卡 v15 段)
+   - .sgt-prod-chain (定义在产出块段)
+   设计目标:极简文字框 + 透明底 + 发丝灰边,体感缩约 40%
+   ════════════════════════════════════════════════ */
+
+/* ── 武将胶囊:字号下调一档 + padding 收紧 + 透明底 + 发丝灰边 ── */
+.sgmap-tooltip .sgt-gen-pill-row {
+  gap: 4px 4px;
+}
+
+.sgmap-tooltip .sgt-gen-pill {
+  padding: 1.5px 7px;
+  font-size: .72rem;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 3px;
+  color: var(--text-main);
+  letter-spacing: .025em;
+  line-height: 1.5;
+}
+
+/* hover 同步降幅,避免 hover 后忽然变胖 */
+.sgmap-tooltip .sgt-gen-pill:hover {
+  background: rgba(212,168,67,.06);
+  border-color: rgba(212,168,67,.45);
+  color: var(--gold-light);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,.45);
+}
+
+/* 状态字也同步小一档 */
+.sgmap-tooltip .sgt-gen-pill .sgt-gen-state {
+  font-size: .58rem;
+}
+
+/* ── 描述行:字重从默认上调到 400,字色从 dim 抬到 sub ── */
+.sgmap-tooltip .sgt-desc {
+  font-weight: 400;
+  color: var(--text-sub);
+}
+
+/* ── 产出链小注:字重从默认上调到 400,保持暗色不变 ── */
+.sgmap-tooltip .sgt-prod-chain {
+  font-weight: 400;
+}
