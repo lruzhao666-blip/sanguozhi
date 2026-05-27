@@ -1036,12 +1036,13 @@ const BONUS_MULT = {
       holderDisp = isNPC ? (city.npcGuard || '无') : '无';
     }
 
-    // 势力浅色取值
+    // 势力浅色取值(v20260616b 修复:pIndex → ow.playerIdx)
     let holderColor = 'var(--gold-dim)'; // NPC 默认
     if (isPlayer) {
-      if (pIndex === 0) holderColor = 'rgba(231,76,60,0.85)';
-      else if (pIndex === 1) holderColor = 'rgba(61,190,108,0.85)';
-      else if (pIndex === 2) holderColor = 'rgba(52,152,219,0.85)';
+      const _pi = ow.playerIdx;
+      if (_pi === 0)      holderColor = 'rgba(231,76,60,0.85)';
+      else if (_pi === 1) holderColor = 'rgba(61,190,108,0.85)';
+      else if (_pi === 2) holderColor = 'rgba(52,152,219,0.85)';
     }
 
     // 驻将纯文字渲染
@@ -1054,7 +1055,7 @@ const BONUS_MULT = {
       // 所以我们这里也用 / 分隔，同时兼容可能出现的 ,
       // 有的地方可能带有状态：(受伤)
       const pills = holderDisp.split(/[\/,，、]/).map(s => s.trim()).filter(Boolean);
-      const pillHtmls = pills.map((genStr, idx) => {
+      const pillHtmls = pills.map(genStr => {
         let name = genStr;
         let state = '';
 
@@ -1072,10 +1073,9 @@ const BONUS_MULT = {
         else if (state === '患病') stateSpan = '<span style="opacity:0.8;font-size:0.9em;">(病)</span>';
         else if (state === '阵亡') stateSpan = '<span style="opacity:0.8;font-size:0.9em;">(亡)</span>';
 
-        const fontWeight = idx === 0 ? '600' : 'normal';
-        return `<span style="color:${holderColor};font-weight:${fontWeight};" data-name="${_esc(name)}">${_esc(name)}${stateSpan}</span>`;
+        return `<span class="sgt-holder-name" style="color:${holderColor};" data-name="${_esc(name)}">${_esc(name)}${stateSpan}</span>`;
       });
-      holderHtml = `<div style="display:inline-block;flex:1;">${pillHtmls.join('　')}</div>`;
+      holderHtml = `<div class="sgt-holder-names">${pillHtmls.join(' ')}</div>`;
     }
 
     // 兵力

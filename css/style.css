@@ -5420,3 +5420,19 @@ body.fx-off-captured [data-ctype="captured"] {
 .pcard.pcard-v3 .pc-transit-status {
   margin-left: 0;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   v20260616b · 工单#1-FIX-v3 · 城池悬浮卡守将字重间距优化
+   ----------------------------------------------------------------
+   配合 map.js _showTip 守将 span 加 class .sgt-holder-name + 外层 .sgt-holder-names。
+   字重统一 600,间距用 word-spacing 6px 控制(半角空格分隔)。
+   颜色仍由 JS 内联控制(NPC 暗金 / 玩家势力浅色)。
+   ══════════════════════════════════════════════════════════════ */
+.sgt-holder-names {
+  display: inline-block;
+  word-spacing: 6px;
+}
+.sgt-holder-name {
+  font-weight: 600;
+  letter-spacing: .02em;
+}
