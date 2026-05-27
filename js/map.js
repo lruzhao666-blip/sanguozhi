@@ -1036,7 +1036,15 @@ const BONUS_MULT = {
       holderDisp = isNPC ? (city.npcGuard || '无') : '无';
     }
 
-    // 驻将胶囊渲染
+    // 势力浅色取值
+    let holderColor = 'var(--gold-dim)'; // NPC 默认
+    if (isPlayer) {
+      if (pIndex === 0) holderColor = 'rgba(231,76,60,0.85)';
+      else if (pIndex === 1) holderColor = 'rgba(61,190,108,0.85)';
+      else if (pIndex === 2) holderColor = 'rgba(52,152,219,0.85)';
+    }
+
+    // 驻将纯文字渲染
     let holderHtml = '';
     if (!holderDisp || holderDisp === '无' || holderDisp === '空' || holderDisp === '空缺') {
       holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空缺</div>';
@@ -1046,7 +1054,7 @@ const BONUS_MULT = {
       // 所以我们这里也用 / 分隔，同时兼容可能出现的 ,
       // 有的地方可能带有状态：(受伤)
       const pills = holderDisp.split(/[\/,，、]/).map(s => s.trim()).filter(Boolean);
-      const pillHtmls = pills.map(genStr => {
+      const pillHtmls = pills.map((genStr, idx) => {
         let name = genStr;
         let state = '';
 
@@ -1059,15 +1067,15 @@ const BONUS_MULT = {
           }
         }
 
-        let stateAttr = state ? ` data-state="${state}"` : '';
         let stateSpan = '';
-        if (state === '受伤') stateSpan = '<span class="sgt-gen-state">·伤</span>';
-        else if (state === '患病') stateSpan = '<span class="sgt-gen-state">·病</span>';
-        else if (state === '阵亡') stateSpan = '<span class="sgt-gen-state">·亡</span>';
+        if (state === '受伤') stateSpan = '<span style="opacity:0.8;font-size:0.9em;">(伤)</span>';
+        else if (state === '患病') stateSpan = '<span style="opacity:0.8;font-size:0.9em;">(病)</span>';
+        else if (state === '阵亡') stateSpan = '<span style="opacity:0.8;font-size:0.9em;">(亡)</span>';
 
-        return `<span class="sgt-gen-pill gen-tag" data-name="${_esc(name)}"${stateAttr}>${_esc(name)}${stateSpan}</span>`;
+        const fontWeight = idx === 0 ? '600' : 'normal';
+        return `<span style="color:${holderColor};font-weight:${fontWeight};" data-name="${_esc(name)}">${_esc(name)}${stateSpan}</span>`;
       });
-      holderHtml = `<div class="sgt-gen-pill-row">${pillHtmls.join('')}</div>`;
+      holderHtml = `<div style="display:inline-block;flex:1;">${pillHtmls.join('　')}</div>`;
     }
 
     // 兵力

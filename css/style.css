@@ -5123,38 +5123,26 @@ body.fx-off-captured [data-ctype="captured"] {
 /* ══ v20260614d END ══ */
 
 /* ══════════════════════════════════════════════════════════════
-   v20260615b · 工单#1-FIX · 武将胶囊 C 款(JS瘦身后真生效)
+   v20260615c · 工单#1-FIX-v2 · 武将胶囊真生效 + 4档异常状态色条 + 滚动条统一
+   ----------------------------------------------------------------
+   配合本版本 main.js inline style 瘦身。
+   颜色三项(背景/边框/字色)仍由 JS 内联控制;形态、状态色条由本段 CSS 控制。
+   异常状态白名单:tired / injured / sick / dead(健康态 healthy 无色条)。
    ══════════════════════════════════════════════════════════════ */
 
-/* ── 1.1 全站滚动条统一 · 暗金细款 4px ── */
-/* 覆盖文件头部 ::-webkit-scrollbar 旧规则(原 4px 暗红) */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, .3);
-  border-radius: 0;
-}
+/* ── 1. 全站滚动条统一 · 暗金细款 4px ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,.3); border-radius: 0; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(160, 120, 40, .35);
+  background: rgba(160,120,40,.35);
   border-radius: 2px;
   transition: background .2s;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 168, 67, .65);
-}
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(160, 120, 40, .35) rgba(0, 0, 0, .3);
-}
+::-webkit-scrollbar-thumb:hover { background: rgba(212,168,67,.65); }
+::-webkit-scrollbar-corner { background: transparent; }
+* { scrollbar-width: thin; scrollbar-color: rgba(160,120,40,.35) rgba(0,0,0,.3); }
 
-/* 颜色三项(背景/边框/字色)仍由 JS 内联控制,本规则不动它们。
-   其余视觉属性全部由 CSS 接管。 */
+/* ── 2. 武将胶囊 C 款 ── */
 .gen-tag {
   display: inline-flex;
   align-items: center;
@@ -5182,16 +5170,36 @@ body.fx-off-captured [data-ctype="captured"] {
     0 0 0 1px rgba(255,255,255,.05);
 }
 
-/* 主公(lord)标记:JS 端如未加 .lord class,此规则不生效 */
-.gen-tag.lord::before {
+/* ── 3. 4 档异常状态左色条(健康 healthy 不显示) ── */
+/* 异常胶囊左 padding 加大 4px 给色条让位 */
+.gen-tag[data-status="tired"],
+.gen-tag[data-status="injured"],
+.gen-tag[data-status="sick"],
+.gen-tag[data-status="dead"] {
+  padding-left: 13px;
+}
+.gen-tag[data-status="tired"]::before,
+.gen-tag[data-status="injured"]::before,
+.gen-tag[data-status="sick"]::before,
+.gen-tag[data-status="dead"]::before {
   content: '';
-  display: inline-block;
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 2px;
   height: 11px;
-  margin-right: 7px;
-  margin-left: -3px;
-  background: var(--gold);
   border-radius: 1px;
-  box-shadow: 0 0 4px rgba(212,168,67,.6);
   flex-shrink: 0;
+}
+/* 4 档状态色 */
+.gen-tag[data-status="tired"]::before   { background: #d4b040; box-shadow: 0 0 4px rgba(212,176,64,.55); }
+.gen-tag[data-status="injured"]::before { background: #e07070; box-shadow: 0 0 4px rgba(224,112,112,.55); }
+.gen-tag[data-status="sick"]::before    { background: #cc80ee; box-shadow: 0 0 4px rgba(204,128,238,.55); }
+.gen-tag[data-status="dead"]::before    { background: #686868; box-shadow: 0 0 3px rgba(120,120,120,.40); }
+
+/* 阵亡态额外:整体降透明度,字加删除线感(可选,如不喜欢可删) */
+.gen-tag[data-status="dead"] {
+  opacity: .55;
+  filter: grayscale(0.4);
 }

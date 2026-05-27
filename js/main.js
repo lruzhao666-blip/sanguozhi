@@ -1342,17 +1342,15 @@
     var statusLabel  = STATUS_LABEL[statusKey] || (g.status || '健康');
 
     // ── 容器样式：颜色表示状态，只显示名字 ──
-    var wrapStyle = 'border:1px solid ' + sc.bd + ';'
-      + 'background-color:' + sc.bg + ';'
-      + (isDead ? 'text-decoration:line-through;opacity:.5;' : '');
-
-    var nameStyle = 'color:' + sc.c + ';';
+    var wrapStyle = 'background-color:' + sc.bg + ';'
+      + 'border:1px solid ' + sc.bd + ';'
+      + 'color:' + sc.c + ';';
 
     // 结构：仅名字，状态通过颜色体现；title 已移除（使用自定义 tooltip）
     return '<span class="gen-tag" data-status="' + statusKey
       + '" data-name="' + esc(g.name) + '"'
       + ' style="' + wrapStyle + '">'
-      + '<span style="' + nameStyle + '">' + esc(g.name) + '</span>'
+      + esc(g.name)
       + '</span>';
   }
 
