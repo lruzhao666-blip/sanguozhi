@@ -4566,3 +4566,77 @@ body.fx-off-captured [data-ctype="captured"] {
   letter-spacing: .01em;
   white-space: nowrap;
 }
+
+/* v20260527a 武将胶囊徽章:驻将列表升级,接入 .gen-tag 武将悬浮卡委托 */
+/* 仅新增 .sgt-gen-pill 系列,不修改任何现有 .sgt-* 规则 */
+
+.sgt-gen-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.sgt-gen-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px 4px 11px;
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  color: var(--text-main);
+  background: rgba(40,22,14,.5);
+  border: 1px solid rgba(180,140,60,.28);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: color .15s ease-out,
+              background .15s ease-out,
+              border-color .15s ease-out,
+              transform .15s ease-out,
+              box-shadow .15s ease-out;
+  letter-spacing: .03em;
+  line-height: 1.4;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sgt-gen-pill:hover {
+  color: var(--gold-light);
+  background: rgba(70,38,15,.7);
+  border-color: rgba(212,168,67,.65);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,.4),
+              0 0 12px rgba(212,168,67,.15);
+}
+
+.sgt-gen-state {
+  color: #d49435;
+  font-size: .72rem;
+  margin-left: 1px;
+  opacity: .9;
+}
+
+.sgt-gen-pill[data-state="受伤"] .sgt-gen-state { color: #d9544a; }
+.sgt-gen-pill[data-state="患病"] .sgt-gen-state { color: #a66dd4; }
+
+.sgt-gen-pill[data-state="阵亡"] {
+  color: var(--text-dim);
+  text-decoration: line-through;
+  text-decoration-color: rgba(160,60,60,.55);
+  background: rgba(20,10,8,.4);
+  border-color: rgba(120,80,40,.2);
+}
+.sgt-gen-pill[data-state="阵亡"]:hover {
+  color: var(--text-sub);
+  background: rgba(40,20,15,.5);
+  transform: translateY(-1px);
+}
+
+.sgt-gen-empty {
+  color: var(--text-dim);
+  font-size: .82rem;
+  font-style: italic;
+  letter-spacing: .12em;
+  opacity: .55;
+  padding: 4px 0;
+}

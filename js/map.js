@@ -1035,6 +1035,40 @@ const BONUS_MULT = {
       holderDisp = isNPC ? (city.npcGuard || '无') : '无';
     }
 
+    // 驻将胶囊渲染
+    let holderHtml = '';
+    if (!holderDisp || holderDisp === '无' || holderDisp === '空' || holderDisp === '空缺') {
+      holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空缺</div>';
+    } else {
+      // 在 parser 里面可能是用 / 分隔，有的地方可能是纯文本（或者逗号等分隔），但按理说是 /
+      // parser: const holders = holderEmpty ? [] : _trimmed.split('/').map(s => s.trim()).filter(Boolean);
+      // 所以我们这里也用 / 分隔，同时兼容可能出现的 ,
+      // 有的地方可能带有状态：(受伤)
+      const pills = holderDisp.split(/[\/,，、]/).map(s => s.trim()).filter(Boolean);
+      const pillHtmls = pills.map(genStr => {
+        let name = genStr;
+        let state = '';
+
+        const stMatch = genStr.match(/[（(](健康|疲劳|受伤|患病|阵亡)[）)]/);
+        if (stMatch) {
+          name = genStr.replace(/[（(].*?[）)]/, '');
+          const st = stMatch[1];
+          if (st === '受伤' || st === '患病' || st === '阵亡') {
+            state = st;
+          }
+        }
+
+        let stateAttr = state ? ` data-state="${state}"` : '';
+        let stateSpan = '';
+        if (state === '受伤') stateSpan = '<span class="sgt-gen-state">·伤</span>';
+        else if (state === '患病') stateSpan = '<span class="sgt-gen-state">·病</span>';
+        else if (state === '阵亡') stateSpan = '<span class="sgt-gen-state">·亡</span>';
+
+        return `<span class="sgt-gen-pill gen-tag" data-name="${_esc(name)}"${stateAttr}>${_esc(name)}${stateSpan}</span>`;
+      });
+      holderHtml = `<div class="sgt-gen-pill-row">${pillHtmls.join('')}</div>`;
+    }
+
     // 兵力
     const troops = ow?.troops || {};
     const hasTroop = Object.keys(troops).some(k => (troops[k] || 0) > 0);
@@ -1071,7 +1105,7 @@ const BONUS_MULT = {
       </div>
       <div class="sgt-desc">${_esc(city.terrainDesc)}</div>
       <div class="sgt-info-block">
-        <div class="sgt-row sgt-holder"><span class="sgt-lbl">驻将</span><b>${_esc(holderDisp)}</b></div>
+        <div class="sgt-row sgt-holder"><span class="sgt-lbl">驻将</span>${holderHtml}</div>
         ${troopHtml}
       </div>
       ${isEmpty ? '' : `
