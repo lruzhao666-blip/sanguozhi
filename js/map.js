@@ -1,5 +1,6 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v25.3
+ * v25.4 (2026-05-27): 工单#map-tooltip-1 · 城池悬浮卡守将区极简化 — 去势力色 + 去状态后缀 + 阵亡不渲染
  * v25.3 (变更): 公开 API 追加 getFactionColor(factionName),供军报/战报读取 NPC 阵营色
  * v25.2 (2026-05-28): 移除 _showTip 内 sgt-combat-section 在途/战况段渲染,该信息迁移至军报板块
  * v25.1 (2026-05-27): 补回 PR#204 误删的 _moveTip / _hideTip
@@ -1036,46 +1037,44 @@ const BONUS_MULT = {
       holderDisp = isNPC ? (city.npcGuard || '无') : '无';
     }
 
-    // 势力浅色取值(v20260616b 修复:pIndex → ow.playerIdx)
-    let holderColor = 'var(--gold-dim)'; // NPC 默认
-    if (isPlayer) {
-      const _pi = ow.playerIdx;
-      if (_pi === 0)      holderColor = 'rgba(231,76,60,0.85)';
-      else if (_pi === 1) holderColor = 'rgba(61,190,108,0.85)';
-      else if (_pi === 2) holderColor = 'rgba(52,152,219,0.85)';
-    }
-
-    // 驻将纯文字渲染
+    // ══ v20260617a · 工单#map-tooltip-1 · 守将区极简化 ══
+    // - 移除势力色硬编码(原 holderColor 逻辑全删,颜色交还 CSS)
+    // - 移除 (伤)/(病)/(亡) 状态后缀(状态信息只在玩家卡展示)
+    // - 阵亡武将不渲染(从列表中移除)
+    // - 半角空格 join 改为不 join(由 CSS flex gap 控制间距)
     let holderHtml = '';
     if (!holderDisp || holderDisp === '无' || holderDisp === '空' || holderDisp === '空缺') {
       holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空缺</div>';
     } else {
-      // 在 parser 里面可能是用 / 分隔，有的地方可能是纯文本（或者逗号等分隔），但按理说是 /
-      // parser: const holders = holderEmpty ? [] : _trimmed.split('/').map(s => s.trim()).filter(Boolean);
-      // 所以我们这里也用 / 分隔，同时兼容可能出现的 ,
-      // 有的地方可能带有状态：(受伤)
+      // 兼容 / , ， 、 四种分隔符
       const pills = holderDisp.split(/[\/,，、]/).map(s => s.trim()).filter(Boolean);
-      const pillHtmls = pills.map(genStr => {
-        let name = genStr;
-        let state = '';
+      const pillHtmls = pills
+        .map(genStr => {
+          let name = genStr;
+          let isDead = false;
 
-        const stMatch = genStr.match(/[（(](健康|疲劳|受伤|患病|阵亡)[）)]/);
-        if (stMatch) {
-          name = genStr.replace(/[（(].*?[）)]/, '');
-          const st = stMatch[1];
-          if (st === '受伤' || st === '患病' || st === '阵亡') {
-            state = st;
+          // 提取并剥离状态括号
+          const stMatch = genStr.match(/[（(](健康|疲劳|受伤|患病|阵亡)[）)]/);
+          if (stMatch) {
+            name = genStr.replace(/[（(].*?[）)]/, '').trim();
+            if (stMatch[1] === '阵亡') isDead = true;
           }
-        }
 
-        let stateSpan = '';
-        if (state === '受伤') stateSpan = '<span style="opacity:0.8;font-size:0.9em;">(伤)</span>';
-        else if (state === '患病') stateSpan = '<span style="opacity:0.8;font-size:0.9em;">(病)</span>';
-        else if (state === '阵亡') stateSpan = '<span style="opacity:0.8;font-size:0.9em;">(亡)</span>';
+          // 阵亡武将整体不渲染
+          if (isDead) return null;
 
-        return `<span class="sgt-holder-name" style="color:${holderColor};" data-name="${_esc(name)}">${_esc(name)}${stateSpan}</span>`;
-      });
-      holderHtml = `<div class="sgt-holder-names">${pillHtmls.join(' ')}</div>`;
+          // 纯名字渲染,无 inline color,无状态后缀
+          return `<span class="sgt-holder-name" data-name="${_esc(name)}">${_esc(name)}</span>`;
+        })
+        .filter(Boolean);
+
+      // 全部阵亡或解析后为空 → 显示空缺
+      if (pillHtmls.length === 0) {
+        holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空缺</div>';
+      } else {
+        // 不 join 空格,由 CSS flex gap 控制
+        holderHtml = `<div class="sgt-holder-names">${pillHtmls.join('')}</div>`;
+      }
     }
 
     // 兵力
