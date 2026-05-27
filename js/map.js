@@ -400,9 +400,6 @@ const BONUS_MULT = {
   let _transitData = [];  // [{faction,general,from,to,troopType,troopCount,status}]
   let _battlesData  = []; // [{attacker,defender,result,attacker_loss,defender_loss,city?}]
   let _tooltip = null;
-  let _pinnedCity = null;
-  let _hoverHideTimer = null;
-  let _globalEventsBound = false;
 
   function _esc(s) {
     return String(s)
@@ -829,45 +826,15 @@ const BONUS_MULT = {
      事件绑定
   ───────────────────────────────── */
   function _bindEvents(container) {
-    if (!_globalEventsBound) {
-      _globalEventsBound = true;
-      document.addEventListener('click', (e) => {
-        if (!_pinnedCity) return;
-        if (e.target.closest('.sgmap-city')) return;
-        _unpinTooltip();
-      });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && _pinnedCity) {
-          _unpinTooltip();
-        }
-      });
-      if (_tooltip) {
-        _tooltip.addEventListener('click', (e) => {
-          if (e.target.closest('.sgt-pin-close')) {
-            _unpinTooltip();
-            e.stopPropagation();
-            return;
-          }
-          e.stopPropagation();
-        });
-      }
-    }
-
     container.querySelectorAll('.sgmap-city').forEach(g => {
-      g.addEventListener('click', _onCityClick);
       g.addEventListener('mouseenter', e => {
-        _activateRing(g);
-        if (_pinnedCity) return;
-        clearTimeout(_hoverHideTimer);
         _showTip(g, e);
+        _activateRing(g);
       });
       g.addEventListener('mousemove',  e => _moveTip(e));
       g.addEventListener('mouseleave', () => {
+        _hideTip();
         _deactivateRing(g);
-        if (_pinnedCity) return;
-        _hoverHideTimer = setTimeout(() => {
-          _hideTip();
-        }, 200);
       });
       g.addEventListener('touchstart', e => {
         e.preventDefault();
@@ -1131,10 +1098,7 @@ const BONUS_MULT = {
     const prodTitle = isPlayer ? '📊 预计本回合产出' : '📊 攻下后基础产出';
     const prodTag = isPlayer ? '含修正' : '仅基础+地利';
 
-    const pinCloseHtml = _pinnedCity ? '<button class="sgt-pin-close" type="button" aria-label="关闭钉住">×</button>' : '';
-
     _tooltip.innerHTML = `
-      ${pinCloseHtml}
       <div class="sgt-header">
         <div class="sgt-name">${_esc(city.name)}</div>
         ${factionChip}
@@ -1182,55 +1146,7 @@ const BONUS_MULT = {
     _tooltip.style.top  = ty + 'px';
   }
 
-  function _pinTooltip(cityEl) {
-    const cityId = cityEl.dataset.id;
-    if (!cityId) return;
-    _pinnedCity = cityId;
-    clearTimeout(_hoverHideTimer);
-    if (_tooltip) _tooltip.classList.add('sgmap-tooltip--pinned');
-
-    // 优先使用 city 元素内的 hex polygon 的屏幕坐标（SVG <g> 的 rect 不可靠）
-    const hex = cityEl.querySelector('polygon') || cityEl.querySelector('circle') || cityEl;
-    const rect = hex.getBoundingClientRect();
-
-    // 兜底：如果 rect 异常（width/height 为 0 或坐标无效），改用窗口中心
-    let cx, cy;
-    if (rect && rect.width > 0 && rect.height > 0 &&
-        isFinite(rect.left) && isFinite(rect.top) &&
-        rect.top >= 0 && rect.top <= window.innerHeight) {
-      cx = rect.left + rect.width / 2;
-      cy = rect.top + rect.height / 2;
-    } else {
-      cx = window.innerWidth / 2;
-      cy = window.innerHeight / 2;
-    }
-
-    const fakeEvent = { clientX: cx, clientY: cy };
-    _showTip(cityEl, fakeEvent);
-  }
-
-  function _unpinTooltip() {
-    _pinnedCity = null;
-    if (_tooltip) _tooltip.classList.remove('sgmap-tooltip--pinned');
-    _hideTip();
-  }
-
-  function _onCityClick(e) {
-    e.stopPropagation();
-    const cityEl = e.target.closest('.sgmap-city');
-    if (!cityEl) return;
-    const cityId = cityEl.dataset.id;
-    if (!cityId) return;
-
-    if (_pinnedCity === cityId) {
-      _unpinTooltip();
-    } else {
-      _pinTooltip(cityEl);
-    }
-  }
-
   function _hideTip() {
-    if (_pinnedCity) return;
     if (_tooltip) _tooltip.classList.remove('visible');
   }
 
@@ -1349,12 +1265,6 @@ const BONUS_MULT = {
       return { name: c.name, region: c.region, tier: c.tier, terrain: c.terrain, bonusKeys: c.bonusKeys || [c.bonusKey] };
     },
     update(newPlayers, cityMap, transitArr, battlesArr) {
-      _pinnedCity = null;
-      if (_tooltip) {
-        _tooltip.classList.remove('sgmap-tooltip--pinned');
-      }
-      _hideTip();
-
       players       = newPlayers  || [];
       cityOwnership = cityMap     || {};
       _transitData  = transitArr  || [];
