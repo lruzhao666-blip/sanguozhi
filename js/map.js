@@ -400,6 +400,9 @@ const BONUS_MULT = {
   let _transitData = [];  // [{faction,general,from,to,troopType,troopCount,status}]
   let _battlesData  = []; // [{attacker,defender,result,attacker_loss,defender_loss,city?}]
   let _tooltip = null;
+  let _pinnedCity = null;
+  let _hoverHideTimer = null;
+  let _globalEventsBound = false;
 
   function _esc(s) {
     return String(s)
@@ -826,15 +829,44 @@ const BONUS_MULT = {
      事件绑定
   ───────────────────────────────── */
   function _bindEvents(container) {
+    if (!_globalEventsBound) {
+      _globalEventsBound = true;
+      document.addEventListener('click', (e) => {
+        if (!_pinnedCity) return;
+        if (e.target.closest('.sgmap-city')) return;
+        _unpinTooltip();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && _pinnedCity) {
+          _unpinTooltip();
+        }
+      });
+      if (_tooltip) {
+        _tooltip.addEventListener('click', (e) => {
+          if (e.target.closest('.sgt-pin-close')) {
+            _unpinTooltip();
+            e.stopPropagation();
+            return;
+          }
+          e.stopPropagation();
+        });
+      }
+    }
+
     container.querySelectorAll('.sgmap-city').forEach(g => {
+      g.addEventListener('click', _onCityClick);
       g.addEventListener('mouseenter', e => {
+        if (_pinnedCity) return;
+        clearTimeout(_hoverHideTimer);
         _showTip(g, e);
         _activateRing(g);
       });
       g.addEventListener('mousemove',  e => _moveTip(e));
       g.addEventListener('mouseleave', () => {
-        _hideTip();
-        _deactivateRing(g);
+        _hoverHideTimer = setTimeout(() => {
+          _hideTip();
+          _deactivateRing(g);
+        }, 200);
       });
       g.addEventListener('touchstart', e => {
         const t = e.touches[0];
@@ -1097,7 +1129,10 @@ const BONUS_MULT = {
     const prodTitle = isPlayer ? '📊 预计本回合产出' : '📊 攻下后基础产出';
     const prodTag = isPlayer ? '含修正' : '仅基础+地利';
 
+    const pinCloseHtml = _pinnedCity ? '<button class="sgt-pin-close" type="button" aria-label="关闭钉住">×</button>' : '';
+
     _tooltip.innerHTML = `
+      ${pinCloseHtml}
       <div class="sgt-header">
         <div class="sgt-name">${_esc(city.name)}</div>
         ${factionChip}
@@ -1145,7 +1180,39 @@ const BONUS_MULT = {
     _tooltip.style.top  = ty + 'px';
   }
 
+  function _pinTooltip(cityName) {
+    _pinnedCity = cityName;
+    clearTimeout(_hoverHideTimer);
+    if (_tooltip) _tooltip.classList.add('sgmap-tooltip--pinned');
+    // We pass a fake event just in case `_showTip` expects one, but we mainly care about `cityName`.
+    const el = document.querySelector(`.sgmap-city[data-name="${cityName}"]`);
+    if (el) {
+      _showTip(el, null);
+    }
+  }
+
+  function _unpinTooltip() {
+    _pinnedCity = null;
+    if (_tooltip) _tooltip.classList.remove('sgmap-tooltip--pinned');
+    _hideTip();
+  }
+
+  function _onCityClick(e) {
+    e.stopPropagation();
+    const cityEl = e.target.closest('.sgmap-city');
+    if (!cityEl) return;
+    const cityName = cityEl.dataset.name;
+    if (!cityName) return;
+
+    if (_pinnedCity === cityName) {
+      _unpinTooltip();
+    } else {
+      _pinTooltip(cityName);
+    }
+  }
+
   function _hideTip() {
+    if (_pinnedCity) return;
     if (_tooltip) _tooltip.classList.remove('visible');
   }
 
@@ -1264,6 +1331,12 @@ const BONUS_MULT = {
       return { name: c.name, region: c.region, tier: c.tier, terrain: c.terrain, bonusKeys: c.bonusKeys || [c.bonusKey] };
     },
     update(newPlayers, cityMap, transitArr, battlesArr) {
+      _pinnedCity = null;
+      if (_tooltip) {
+        _tooltip.classList.remove('sgmap-tooltip--pinned');
+      }
+      _hideTip();
+
       players       = newPlayers  || [];
       cityOwnership = cityMap     || {};
       _transitData  = transitArr  || [];
