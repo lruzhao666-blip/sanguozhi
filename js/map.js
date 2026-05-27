@@ -1188,11 +1188,23 @@ const BONUS_MULT = {
     clearTimeout(_hoverHideTimer);
     if (_tooltip) _tooltip.classList.add('sgmap-tooltip--pinned');
 
-    const rect = cityEl.getBoundingClientRect();
-    const fakeEvent = {
-      clientX: rect.left + rect.width / 2,
-      clientY: rect.top + rect.height / 2,
-    };
+    // 优先使用 city 元素内的 hex polygon 的屏幕坐标（SVG <g> 的 rect 不可靠）
+    const hex = cityEl.querySelector('polygon') || cityEl.querySelector('circle') || cityEl;
+    const rect = hex.getBoundingClientRect();
+
+    // 兜底：如果 rect 异常（width/height 为 0 或坐标无效），改用窗口中心
+    let cx, cy;
+    if (rect && rect.width > 0 && rect.height > 0 &&
+        isFinite(rect.left) && isFinite(rect.top) &&
+        rect.top >= 0 && rect.top <= window.innerHeight) {
+      cx = rect.left + rect.width / 2;
+      cy = rect.top + rect.height / 2;
+    } else {
+      cx = window.innerWidth / 2;
+      cy = window.innerHeight / 2;
+    }
+
+    const fakeEvent = { clientX: cx, clientY: cy };
     _showTip(cityEl, fakeEvent);
   }
 
