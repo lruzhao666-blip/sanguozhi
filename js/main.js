@@ -502,16 +502,15 @@
     countEl.textContent = `${mine.length} 支`;
 
     listEl.innerHTML = mine.map(t => {
-      const statusCls = t.status === '围攻中' ? 'siege'
-                      : t.status === '客驻'   ? 'resident'
+      const statusCls = (t.state === '围攻' || t.state === 'siege') ? 'siege'
+                      : (t.state === '驻守' || t.state === 'resident') ? 'resident'
                       : 'march';
-      const noteHtml = t.note ? `<span class="pc-transit-note">↪ ${esc(t.note)}</span>` : '';
       return `<div class="pc-transit-item" data-status="${statusCls}">
         <span class="pc-transit-general">${esc(t.general || '')}</span>
-        <span class="pc-transit-route">${esc(t.from || '')}<span class="pc-transit-arrow">›</span>${esc(t.to || '')}</span>
-        ${noteHtml}
-        <span class="pc-transit-troop">${esc(t.troopType || '')} ${t.troopCount || 0}</span>
-        <span class="pc-transit-status">${esc(t.status || '')}</span>
+        <span class="pc-transit-route">
+          ${esc(t.from || '')}<span class="pc-transit-arrow">›</span>${esc(t.to || '')}
+        </span>
+        <span class="pc-transit-troop">${esc(t.troop || '')}</span>
       </div>`;
     }).join('');
   }

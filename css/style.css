@@ -5925,3 +5925,93 @@ body.fx-off-captured [data-ctype="captured"] {
   padding-top: 2px !important;
   letter-spacing: .02em !important;
 }
+
+/* ══════════════════════════════════════
+   v20260618b
+   ══════════════════════════════════════ */
+
+/* 【1. 左侧色条完整显示（修复被截断）】 */
+.pcard.pcard-v3 {
+  overflow: visible !important;
+}
+.pcard.pcard-v3::before {
+  top: 0 !important;
+  bottom: 0 !important;
+  height: auto !important;
+  z-index: 5 !important;
+}
+
+/* 【2. 折叠三角换回细款 ▸ 并缩小】 */
+.pcard.pcard-v3 .pc-battles > summary::before,
+.pcard.pcard-v3 .pc-transit > summary::before {
+  content: '▸' !important;
+  display: inline-block !important;
+  font-size: .6rem !important;
+  color: #7a6a5a !important;
+  opacity: .6 !important;
+  margin-right: 6px !important;
+  transition: transform .2s ease !important;
+  width: auto !important;
+  height: auto !important;
+}
+.pcard.pcard-v3 .pc-battles[open] > summary::before,
+.pcard.pcard-v3 .pc-transit[open] > summary::before {
+  transform: rotate(90deg) !important;
+}
+
+/* 【3. 在途部队条目卡片化】 */
+.pcard.pcard-v3 .pc-transit-list {
+  padding: 4px 12px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+}
+.pcard.pcard-v3 .pc-transit-item {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center !important;
+  gap: 6px 10px !important;
+  padding: 6px 10px !important;
+  background: rgba(0,0,0,.35) !important;
+  border-left: 2px solid var(--ti-tone, #a07830) !important;
+  border-radius: 0 4px 4px 0 !important;
+  font-size: .68rem !important;
+  color: #c8b89a !important;
+}
+.pcard.pcard-v3 .pc-transit-item[data-status="march"]    { --ti-tone: #a07830 !important; }
+.pcard.pcard-v3 .pc-transit-item[data-status="siege"]    { --ti-tone: #e05858 !important; }
+.pcard.pcard-v3 .pc-transit-item[data-status="resident"] { --ti-tone: #8ec5e8 !important; }
+.pcard.pcard-v3 .pc-transit-general {
+  font-family: var(--font-serif) !important;
+  font-weight: 700 !important;
+  font-size: .76rem !important;
+  color: #f0e6d3 !important;
+  letter-spacing: .03em !important;
+}
+.pcard.pcard-v3 .pc-transit-route {
+  font-size: .68rem !important;
+  color: #c8b89a !important;
+  letter-spacing: .02em !important;
+}
+.pcard.pcard-v3 .pc-transit-arrow {
+  color: #7a6a5a !important;
+  margin: 0 4px !important;
+}
+.pcard.pcard-v3 .pc-transit-troop {
+  font-size: .62rem !important;
+  color: #a07830 !important;
+  background: rgba(212,168,67,.08) !important;
+  border: 1px solid rgba(212,168,67,.22) !important;
+  border-radius: 8px !important;
+  padding: 1px 7px !important;
+  letter-spacing: .04em !important;
+  white-space: nowrap !important;
+  justify-self: end !important;
+}
+.pcard.pcard-v3 .pc-transit-status {
+  font-size: .58rem !important;
+  font-weight: 700 !important;
+  color: var(--ti-tone, #a07830) !important;
+  letter-spacing: .05em !important;
+  grid-column: 3 !important;
+}
