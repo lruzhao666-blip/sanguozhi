@@ -1,43 +1,34 @@
 /**
- * parser.js — 三国志文字版 · AI内容解析器 v13
- * v13 (变更): [在途] 标签更名为 [调度],双名兼容;_parseTransit 输出新增 slot 字段(0/1/2|null)
+ * parser.js — 三国志文字版 · AI内容解析器 v15
+ * v15 (变更): 清除 府库△/暗账△/兵种△/季度△ 解析路径（规则 v3.32 已移除这三个锚点）
+ *             清除 treasury/troopOps/quarterly/seasonal/darkItems/troopChanges 旧字段
+ *             保留 收支△/情报△/驻军△ 解析路径
  * v14 (变更): _parseBattles 输出新增 attackerSlot/defenderSlot/
  *             attackerFaction/defenderFaction,供军报方案二徽章渲染
  *
- * 规则基准：《三国志文字版》核心引擎 v3.20.1
+ * 规则基准：《三国志文字版》核心引擎 v3.32
  *
  * 支持三种格式：
  *  A. 新版 GM 双段格式 v4（当前规范）：
  *     ``` 剧情区 \n====×36\n 数据区 ```
  *     数据区字段白名单（顺序固定）：
- *       [回合] [速递] [甲] [乙] [丙] [NPC] [战报] [变动]
+ *       [回合] [速递] [甲] [乙] [丙] [NPC] [战报] [调度] [变动]
  *
  *     [变动] 内双层结构：
  *       总变化行   甲 金△-126 粮△+138 兵△X 民心△X 城△+1(攻下XX)
  *       收支△块   甲 收支△                    <- 开启明细块
- *                   金:产出+X,维护-X,合计+-X  <- 资源明细行（冒号或空格分隔）
+ *                   金:产出+X,维护-X,合计+-X  <- 资源明细行
  *                   粮:... 兵:... 民心:...
- *       专项锚点   甲 府库△事由:金+-X,粮+-X
- *                  甲 驻军△城名:+武将/-武将
- *                  甲 兵种△城名:骑+500,步-300 | 步:2000,弓:1000
- *                  甲 季度△金-X,粮-X          <- 每城-40金-60粮，每5回合触发
- *       全局锚点   NPC状态△城名:动态           <- 冒号分隔或空格分隔均支持
+ *       专项锚点   甲 驻军△城名:+武将/-武将
+ *                  甲 情报△情报内容
+ *       全局锚点   NPC状态△城名:动态
  *                  野外△:动态
  *
  *     [甲/乙/丙] 城池格式：城名(守将1/守将2|骑:3000,步:2000)
  *     武将状态白名单（5种固定值）：健康/疲劳/受伤/患病/阵亡
  *
- *  B. 简化新格式 v3（旧规范）：
- *     文本中含【结构化数据】区，每行用 △|字段=值|字段=值 管道格式
- *
+ *  B. 简化新格式 v3（旧规范）：管道格式
  *  C. 降级：最旧格式（👤[...] emoji块）
- *
- * ── 扩展预留位 ──
- *   新增[变动]锚点类型：在 _parseOneChange() Step2 专项锚点区追加 if(/^新锚点△/) 分支
- *   新增全局锚点：在 _parseChangesBlock() 全局锚点区追加匹配逻辑
- *   新增资源类型：扩展 _parseSeasonalLine / _validateBreakdown 的资源列表
- *   新增数据区字段块：在 _splitBlocks() 的 KNOWN Set 中追加标签名
- *   前端无需同步修改：anchorGroups 数据驱动，自动适应新锚点渲染
  */
 
 window.SGParser = (function () {
@@ -45,7 +36,7 @@ window.SGParser = (function () {
 
   const SEP = '='.repeat(36);
 
-  // 兵种顺序（显示用）
+  // 兵种类型（城池解析用）
   const TROOP_TYPES = ['步', '弓', '骑', '水', '蛮'];
 
   // 武将合法状态
@@ -102,7 +93,7 @@ window.SGParser = (function () {
       battles:       [],      // [{attacker,defender,result,attacker_loss,defender_loss,success}]
       battleSummary: '',      // 新增
       transit:       [],      // 新增
-      changes:       [],      // [{slot,resources,breakdown,treasury,garrisonOps,troopOps,quarterly,…}]
+      changes:       [],      // [{slot,resources,breakdown,garrisonOps,intel,anchorGroups}]
       garrison:      [],
       cityOwnership: {},
       roundInfo:     {},
@@ -180,13 +171,6 @@ window.SGParser = (function () {
 
     // 构建 cityOwnership
     result.cityOwnership = _buildCityOwnership(result.players, result.npcCities);
-
-    // 应用 troopOps（兵种覆写/增减）到 cityOwnership
-    result.changes.forEach(ch => {
-      (ch.troopOps || []).forEach(op => {
-        _applyOneTroopOp(op, result.cityOwnership);
-      });
-    });
 
   }
 
@@ -477,14 +461,12 @@ window.SGParser = (function () {
   //  支持结构：
   //  ┌ 总变化行    甲 金△-126 粮△+138 兵△-80 民心△+0 城△+1(攻下陈仓)
   //  ├ 收支△块    甲 收支△
-  //  │              金:产出+30,维护-24,明账-10,府库-120,合计-124
-  //  │              粮:产出+50,维护-107,府库+195,合计+138
+  //  │              金:产出+30,维护-24,明账-10,合计-124
+  //  │              粮:产出+50,维护-107,合计+138
   //  │              兵:战损-80,合计-80
   //  │              民心:合计+0
-  //  ├ 专项锚点   甲 府库△事由:金-120,粮+195
-  //  │            甲 驻军△长安:+赵云
-  //  │            甲 兵种△长安:骑+500
-  //  │            甲 季度△金-40,粮-60
+  //  ├ 专项锚点   甲 驻军△长安:+赵云
+  //  │            甲 情报△某情报内容
   //  └ 全局锚点   NPC状态△虎牢关:吕布更换西门巡夜
   //               野外△:高定再送山盐但仍未归附
   // ═══════════════════════════════════════════════════════
@@ -603,16 +585,9 @@ window.SGParser = (function () {
       resources:    {},   // 总变化  { 金:-126, 粮:+138, … }
       cities:       [],   // 城池得失 [{delta,action,cityName}]
       breakdown:    {},   // 收支明细 { 金:{items:[],total}, 粮:{…}, 兵:{…}, 民心:{…} }
-      treasury:     [],   // 府库△   [{desc,entries:[{res,val}]}]
       garrisonOps:  [],   // 驻军△   [{cityName, ops:[{name,dir}]}]  dir: in|out|dead
-      troopOps:     [],   // 兵种△   [{cityName, entries:[{type,val}], isDelta}]
-      quarterly:    [],   // 季度△   [{res,val}]
-      // 以下保留供旧渲染路径使用
-      guards:       [],
-      troopChanges: [],
-      darkItems:    [],
-      seasonal:     [],
-      intel:        [],
+      guards:       [],   // 兼容旧渲染路径（由 garrisonOps 派生）
+      intel:        [],   // 情报△
       anchorGroups: {},
       warnings:     [],
     };
@@ -634,7 +609,7 @@ window.SGParser = (function () {
       const totalMatches = [...line.matchAll(/(金|粮|兵|民心|城)△([+-]?\d+)/g)];
       if (totalMatches.length >= 1) {
         // 排除已在 Step2 处理的专项锚点行（这些行含 △ 但不是总变化行）
-        const isSpecialAnchor = /^(收支|府库|暗账|驻军|兵种|季度|情报)△/.test(line);
+        const isSpecialAnchor = /^(收支|驻军|情报|产出)△/.test(line);
         if (!isSpecialAnchor) {
           totalMatches.forEach(m => {
             change.resources[m[1]] = parseInt(m[2]);
@@ -658,78 +633,10 @@ window.SGParser = (function () {
         continue;
       }
 
-      // 府库△事由:金-120,粮+195
-      if (/^府库△/.test(line)) {
-        anchor = null;
-        const rest = line.replace(/^府库△\s*/, '').trim();
-        if (rest) {
-          const item = _parseTreasuryLine(rest);
-          change.treasury.push(item);
-          // 兼容旧字段
-          change.darkItems.push({ desc: item.desc, entries: item.entries });
-          // 加入 anchorGroups.府库
-          if (!change.anchorGroups['府库']) change.anchorGroups['府库'] = [];
-          change.anchorGroups['府库'].push({
-            label:  item.desc,
-            deltas: item.entries.map(e => ({ res: e.res, val: e.val })),
-            text:   line,
-          });
-        }
-        continue;
-      }
-
-      // 暗账△（兼容旧名称，等同府库△）
-      if (/^暗账△/.test(line)) {
-        anchor = null;
-        const rest = line.replace(/^暗账△\s*/, '').trim();
-        if (rest) {
-          const item = _parseTreasuryLine(rest);
-          change.treasury.push(item);
-          change.darkItems.push({ desc: item.desc, entries: item.entries });
-          if (!change.anchorGroups['府库']) change.anchorGroups['府库'] = [];
-          change.anchorGroups['府库'].push({
-            label:  item.desc,
-            deltas: item.entries.map(e => ({ res: e.res, val: e.val })),
-            text:   line,
-          });
-        }
-        continue;
-      }
-
       // 驻军△城名:+赵云/-魏延/-文聘(阵亡)/无
       if (/^驻军△/.test(line)) {
         anchor = null;
         _parseGarrisonOp(line, change);
-        continue;
-      }
-
-      // 兵种△城名:骑+500  或  兵种△城名:步:2000,弓:1000
-      if (/^兵种△/.test(line)) {
-        anchor = null;
-        _parseTroopOp(line, change);
-        continue;
-      }
-
-      // 季度△金-40,粮-60
-      if (/^季度△/.test(line)) {
-        anchor = null;
-        const rest = line.replace(/^季度△\s*/, '').trim();
-        // 先解析到临时数组，避免累积后 deltas 捕获到上一条的内容
-        const newItems = [];
-        _parseSeasonalLine(rest, newItems);
-        newItems.forEach(item => {
-          change.quarterly.push(item);
-          // 注：不再写入 change.seasonal——seasonal 是旧版字段，
-          // _migrateToAnchorGroups 会检测 anchorGroups['季度'] 已存在时跳过迁移，
-          // 写入 seasonal 反而触发重复渲染。旧存档兼容由 main.js 侧保证。
-        });
-        // 加入 anchorGroups.季度（每条 季度△ 独立一项，label 注明结算周期）
-        if (!change.anchorGroups['季度']) change.anchorGroups['季度'] = [];
-        change.anchorGroups['季度'].push({
-          label:  '季度结算',
-          deltas: newItems.map(s => ({ res: s.res, val: s.val })),
-          text:   line,
-        });
         continue;
       }
 
@@ -769,23 +676,17 @@ if (/^产出△/.test(line)) {
       // ══════════════════════════════════════
       //  Step 3：锚点内容行（收支△明细块）
       //  规则：收支△后跟资源明细行，每行格式：
-      //    金:产出+30,维护-24,明账-10,府库-120,合计-124
+      //    金:产出+30,维护-24,明账-10,合计-124
       //    民心:赤字-5,合计-5
       //  BUG#2 修复：遇到新的专项锚点行时必须退出 breakdown 状态
-      //    旧逻辑：非资源行只 continue 不重置 anchor，后续锚点行被误归入 breakdown
-      //    新逻辑：明细块只接受「资源名:...」格式行；一旦遇到以下情况则退出 breakdown：
-      //      a) 新专项锚点行（府库△/驻军△/兵种△/季度△/情报△/收支△）
-      //      b) 空行（收支块已结束）
-      //    退出后重新进入主循环 Step2 处理该行
       // ══════════════════════════════════════
       if (anchor === 'breakdown') {
-        // 检查是否遇到了新锚点行 —— 若是，退出 breakdown，让该行在下方 Step2 重新处理
-        // （收支△本身也算新块，虽然不常见但容错）
-        if (/^(收支|府库|暗账|驻军|兵种|季度|情报|产出)△/.test(line)) {
+        // 检查是否遇到了新锚点行 —— 若是，退出 breakdown
+        if (/^(收支|驻军|情报|产出)△/.test(line)) {
           anchor = null;
           // 不 continue，让代码继续往下执行 Step2 处理本行
         } else {
-          // 格式：金:产出+30,维护-24,明账-10,府库-120,合计-124
+          // 格式：金:产出+30,维护-24,明账-10,合计-124
           //       民心:赤字-5,合计-5
           //       兵 战损-80,合计-80   （空格分隔也支持）
           const catM = line.match(/^(金|粮|兵|民心)[：:,，\s]+(.*)/);
@@ -800,7 +701,6 @@ if (/^产出△/.test(line)) {
             let im;
             while ((im = itemRe.exec(restNoTotal)) !== null) {
               let lbl = im[1].replace(/[→:：]/g, '').trim();
-              if (lbl === '暗账') lbl = '府库';  // 字段别名统一
               // 过滤：空标签、完整"合计"词、单字残余"合"/"计"
               if (lbl && lbl !== '合计' && lbl !== '合' && lbl !== '计' && lbl.length >= 2) {
                 items.push({ label: lbl, val: parseInt(im[2]) });
@@ -820,16 +720,13 @@ if (/^产出△/.test(line)) {
       // ══════════════════════════════════════
       //  Step 4：通用 fallback（未知 XX△ 模式）
       //  仅捕获 Step1/Step2 均未命中的行
-      //  排除资源名前缀（金△/粮△/兵△/民心△/城△）——
-      //    这些行在 Step1 处理（总变化行），不应在此二次处理
-      //  排除已知专项锚点前缀——这些行在 Step2 处理
       // ══════════════════════════════════════
       const genericM = line.match(/^([^△\s]{1,10})△\s*(.*)/);
       if (genericM) {
         const key  = genericM[1].trim();
         const body = genericM[2].trim();
         // 已知锚点关键字：由 Step1/Step2 专门处理，此处跳过
-        const KNOWN_ANCHORS = ['金','粮','兵','民心','城','收支','府库','暗账','驻军','兵种','季度','情报'];
+        const KNOWN_ANCHORS = ['金','粮','兵','民心','城','收支','驻军','情报'];
         if (!KNOWN_ANCHORS.includes(key)) {
           anchor = null;
           const deltas = [];
@@ -849,7 +746,7 @@ if (/^产出△/.test(line)) {
     // ── 收支合计校验 ──
     _validateBreakdown(change, slot);
 
-    // ── 兼容旧渲染路径：guards ← garrisonOps ──
+    // ── 派生 guards（供驻军渲染使用）← garrisonOps ──
     change.garrisonOps.forEach(op => {
       const existing = change.guards.find(g => g.cityName === op.cityName);
       const members  = op.ops.map(o => ({ name: o.name, dir: o.dir === 'dead' ? 'out' : o.dir }));
@@ -860,15 +757,7 @@ if (/^产出△/.test(line)) {
       }
     });
 
-    // ── 兼容旧渲染路径：troopChanges ← troopOps ──
-    change.troopChanges = change.troopOps.map(op => ({
-      cityName: op.cityName,
-      spec:     op.entries.map(e => e.isDelta ? `${e.type}${e.val > 0 ? '+' : ''}${e.val}` : `${e.type}:${e.val}`).join(','),
-      entries:  op.entries.map(e => ({ type: e.type, val: e.val })),
-      isDelta:  op.isDelta,
-    }));
-
-    // ── 兼容旧渲染路径：anchorGroups.驻军 ← garrisonOps ──
+    // ── anchorGroups.驻军 ← garrisonOps ──
     if (change.garrisonOps.length && !change.anchorGroups['驻军']) {
       change.anchorGroups['驻军'] = [];
       const cityMap = {};
@@ -884,41 +773,7 @@ if (/^产出△/.test(line)) {
       });
     }
 
-    // ── 兼容旧渲染路径：anchorGroups.兵种 ← troopOps ──
-    if (change.troopOps.length && !change.anchorGroups['兵种']) {
-      change.anchorGroups['兵种'] = [];
-      change.troopOps.forEach(op => {
-        change.anchorGroups['兵种'].push({
-          label:  op.cityName,
-          deltas: op.entries.map(e => ({ res: e.type, val: e.val })),
-          text:   '',
-          isTroop: true,
-        });
-      });
-    }
-
     return change;
-  }
-
-  // ─────────────────────────────────────────
-  //  解析府库/暗账行
-  //  格式：陈留粮市:金-120,粮+195
-  // ─────────────────────────────────────────
-  function _parseTreasuryLine(line) {
-    const colonIdx = line.search(/[:：]/);
-    let desc, resRaw;
-    if (colonIdx > 0) {
-      desc   = line.slice(0, colonIdx).trim();
-      resRaw = line.slice(colonIdx + 1).trim();
-    } else {
-      desc   = line;
-      resRaw = '';
-    }
-    const entries = [];
-    for (const m of resRaw.matchAll(/(金|粮|兵|民心)([+-]\d+)/g)) {
-      entries.push({ res: m[1], val: parseInt(m[2]) });
-    }
-    return { desc, entries };
   }
 
   // ─────────────────────────────────────────
@@ -977,68 +832,11 @@ if (/^产出△/.test(line)) {
   }
 
   // ─────────────────────────────────────────
-  //  解析兵种△
-  //  增减式：兵种△长安:骑+500,步-200   → isDelta=true
-  //  覆写式：兵种△长安:步:2000,弓:1000  → isDelta=false
-  // ─────────────────────────────────────────
-  function _parseTroopOp(line, change) {
-    const re = /兵种△([^:：]+)[：:]([^\n]+)/g;
-    let m;
-    while ((m = re.exec(line)) !== null) {
-      const cityName = m[1].trim();
-      const spec     = m[2].trim();
-      const deltaEntries = [];
-      const absEntries   = [];
-
-      for (const dm of spec.matchAll(/([步弓骑水蛮])([+-]\d+)/g)) {
-        deltaEntries.push({ type: dm[1], val: parseInt(dm[2]) });
-      }
-      for (const am of spec.matchAll(/([步弓骑水蛮])[:：](\d+)/g)) {
-        absEntries.push({ type: am[1], val: parseInt(am[2]) });
-      }
-
-      if (deltaEntries.length) {
-        change.troopOps.push({ cityName, entries: deltaEntries, isDelta: true });
-      } else if (absEntries.length) {
-        change.troopOps.push({ cityName, entries: absEntries, isDelta: false });
-      }
-    }
-  }
-
-  // ─────────────────────────────────────────
-  //  解析季度行：金-40,粮-60
-  // ─────────────────────────────────────────
-  function _parseSeasonalLine(line, arr) {
-    if (!line) return;
-    for (const m of line.matchAll(/(金|粮|兵|民心)([+-]\d+)/g)) {
-      arr.push({ res: m[1], val: parseInt(m[2]) });
-    }
-  }
-
-  // ─────────────────────────────────────────
   //  收支合计校验
   //  breakdown[res].total 应 == resources[res]
   // ─────────────────────────────────────────
   function _validateBreakdown(change, slot) {
     // 数据校验功能已移除（保留空函数以兼容调用方）
-  }
-
-  // ─────────────────────────────────────────
-  //  应用单条 troopOp 到 cityOwnership
-  // ─────────────────────────────────────────
-  function _applyOneTroopOp(op, cityOwnership) {
-    const ow = cityOwnership[op.cityName];
-    if (!ow) return;
-    if (!ow.troops) ow.troops = {};
-    if (op.isDelta) {
-      op.entries.forEach(e => {
-        ow.troops[e.type] = Math.max(0, (ow.troops[e.type] || 0) + e.val);
-      });
-    } else {
-      // 覆写
-      ow.troops = {};
-      op.entries.forEach(e => { ow.troops[e.type] = e.val; });
-    }
   }
 
   // ─────────────────────────────────────────
@@ -1222,9 +1020,9 @@ if (/^产出△/.test(line)) {
   function _emptyChange(lord) {
     return {
       slot: lord, raw: '',
-      resources: {}, cities: [], guards: [], troopChanges: [],
-      breakdown: {}, treasury: [], garrisonOps: [], troopOps: [], quarterly: [],
-      darkItems: [], seasonal: [], intel: [], anchorGroups: {}, warnings: [],
+      resources: {}, cities: [], guards: [],
+      breakdown: {}, garrisonOps: [],
+      intel: [], anchorGroups: {}, warnings: [],
     };
   }
 
@@ -1354,15 +1152,9 @@ if (/^产出△/.test(line)) {
         const warns  = ch.warnings && ch.warnings.length
           ? ` <span style="color:#f07070">⚠ ${ch.warnings.length}项校验警告</span>` : '';
         lines.push(`&nbsp;&nbsp;[${ch.slot}] ${resStr || '无变化'}${warns}`);
-        // 府库/驻军/兵种/季度锚点摘要
-        if (ch.treasury && ch.treasury.length)
-          lines.push(`&nbsp;&nbsp;&nbsp;&nbsp;🏛️ 府库 ${ch.treasury.length} 笔`);
+        // 驻军锚点摘要
         if (ch.garrisonOps && ch.garrisonOps.length)
           lines.push(`&nbsp;&nbsp;&nbsp;&nbsp;🛡️ 驻军调度 ${ch.garrisonOps.length} 城`);
-        if (ch.troopOps && ch.troopOps.length)
-          lines.push(`&nbsp;&nbsp;&nbsp;&nbsp;⚔️ 兵种变动 ${ch.troopOps.length} 城`);
-        if (ch.quarterly && ch.quarterly.length)
-          lines.push(`&nbsp;&nbsp;&nbsp;&nbsp;🗓️ 季度扣除`);
       });
     }
 
