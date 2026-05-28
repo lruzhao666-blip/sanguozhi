@@ -6015,3 +6015,33 @@ body.fx-off-captured [data-ctype="captured"] {
   letter-spacing: .05em !important;
   grid-column: 3 !important;
 }
+
+/* v20260618c */
+/* 1. 左侧色条改用 border-left 实现，彻底解决溢出问题 */
+.pcard.pcard-v3 {
+  overflow: hidden !important;
+  border-left-width: 3px !important;
+  border-left-style: solid !important;
+  position: relative !important;
+}
+.pcard.pcard-v3[data-slot="0"] { border-left-color: #e74c3c !important; }
+.pcard.pcard-v3[data-slot="1"] { border-left-color: #3dbe6c !important; }
+.pcard.pcard-v3[data-slot="2"] { border-left-color: #3498db !important; }
+
+/* 彻底取消 ::before 色条，避免与 border-left 冲突 */
+.pcard.pcard-v3::before {
+  content: none !important;
+  display: none !important;
+}
+
+/* 2. 空 .pc-transit-troop 不显示框（避免出现"灰横线"瑕疵） */
+.pcard.pcard-v3 .pc-transit-troop:empty {
+  display: none !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+/* 对 transit-status 同样处理（如果也是空的） */
+.pcard.pcard-v3 .pc-transit-status:empty {
+  display: none !important;
+}
