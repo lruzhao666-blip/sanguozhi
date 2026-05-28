@@ -448,7 +448,7 @@
     // 空态
     if (!mine.length) {
       wrapEl.removeAttribute('open');
-      listEl.innerHTML = '';
+      listEl.innerHTML = '<div class="no-battle">— 本回合无战事 —</div>';
       countEl.textContent = '0 场';
       return;
     }
@@ -493,7 +493,7 @@
     // 空态
     if (!mine.length) {
       wrapEl.removeAttribute('open');
-      listEl.innerHTML = '';
+      listEl.innerHTML = '<div class="no-battle">— 暂无在途部队 —</div>';
       countEl.textContent = '0 支';
       return;
     }
