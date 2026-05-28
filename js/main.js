@@ -443,17 +443,18 @@
     // 过滤：本玩家作为攻方的战斗
     const mine = (battles || []).filter(b => b.attackerSlot === slot);
 
-    // 空态:整段隐藏
+    wrapEl.classList.remove('hidden');
+
+    // 空态
     if (!mine.length) {
-      wrapEl.classList.add('hidden');
       wrapEl.removeAttribute('open');
       listEl.innerHTML = '';
-      countEl.textContent = '';
+      countEl.textContent = '0 场';
       return;
     }
 
-    // 有内容:显示 details(由 HTML 默认 closed,这里不主动 open)
-    wrapEl.classList.remove('hidden');
+    // 有内容:显示 details
+    wrapEl.setAttribute('open', '');
     countEl.textContent = `${mine.length} 场`;
 
     listEl.innerHTML = mine.map(b => {
@@ -487,17 +488,18 @@
 
     const mine = (transit || []).filter(t => t.slot === slot);
 
-    // 空态:整段隐藏
+    wrapEl.classList.remove('hidden');
+
+    // 空态
     if (!mine.length) {
-      wrapEl.classList.add('hidden');
       wrapEl.removeAttribute('open');
       listEl.innerHTML = '';
-      countEl.textContent = '';
+      countEl.textContent = '0 支';
       return;
     }
 
-    // 有内容:显示 details(由 HTML 默认 closed,这里不主动 open)
-    wrapEl.classList.remove('hidden');
+    // 有内容:显示 details
+    wrapEl.setAttribute('open', '');
     countEl.textContent = `${mine.length} 支`;
 
     listEl.innerHTML = mine.map(t => {
