@@ -6103,3 +6103,379 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* pc-transit-troop 空字符串时隐藏(已在 v20260618c 处理,本段不重复) */
+
+/* ══════════════════════════════════════════════════════════════
+   v20260628a · 工单#2-FIX-v2 · 战况/调度行单行紧凑化
+   ----------------------------------------------------------------
+   目标:与"在线 HTML 预览页"1:1 对齐
+   - 单行三段式: [色条] [武将信息+副行] [印章]
+   - 武将名用势力浅色,与玩家卡左色条呼应
+   - 调度三态色条:暗金行军 / 红围攻中 / 蓝客驻
+   - NPC 调度:.is-npc 整行 .78 透明 + 红色条 + 阵营字角标
+   - 移动端 ≤640px:整体微缩
+   覆盖目标:v20260618b/c 段的 grid 多行布局
+   ══════════════════════════════════════════════════════════════ */
+
+/* ═══════════ 战况行单行紧凑化 ═══════════ */
+.pcard.pcard-v3 .pc-battles-list {
+  padding: 4px 12px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+}
+
+.pcard.pcard-v3 .pc-battle-item {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  grid-template-rows: auto auto !important;
+  align-items: center !important;
+  column-gap: 8px !important;
+  row-gap: 2px !important;
+  padding: 6px 10px !important;
+  background: rgba(0,0,0,.35) !important;
+  border-left: 2px solid var(--bi-tone, #d4b040) !important;
+  border-radius: 0 4px 4px 0 !important;
+  font-size: .72rem !important;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="win"]  { --bi-tone: #d4b040 !important; }
+.pcard.pcard-v3 .pc-battle-item[data-result="lose"] { --bi-tone: #d4b040 !important; }
+.pcard.pcard-v3 .pc-battle-item[data-result="draw"] { --bi-tone: #d4b040 !important; }
+
+/* 战况第一行:武将流 + 胜负印章 */
+.pcard.pcard-v3 .pc-battle-flow {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+  font-family: var(--font-serif) !important;
+  font-size: .82rem !important;
+  font-weight: 600 !important;
+  letter-spacing: .03em !important;
+  line-height: 1.4 !important;
+}
+.pcard.pcard-v3 .pc-battle-arrow {
+  color: #7a6a5a !important;
+  margin: 0 3px !important;
+  font-size: .78rem !important;
+  opacity: .7 !important;
+}
+
+/* 战况武将名:按攻方/守方势力浅色 — 利用相邻关系无法直接判定,
+   改用统一暖白色,势力色由玩家卡边框已表达;
+   若要分色,需 JS 端注入 data-slot,本工单不动 JS */
+.pcard.pcard-v3 .pc-battle-flow {
+  color: #f0e6d3 !important;
+}
+
+/* 城名小胶囊:贴在武将流后,inline */
+.pcard.pcard-v3 .pc-battle-item .pc-battle-city {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  justify-self: end !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  font-size: .62rem !important;
+  color: #7a6a5a !important;
+  padding: 1px 6px !important;
+  background: rgba(60,40,10,.25) !important;
+  border: 1px solid rgba(160,120,48,.22) !important;
+  border-radius: 3px !important;
+  letter-spacing: .04em !important;
+  white-space: nowrap !important;
+  margin-left: 4px !important;
+}
+
+/* 胜负印章 */
+.pcard.pcard-v3 .pc-battle-result {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  align-self: center !important;
+  font-family: var(--font-serif) !important;
+  font-weight: 700 !important;
+  font-size: .76rem !important;
+  letter-spacing: .06em !important;
+  padding: 2px 11px !important;
+  border-radius: 3px !important;
+  min-width: 30px !important;
+  text-align: center !important;
+  line-height: 1.5 !important;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="win"] .pc-battle-result {
+  color: #7ddd7d !important;
+  background: rgba(0,60,0,.3) !important;
+  border: 1px solid rgba(125,221,125,.32) !important;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="lose"] .pc-battle-result {
+  color: #e07070 !important;
+  background: rgba(60,0,0,.3) !important;
+  border: 1px solid rgba(224,112,112,.32) !important;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="draw"] .pc-battle-result {
+  color: #aaa !important;
+  background: rgba(40,40,40,.3) !important;
+  border: 1px solid rgba(170,170,170,.22) !important;
+}
+
+/* 战况副行:伤亡 */
+.pcard.pcard-v3 .pc-battle-casu {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  font-size: .62rem !important;
+  color: #7a6a5a !important;
+  letter-spacing: .02em !important;
+  padding-top: 0 !important;
+  font-feature-settings: 'tnum' !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* ═══════════ 调度行单行紧凑化(对仗战况) ═══════════ */
+.pcard.pcard-v3 .pc-transit-list {
+  padding: 4px 12px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+}
+
+.pcard.pcard-v3 .pc-transit-item {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  grid-template-rows: auto auto auto !important;
+  align-items: center !important;
+  column-gap: 6px !important;
+  row-gap: 2px !important;
+  padding: 6px 10px !important;
+  background: rgba(0,0,0,.35) !important;
+  border-left: 2px solid var(--ti-tone, #a07830) !important;
+  border-radius: 0 4px 4px 0 !important;
+  font-size: .72rem !important;
+}
+.pcard.pcard-v3 .pc-transit-item[data-status="march"]    { --ti-tone: #a07830 !important; }
+.pcard.pcard-v3 .pc-transit-item[data-status="siege"]    { --ti-tone: #c84a3a !important; }
+.pcard.pcard-v3 .pc-transit-item[data-status="resident"] { --ti-tone: #5a8cb8 !important; }
+
+/* NPC 行:整体降一档 + 强制红色条(威胁感) */
+.pcard.pcard-v3 .pc-transit-item.is-npc {
+  opacity: .82 !important;
+  border-left-color: #c84a3a !important;
+  --ti-tone: #c84a3a !important;
+}
+
+/* NPC 阵营字角标 */
+.pcard.pcard-v3 .pc-transit-faction {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 16px !important;
+  padding: 1px 5px !important;
+  font-family: var(--font-serif) !important;
+  font-size: .6rem !important;
+  font-weight: 700 !important;
+  color: #c8a060 !important;
+  background: rgba(160,120,40,.18) !important;
+  border: 1px solid rgba(180,140,60,.42) !important;
+  border-radius: 3px !important;
+  letter-spacing: 0 !important;
+  line-height: 1.4 !important;
+  margin-right: 2px !important;
+}
+
+/* 武将名(玩家行:用所在玩家卡的势力浅色;NPC 行:暖白) */
+.pcard.pcard-v3 .pc-transit-general {
+  grid-row: 1 !important;
+  font-family: var(--font-serif) !important;
+  font-weight: 700 !important;
+  font-size: .82rem !important;
+  letter-spacing: .03em !important;
+  line-height: 1.4 !important;
+}
+/* 有 faction 角标时,武将名在第二列;无角标时,在第一列 */
+.pcard.pcard-v3 .pc-transit-item:not(.is-npc) .pc-transit-general {
+  grid-column: 1 / span 1 !important;
+}
+.pcard.pcard-v3 .pc-transit-item.is-npc .pc-transit-general {
+  grid-column: 2 !important;
+  color: #d8c8aa !important;
+}
+/* 玩家行武将名按势力浅色 */
+.pcard.pcard-v3[data-slot="0"] .pc-transit-item:not(.is-npc) .pc-transit-general { color: #ec9a8e !important; }
+.pcard.pcard-v3[data-slot="1"] .pc-transit-item:not(.is-npc) .pc-transit-general { color: #9ad9b3 !important; }
+.pcard.pcard-v3[data-slot="2"] .pc-transit-item:not(.is-npc) .pc-transit-general { color: #8ec5e8 !important; }
+
+/* 路线:出发→目的,inline 文字(线上 from/to 直接是城名文字,不是胶囊) */
+.pcard.pcard-v3 .pc-transit-route {
+  grid-row: 1 !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 3px !important;
+  font-size: .72rem !important;
+  color: #c8b89a !important;
+  letter-spacing: .02em !important;
+  line-height: 1.4 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-width: 0 !important;
+}
+.pcard.pcard-v3 .pc-transit-item:not(.is-npc) .pc-transit-route {
+  grid-column: 2 !important;
+}
+.pcard.pcard-v3 .pc-transit-item.is-npc .pc-transit-route {
+  grid-column: 3 !important;
+}
+
+/* 路线中的城名:暗色小胶囊(与战况城名一致) */
+.pcard.pcard-v3 .pc-transit-route::before,
+.pcard.pcard-v3 .pc-transit-route::after {
+  /* 兼容性占位,不实际生成内容 */
+}
+.pcard.pcard-v3 .pc-transit-arrow {
+  color: var(--gold-dim) !important;
+  margin: 0 2px !important;
+  font-size: .78rem !important;
+  opacity: .7 !important;
+}
+
+/* 兵种印章(右侧,与胜负印章同位置同尺寸) */
+.pcard.pcard-v3 .pc-transit-troop {
+  grid-column: -2 !important;
+  grid-row: 1 !important;
+  align-self: center !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  font-size: .72rem !important;
+  color: #f0c060 !important;
+  padding: 2px 10px !important;
+  background: rgba(100,70,10,.22) !important;
+  border: 1px solid rgba(180,140,60,.4) !important;
+  border-radius: 3px !important;
+  letter-spacing: .04em !important;
+  font-feature-settings: 'tnum' !important;
+  font-variant-numeric: tabular-nums !important;
+  min-width: 44px !important;
+  text-align: center !important;
+  line-height: 1.5 !important;
+  margin-left: 0 !important;
+  justify-self: end !important;
+}
+.pcard.pcard-v3 .pc-transit-troop:empty {
+  display: none !important;
+}
+/* NPC 行兵种印章降暗 */
+.pcard.pcard-v3 .pc-transit-item.is-npc .pc-transit-troop {
+  color: #a07830 !important;
+  background: rgba(40,30,10,.3) !important;
+  border-color: rgba(120,90,40,.32) !important;
+}
+
+/* 副行状态字(剩N/围攻中/客驻):合并到第二行小灰字 */
+.pcard.pcard-v3 .pc-transit-status {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  align-self: start !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  font-family: var(--font-sans) !important;
+  font-size: .62rem !important;
+  font-weight: 400 !important;
+  color: #7a6a5a !important;
+  letter-spacing: .04em !important;
+  line-height: 1.5 !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+.pcard.pcard-v3 .pc-transit-status:empty {
+  display: none !important;
+}
+/* 状态字带前缀:兵种数量 · 状态(由 JS 输出时已含 troop 字符串,此处用 ::before 拼前缀) */
+.pcard.pcard-v3 .pc-transit-item .pc-transit-status::before {
+  content: attr(data-troop-prefix);
+}
+
+/* 因为 JS 当前未输出 data-troop-prefix,改用纯展示:troop 字符串渲染时已写在副行旁
+   这里用兜底:让 status 显示"兵种 数量 · 状态" 由 JS 改造,本工单不动 JS
+   保持现状:status 仅显示 t.status 文字,前缀由用户视觉容忍 */
+/* 状态字按三态分色 */
+.pcard.pcard-v3 .pc-transit-item[data-status="march"]    .pc-transit-status { color: #a07830 !important; }
+.pcard.pcard-v3 .pc-transit-item[data-status="siege"]    .pc-transit-status { color: #e07060 !important; }
+.pcard.pcard-v3 .pc-transit-item[data-status="resident"] .pc-transit-status { color: #7aa8d0 !important; }
+
+/* note 备注:第三行更小灰字 */
+.pcard.pcard-v3 .pc-transit-note {
+  grid-column: 1 / -1 !important;
+  grid-row: 3 !important;
+  font-family: var(--font-sans) !important;
+  font-size: .58rem !important;
+  color: #7a6a5a !important;
+  letter-spacing: .04em !important;
+  opacity: .75 !important;
+  line-height: 1.5 !important;
+  white-space: normal !important;
+}
+.pcard.pcard-v3 .pc-transit-note::before {
+  content: '· ' !important;
+  opacity: .55 !important;
+}
+
+/* ═══════════ 空态文字(战况/调度统一)═══════════ */
+.pcard.pcard-v3 .no-battle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  padding: 12px 0 !important;
+  font-family: var(--font-sans) !important;
+  font-size: .68rem !important;
+  color: #7a6a5a !important;
+  letter-spacing: .1em !important;
+  text-align: center !important;
+  opacity: .65 !important;
+}
+.pcard.pcard-v3 .no-battle::before,
+.pcard.pcard-v3 .no-battle::after {
+  content: '' !important;
+  display: inline-block !important;
+  width: 28px !important;
+  height: 1px !important;
+  background: rgba(160,120,48,.22) !important;
+  vertical-align: middle !important;
+}
+
+/* ═══════════ 移动端 ≤640px ═══════════ */
+@media (max-width: 640px) {
+  .pcard.pcard-v3 .pc-battle-item,
+  .pcard.pcard-v3 .pc-transit-item {
+    padding: 5px 8px !important;
+    font-size: .7rem !important;
+  }
+  .pcard.pcard-v3 .pc-battle-flow,
+  .pcard.pcard-v3 .pc-transit-general {
+    font-size: .78rem !important;
+  }
+  .pcard.pcard-v3 .pc-transit-route {
+    font-size: .68rem !important;
+  }
+  .pcard.pcard-v3 .pc-battle-result,
+  .pcard.pcard-v3 .pc-transit-troop {
+    font-size: .68rem !important;
+    padding: 1px 8px !important;
+    min-width: 36px !important;
+  }
+  .pcard.pcard-v3 .pc-battle-casu,
+  .pcard.pcard-v3 .pc-transit-status {
+    font-size: .58rem !important;
+  }
+  .pcard.pcard-v3 .pc-transit-note {
+    font-size: .55rem !important;
+  }
+  .pcard.pcard-v3 .no-battle::before,
+  .pcard.pcard-v3 .no-battle::after {
+    width: 20px !important;
+  }
+}
