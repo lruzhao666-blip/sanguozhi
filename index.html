@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=v20260701a" />
+  <link rel="stylesheet" href="css/style.css?v=v20260702a" />
 </head>
 <body>
 
@@ -97,140 +97,182 @@
         <div class="ib-body">
           <div class="players-row" id="players-col">
 
-            <!-- 玩家卡 0 -->
-            <div class="pcard pcard-v3" id="pcard-0" data-slot="0">
-              <div class="pcard-header p0-header">
-                <div class="pc-identity">
-                  <span class="pc-name" id="pname-0">城主甲</span>
-                  <span class="pc-city" id="pcity-0"></span>
-                  <span id="ptitle-0" style="display:none"></span>
-                </div>
-                  <div class="pc-ach-slot" id="pc-ach-slot-0"></div>
-              </div>
-              <div class="pc-resources">
-                <div class="pc-res-grid">
-                  <div class="res-cell"><span class="res-emoji">💰</span><b id="pgold-0">—</b><span class="res-name">金</span></div>
-                  <div class="res-cell"><span class="res-emoji">🌾</span><b id="pfood-0">—</b><span class="res-name">粮</span></div>
-                  <div class="res-cell"><span class="res-emoji">🛡️</span><b id="ptroop-0">—</b><span class="res-name">兵</span></div>
-                  <div class="res-cell"><span class="res-emoji">❤️</span><b id="pmorale-0">—</b><span class="res-name">民心</span></div>
-                  <div class="res-cell"><span class="res-emoji">🏯</span><b id="pcities-0">—</b><span class="res-name">城</span></div>
-                </div>
-              </div>
-              <div class="pc-generals" id="pc-generals-0">
-                <div class="gen-list gen-list-expand" id="gen-list-0">——</div>
-              </div>
-              <details class="pc-battles" id="pc-battles-0">
-                <summary>
-                  <span class="pcs-icon">⚔️</span>
-                  <span class="pcs-label">本回合战况</span>
-                  <span class="pcs-divider"></span>
-                  <span class="pc-battles-count" id="pc-battles-count-0">0 场</span>
-                  <span class="pcs-chevron"></span>
-                </summary>
-                <div class="pc-battles-list" id="pc-battles-list-0"></div>
-              </details>
-              <details class="pc-transit" id="pc-transit-0">
-                <summary>
-                  <span class="pcs-icon">🚩</span>
-                  <span class="pcs-label">本回合调度</span>
-                  <span class="pcs-divider"></span>
-                  <span class="pc-transit-count" id="pc-transit-count-0">0 支</span>
-                  <span class="pcs-chevron"></span>
-                </summary>
-                <div class="pc-transit-list" id="pc-transit-list-0"></div>
-              </details>
-              <div class="pc-situation-note hidden" id="pc-note-0"></div>
-            </div>
+<!-- 玩家卡 0 · 甲 -->
+<div class="pcard pcard-v4" id="pcard-0" data-slot="0">
+  <div class="pcard-header p0-header">
+    <div class="pc-identity">
+      <span class="pc-name" id="pname-0">城主甲</span>
+      <span class="pc-city" id="pcity-0"></span>
+      <span id="ptitle-0" style="display:none"></span>
+    </div>
+    <div class="pc-ach-slot" id="pc-ach-slot-0" onclick="window.SGAch && SGAch.open(0)">
+      <span class="ach-title rar-bronze">初出茅庐</span>
+      <span class="ach-count">0</span>
+    </div>
+  </div>
+  <div class="pc-resources">
+    <div class="pc-res-grid">
+      <div class="res-cell"><span class="res-emoji">💰</span><b id="pgold-0">—</b><span class="res-name">金</span></div>
+      <div class="res-cell"><span class="res-emoji">🌾</span><b id="pfood-0">—</b><span class="res-name">粮</span></div>
+      <div class="res-cell"><span class="res-emoji">🛡️</span><b id="ptroop-0">—</b><span class="res-name">兵</span></div>
+      <div class="res-cell"><span class="res-emoji">❤️</span><b id="pmorale-0">—</b><span class="res-name">民心</span></div>
+      <div class="res-cell"><span class="res-emoji">🏯</span><b id="pcities-0">—</b><span class="res-name">城</span></div>
+    </div>
+  </div>
+  <div class="pc-generals" id="pc-generals-0">
+    <div class="gen-list gen-list-expand" id="gen-list-0">——</div>
+  </div>
+  <details class="pc-section pc-battles" id="pc-battles-0" open>
+    <summary>
+      <span class="pcs-icon">⚔️</span>
+      <span class="pcs-label">本回合战况</span>
+      <span class="pcs-divider"></span>
+      <span class="pcs-count pc-battles-count" id="pc-battles-count-0">0 场</span>
+      <span class="pcs-chevron"></span>
+    </summary>
+    <div class="pc-battles-list" id="pc-battles-list-0"></div>
+  </details>
+  <details class="pc-section pc-transit" id="pc-transit-0" open>
+    <summary>
+      <span class="pcs-icon">🚩</span>
+      <span class="pcs-label">本回合调度</span>
+      <span class="pcs-divider"></span>
+      <span class="pcs-count pc-transit-count" id="pc-transit-count-0">0 支</span>
+      <span class="pcs-chevron"></span>
+    </summary>
+    <div class="pc-transit-list" id="pc-transit-list-0"></div>
+  </details>
+  <details class="pc-section pc-changes" id="pc-changes-0" open>
+    <summary>
+      <span class="pcs-icon">💰</span>
+      <span class="pcs-label">本回合收支</span>
+      <span class="pcs-divider"></span>
+      <span class="pcs-count" id="pc-changes-sum-0">—</span>
+      <span class="pcs-chevron"></span>
+    </summary>
+    <div class="pc-changes-list" id="pc-changes-list-0"></div>
+    <div class="pc-changes-intel hidden" id="pc-changes-intel-0"></div>
+  </details>
+  <div class="pc-situation-note hidden" id="pc-note-0"></div>
+</div>
 
-            <!-- 玩家卡 1 -->
-            <div class="pcard pcard-v3" id="pcard-1" data-slot="1">
-              <div class="pcard-header p1-header">
-                <div class="pc-identity">
-                  <span class="pc-name" id="pname-1">城主乙</span>
-                  <span class="pc-city" id="pcity-1"></span>
-                  <span id="ptitle-1" style="display:none"></span>
-                </div>
-                  <div class="pc-ach-slot" id="pc-ach-slot-1"></div>
-              </div>
-              <div class="pc-resources">
-                <div class="pc-res-grid">
-                  <div class="res-cell"><span class="res-emoji">💰</span><b id="pgold-1">—</b><span class="res-name">金</span></div>
-                  <div class="res-cell"><span class="res-emoji">🌾</span><b id="pfood-1">—</b><span class="res-name">粮</span></div>
-                  <div class="res-cell"><span class="res-emoji">🛡️</span><b id="ptroop-1">—</b><span class="res-name">兵</span></div>
-                  <div class="res-cell"><span class="res-emoji">❤️</span><b id="pmorale-1">—</b><span class="res-name">民心</span></div>
-                  <div class="res-cell"><span class="res-emoji">🏯</span><b id="pcities-1">—</b><span class="res-name">城</span></div>
-                </div>
-              </div>
-              <div class="pc-generals" id="pc-generals-1">
-                <div class="gen-list gen-list-expand" id="gen-list-1">——</div>
-              </div>
-              <details class="pc-battles" id="pc-battles-1">
-                <summary>
-                  <span class="pcs-icon">⚔️</span>
-                  <span class="pcs-label">本回合战况</span>
-                  <span class="pcs-divider"></span>
-                  <span class="pc-battles-count" id="pc-battles-count-1">0 场</span>
-                  <span class="pcs-chevron"></span>
-                </summary>
-                <div class="pc-battles-list" id="pc-battles-list-1"></div>
-              </details>
-              <details class="pc-transit" id="pc-transit-1">
-                <summary>
-                  <span class="pcs-icon">🚩</span>
-                  <span class="pcs-label">本回合调度</span>
-                  <span class="pcs-divider"></span>
-                  <span class="pc-transit-count" id="pc-transit-count-1">0 支</span>
-                  <span class="pcs-chevron"></span>
-                </summary>
-                <div class="pc-transit-list" id="pc-transit-list-1"></div>
-              </details>
-              <div class="pc-situation-note hidden" id="pc-note-1"></div>
-            </div>
+<!-- 玩家卡 1 · 乙 -->
+<div class="pcard pcard-v4" id="pcard-1" data-slot="1">
+  <div class="pcard-header p1-header">
+    <div class="pc-identity">
+      <span class="pc-name" id="pname-1">城主乙</span>
+      <span class="pc-city" id="pcity-1"></span>
+      <span id="ptitle-1" style="display:none"></span>
+    </div>
+    <div class="pc-ach-slot" id="pc-ach-slot-1" onclick="window.SGAch && SGAch.open(1)">
+      <span class="ach-title rar-bronze">初出茅庐</span>
+      <span class="ach-count">0</span>
+    </div>
+  </div>
+  <div class="pc-resources">
+    <div class="pc-res-grid">
+      <div class="res-cell"><span class="res-emoji">💰</span><b id="pgold-1">—</b><span class="res-name">金</span></div>
+      <div class="res-cell"><span class="res-emoji">🌾</span><b id="pfood-1">—</b><span class="res-name">粮</span></div>
+      <div class="res-cell"><span class="res-emoji">🛡️</span><b id="ptroop-1">—</b><span class="res-name">兵</span></div>
+      <div class="res-cell"><span class="res-emoji">❤️</span><b id="pmorale-1">—</b><span class="res-name">民心</span></div>
+      <div class="res-cell"><span class="res-emoji">🏯</span><b id="pcities-1">—</b><span class="res-name">城</span></div>
+    </div>
+  </div>
+  <div class="pc-generals" id="pc-generals-1">
+    <div class="gen-list gen-list-expand" id="gen-list-1">——</div>
+  </div>
+  <details class="pc-section pc-battles" id="pc-battles-1" open>
+    <summary>
+      <span class="pcs-icon">⚔️</span>
+      <span class="pcs-label">本回合战况</span>
+      <span class="pcs-divider"></span>
+      <span class="pcs-count pc-battles-count" id="pc-battles-count-1">0 场</span>
+      <span class="pcs-chevron"></span>
+    </summary>
+    <div class="pc-battles-list" id="pc-battles-list-1"></div>
+  </details>
+  <details class="pc-section pc-transit" id="pc-transit-1" open>
+    <summary>
+      <span class="pcs-icon">🚩</span>
+      <span class="pcs-label">本回合调度</span>
+      <span class="pcs-divider"></span>
+      <span class="pcs-count pc-transit-count" id="pc-transit-count-1">0 支</span>
+      <span class="pcs-chevron"></span>
+    </summary>
+    <div class="pc-transit-list" id="pc-transit-list-1"></div>
+  </details>
+  <details class="pc-section pc-changes" id="pc-changes-1" open>
+    <summary>
+      <span class="pcs-icon">💰</span>
+      <span class="pcs-label">本回合收支</span>
+      <span class="pcs-divider"></span>
+      <span class="pcs-count" id="pc-changes-sum-1">—</span>
+      <span class="pcs-chevron"></span>
+    </summary>
+    <div class="pc-changes-list" id="pc-changes-list-1"></div>
+    <div class="pc-changes-intel hidden" id="pc-changes-intel-1"></div>
+  </details>
+  <div class="pc-situation-note hidden" id="pc-note-1"></div>
+</div>
 
-            <!-- 玩家卡 2 -->
-            <div class="pcard pcard-v3" id="pcard-2" data-slot="2">
-              <div class="pcard-header p2-header">
-                <div class="pc-identity">
-                  <span class="pc-name" id="pname-2">城主丙</span>
-                  <span class="pc-city" id="pcity-2"></span>
-                  <span id="ptitle-2" style="display:none"></span>
-                </div>
-                  <div class="pc-ach-slot" id="pc-ach-slot-2"></div>
-              </div>
-              <div class="pc-resources">
-                <div class="pc-res-grid">
-                  <div class="res-cell"><span class="res-emoji">💰</span><b id="pgold-2">—</b><span class="res-name">金</span></div>
-                  <div class="res-cell"><span class="res-emoji">🌾</span><b id="pfood-2">—</b><span class="res-name">粮</span></div>
-                  <div class="res-cell"><span class="res-emoji">🛡️</span><b id="ptroop-2">—</b><span class="res-name">兵</span></div>
-                  <div class="res-cell"><span class="res-emoji">❤️</span><b id="pmorale-2">—</b><span class="res-name">民心</span></div>
-                  <div class="res-cell"><span class="res-emoji">🏯</span><b id="pcities-2">—</b><span class="res-name">城</span></div>
-                </div>
-              </div>
-              <div class="pc-generals" id="pc-generals-2">
-                <div class="gen-list gen-list-expand" id="gen-list-2">——</div>
-              </div>
-              <details class="pc-battles" id="pc-battles-2">
-                <summary>
-                  <span class="pcs-icon">⚔️</span>
-                  <span class="pcs-label">本回合战况</span>
-                  <span class="pcs-divider"></span>
-                  <span class="pc-battles-count" id="pc-battles-count-2">0 场</span>
-                  <span class="pcs-chevron"></span>
-                </summary>
-                <div class="pc-battles-list" id="pc-battles-list-2"></div>
-              </details>
-              <details class="pc-transit" id="pc-transit-2">
-                <summary>
-                  <span class="pcs-icon">🚩</span>
-                  <span class="pcs-label">本回合调度</span>
-                  <span class="pcs-divider"></span>
-                  <span class="pc-transit-count" id="pc-transit-count-2">0 支</span>
-                  <span class="pcs-chevron"></span>
-                </summary>
-                <div class="pc-transit-list" id="pc-transit-list-2"></div>
-              </details>
-              <div class="pc-situation-note hidden" id="pc-note-2"></div>
-            </div>
+<!-- 玩家卡 2 · 丙 -->
+<div class="pcard pcard-v4" id="pcard-2" data-slot="2">
+  <div class="pcard-header p2-header">
+    <div class="pc-identity">
+      <span class="pc-name" id="pname-2">城主丙</span>
+      <span class="pc-city" id="pcity-2"></span>
+      <span id="ptitle-2" style="display:none"></span>
+    </div>
+    <div class="pc-ach-slot" id="pc-ach-slot-2" onclick="window.SGAch && SGAch.open(2)">
+      <span class="ach-title rar-bronze">初出茅庐</span>
+      <span class="ach-count">0</span>
+    </div>
+  </div>
+  <div class="pc-resources">
+    <div class="pc-res-grid">
+      <div class="res-cell"><span class="res-emoji">💰</span><b id="pgold-2">—</b><span class="res-name">金</span></div>
+      <div class="res-cell"><span class="res-emoji">🌾</span><b id="pfood-2">—</b><span class="res-name">粮</span></div>
+      <div class="res-cell"><span class="res-emoji">🛡️</span><b id="ptroop-2">—</b><span class="res-name">兵</span></div>
+      <div class="res-cell"><span class="res-emoji">❤️</span><b id="pmorale-2">—</b><span class="res-name">民心</span></div>
+      <div class="res-cell"><span class="res-emoji">🏯</span><b id="pcities-2">—</b><span class="res-name">城</span></div>
+    </div>
+  </div>
+  <div class="pc-generals" id="pc-generals-2">
+    <div class="gen-list gen-list-expand" id="gen-list-2">——</div>
+  </div>
+  <details class="pc-section pc-battles" id="pc-battles-2" open>
+    <summary>
+      <span class="pcs-icon">⚔️</span>
+      <span class="pcs-label">本回合战况</span>
+      <span class="pcs-divider"></span>
+      <span class="pcs-count pc-battles-count" id="pc-battles-count-2">0 场</span>
+      <span class="pcs-chevron"></span>
+    </summary>
+    <div class="pc-battles-list" id="pc-battles-list-2"></div>
+  </details>
+  <details class="pc-section pc-transit" id="pc-transit-2" open>
+    <summary>
+      <span class="pcs-icon">🚩</span>
+      <span class="pcs-label">本回合调度</span>
+      <span class="pcs-divider"></span>
+      <span class="pcs-count pc-transit-count" id="pc-transit-count-2">0 支</span>
+      <span class="pcs-chevron"></span>
+    </summary>
+    <div class="pc-transit-list" id="pc-transit-list-2"></div>
+  </details>
+  <details class="pc-section pc-changes" id="pc-changes-2" open>
+    <summary>
+      <span class="pcs-icon">💰</span>
+      <span class="pcs-label">本回合收支</span>
+      <span class="pcs-divider"></span>
+      <span class="pcs-count" id="pc-changes-sum-2">—</span>
+      <span class="pcs-chevron"></span>
+    </summary>
+    <div class="pc-changes-list" id="pc-changes-list-2"></div>
+    <div class="pc-changes-intel hidden" id="pc-changes-intel-2"></div>
+  </details>
+  <div class="pc-situation-note hidden" id="pc-note-2"></div>
+</div>
 
           </div><!-- /players-row -->
         </div><!-- /ib-body -->
@@ -447,6 +489,26 @@
   </div>
 </section>
 
+<!-- ══ 成就墙模态 v4 ══ -->
+<div class="ach-modal-overlay" id="ach-modal">
+  <div class="ach-modal">
+    <div class="ach-modal-head">
+      <div class="ach-modal-title">
+        <span class="title-deco"></span>
+        <span id="ach-modal-player">城主</span> · 战功册
+        <span class="title-deco" style="transform:rotate(180deg)"></span>
+      </div>
+      <div class="ach-modal-right">
+        <div class="ach-modal-stats">已解锁 <b id="ach-stat-unlocked">0</b> / <span id="ach-stat-total">5</span></div>
+        <button class="ach-modal-close" onclick="window.SGAch && SGAch.close()">✕</button>
+      </div>
+    </div>
+    <div class="ach-empty-note">
+      <b>开发预留</b> · 当前 5 个为新手测试成就。后续将通过 Supabase 接入更多成就,由 GM 在 AI 推演中触发解锁。
+    </div>
+    <div class="ach-list" id="ach-list"></div>
+  </div>
+</div>
 </main>
 
 <footer id="site-footer">
