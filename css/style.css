@@ -5882,3 +5882,17 @@ body.fx-off-captured [data-ctype="captured"] {
   .ach-card-desc { font-size: .62rem; }
   .ach-card-meta { font-size: .54rem; }
 }
+
+/* ════════════════════════════════════════════
+   v20260703a 工单#pcard-v4-fix-C
+   - 修复 .pcard-v4 左侧色条被旧规则覆盖
+   - 通过提高特异性 .pcard.pcard-v4 强制生效
+   ════════════════════════════════════════════ */
+
+.pcard.pcard-v4 {
+  border: 1px solid var(--pc-border);
+  border-left: 3px solid var(--pc-strip);
+}
+.pcard.pcard-v4[data-slot="0"] { border-left-color: var(--p0-color); }
+.pcard.pcard-v4[data-slot="1"] { border-left-color: var(--p1-color); }
+.pcard.pcard-v4[data-slot="2"] { border-left-color: var(--p2-color); }
