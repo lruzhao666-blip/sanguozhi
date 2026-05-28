@@ -510,7 +510,7 @@
         <span class="pc-transit-route">
           ${esc(t.from || '')}<span class="pc-transit-arrow">›</span>${esc(t.to || '')}
         </span>
-        <span class="pc-transit-troop">${esc(t.troop || '')}</span>
+        ${t.troop ? `<span class="pc-transit-troop">${esc(t.troop)}</span>` : ''}
       </div>`;
     }).join('');
   }
