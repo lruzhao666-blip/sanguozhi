@@ -261,9 +261,9 @@
   //  事件委托：document 层捕获，兼容动态渲染
   // ══════════════════════════════════════════
   function onMouseOver(e) {
-    var tag = e.target.closest ? e.target.closest('.gen-tag') : null;
+    var tag = e.target.closest ? e.target.closest('.gen-tag, .new-gen-tag') : null;
     if (!tag) return;
-    var name = tag.dataset.name;
+    var name = tag.dataset.name || tag.textContent.trim().split('\n')[0].trim();
     if (!name) return;
     _curTarget = name;
     showTip(name, e);
@@ -271,13 +271,13 @@
 
   function onMouseMove(e) {
     if (!_tip || !_tip.classList.contains('gtp-visible')) return;
-    var tag = e.target.closest ? e.target.closest('.gen-tag') : null;
+    var tag = e.target.closest ? e.target.closest('.gen-tag, .new-gen-tag') : null;
     if (!tag) return;
     positionTip(e);
   }
 
   function onMouseOut(e) {
-    var tag = e.target.closest ? e.target.closest('.gen-tag') : null;
+    var tag = e.target.closest ? e.target.closest('.gen-tag, .new-gen-tag') : null;
     if (!tag) return;
     // 检查是否移向子元素（不触发隐藏）
     if (tag.contains(e.relatedTarget)) return;

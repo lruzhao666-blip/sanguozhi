@@ -829,13 +829,19 @@
     const def      = esc(b.defender || '守方');
     const atkLoss  = b.attacker_loss ?? 0;
     const defLoss  = b.defender_loss ?? 0;
-    const lossHtml = (atkLoss || defLoss)
-      ? `<span class="pc-battle-loss">损：攻${atkLoss} 守${defLoss}</span>` : '';
+    // 次行：伤亡数字（只在有数据时显示）
+    const subLine  = (atkLoss || defLoss)
+      ? `<div class="pc-row-sub">伤亡：攻 ${atkLoss.toLocaleString()} · 守 ${defLoss.toLocaleString()}</div>`
+      : '';
     return `<div class="pc-row">
       <span class="pc-bar b-battle"></span>
-      <span class="pc-row-body">
-        <span class="pc-battle-sides">${atk} <span class="vs-arrow">→</span> ${def}</span>
-        ${lossHtml}
+      <span class="pc-row-mid">
+        <div class="pc-row-main">
+          <span class="pc-battle-atk">${atk}</span>
+          <span class="pc-battle-arrow">→</span>
+          <span class="pc-battle-def">${def}</span>
+        </div>
+        ${subLine}
       </span>
       <span class="pc-result ${rCls}">${rTxt}</span>
     </div>`;
@@ -863,14 +869,21 @@
     if (ch && ch.guards && ch.guards.length) {
       ch.guards.forEach(g => {
         (g.members || []).forEach(m => {
-          const dir   = m.dir === 'out' ? 'out' : 'in';
-          const label = dir === 'in'
-            ? `<span class="guard-in">↘ ${esc(m.name)}</span> 入驻 <b>${esc(g.cityName)}</b>`
-            : `<span class="guard-out">↗ ${esc(m.name)}</span> 调离 <b>${esc(g.cityName)}</b>`;
+          const dir      = m.dir === 'out' ? 'out' : 'in';
+          const dirLabel = dir === 'in' ? '入驻' : '调离';
+          const barCls   = dir === 'in' ? 'b-march' : 'b-siege';
+          const chipCls  = dir === 'in' ? 'pos' : 'neg';
           rows.push(`<div class="pc-row">
-            <span class="pc-bar b-march"></span>
-            <span class="pc-row-body">${label}</span>
-            <span class="pc-troop-chip ${dir === 'in' ? 'pos' : 'neg'}">${dir === 'in' ? '入' : '出'}</span>
+            <span class="pc-bar ${barCls}"></span>
+            <span class="pc-row-mid">
+              <div class="pc-row-main">
+                <span class="pc-transit-name">${esc(m.name)}</span>
+                <span class="pc-battle-arrow">→</span>
+                <span class="pc-transit-city">${esc(g.cityName)}</span>
+              </div>
+              <div class="pc-row-sub">${dirLabel}</div>
+            </span>
+            <span class="pc-troop-chip ${chipCls}">${dir === 'in' ? '入驻' : '调离'}</span>
           </div>`);
         });
       });
@@ -1025,37 +1038,26 @@
 
   function buildGenTag(g) {
     var statusKey = genStatusKey(g.status);
-    var sc        = GEN_STATUS_STYLES[statusKey] || GEN_STATUS_STYLES.healthy;
     var isDead    = statusKey === 'dead';
-
-    // tooltip 悬停提示
-    var titleTip = esc(g.name) + ' · ' + esc(g.status || '健康');
-
-    // ── 容器样式（完全由状态色决定）──
-    var wrapStyle = 'display:inline-flex!important;align-items:center!important;'
-      + 'border-radius:5px;padding:2px 8px 2px 7px;'
-      + 'font-size:.74rem;font-family:inherit;transition:transform .15s;cursor:default;'
-      + 'border:1px solid ' + sc.bd + '!important;'
-      + 'background:' + sc.bg + '!important;'
-      + (isDead ? 'text-decoration:line-through;opacity:.5;' : '');
-
-    var nameStyle = 'font-weight:700;color:' + sc.c + '!important;letter-spacing:.02em;';
-
-    var divStyle = 'display:inline-block;width:1px;height:.9em;margin:0 5px;'
-      + 'background:' + sc.bd + ';flex-shrink:0;opacity:.6;';
-
-    var statusStyle = 'font-size:.6rem;color:' + sc.c + '!important;opacity:.85;white-space:nowrap;';
 
     // 状态文字映射
     var STATUS_SHORT = { healthy:'健康', tired:'疲劳', injured:'受伤', sick:'患病', dead:'阵亡' };
     var statusShort = STATUS_SHORT[statusKey] || (g.status || '健康');
+    var showStatus  = statusKey !== 'healthy'; // 健康时不显示状态字
 
-    // 结构：[名字] | [状态]
-    return '<span class="gen-tag" data-status="' + statusKey
-      + '" style="' + wrapStyle + '" title="' + titleTip + '">'
-      + '<span style="' + nameStyle + '">' + esc(g.name) + '</span>'
-      + '<span style="' + divStyle + '"></span>'
-      + '<span style="' + statusStyle + '">' + esc(statusShort) + '</span>'
+    // class: gen-tag（tooltip监听用）+ new-gen-tag（新视觉）+ data-status + data-name
+    // 非健康状态显示小状态徽标
+    var statusBadge = showStatus
+      ? '<span class="gt-status gt-status--' + statusKey + '">' + esc(statusShort) + '</span>'
+      : '';
+
+    return '<span class="gen-tag new-gen-tag"'
+      + ' data-status="' + statusKey + '"'
+      + ' data-name="' + esc(g.name) + '"'
+      + (isDead ? ' style="opacity:.5;text-decoration:line-through"' : '')
+      + '>'
+      + esc(g.name)
+      + statusBadge
       + '</span>';
   }
 

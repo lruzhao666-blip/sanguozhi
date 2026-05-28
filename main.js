@@ -1,11 +1,10 @@
 /**
- * main.js — 三国志文字版 v10 (v2.5)
- * 对接规范 v2.0：
- *  - 剧情区 / 数据区分离（36个=号分隔）
- *  - [甲][乙][丙] 含 cities_list（城名+守将）
- *  - [战报] 新格式：甲→宛城NPC | 胜 | 伤亡:攻40守180
- *  - cityOwnership 携带 holder 守将字段供地图渲染
- *  - 兼容旧格式
+ * main.js — 三国志文字版 v11
+ * 规范 v3.32：简化格式，三方势力新卡片布局，成就墙
+ *  - new-pcard[data-slot] 卡片结构
+ *  - 战况/调度内嵌 pc-section collapsible
+ *  - 成就墙模态（openAchModal / closeAchModal）
+ *  - 兼容旧格式解析
  */
 
 (function () {
@@ -393,7 +392,8 @@
       renderRoundBar(latest);
       renderDigest(latest);
       renderPlayerCards();
-      renderBattlesBlock(latest.parsed.battles || []);
+      renderPlayerBattles(latest.parsed.battles || [], latest.parsed.changes || []);
+      renderPlayerTransit(latest.parsed.changes || []);
       renderMap();
       renderChangesDetail();
       renderHistorySection();
@@ -778,19 +778,130 @@
   }
 
   // ══════════════════════════════════════════
-  //  战斗结算
+  //  战况 / 调度 → 嵌入玩家卡 pc-section
   // ══════════════════════════════════════════
-  function renderBattlesBlock(battles) {
-    const block = document.getElementById('block-battles');
-    const list  = document.getElementById('battles-list');
-    if (!block || !list) return;
-    if (!battles || !battles.length) { block.classList.add('hidden'); return; }
-    block.classList.remove('hidden');
-    list.innerHTML = '<div class="battle-list">' +
-      battles.map(b => buildBattleCard(b)).join('') +
-      '</div>';
+
+  /**
+   * 把战报注入各玩家卡的 #pc-battles-list-N
+   * 战报行：attacker / defender 字段，匹配 state.players[i].name
+   */
+  function renderPlayerBattles(battles, changes) {
+    // 先全部重置为空状态
+    for (let i = 0; i < 3; i++) {
+      _setBattles(i, [], changes);
+    }
+    if (!battles || !battles.length) return;
+    // 聚合：每个玩家拿所有涉及自己的战报
+    for (let i = 0; i < 3; i++) {
+      const pName = state.players[i]?.name || '';
+      const myBattles = battles.filter(b =>
+        b.attacker === pName || b.defender === pName ||
+        // 兼容旧格式槽位名
+        b.attacker === ['甲','乙','丙'][i] || b.defender === ['甲','乙','丙'][i]
+      );
+      _setBattles(i, myBattles, changes);
+    }
   }
 
+  function _setBattles(idx, battles, changes) {
+    const listEl  = document.getElementById(`pc-battles-list-${idx}`);
+    const countEl = document.getElementById(`pc-battles-count-${idx}`);
+    if (!listEl || !countEl) return;
+
+    if (!battles.length) {
+      listEl.innerHTML = '<div class="pc-empty">本回合无战事</div>';
+      countEl.textContent = '— 无 —';
+      countEl.className   = 'pcs-count is-empty';
+      return;
+    }
+
+    countEl.textContent = battles.length;
+    countEl.className   = 'pcs-count';
+    listEl.innerHTML = battles.map(b => _buildPcBattleRow(b)).join('');
+  }
+
+  function _buildPcBattleRow(b) {
+    const isV2     = b.attacker !== undefined;
+    const result   = isV2 ? b.result : (b.success ? '胜' : '负');
+    const rCls     = result === '胜' ? 'r-win' : result === '平' ? 'r-draw' : 'r-lose';
+    const rTxt     = { '胜':'胜', '平':'平', '负':'败' }[result] || result;
+    const atk      = esc(b.attacker || b.player || '攻方');
+    const def      = esc(b.defender || '守方');
+    const atkLoss  = b.attacker_loss ?? 0;
+    const defLoss  = b.defender_loss ?? 0;
+    // 次行：伤亡数字（只在有数据时显示）
+    const subLine  = (atkLoss || defLoss)
+      ? `<div class="pc-row-sub">伤亡：攻 ${atkLoss.toLocaleString()} · 守 ${defLoss.toLocaleString()}</div>`
+      : '';
+    return `<div class="pc-row">
+      <span class="pc-bar b-battle"></span>
+      <span class="pc-row-mid">
+        <div class="pc-row-main">
+          <span class="pc-battle-atk">${atk}</span>
+          <span class="pc-battle-arrow">→</span>
+          <span class="pc-battle-def">${def}</span>
+        </div>
+        ${subLine}
+      </span>
+      <span class="pc-result ${rCls}">${rTxt}</span>
+    </div>`;
+  }
+
+  /**
+   * 把调度（guards / troopChanges）注入各玩家卡的 #pc-transit-list-N
+   */
+  function renderPlayerTransit(changes) {
+    for (let i = 0; i < 3; i++) {
+      const slot = ['甲','乙','丙'][i];
+      const ch   = changes.find(c => c.slot === slot);
+      _setTransit(i, ch);
+    }
+  }
+
+  function _setTransit(idx, ch) {
+    const listEl  = document.getElementById(`pc-transit-list-${idx}`);
+    const countEl = document.getElementById(`pc-transit-count-${idx}`);
+    if (!listEl || !countEl) return;
+
+    const rows = [];
+
+    // 驻军变动
+    if (ch && ch.guards && ch.guards.length) {
+      ch.guards.forEach(g => {
+        (g.members || []).forEach(m => {
+          const dir      = m.dir === 'out' ? 'out' : 'in';
+          const dirLabel = dir === 'in' ? '入驻' : '调离';
+          const barCls   = dir === 'in' ? 'b-march' : 'b-siege';
+          const chipCls  = dir === 'in' ? 'pos' : 'neg';
+          rows.push(`<div class="pc-row">
+            <span class="pc-bar ${barCls}"></span>
+            <span class="pc-row-mid">
+              <div class="pc-row-main">
+                <span class="pc-transit-name">${esc(m.name)}</span>
+                <span class="pc-battle-arrow">→</span>
+                <span class="pc-transit-city">${esc(g.cityName)}</span>
+              </div>
+              <div class="pc-row-sub">${dirLabel}</div>
+            </span>
+            <span class="pc-troop-chip ${chipCls}">${dir === 'in' ? '入驻' : '调离'}</span>
+          </div>`);
+        });
+      });
+    }
+
+    if (!rows.length) {
+      listEl.innerHTML = '<div class="pc-empty">本回合无调度</div>';
+      countEl.textContent = '— 无 —';
+      countEl.className   = 'pcs-count is-empty';
+      return;
+    }
+
+    countEl.textContent = rows.length;
+    countEl.className   = 'pcs-count';
+    listEl.innerHTML    = rows.join('');
+  }
+
+  // ── 旧格式兼容：保留 buildBattleCard 供历史回合用 ──
   function buildBattleCard(b) {
     // 兼容 v2.0（attacker/defender/result/attacker_loss/defender_loss）
     // 和旧格式（player/dice/resultTxt/narrative/success）
@@ -927,37 +1038,26 @@
 
   function buildGenTag(g) {
     var statusKey = genStatusKey(g.status);
-    var sc        = GEN_STATUS_STYLES[statusKey] || GEN_STATUS_STYLES.healthy;
     var isDead    = statusKey === 'dead';
-
-    // tooltip 悬停提示
-    var titleTip = esc(g.name) + ' · ' + esc(g.status || '健康');
-
-    // ── 容器样式（完全由状态色决定）──
-    var wrapStyle = 'display:inline-flex!important;align-items:center!important;'
-      + 'border-radius:5px;padding:2px 8px 2px 7px;'
-      + 'font-size:.74rem;font-family:inherit;transition:transform .15s;cursor:default;'
-      + 'border:1px solid ' + sc.bd + '!important;'
-      + 'background:' + sc.bg + '!important;'
-      + (isDead ? 'text-decoration:line-through;opacity:.5;' : '');
-
-    var nameStyle = 'font-weight:700;color:' + sc.c + '!important;letter-spacing:.02em;';
-
-    var divStyle = 'display:inline-block;width:1px;height:.9em;margin:0 5px;'
-      + 'background:' + sc.bd + ';flex-shrink:0;opacity:.6;';
-
-    var statusStyle = 'font-size:.6rem;color:' + sc.c + '!important;opacity:.85;white-space:nowrap;';
 
     // 状态文字映射
     var STATUS_SHORT = { healthy:'健康', tired:'疲劳', injured:'受伤', sick:'患病', dead:'阵亡' };
     var statusShort = STATUS_SHORT[statusKey] || (g.status || '健康');
+    var showStatus  = statusKey !== 'healthy'; // 健康时不显示状态字
 
-    // 结构：[名字] | [状态]
-    return '<span class="gen-tag" data-status="' + statusKey
-      + '" style="' + wrapStyle + '" title="' + titleTip + '">'
-      + '<span style="' + nameStyle + '">' + esc(g.name) + '</span>'
-      + '<span style="' + divStyle + '"></span>'
-      + '<span style="' + statusStyle + '">' + esc(statusShort) + '</span>'
+    // class: gen-tag（tooltip监听用）+ new-gen-tag（新视觉）+ data-status + data-name
+    // 非健康状态显示小状态徽标
+    var statusBadge = showStatus
+      ? '<span class="gt-status gt-status--' + statusKey + '">' + esc(statusShort) + '</span>'
+      : '';
+
+    return '<span class="gen-tag new-gen-tag"'
+      + ' data-status="' + statusKey + '"'
+      + ' data-name="' + esc(g.name) + '"'
+      + (isDead ? ' style="opacity:.5;text-decoration:line-through"' : '')
+      + '>'
+      + esc(g.name)
+      + statusBadge
       + '</span>';
   }
 
@@ -970,13 +1070,11 @@
 
   // 已知锚点图标映射（未知锚点自动用 ◆ 兜底）
   const ANCHOR_ICON = {
-    '季度':'🗓️','府库':'🏛️','暗账':'🏛️','城':'🏯','驻军':'🛡️',
-    '兵种':'⚔️','情报':'📜','NPC状态':'🎭','野外':'🌿',
-    '收支':'💰','赏赐':'🎁','救灾':'🚑','贡赋':'📦',
-    '状态':'🩺',
+    '城':'🏯','驻军':'🛡️','情报':'📜','NPC状态':'🎭','野外':'🌿',
+    '收支':'💰','赏赐':'🎁','救灾':'🚑','贡赋':'📦','状态':'🩺',
   };
   // 已知锚点的优先显示顺序
-  const ANCHOR_ORDER = ['季度','府库','暗账','城','驻军','兵种','状态','情报'];
+  const ANCHOR_ORDER = ['城','驻军','状态','情报'];
 
   // 武将状态值 → CSS class 映射
   const STATUS_DESC_CLS = (desc) => {
@@ -1009,7 +1107,7 @@
   }
 
   // ── Layer 2：收支明细（可折叠） ──
-  const BD_ITEM_ORDER = ['产出','维护','季度','明账','府库','贸易','事件'];
+  const BD_ITEM_ORDER = ['产出','维护','明账','贸易','事件'];
   function _renderBreakdown(bd, troopChanges) {
     if (!bd) return '';
     const cats = RES_ORDER.filter(k => k in bd);
@@ -1076,7 +1174,6 @@
   }
 
   // ── Layer 3：通用锚点组渲染（数据驱动，无白名单）──
-  // 默认折叠，显示摘要行：「N 项变动 · 含X调度 · 府库-100金」
   function _renderAnchorGroups(groups) {
     if (!groups || !Object.keys(groups).length) return '';
     const knownKeys   = ANCHOR_ORDER.filter(k => groups[k]);
@@ -1088,7 +1185,6 @@
       const icon  = ANCHOR_ICON[key] || '◆';
       const isStatus  = key === '状态';
       const isGarrison = key === '驻军';
-      const isTroop   = key === '兵种';
 
       const itemsHtml = items.map(it => {
 
@@ -1107,19 +1203,6 @@
           return `<li class="ag-item ag-item-guard">
             <span class="ag-guard-city">${city}</span>
             <span class="ag-guard-moves">${parts.join('')}</span>
-          </li>`;
-        }
-
-        // ── 兵种：delta chip 正绿负红 ──
-        if (isTroop) {
-          const city = esc(it.label || '');
-          const chipsHtml = (it.deltas || []).map(d =>
-            `<span class="delta-chip ${valCls(d.val)}">${esc(d.res)}${sign(d.val)}${d.val}</span>`
-          ).join('');
-          if (!chipsHtml) return '';
-          return `<li class="ag-item">
-            <span class="ag-label">${city}</span>
-            <span class="ag-deltas">${chipsHtml}</span>
           </li>`;
         }
 
@@ -1175,42 +1258,10 @@
   function _migrateToAnchorGroups(ch) {
     const groups = Object.assign({}, ch.anchorGroups || {});
 
-    // 季度△
-    if (ch.seasonal && ch.seasonal.length) {
-      if (!groups['季度']) groups['季度'] = [];
-      groups['季度'].push({
-        label: '',
-        deltas: ch.seasonal.map(s => ({ res: s.res, val: s.val })),
-        text: '',
-      });
-    }
-    // 府库△
-    if (ch.darkItems && ch.darkItems.length) {
-      if (!groups['府库']) groups['府库'] = [];
-      ch.darkItems.forEach(d => {
-        groups['府库'].push({
-          label:  typeof d === 'string' ? d : (d.desc || ''),
-          deltas: typeof d === 'string' ? [] : (d.entries || []).map(e => ({ res: e.res, val: e.val })),
-          text:   typeof d === 'string' ? d : '',
-        });
-      });
-    }
     // 情报△（合并进 anchorGroups）
     if (ch.intel && ch.intel.length) {
       if (!groups['情报']) groups['情报'] = [];
       ch.intel.forEach(s => groups['情报'].push({ label: s, deltas: [], text: s }));
-    }
-    // 兵种变动 ── res 字段用 type（步/弓/骑/水/蛮），val 保持原值供 valCls 正确配色
-    if (ch.troopChanges && ch.troopChanges.length) {
-      if (!groups['兵种']) groups['兵种'] = [];
-      ch.troopChanges.forEach(tc => {
-        groups['兵种'].push({
-          label:  tc.cityName,
-          deltas: (tc.entries || []).map(e => ({ res: e.type, val: e.val })),
-          text:   tc.spec || '',
-          isTroop: true,
-        });
-      });
     }
     // ★ 驻军变动 ── 迁移 ch.guards 进 anchorGroups，按城名去重聚合
     if (ch.guards && ch.guards.length) {
@@ -1730,6 +1781,94 @@
       tabBtn.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     });
   }
+
+  // ══════════════════════════════════════════
+  //  成就墙  (placeholder · 10 个硬编码成就)
+  // ══════════════════════════════════════════
+
+  const ACH_DATA = [
+    { id:'first_blood',  cat:'battle',   rar:'bronze', name:'初战告捷',  cond:'赢得第一场战斗',              locked: true },
+    { id:'city_taken',   cat:'battle',   rar:'silver', name:'攻城掠地',  cond:'攻下一座城池',                locked: true },
+    { id:'ten_rounds',   cat:'strategy', rar:'bronze', name:'老当益壮',  cond:'存活至第10回合',              locked: true },
+    { id:'rich',         cat:'govern',   rar:'silver', name:'富可敌国',  cond:'金库突破 2000 金',            locked: true },
+    { id:'five_gens',    cat:'general',  rar:'bronze', name:'麾下群英',  cond:'同时拥有 5 名武将',           locked: true },
+    { id:'legendary_gen',cat:'general',  rar:'gold',   name:'万人敌',    cond:'武将在一次战斗中击退敌军3000', locked: true },
+    { id:'triple_city',  cat:'strategy', rar:'gold',   name:'三分天下',  cond:'三名玩家各持至少 3 城',        locked: true },
+    { id:'morale_max',   cat:'govern',   rar:'silver', name:'万民拥戴',  cond:'民心达到满值 100',             locked: true },
+    { id:'comeback',     cat:'battle',   rar:'purple', name:'绝处逢生',  cond:'兵力不足 500 时赢得战斗',      locked: true },
+    { id:'hegemon',      cat:'strategy', rar:'purple', name:'一统河山',  cond:'占领全部城池',                 locked: true },
+  ];
+
+  // 当前打开的玩家槽
+  let _achModalSlot = 0;
+
+  window.openAchModal = function (slot) {
+    _achModalSlot = slot ?? 0;
+    const overlay = document.getElementById('ach-modal');
+    if (!overlay) return;
+    // 标题更新
+    const titleEl = document.getElementById('ach-modal-player');
+    if (titleEl) titleEl.textContent = state.players[_achModalSlot]?.name || `城主${'甲乙丙'[_achModalSlot]}`;
+    // 统计解锁数（暂时全锁，留接口）
+    const unlocked = ACH_DATA.filter(a => !a.locked).length;
+    const statEl = document.getElementById('ach-stat-unlocked');
+    if (statEl) statEl.textContent = unlocked;
+    // 渲染列表
+    _renderAchList('all');
+    // 绑定 tab 切换（懒绑定，用事件委托）
+    const tabsEl = overlay.querySelector('.ach-tabs');
+    if (tabsEl && !tabsEl._sgBound) {
+      tabsEl._sgBound = true;
+      tabsEl.addEventListener('click', e => {
+        const btn = e.target.closest('.ach-tab');
+        if (!btn) return;
+        tabsEl.querySelectorAll('.ach-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _renderAchList(btn.dataset.cat || 'all');
+      });
+    }
+    // 点遮罩关闭
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) window.closeAchModal();
+    }, { once: false });
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeAchModal = function () {
+    const overlay = document.getElementById('ach-modal');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  function _renderAchList(cat) {
+    const listEl = document.getElementById('ach-list');
+    if (!listEl) return;
+    const filtered = cat === 'all' ? ACH_DATA : ACH_DATA.filter(a => a.cat === cat);
+    listEl.innerHTML = filtered.map(a => {
+      const rarLabel = { bronze:'铜 · 寻常', silver:'银 · 难得', gold:'金 · 罕见', purple:'紫 · 传奇' }[a.rar] || '';
+      const lockedCls = a.locked ? ' locked' : ' unlocked';
+      return `<div class="ach-item${lockedCls} rar-${a.rar}">
+        <div class="ach-item-icon">${a.locked ? '🔒' : '🏆'}</div>
+        <div class="ach-item-body">
+          <div class="ach-item-name">${esc(a.name)}</div>
+          <div class="ach-item-cond">${esc(a.cond)}</div>
+        </div>
+        <div class="ach-item-rar rar-${a.rar}">${rarLabel}</div>
+      </div>`;
+    }).join('');
+    if (!filtered.length) {
+      listEl.innerHTML = '<div class="ach-empty">暂无成就记录</div>';
+    }
+  }
+
+  // ESC 关闭成就模态
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const overlay = document.getElementById('ach-modal');
+      if (overlay && overlay.classList.contains('open')) window.closeAchModal();
+    }
+  });
 
   document.addEventListener('DOMContentLoaded', init);
 })();
