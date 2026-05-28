@@ -461,8 +461,10 @@
       const resultCls = b.result === '胜' ? 'win'
                       : b.result === '负' ? 'lose'
                       : 'draw';
-      const atk = esc(b.attacker || '');
-      const def = esc(b.defender || '');
+      // 移除攻守方名字前缀的槽位字"甲/乙/丙"(parser 残留, UI 层不展示)
+      const stripSlot = s => String(s || '').replace(/^[甲乙丙]\s*/, '');
+      const atk = esc(stripSlot(b.attacker));
+      const def = esc(stripSlot(b.defender));
       const city = b.city ? `<span class="pc-battle-city">${esc(b.city)}</span>` : '';
       const casuText = (b.attacker_loss != null && b.defender_loss != null) ? `伤亡：攻 ${b.attacker_loss} · 守 ${b.defender_loss}` : '';
       return `<div class="pc-battle-item" data-result="${resultCls}">
@@ -1511,15 +1513,33 @@
 
 
   // ══════════════════════════════════════════
-  //  收支详情渲染 v4 (工单 #pcard-v4-install-B)
-  //  写入每张玩家卡内嵌的 #pc-changes-list-N / #pc-changes-sum-N / #pc-changes-intel-N
+  //  收支详情渲染 v4.1 (工单 #pcard-v4-fix-C)
+  //  字段对齐真实 parser 输出:
+  //  - changes 是数组,每个 slot 出现两次:
+  //      a) 详细块:含 breakdown {资源名:{items:[{label,val}], total}}, intel(数组)
+  //      b) 总账行:含 resources {资源名:数字}, breakdown 为空对象
+  //  - 本函数策略:遍历找到每个 slot 的"详细块"(breakdown 非空),
+  //    并用"总账行" resources 补足 breakdown 缺失的资源(只显示合计,无明细)
   // ══════════════════════════════════════════
   function renderChangesDetail() {
     const latest = state.rounds[state.rounds.length - 1];
     if (!latest) return;
-    const changes = (latest.parsed && latest.parsed.changes) || [];
+    const allChanges = (latest.parsed && latest.parsed.changes) || [];
 
-    // 资源 emoji 顺序对齐数据契约:金/粮/兵/民心/城
+    // 按 slot 聚合:detailMap[slot] = 详细块, totalMap[slot] = 总账块
+    const detailMap = { '甲': null, '乙': null, '丙': null };
+    const totalMap  = { '甲': null, '乙': null, '丙': null };
+    allChanges.forEach(ch => {
+      if (!ch || !ch.slot) return;
+      const hasBreakdown = ch.breakdown && Object.keys(ch.breakdown).length > 0;
+      if (hasBreakdown) {
+        detailMap[ch.slot] = ch;
+      } else if (ch.resources && Object.keys(ch.resources).length > 0) {
+        totalMap[ch.slot] = ch;
+      }
+    });
+
+    const SLOT_NAMES = ['甲', '乙', '丙'];
     const RES_DEFS = [
       { key: '金',   emoji: '💰' },
       { key: '粮',   emoji: '🌾' },
@@ -1528,16 +1548,16 @@
       { key: '城',   emoji: '🏯' },
     ];
 
-    [0, 1, 2].forEach(slot => {
-      const listEl  = document.getElementById(`pc-changes-list-${slot}`);
-      const sumEl   = document.getElementById(`pc-changes-sum-${slot}`);
-      const intelEl = document.getElementById(`pc-changes-intel-${slot}`);
+    SLOT_NAMES.forEach((slotName, slotIdx) => {
+      const listEl  = document.getElementById('pc-changes-list-' + slotIdx);
+      const sumEl   = document.getElementById('pc-changes-sum-' + slotIdx);
+      const intelEl = document.getElementById('pc-changes-intel-' + slotIdx);
       if (!listEl || !sumEl) return;
 
-      // 找到该 slot 的 change 记录(parser 输出顺序 = 甲乙丙)
-      const ch = changes[slot] || null;
+      const detail = detailMap[slotName];
+      const total  = totalMap[slotName];
 
-      if (!ch) {
+      if (!detail && !total) {
         listEl.innerHTML = '<div class="no-battle">— 暂无数据 —</div>';
         sumEl.textContent = '—';
         sumEl.className = 'pcs-count';
@@ -1545,56 +1565,71 @@
         return;
       }
 
-      // 每种资源:聚合明细 + 计算合计
-      const rows = RES_DEFS.map(def => {
-        const items = [];
+      // 每种资源:优先用 detail.breakdown,缺失时回落到 total.resources
+      const rowsHtml = RES_DEFS.map(def => {
+        const bd = detail && detail.breakdown && detail.breakdown[def.key];
+        let items = [];
         let sum = 0;
 
-        // breakdown 结构(parser v13): { 金:[{label,delta}], 粮:[...], ... }
-        const arr = (ch.breakdown && ch.breakdown[def.key]) || [];
-        arr.forEach(it => {
-          const v = Number(it.delta) || 0;
-          sum += v;
-          items.push({ label: it.label || '', val: v });
-        });
+        if (bd && Array.isArray(bd.items) && bd.items.length) {
+          // 详细明细可用
+          items = bd.items.map(it => ({
+            label: it.label || '',
+            val:   Number(it.val) || 0,
+          }));
+          sum = (typeof bd.total === 'number')
+            ? bd.total
+            : items.reduce((a, b) => a + b.val, 0);
+        } else if (total && total.resources && total.resources[def.key] != null) {
+          // 仅总账有值,无明细
+          sum = Number(total.resources[def.key]) || 0;
+        } else {
+          // 完全无变动
+          sum = 0;
+        }
 
-        return { def, items, sum };
-      });
-
-      // 渲染每一行
-      listEl.innerHTML = rows.map(row => {
-        const itemsHtml = row.items.length
-          ? row.items.map(it => {
+        const itemsHtml = items.length
+          ? items.map(it => {
               const cls = it.val > 0 ? 'pos' : (it.val < 0 ? 'neg' : 'zero');
               const sign = it.val > 0 ? '+' : '';
               const valTxt = it.val === 0 ? '±0' : (sign + it.val);
-              return `<span class="pcc-item"><span class="pcc-label">${esc(it.label)}</span><span class="pcc-val ${cls}">${valTxt}</span></span>`;
+              return '<span class="pcc-item"><span class="pcc-label">' + esc(it.label) +
+                     '</span><span class="pcc-val ' + cls + '">' + valTxt + '</span></span>';
             }).join('')
-          : `<span class="pcc-item"><span class="pcc-label">无变动</span><span class="pcc-val zero">±0</span></span>`;
+          : '<span class="pcc-item"><span class="pcc-label">无变动</span><span class="pcc-val zero">±0</span></span>';
 
-        const sumCls = row.sum > 0 ? 'pos' : (row.sum < 0 ? 'neg' : 'zero');
-        const sumSign = row.sum > 0 ? '+' : '';
-        const sumTxt = row.sum === 0 ? '±0' : (sumSign + row.sum);
+        const sumCls = sum > 0 ? 'pos' : (sum < 0 ? 'neg' : 'zero');
+        const sumSign = sum > 0 ? '+' : '';
+        const sumTxt = sum === 0 ? '±0' : (sumSign + sum);
 
-        return `<div class="pc-changes-row">
-          <span class="pcc-icon">${row.def.emoji}</span>
-          <span class="pcc-detail">${itemsHtml}</span>
-          <span class="pcc-sum ${sumCls}">${sumTxt}</span>
-        </div>`;
+        return '<div class="pc-changes-row">' +
+                 '<span class="pcc-icon">' + def.emoji + '</span>' +
+                 '<span class="pcc-detail">' + itemsHtml + '</span>' +
+                 '<span class="pcc-sum ' + sumCls + '">' + sumTxt + '</span>' +
+               '</div>';
       }).join('');
 
-      // 顶部徽:净金粮变化简略合计
-      const netGold = rows[0].sum;
-      const netFood = rows[1].sum;
+      listEl.innerHTML = rowsHtml;
+
+      // 顶部徽:净金粮变化(优先 total.resources,回落到 detail.breakdown.total)
+      let netGold = 0, netFood = 0;
+      if (total && total.resources) {
+        netGold = Number(total.resources['金']) || 0;
+        netFood = Number(total.resources['粮']) || 0;
+      } else if (detail && detail.breakdown) {
+        netGold = (detail.breakdown['金'] && detail.breakdown['金'].total) || 0;
+        netFood = (detail.breakdown['粮'] && detail.breakdown['粮'].total) || 0;
+      }
       const net = netGold + netFood;
       const netCls = net > 0 ? 'is-positive' : (net < 0 ? 'is-negative' : '');
       const netSign = net > 0 ? '+' : '';
-      sumEl.textContent = `净 ${net === 0 ? '±0' : netSign + net}`;
+      sumEl.textContent = '净 ' + (net === 0 ? '±0' : netSign + net);
       sumEl.className = 'pcs-count ' + netCls;
 
-      // 情报(从 ch 中提取,字段名优先用 intel / situation_note / publicNote)
+      // 情报(intel 是数组,合并为字符串)
       if (intelEl) {
-        const intelText = (ch.intel || ch.situation_note || ch.publicNote || '').trim();
+        const intelArr = (detail && Array.isArray(detail.intel)) ? detail.intel : [];
+        const intelText = intelArr.filter(Boolean).join(';').trim();
         if (intelText) {
           intelEl.textContent = intelText;
           intelEl.classList.remove('hidden');
