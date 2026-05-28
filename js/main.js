@@ -466,10 +466,12 @@
       const city = b.city ? `<span class="pc-battle-city">${esc(b.city)}</span>` : '';
       const casuText = (b.attacker_loss != null && b.defender_loss != null) ? `伤亡：攻 ${b.attacker_loss} · 守 ${b.defender_loss}` : '';
       return `<div class="pc-battle-item" data-result="${resultCls}">
-        <span class="pc-battle-flow">${atk}<span class="pc-battle-arrow">→</span>${def}</span>
-        ${city}
-        <span class="pc-battle-result">${esc(b.result || '')}</span>
-        <span class="pc-battle-casu">${casuText}</span>
+        <div class="pc-battle-main">
+          <span class="pc-battle-flow">${atk}<span class="pc-battle-arrow">→</span>${def}</span>
+          ${city}
+          <span class="pc-battle-result">${esc(b.result || '')}</span>
+        </div>
+        ${casuText ? `<div class="pc-battle-casu">${casuText}</div>` : ''}
       </div>`;
     }).join('');
   }
