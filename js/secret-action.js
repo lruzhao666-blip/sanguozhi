@@ -42,6 +42,8 @@
     sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     sessionStorage.setItem('sa_session_id', sessionId);
   }
+  // v20260704c · 跨设备同步修复:强制覆盖为固定全局 ID,所有设备共享同一份数据
+  sessionId = 'global';
 
   /* ── 本地状态 ── */
   const localState = {
@@ -384,6 +386,8 @@
     // 生成新 sessionId
     sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     sessionStorage.setItem('sa_session_id', sessionId);
+    // v20260704c · 跨设备同步修复:resetLocal 后仍使用固定全局 ID
+    sessionId = 'global';
 
     // 恢复 UI
     [0, 1, 2].forEach(slot => {
