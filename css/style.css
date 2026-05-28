@@ -5753,3 +5753,175 @@ body.fx-off-captured [data-ctype="captured"] {
   opacity: .5 !important;
   letter-spacing: .08em !important;
 }
+
+/* ══════════════════════════════════════
+   v20260618a · 工单#2-FIX-v4 · 玩家卡 6 项精修
+   ══════════════════════════════════════ */
+
+.pcard.pcard-v3::before {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+.pcard.pcard-v3[data-slot="0"]::before {
+  background: #e74c3c !important;
+  box-shadow: inset 0 0 4px rgba(231,76,60,.5) !important;
+}
+.pcard.pcard-v3[data-slot="1"]::before {
+  background: #3dbe6c !important;
+  box-shadow: inset 0 0 4px rgba(61,190,108,.5) !important;
+}
+.pcard.pcard-v3[data-slot="2"]::before {
+  background: #3498db !important;
+  box-shadow: inset 0 0 4px rgba(52,152,219,.5) !important;
+}
+
+.pcard.pcard-v3 .pc-city {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: .62rem !important;
+  color: rgba(200,184,154,.6) !important;
+  letter-spacing: .04em !important;
+}
+.pcard.pcard-v3 .pc-city::before {
+  content: '· ' !important;
+  opacity: .5 !important;
+}
+
+.pcard.pcard-v3 .pcard-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+.pcard.pcard-v3 .pc-identity {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+.pcard.pcard-v3 .pc-ach-slot {
+  position: static !important;
+  min-height: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  flex-shrink: 0 !important;
+}
+.pcard.pcard-v3 .ach-title {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px 9px 3px 7px !important;
+  border-radius: 3px !important;
+  font-family: var(--font-serif) !important;
+  font-size: .7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: .08em !important;
+  border: 1px solid rgba(232,184,64,.6) !important;
+  background: rgba(232,184,64,.13) !important;
+  color: #f0c870 !important;
+  box-shadow: 0 0 8px rgba(232,184,64,.18) !important;
+}
+.pcard.pcard-v3 .ach-title::before {
+  content: '' !important;
+  width: 3px !important;
+  height: 3px !important;
+  border-radius: 50% !important;
+  background: currentColor !important;
+  box-shadow: 0 0 4px currentColor !important;
+  margin-right: 2px !important;
+}
+.pcard.pcard-v3 .ach-count {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 4px !important;
+  min-width: 19px !important;
+  height: 18px !important;
+  padding: 0 5px !important;
+  border-radius: 9px !important;
+  font-family: var(--font-sans) !important;
+  font-size: .6rem !important;
+  font-weight: 700 !important;
+  background: rgba(212,168,67,.18) !important;
+  border: 1px solid rgba(212,168,67,.4) !important;
+  color: #f0c060 !important;
+  letter-spacing: .02em !important;
+  line-height: 1 !important;
+}
+.pcard.pcard-v3 .ach-count::before {
+  content: '+' !important;
+  opacity: .7 !important;
+  margin-right: 1px !important;
+}
+
+.pcard.pcard-v3 .pc-res-grid .res-cell .res-emoji {
+  font-size: .7rem !important;
+  opacity: 1 !important;
+  filter: none !important;
+  line-height: 1 !important;
+  margin-bottom: 1px !important;
+}
+
+.pcard.pcard-v3 .pc-battles-count,
+.pcard.pcard-v3 .pc-transit-count {
+  font-size: .58rem !important;
+  font-weight: 400 !important;
+  padding: 1px 7px !important;
+  border-radius: 8px !important;
+  background: rgba(212,168,67,.1) !important;
+  border: 1px solid rgba(212,168,67,.25) !important;
+  color: #a07830 !important;
+  letter-spacing: .04em !important;
+}
+.pcard.pcard-v3 .pc-battles > summary,
+.pcard.pcard-v3 .pc-transit > summary {
+  font-size: .68rem !important;
+  padding: 7px 12px !important;
+  color: #c8b89a !important;
+  letter-spacing: .08em !important;
+}
+
+.pcard.pcard-v3 .pc-battle-item {
+  display: grid !important;
+  grid-template-columns: 1fr auto auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 10px !important;
+  background: rgba(0,0,0,.35) !important;
+  border-left: 2px solid var(--bi-tone, #888) !important;
+  border-radius: 0 4px 4px 0 !important;
+  font-size: .72rem !important;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="win"]  { --bi-tone: #6dce6d !important; }
+.pcard.pcard-v3 .pc-battle-item[data-result="lose"] { --bi-tone: #e05858 !important; }
+.pcard.pcard-v3 .pc-battle-item[data-result="draw"] { --bi-tone: #a07830 !important; }
+.pcard.pcard-v3 .pc-battle-flow {
+  color: #f0e6d3 !important;
+  letter-spacing: .03em !important;
+}
+.pcard.pcard-v3 .pc-battle-arrow {
+  color: #7a6a5a !important;
+  margin: 0 5px !important;
+}
+.pcard.pcard-v3 .pc-battle-city {
+  font-size: .62rem !important;
+  color: #7a6a5a !important;
+  padding: 1px 6px !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 8px !important;
+  white-space: nowrap !important;
+}
+.pcard.pcard-v3 .pc-battle-result {
+  font-weight: 700 !important;
+  font-size: .72rem !important;
+  color: var(--bi-tone, #888) !important;
+  letter-spacing: .05em !important;
+}
+.pcard.pcard-v3 .pc-battle-casu {
+  grid-column: 1 / -1 !important;
+  font-size: .62rem !important;
+  color: #7a6a5a !important;
+  padding-top: 2px !important;
+  letter-spacing: .02em !important;
+}
