@@ -1511,16 +1511,98 @@
 
 
   // ══════════════════════════════════════════
-  //  📊 本回合收支详情  v3.0
-  //  数据驱动·三层卡片·通用锚点渲染
-  // ══════════════════════════════════════════
-  //  收支详情渲染（v4 工单 #pcard-v4-cleanup-A 清空,
-  //  等待下一单 B 改为写入玩家卡内嵌容器）
+  //  收支详情渲染 v4 (工单 #pcard-v4-install-B)
+  //  写入每张玩家卡内嵌的 #pc-changes-list-N / #pc-changes-sum-N / #pc-changes-intel-N
   // ══════════════════════════════════════════
   function renderChangesDetail() {
-    // 旧逻辑已清空。下一单将改为遍历三家,写入
-    // #pc-changes-list-0/1/2 与 #pc-changes-sum-0/1/2
-    return;
+    const latest = state.rounds[state.rounds.length - 1];
+    if (!latest) return;
+    const changes = (latest.parsed && latest.parsed.changes) || [];
+
+    // 资源 emoji 顺序对齐数据契约:金/粮/兵/民心/城
+    const RES_DEFS = [
+      { key: '金',   emoji: '💰' },
+      { key: '粮',   emoji: '🌾' },
+      { key: '兵',   emoji: '🛡️' },
+      { key: '民心', emoji: '❤️' },
+      { key: '城',   emoji: '🏯' },
+    ];
+
+    [0, 1, 2].forEach(slot => {
+      const listEl  = document.getElementById(`pc-changes-list-${slot}`);
+      const sumEl   = document.getElementById(`pc-changes-sum-${slot}`);
+      const intelEl = document.getElementById(`pc-changes-intel-${slot}`);
+      if (!listEl || !sumEl) return;
+
+      // 找到该 slot 的 change 记录(parser 输出顺序 = 甲乙丙)
+      const ch = changes[slot] || null;
+
+      if (!ch) {
+        listEl.innerHTML = '<div class="no-battle">— 暂无数据 —</div>';
+        sumEl.textContent = '—';
+        sumEl.className = 'pcs-count';
+        if (intelEl) intelEl.classList.add('hidden');
+        return;
+      }
+
+      // 每种资源:聚合明细 + 计算合计
+      const rows = RES_DEFS.map(def => {
+        const items = [];
+        let sum = 0;
+
+        // breakdown 结构(parser v13): { 金:[{label,delta}], 粮:[...], ... }
+        const arr = (ch.breakdown && ch.breakdown[def.key]) || [];
+        arr.forEach(it => {
+          const v = Number(it.delta) || 0;
+          sum += v;
+          items.push({ label: it.label || '', val: v });
+        });
+
+        return { def, items, sum };
+      });
+
+      // 渲染每一行
+      listEl.innerHTML = rows.map(row => {
+        const itemsHtml = row.items.length
+          ? row.items.map(it => {
+              const cls = it.val > 0 ? 'pos' : (it.val < 0 ? 'neg' : 'zero');
+              const sign = it.val > 0 ? '+' : '';
+              const valTxt = it.val === 0 ? '±0' : (sign + it.val);
+              return `<span class="pcc-item"><span class="pcc-label">${esc(it.label)}</span><span class="pcc-val ${cls}">${valTxt}</span></span>`;
+            }).join('')
+          : `<span class="pcc-item"><span class="pcc-label">无变动</span><span class="pcc-val zero">±0</span></span>`;
+
+        const sumCls = row.sum > 0 ? 'pos' : (row.sum < 0 ? 'neg' : 'zero');
+        const sumSign = row.sum > 0 ? '+' : '';
+        const sumTxt = row.sum === 0 ? '±0' : (sumSign + row.sum);
+
+        return `<div class="pc-changes-row">
+          <span class="pcc-icon">${row.def.emoji}</span>
+          <span class="pcc-detail">${itemsHtml}</span>
+          <span class="pcc-sum ${sumCls}">${sumTxt}</span>
+        </div>`;
+      }).join('');
+
+      // 顶部徽:净金粮变化简略合计
+      const netGold = rows[0].sum;
+      const netFood = rows[1].sum;
+      const net = netGold + netFood;
+      const netCls = net > 0 ? 'is-positive' : (net < 0 ? 'is-negative' : '');
+      const netSign = net > 0 ? '+' : '';
+      sumEl.textContent = `净 ${net === 0 ? '±0' : netSign + net}`;
+      sumEl.className = 'pcs-count ' + netCls;
+
+      // 情报(从 ch 中提取,字段名优先用 intel / situation_note / publicNote)
+      if (intelEl) {
+        const intelText = (ch.intel || ch.situation_note || ch.publicNote || '').trim();
+        if (intelText) {
+          intelEl.textContent = intelText;
+          intelEl.classList.remove('hidden');
+        } else {
+          intelEl.classList.add('hidden');
+        }
+      }
+    });
   }
 
 
@@ -2068,4 +2150,74 @@
   }
 
 
+})();
+
+/* ════════════════════════════════════════════
+   v20260702a 工单#pcard-v4-install-B
+   成就墙 v4 · 静态测试数据 · 预留 Supabase 接入位
+   ════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  // 5 个新手测试成就(硬编码,后续替换为 Supabase 读取)
+  const ACHIEVEMENTS = [
+    { code:'g_first_general', cat:'general',  rar:'bronze', name:'初见贤士', icon:'贤', cond:'首次招揽成功一名常规级武将' },
+    { code:'b_first_blood',   cat:'battle',   rar:'bronze', name:'初战告捷', icon:'胜', cond:'首次攻城战胜利' },
+    { code:'c_full_grain',    cat:'govern',   rar:'bronze', name:'仓廪初实', icon:'粮', cond:'粮草储备首次突破 5000' },
+    { code:'g_elite_recruit', cat:'general',  rar:'silver', name:'礼贤下士', icon:'礼', cond:'首次招揽成功一名精英级武将' },
+    { code:'s_three_cities',  cat:'strategy', rar:'silver', name:'立足一方', icon:'立', cond:'占据城池数首次达到 3 座' },
+  ];
+
+  // 静态解锁状态(测试用,后续替换为按 slot 查 Supabase)
+  // TODO[supabase]: 替换为 await loadPlayerUnlocked(slot)
+  const UNLOCKED = { 0: [], 1: [], 2: [] };
+
+  // 从玩家卡 #pname-N 读取当前主公名(主公标记策略:玩家名号 = 主公名)
+  function getPlayerName(slot) {
+    const el = document.getElementById('pname-' + slot);
+    return el ? (el.textContent || '').trim() : ('城主' + ['甲','乙','丙'][slot]);
+  }
+
+  function open(slot) {
+    const modal = document.getElementById('ach-modal');
+    if (!modal) return;
+    const unlocked = UNLOCKED[slot] || [];
+    const playerEl = document.getElementById('ach-modal-player');
+    const unEl = document.getElementById('ach-stat-unlocked');
+    const totalEl = document.getElementById('ach-stat-total');
+    const listEl = document.getElementById('ach-list');
+    if (playerEl) playerEl.textContent = getPlayerName(slot);
+    if (unEl) unEl.textContent = unlocked.length;
+    if (totalEl) totalEl.textContent = ACHIEVEMENTS.length;
+    if (listEl) {
+      listEl.innerHTML = ACHIEVEMENTS.map(a => {
+        const isU = unlocked.indexOf(a.code) !== -1;
+        return `<div class="ach-card-i rar-${a.rar} ${isU ? 'unlocked' : 'locked'}">
+          <div class="ach-card-icon">${a.icon}</div>
+          <div>
+            <div class="ach-card-name">${a.name}</div>
+            <div class="ach-card-desc">${a.cond}</div>
+          </div>
+          <div class="ach-card-meta">${isU ? '已解锁' : '未达成'}</div>
+        </div>`;
+      }).join('');
+    }
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function close() {
+    const modal = document.getElementById('ach-modal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // 点击遮罩关闭
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.id === 'ach-modal') close();
+  });
+
+  // 对外暴露
+  window.SGAch = { open: open, close: close };
 })();
