@@ -6469,3 +6469,199 @@ body.fx-off-captured [data-ctype="captured"] {
     padding: 1px 4px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   v20260629a · 玩家卡战况/调度区视觉精修
+   覆盖目标:.pc-battles、.pc-transit 内部条目布局
+   设计要点:
+     1. 每条目左侧 2px 状态色条
+     2. 三列网格布局(主体 | 兵力 chip | 状态色块)
+     3. 状态色:march=暗金 #c8a04a / siege=红 #c1392b
+        / resident=蓝 #5a7fc4
+     4. NPC 行(.is-npc) 强制红色色条 + 整行 .85 透明度
+   ═══════════════════════════════════════════════════ */
+
+/* ── 折叠区列表容器 ── */
+.pcard.pcard-v3 .pc-battles-list,
+.pcard.pcard-v3 .pc-transit-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  padding: 4px 0 2px !important;
+}
+
+/* ── 单条目:三列网格 + 左色条 ── */
+.pcard.pcard-v3 .pc-battle-item,
+.pcard.pcard-v3 .pc-transit-item {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 1fr auto auto !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 4px 6px 4px 10px !important;
+  background: rgba(255,255,255,.02) !important;
+  border-radius: 3px !important;
+  font-size: .72rem !important;
+  line-height: 1.3 !important;
+  color: #c8b89a !important;
+}
+
+/* 左侧 2px 状态色条 */
+.pcard.pcard-v3 .pc-battle-item::before,
+.pcard.pcard-v3 .pc-transit-item::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 4px !important;
+  bottom: 4px !important;
+  width: 2px !important;
+  border-radius: 1px !important;
+  background: #c8a04a !important;  /* 默认暗金 */
+}
+
+/* ── 调度状态色条 ── */
+.pcard.pcard-v3 .pc-transit-item[data-status="march"]::before {
+  background: #c8a04a !important;
+}
+.pcard.pcard-v3 .pc-transit-item[data-status="siege"]::before {
+  background: #c1392b !important;
+}
+.pcard.pcard-v3 .pc-transit-item[data-status="resident"]::before {
+  background: #5a7fc4 !important;
+}
+
+/* NPC 行:强制红色色条 + 整行透明度 */
+.pcard.pcard-v3 .pc-transit-item.is-npc::before {
+  background: #c1392b !important;
+}
+.pcard.pcard-v3 .pc-transit-item.is-npc {
+  opacity: .85 !important;
+}
+
+/* ── 战况状态色条(按结果) ── */
+.pcard.pcard-v3 .pc-battle-item[data-result="win"]::before {
+  background: #6dce6d !important;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="lose"]::before {
+  background: #c1392b !important;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="draw"]::before {
+  background: #c8a04a !important;
+}
+
+/* ── 主体文字:武将名 + 路线 ── */
+.pcard.pcard-v3 .pc-transit-faction {
+  display: inline-block !important;
+  margin-right: 4px !important;
+  padding: 0 4px !important;
+  font-size: .6rem !important;
+  color: #c1392b !important;
+  border: 1px solid rgba(193,57,43,.4) !important;
+  border-radius: 2px !important;
+  line-height: 1.2 !important;
+}
+
+.pcard.pcard-v3 .pc-transit-general,
+.pcard.pcard-v3 .pc-battle-flow {
+  color: #e8d8b0 !important;
+  font-weight: 500 !important;
+}
+
+.pcard.pcard-v3 .pc-transit-route {
+  margin-left: 6px !important;
+  color: #a89878 !important;
+  font-size: .68rem !important;
+}
+
+.pcard.pcard-v3 .pc-transit-arrow,
+.pcard.pcard-v3 .pc-battle-arrow {
+  margin: 0 3px !important;
+  color: #7a6a5a !important;
+  font-size: .65rem !important;
+}
+
+/* ── 兵力 chip(中列) ── */
+.pcard.pcard-v3 .pc-transit-troop {
+  padding: 1px 6px !important;
+  background: rgba(200,160,74,.08) !important;
+  border: 1px solid rgba(200,160,74,.2) !important;
+  border-radius: 2px !important;
+  color: #c8a04a !important;
+  font-size: .65rem !important;
+  white-space: nowrap !important;
+}
+
+/* 空 troop 隐藏(防止留空 chip) */
+.pcard.pcard-v3 .pc-transit-troop:empty {
+  display: none !important;
+}
+
+/* ── 状态色块(右列) ── */
+.pcard.pcard-v3 .pc-transit-status {
+  padding: 1px 6px !important;
+  border-radius: 2px !important;
+  font-size: .62rem !important;
+  white-space: nowrap !important;
+  background: rgba(200,160,74,.1) !important;
+  color: #c8a04a !important;
+}
+.pcard.pcard-v3 .pc-transit-item[data-status="siege"] .pc-transit-status {
+  background: rgba(193,57,43,.12) !important;
+  color: #d05050 !important;
+}
+.pcard.pcard-v3 .pc-transit-item[data-status="resident"] .pc-transit-status {
+  background: rgba(90,127,196,.12) !important;
+  color: #7095d0 !important;
+}
+
+/* ── 备注(独占第二行,小灰字) ── */
+.pcard.pcard-v3 .pc-transit-note {
+  grid-column: 1 / -1 !important;
+  margin-top: 2px !important;
+  color: #7a6a5a !important;
+  font-size: .62rem !important;
+  font-style: italic !important;
+}
+
+/* ── 战况:结果色块 + 伤亡灰字 ── */
+.pcard.pcard-v3 .pc-battle-result {
+  padding: 1px 6px !important;
+  border-radius: 2px !important;
+  font-size: .62rem !important;
+  font-weight: 600 !important;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="win"] .pc-battle-result {
+  background: rgba(109,206,109,.12) !important;
+  color: #6dce6d !important;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="lose"] .pc-battle-result {
+  background: rgba(193,57,43,.12) !important;
+  color: #d05050 !important;
+}
+.pcard.pcard-v3 .pc-battle-item[data-result="draw"] .pc-battle-result {
+  background: rgba(200,160,74,.12) !important;
+  color: #c8a04a !important;
+}
+
+.pcard.pcard-v3 .pc-battle-casu {
+  grid-column: 1 / -1 !important;
+  margin-top: 2px !important;
+  color: #7a6a5a !important;
+  font-size: .62rem !important;
+}
+
+/* 战况城名本期不显示(JS 字段缺失),空标签隐藏防留白 */
+.pcard.pcard-v3 .pc-battle-city:empty {
+  display: none !important;
+}
+
+/* ── 空态文案(— 本回合无战事 — / — 本回合无调度 —) ── */
+.pcard.pcard-v3 .no-battle {
+  padding: 8px 6px !important;
+  color: #7a6a5a !important;
+  font-size: .65rem !important;
+  text-align: center !important;
+  opacity: .6 !important;
+}
+
+/* ═══════════ v20260629a 段结束 ═══════════ */
