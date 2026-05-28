@@ -5913,3 +5913,8 @@ body.fx-off-captured [data-ctype="captured"] {
 .pcard.pcard-v4[data-slot="2"] {
   border-left: 3px solid #3498db !important;
 }
+
+/* v20260705a 工单#pcard-v4-polish-E – emoji 亮度统一 */
+.pcard.pcard-v4 .res-emoji,
+.pcard.pcard-v4 .pcc-icon,
+.pcard.pcard-v4 .pcs-icon { opacity: 1; }
