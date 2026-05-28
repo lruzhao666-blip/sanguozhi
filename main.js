@@ -1,5 +1,22 @@
 /**
- * main.js — 三国志文字版 v10 (v2.5)
+ * main.js — 三国志文字版 v14 (v2.5)
+ * v17 (变更): 方案二最终落地 — 武将名去染色保持中性白;战报卡 v3.0
+ *             调用新增 attackerSlot/defenderSlot/Faction 字段渲染徽章;
+ *             调度部队/战报均移除"甲乙丙"字面展示
+ * v18 (变更): 色条移除 box-shadow,避免相邻行颜色互渗
+ * v19 (2026-05-26): 徽章去除外发光 box-shadow,消除色条邻接处的"渐变/混色"错觉
+ * v20 (2026-05-26): 军报徽章不再注入 background,改为线框样式;阵营色仅由 border+text 表达
+ * v21 (2026-06-03): 军报推倒重做 — 删除军报摘要段渲染 + 简化 renderBattlesBlock + 战报卡 buildBattleCard 攻守双方徽章中性白
+ * v22 (2026-06-04): 军报板块整体下线 — 删除 renderBattlesBlock / buildBattleCard / renderAll 中的调用
+ * v23 (2026-06-05): 军报板块重建(方案二) — 新增 renderJunbao(),挂载于地图与三方势力之间;读取 transit + battles,徽章色走 P_COLOR / SGMap.getFactionColor()
+ * v24 (2026-06-05): 修复 PR#220 renderJunbao 误置于特效开关栏 IIFE 内 — 迁回主 IIFE,恢复 renderChangesDetail/renderHistorySection 调用链
+ * v25 (2026-06-12): 军报板块 UI 重做 — CSS 全量补齐,头部去 emoji 与 tag,
+ *                   消费已注入的 --strip-color / --badge-* 变量
+ * v26 (2026-06-13): 军报板块对齐修复 — 边框/padding/头部 对齐兄弟板块, 小标签改"军情",空态占位加金线装饰
+ * v27 (2026-06-17): 工单#pcard-v3-fix-1 玩家卡 v3 视觉精修 — renderPlayerBattles/renderPlayerTransit 空态整段隐藏,移除 pc-battle-empty/pc-transit-empty 占位
+ * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
+ * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
+ * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
  * 对接规范 v2.0：
  *  - 剧情区 / 数据区分离（36个=号分隔）
  *  - [甲][乙][丙] 含 cities_list（城名+守将）
@@ -111,7 +128,7 @@
       players_json:        JSON.stringify(rd.parsed.players       || []),
       battles_json:        JSON.stringify(rd.parsed.battles       || []),
       changes_json:        JSON.stringify(rd.parsed.changes        || []),
-      livelihood_json:     JSON.stringify([]),
+      livelihood_json:     JSON.stringify(rd.parsed.transit        || []),
       city_ownership_json: JSON.stringify(rd.parsed.cityOwnership || {}),
     };
     const existId = await findRoundId(rd.round);
@@ -171,10 +188,11 @@
           digest:        row.digest          || '',
           players:       safeJson(row.players_json,          []),
           battles:       safeJson(row.battles_json,          []),
+          transit:       safeJson(row.livelihood_json,        []),
           changes:       safeJson(row.changes_json,          []),
           cityOwnership: safeJson(row.city_ownership_json,  {}),
-          // 兼容旧数据
-          livelihood:    safeJson(row.livelihood_json,       []),
+          // livelihood 列已复用为 transit_json，旧路径置空
+          livelihood:    [],
           situation:     row.situation  || '',
           events:        safeJson(row.events_json, []),
           narration:     row.narration  || '',
@@ -232,20 +250,22 @@
     const raw = document.getElementById('gm-content').value.trim();
     if (!raw) { showToast('⚠️ 内容不能为空'); return; }
 
-    // 回合号 = 当前最大回合 + 1（自动递增）
+    // 回合号：优先使用解析到的剧情标题回合数，失败则自动递增
     const nextRound = state.rounds.length
       ? state.rounds[state.rounds.length - 1].round + 1
       : 1;
 
     const parsed = SGParser.parse(raw);
-    parsed.round = nextRound;
+    const detectedRound = Number.isInteger(parsed.round) ? parsed.round : parseInt(parsed.round, 10);
+    const roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
+    parsed.round = roundNum;
 
     state.publishing = true;
     const btn = document.getElementById('btn-publish');
     btn.disabled = true; btn.textContent = '⏳ 发布中…';
 
     try {
-      const rd = { round: nextRound, roundTitle: '', parsed, rawContent: raw };
+      const rd = { round: roundNum, roundTitle: '', parsed, rawContent: raw };
       await publishRound(rd);
       await fetchAllRounds();
       renderAll();
@@ -255,7 +275,7 @@
       document.getElementById('parse-preview').classList.add('hidden');
 
       updateUndoBtn();
-      showToast(`✅ 第 ${nextRound} 回合已发布！`);
+      showToast(`✅ 第 ${roundNum} 回合已发布！`);
     } catch (e) {
       console.error('[SG] 发布失败:', e);
       showToast('❌ 发布失败，请检查网络');
@@ -393,7 +413,6 @@
       renderRoundBar(latest);
       renderDigest(latest);
       renderPlayerCards();
-      renderBattlesBlock(latest.parsed.battles || []);
       renderMap();
       renderChangesDetail();
       renderHistorySection();
@@ -402,7 +421,146 @@
     updateUndoBtn();
   }
 
+// ─────────────────────────────────────────
+// 任事调度板块渲染 v1
+// 数据源:cityOwnership[城].productionBuffs + players[i].generals
+// 熟练度:遍历 state.rounds 反推已挂回合数
+// ─────────────────────────────────────────
   // ── 势力地图 ──
+
+
+  // 战况嫁接渲染（按攻方 slot 归到对应玩家卡）
+  // v20260617a 工单#pcard-v3-fix-1:
+  //  - 空态:整个 <details> 加 .hidden,连标题都不显示
+  //  - 有内容:显示但不主动 open(默认 closed,由 HTML 已删 open 属性保证)
+  //  - 不再渲染 .pc-battle-empty 占位
+  function renderPlayerBattles(slot, battles) {
+    const wrapEl  = document.getElementById(`pc-battles-${slot}`);
+    const listEl  = document.getElementById(`pc-battles-list-${slot}`);
+    const countEl = document.getElementById(`pc-battles-count-${slot}`);
+    if (!wrapEl || !listEl || !countEl) return;
+
+    // 过滤：本玩家作为攻方的战斗
+    const mine = (battles || []).filter(b => b.attackerSlot === slot);
+
+    wrapEl.classList.remove('hidden');
+
+    // 空态
+    if (!mine.length) {
+      wrapEl.removeAttribute('open');
+      listEl.innerHTML = '<div class="no-battle">— 本回合无战事 —</div>';
+      countEl.textContent = '0 场';
+      return;
+    }
+
+    // 有内容:显示 details
+    wrapEl.setAttribute('open', '');
+    countEl.textContent = `${mine.length} 场`;
+
+    listEl.innerHTML = mine.map(b => {
+      const resultCls = b.result === '胜' ? 'win'
+                      : b.result === '负' ? 'lose'
+                      : 'draw';
+      const atk = esc(b.attacker || '');
+      const def = esc(b.defender || '');
+      const city = b.city ? `<span class="pc-battle-city">${esc(b.city)}</span>` : '';
+      const casuText = (b.attacker_loss != null && b.defender_loss != null) ? `伤亡：攻 ${b.attacker_loss} · 守 ${b.defender_loss}` : '';
+      return `<div class="pc-battle-item" data-result="${resultCls}">
+        <div class="pc-battle-main">
+          <span class="pc-battle-flow">${atk}<span class="pc-battle-arrow">→</span>${def}</span>
+          ${city}
+          <span class="pc-battle-result">${esc(b.result || '')}</span>
+        </div>
+        ${casuText ? `<div class="pc-battle-casu">${casuText}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // 在途部队嫁接渲染（按 slot 归到对应玩家卡）
+  // v20260617a 工单#pcard-v3-fix-1:
+  //  - 空态:整个 <details> 加 .hidden,连标题都不显示
+  //  - 有内容:显示但不主动 open(默认 closed,由 HTML 已删 open 属性保证)
+  //  - 不再渲染 .pc-transit-empty 占位
+  // 在途部队嫁接渲染 v20260628a
+  // 数据源:parser _parseTransit 输出
+  //   { faction, slot(0/1/2|null), general, from, to, troopType, troopCount, status, note }
+  // 归属规则:
+  //   1) t.slot === slot       → 玩家自己的调度
+  //   2) t.slot === null 且 t.to ∈ 当前玩家城池列表 → NPC 朝该玩家来的调度(标记为 NPC 行)
+  // 状态映射:
+  //   '围攻中' → siege  (红色色条)
+  //   '客驻'   → guest  (蓝色色条)
+  //   '剩N' 或其他 → march (暗金色条)
+  // NPC 行额外加 .is-npc class,色条强制为红色(NPC 来攻)
+  function renderPlayerTransit(slot, transit) {
+    const wrapEl  = document.getElementById(`pc-transit-${slot}`);
+    const listEl  = document.getElementById(`pc-transit-list-${slot}`);
+    const countEl = document.getElementById(`pc-transit-count-${slot}`);
+    if (!wrapEl || !listEl || !countEl) return;
+
+    // 当前玩家城池名集合(用于 NPC 调度归属判断)
+    const myCities = new Set();
+    const sp = state.players[slot];
+    if (sp && sp.cities_list && sp.cities_list.length) {
+      sp.cities_list.forEach(c => { if (c && c.name) myCities.add(c.name); });
+    } else if (sp && sp.city) {
+      myCities.add(sp.city);
+    }
+
+    // 过滤 + 标记 NPC
+    const mine = (transit || []).map(t => {
+      if (t.slot === slot) return { t, isNpc: false };
+      if (t.slot === null && t.to && myCities.has(t.to)) return { t, isNpc: true };
+      return null;
+    }).filter(Boolean);
+
+    wrapEl.classList.remove('hidden');
+
+    // 空态
+    if (!mine.length) {
+      wrapEl.removeAttribute('open');
+      listEl.innerHTML = '<div class="no-battle">— 本回合无调度 —</div>';
+      countEl.textContent = '0 支';
+      return;
+    }
+
+    // 有内容
+    wrapEl.setAttribute('open', '');
+    countEl.textContent = `${mine.length} 支`;
+
+    listEl.innerHTML = mine.map(({ t, isNpc }) => {
+      // 状态映射
+      const statusCls = t.status === '围攻中' ? 'siege'
+                      : t.status === '客驻'   ? 'resident'
+                      : 'march';
+      // NPC 行强制红色色条(覆盖默认 march 暗金)
+      const npcCls = isNpc ? ' is-npc' : '';
+
+      // 兵种 + 数量(显式 != null,允许 0)
+      const troopStr = (t.troopType && t.troopCount != null)
+        ? `${esc(t.troopType)} ${t.troopCount}`
+        : '';
+
+      // 主体:武将名 → 路线 (NPC 行武将名前加阵营字角标)
+      const factionTag = isNpc && t.faction
+        ? `<span class="pc-transit-faction">${esc(t.faction)}</span>`
+        : '';
+
+      // 状态文字
+      const statusText = esc(t.status || '');
+
+      // note(尾部备注,小灰字)
+      const noteHtml = t.note ? `<span class="pc-transit-note">${esc(t.note)}</span>` : '';
+
+      return `<div class="pc-transit-item${npcCls}" data-status="${statusCls}">
+        ${factionTag}<span class="pc-transit-general">${esc(t.general || '')}</span>
+        <span class="pc-transit-route">${esc(t.from || '')}<span class="pc-transit-arrow">→</span>${esc(t.to || '')}</span>
+        ${troopStr ? `<span class="pc-transit-troop">${troopStr}</span>` : ''}
+        <span class="pc-transit-status">${statusText}</span>
+        ${noteHtml}
+      </div>`;
+    }).join('');
+  }
   function renderMap() {
     const latest       = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
     const latestParsed = latest ? latest.parsed : null;
@@ -426,7 +584,9 @@
       cityMap = SGMap.parseCityOwnership(state.players, latestRaw);
     }
 
-    SGMap.update(state.players, cityMap);
+    SGMap.update(state.players, cityMap,
+      latestParsed?.transit  || [],
+      latestParsed?.battles  || []);
     _renderMapLegend(cityMap);
   }
 
@@ -445,31 +605,51 @@
         <span style="color:var(--text-dim);font-size:.65rem"> ${cnt}城</span>
       </span>`;
     }).join('');
-    const npcCnt = Object.values(cm).filter(o => o.owner === 'npc').length;
+    const playerTotal   = Object.values(cm).filter(o => o.owner !== '' && o.owner !== 'npc').length;
+    const namedNpcTotal = Object.values(cm).filter(o => o.owner === 'npc' && o.faction != null).length;
+    // 群雄 = 总城数 - 玩家城 - 有名NPC势力城（faction有值的），无主/无名城归群雄
+    const qhCnt         = 60 - playerTotal - namedNpcTotal;
     html += `<span class="sgmap-legend-item">
       <span class="sgmap-legend-dot" style="background:#9a7c3e;box-shadow:0 0 4px #c09050"></span>
-      <span style="color:#c09050;font-weight:700">NPC</span>
-      <span style="color:var(--text-dim);font-size:.65rem"> ${npcCnt}城</span>
+      <span style="color:#c09050;font-weight:700">群雄</span>
+      <span style="color:var(--text-dim);font-size:.65rem"> ${qhCnt}城</span>
     </span>`;
     el.innerHTML = html;
   }
 
+  function getRoundStats() {
+    if (!state.rounds.length) return { latest: null, total: 0 };
+    const nums = state.rounds
+      .map(rd => (Number.isInteger(rd.round) ? rd.round : parseInt(rd.round, 10)))
+      .filter(n => Number.isInteger(n) && n > 0);
+    if (!nums.length) return { latest: null, total: state.rounds.length };
+    const latest = nums[nums.length - 1];
+    const total = Math.max(...nums);
+    return { latest, total };
+  }
+
   // ── 回合标题条 ──
   function renderRoundBar(rd) {
-    setTxt('rb-num', rd.round);
+    const roundNum = Number.isInteger(rd.round) ? rd.round : parseInt(rd.round, 10);
+    if (Number.isInteger(roundNum)) {
+      setTxt('rb-num', roundNum);
+    }
     const countEl = document.getElementById('rb-round-count');
-    if (countEl) countEl.textContent = `共 ${state.rounds.length} 回合`;
+    if (countEl) {
+      const roundLabel = Number.isInteger(roundNum) ? `当前第 ${roundNum} 回合` : '当前回合';
+      countEl.textContent = roundLabel;
+    }
   }
 
   // ══════════════════════════════════════════
   //  战局动态：直接展示原文（rawDigest）
   //  对文本做基础格式化：段落换行、关键词高亮
   // ══════════════════════════════════════════
+
   function renderDigest(rd) {
     const p      = rd.parsed;
     const block  = document.getElementById('block-digest');
     const body   = document.getElementById('digest-body');
-    const tagsEl = document.getElementById('digest-tags');
     if (!block || !body) return;
 
     // rawDigest 优先，兼容旧数据用 situation + events 拼合
@@ -480,13 +660,8 @@
     }
     block.classList.remove('hidden');
 
-    // 标签行：仅显示一个简洁标签
-    if (tagsEl) tagsEl.innerHTML = `<span class="digest-tag tag-situation">📋 AI 原文</span>`;
-
     // 将原文渲染为带高亮的预格式段落
     body.innerHTML = `<div class="digest-raw">${highlightRaw(rawText)}</div>`;
-
-
   }
 
   /**
@@ -520,7 +695,7 @@
     const isOpt  = l => /^\s*[①②③④⑤⑥]\s*.+/.test(l);
     // 判断是否是单行格式：「名: ① xxx ② xxx」
     const isSingleLine = l => /^[^:：①②③④⑤⑥\s][^:：]{0,12}[：:]\s*.*[①②③④⑤⑥]/.test(l.trim());
-    // 判断是否是纯玩家名行（短、无特殊符号）
+    // 判断是否是纯玩家名行（短、无特殊符号，无冒号）
     const isPName = l => {
       const t = l.trim();
       return t.length >= 1 && t.length <= 10
@@ -528,34 +703,86 @@
         && !/^[\s\u3000]/.test(t)
         && !/^[📍🔖💡⏳🎯🌍⚡📢🔥📜🎴🌐⚔️🏯🌅🌙•·▪▸▶◆◇■□=─═—]/.test(t);
     };
+    // 判断是否是「名字+冒号」行（选项在后续行）：昭: / 高： / 源: 等
+    // 条件：1-8字 + 冒号结尾，冒号后无 ① 选项内容
+    const isPNameColon = l => {
+      const t = l.trim();
+      return /^[^:：①②③④⑤⑥\s][^:：①②③④⑤⑥]{0,7}[：:]\s*$/.test(t)
+        && !/^[📍🔖💡⏳🎯🌍⚡📢🔥📜🎴🌐⚔️🏯🌅🌙•·▪▸▶◆◇■□=─═—]/.test(t);
+    };
     // 判断是否是等待行
     const isWait = l => /^⏳/.test(l.trim());
     // GM 标注剥除
     const stripGM = l => l.trim().replace(/^[【\[][^】\]\n]{1,12}[】\]]\s*/, '').trim();
 
+    // 判断是否是 A/B/C 分支行（兼容：A. / A、 / A： / A: / A 空格）
+    const isBranchLine = l => /^\s*[A-Ca-c](?:[.．、]|[：:]|\s)\s*.+/.test(l);
+    // 提取分支字母
+    const branchLetter = l => l.trim().slice(0,1).toUpperCase();
+    // 提取分支正文（去掉 "A. " / "A：" / "A " 前缀）
+    const branchText   = l => l.trim().replace(/^[A-Ca-c](?:[.．、]|[：:]|\s)\s*/, '');
+
     // 渲染一组 actionLines + waitLine → HTML字符串
+    // actionLines: [{ playerLabel, opts: [{ text, branches: [{label,text}] }] }]
     const renderBlock = (actionLines, waitLine) => {
+      // ── 方案H：竖排名号 · 军帐分列风格 ──
       let ab = '<div class="raw-action-block">';
-      ab += '<div class="rab-title">🎯 行动建议</div>';
+      // 标题行
+      ab += '<div class="rab-header">';
+      ab += '<span class="rab-header-icon">🎯</span>';
+      ab += '<span class="rab-header-title">行动建议</span>';
+      ab += '</div>';
       if (actionLines.length) {
         ab += '<div class="rab-players">';
-        actionLines.forEach(al => {
-          ab += '<div class="rab-player-row">';
-          ab += `<div class="rab-pname">${esc(al.playerLabel)}</div>`;
+        actionLines.forEach((al, pi) => {
+          const slot = pi % 3;
+          ab += `<div class="rab-player-row style-h" data-slot="${slot}">`;
+          // 竖排名字列
+          ab += '<div class="pname-h-vert">';
+          ab += `<span class="pname-h-char">${esc(al.playerLabel)}</span>`;
+          ab += '</div>';
+          // 内容区
+          ab += '<div class="pname-h-content">';
           ab += '<div class="rab-opts">';
           al.opts.forEach((opt, oi) => {
-            const isCustom = /自定义/.test(opt);
-            ab += `<div class="rab-opt${isCustom ? ' rab-opt--custom' : ''}">`
-                + `<span class="rab-opt-num">${ICONS[oi]||''}</span>`
-                + `<span class="rab-opt-txt">${esc(opt)}</span>`
-                + '</div>';
+            // 破折号拆分：行动名 —— 注解
+            const dashIdx = opt.text.search(/——|──|\s[-—]{2}\s/);
+            let name = opt.text, desc = '';
+            if (dashIdx > 0) {
+              name = opt.text.slice(0, dashIdx).trim();
+              desc = opt.text.slice(dashIdx).replace(/^[——──\s-—]+/, '').trim();
+            }
+            ab += '<div class="rab-opt">';
+            ab += `<span class="rab-opt-num">${ICONS[oi] || ''}</span>`;
+            ab += '<div class="rab-opt-body">';
+            ab += `<span class="rab-opt-name">${esc(name)}</span>`;
+            if (desc) {
+              ab += '<span class="rab-opt-sep">—</span>';
+              ab += `<span class="rab-opt-note">${esc(desc)}</span>`;
+            }
+            // A/B/C 分支
+            if (opt.branches && opt.branches.length) {
+              ab += '<div class="rab-branch-list">';
+              opt.branches.forEach(br => {
+                const lbl = br.label.toUpperCase();
+                ab += '<div class="rab-branch">';
+                ab += `<span class="rab-branch-label">${lbl}</span>`;
+                ab += `<span class="rab-branch-text">${esc(br.text)}</span>`;
+                ab += '</div>';
+              });
+              ab += '</div>'; // .rab-branch-list
+            }
+            ab += '</div>'; // .rab-opt-body
+            ab += '</div>'; // .rab-opt
           });
-          ab += '</div></div>';
+          ab += '</div>'; // .rab-opts
+          ab += '</div>'; // .rab-pname-h-content
+          ab += '</div>'; // .rab-player-row
         });
-        ab += '</div>';
+        ab += '</div>'; // .rab-players
       }
       if (waitLine) ab += `<div class="rab-wait">${esc(waitLine)}</div>`;
-      ab += '</div>';
+      ab += '</div>'; // .raw-action-block
       return ab;
     };
 
@@ -574,6 +801,7 @@
           if (pendingPlayer !== null && pendingOpts.length) {
             actionLines.push({ playerLabel: pendingPlayer, opts: pendingOpts });
           }
+          // pendingOpts 现在是 [{text, branches}]，flushP 直接赋值即可
           pendingPlayer = null;
           pendingOpts   = [];
         };
@@ -597,7 +825,7 @@
           }
           emptyCount = 0;
 
-          // 单行格式：「名: ① xxx ② xxx」
+          // 单行格式：「名: ① xxx ② xxx」（单行内不含 A/B/C 分支）
           if (isSingleLine(s2)) {
             flushP();
             const cm = s2.match(/^([^:：①②③④⑤⑥\s][^:：]{0,12})[：:]\s*(.+)$/);
@@ -607,25 +835,50 @@
               const opts   = [];
               const re     = /[①②③④⑤⑥]\s*([^①②③④⑤⑥]+)/g;
               let m;
-              while ((m = re.exec(rest)) !== null) opts.push(m[1].trim().replace(/[,，]+$/, ''));
+              while ((m = re.exec(rest)) !== null)
+                opts.push({ text: m[1].trim().replace(/[,，]+$/, ''), branches: [] });
               actionLines.push({ playerLabel: pLabel, opts });
             }
             i++; continue;
           }
 
-          // 纯选项行：① xxx
+          // 纯选项行：① xxx（读完后继续读附属 A/B/C 分支行）
           if (isOpt(s2)) {
             const optTxt = s2.trim().replace(/^[①②③④⑤⑥]\s*/, '').replace(/[,，]+$/, '');
-            pendingOpts.push(optTxt);
+            const branches = [];
+            i++;
+            // 向前预读：连续吃掉所有 A./B./C. 行（允许中间有单个空行）
+            while (i < lines.length) {
+              const ahead = stripGM(lines[i]);
+              if (!ahead) { i++; continue; }          // 空行跳过
+              if (isBranchLine(ahead)) {
+                branches.push({ label: branchLetter(ahead), text: branchText(ahead) });
+                i++;
+              } else {
+                break;                               // 非分支行，停止预读
+              }
+            }
+            pendingOpts.push({ text: optTxt, branches });
+            continue;  // i 已在内层循环推进，外层不再 i++
+          }
+
+          // 玩家名+冒号行：「昭:」「高：」「源:」（选项在后续行）
+          if (isPNameColon(s2)) {
+            flushP();
+            // 去掉尾部冒号，取纯名字
+            pendingPlayer = s2.trim().replace(/[：:]\s*$/, '');
             i++; continue;
           }
 
-          // 纯玩家名行
+          // 纯玩家名行（无冒号）
           if (isPName(s2)) {
             flushP();
             pendingPlayer = s2;
             i++; continue;
           }
+
+          // A/B/C 分支行游离在选项之外（理论不应出现，安全跳过）
+          if (isBranchLine(s2)) { i++; continue; }
 
           // 其他行 → 块结束
           flushP();
@@ -647,6 +900,38 @@
     return { text: out.join('\n'), placeholders };
   }
 
+  // ── 段落标题 emoji → 色条颜色映射 ──
+  const SECTION_CARD_COLOR = {
+    '🎴': { strip: 'rgba(212,168,67,.8)',  bg: 'rgba(50,32,0,.22)',   glow: 'rgba(212,168,67,.12)' },   // 旁白
+    '📢': { strip: 'rgba(80,160,220,.8)',  bg: 'rgba(8,32,60,.20)',   glow: 'rgba(80,160,220,.10)' },   // 主持人语
+    '🌍': { strip: 'rgba(80,180,100,.8)',  bg: 'rgba(5,35,12,.20)',   glow: 'rgba(80,180,100,.10)' },   // 天下大势
+    '⚡': { strip: 'rgba(240,200,60,.85)', bg: 'rgba(50,38,0,.22)',   glow: 'rgba(240,200,60,.12)' },   // 风云突变
+    '🔥': { strip: 'rgba(220,80,40,.85)',  bg: 'rgba(50,8,2,.22)',    glow: 'rgba(220,80,40,.12)' },    // 战斗/行动结果
+    '👤': { strip: 'rgba(180,100,220,.8)', bg: 'rgba(30,8,45,.20)',   glow: 'rgba(180,100,220,.10)' },  // 城主行动结果
+    '🎯': { strip: 'rgba(60,180,220,.8)',  bg: 'rgba(4,30,38,.20)',   glow: 'rgba(60,180,220,.10)' },   // 行动建议
+    '⏳': { strip: 'rgba(150,150,150,.6)', bg: 'rgba(18,18,18,.18)',  glow: 'rgba(150,150,150,.08)' },  // 等待决断
+    '📜': { strip: 'rgba(160,130,70,.8)',  bg: 'rgba(30,22,4,.20)',   glow: 'rgba(160,130,70,.10)' },   // 事件
+    '🌐': { strip: 'rgba(70,140,200,.8)',  bg: 'rgba(5,22,40,.20)',   glow: 'rgba(70,140,200,.10)' },
+    '⚔️': { strip: 'rgba(220,80,40,.85)',  bg: 'rgba(50,8,2,.22)',    glow: 'rgba(220,80,40,.12)' },
+    '🏯': { strip: 'rgba(212,168,67,.75)', bg: 'rgba(38,25,0,.20)',   glow: 'rgba(212,168,67,.10)' },
+    '🌅': { strip: 'rgba(220,140,60,.8)',  bg: 'rgba(45,20,2,.20)',   glow: 'rgba(220,140,60,.10)' },
+    '🌙': { strip: 'rgba(100,100,200,.8)', bg: 'rgba(8,8,35,.20)',    glow: 'rgba(100,100,200,.10)' },
+  };
+
+  /**
+   * 对一行文字做内联渲染：
+   *  - 「」→ <em class="raw-quote">...</em>
+   *  - ▸ 开头 → 不在此处理（外层已判断），仅作内联转义
+   */
+  function highlightInline(text) {
+    if (!text) return '';
+    // 先转义
+    let s = esc(text);
+    // 「」书名号内文字 → 斜体淡金
+    s = s.replace(/「([^」]*)」/g, '<em class="raw-quote">「$1」</em>');
+    return s;
+  }
+
   function highlightRaw(rawText) {
     if (!rawText) return '';
 
@@ -654,11 +939,17 @@
     // 这样后续逐行循环完全不会碰到 ①②③ 行，彻底避免 NUMBULLET_RE 抢先匹配
     const { text, placeholders } = _preRenderActionBlocks(rawText);
 
+    // 段落级 emoji 标题检测（匹配7组规定emoji开头，后跟汉字内容）
+    // 注意：🎯 由 _preRenderActionBlocks 处理，这里不重复
+    const SECTION_EMOJI_RE = /^(🎴|📢|🌍|⚡|🔥|👤|⏳|📜|🌐|⚔️|🏯|🌅|🌙)\s*/;
     const SECTION_RE   = /^(🌍|⚡|📢|🔥|📜|🎴|🌐|⚔️|🏯|🌅|🌙)\s*[【\[]?\s*[\u4e00-\u9fa5]{2,}/;
     const PLAYER_RE    = /^👤\s*[【\[]/;
+    const RESULT_PLAYER_LINE_RE = /^\s*(?:[【\[][^】\]]+[】\]]|[^\s:：·\u30fb\u2022]{1,6}\s*[：:·\u30fb\u2022]).*/;
     const NOTE_RE      = /^[📍🔖💡]/;
     const BATTLE_RE    = /^🎲/;
-    const BULLET_RE    = /^[•·▪▸▶◆◇■□]\s+/;
+    // ▸ 影响行：行首 ▸（含全角/半角变体）
+    const EFFECT_RE    = /^▸\s*/;
+    const BULLET_RE    = /^[•·▪▶◆◇■□]\s+/;
     const NUMBULLET_RE = /^(?:[①②③④⑤⑥⑦⑧⑨⑩]|[1-9]\.|[1-9]、)\s*/;
     // GM 内部标注过滤规则
     const GM_LABEL_PREFIX_RE = /^[【\[][^】\]\n]{1,12}[】\]]\s*/;
@@ -666,25 +957,187 @@
     const lines = text.split('\n').map(l => l.replace(/\s+$/, ''));
     const out = [];
     let paraBuf = [];
+    // 当前所在段落卡片（非null时收集到卡片内）
+    let currentCard = null;   // { emoji, lines:[] }
 
     const flushPara = () => {
       if (!paraBuf.length) return;
-      out.push(`<p class="raw-para">${paraBuf.map(highlight).join('<br>')}</p>`);
+      if (currentCard) {
+        currentCard.lines.push(`<p class="raw-para">${paraBuf.map(highlightInline).join('<br>')}</p>`);
+      } else {
+        out.push(`<p class="raw-para">${paraBuf.map(highlightInline).join('<br>')}</p>`);
+      }
       paraBuf = [];
+    };
+
+    // ── 👤 各城主行动结果：子玩家分组 ──
+    // 与 🎯 行动建议 完全相同的 action-item 排版
+    const _groupPlayerResultLines = (cardLines) => {
+      const SUB_PLAYER_RE = /^([^\s:：·\u30fb\u2022\d第]{1,6})\s*[·\u30fb\u2022]\s*(.*)$/;
+      const SUB_PLAYER_BRACKET_RE = /^[【\[]([^】\]]{1,12})[】\]]\s*(.*)$/;
+      const parseRawPlayer = (html) => {
+        const text = html.replace(/<[^>]+>/g, '').trim();
+        const bracket = text.match(/[【\[]([^】\]]+)[】\]]\s*(.*)$/);
+        if (bracket) {
+          return { name: bracket[1], title: bracket[2].trim() };
+        }
+        return { name: text.replace(/^👤\s*/, ''), title: '' };
+      };
+      const hasSubPlayer = cardLines.some(l => {
+        if (l.startsWith('<div class="raw-player">')) return true;
+        if (l.startsWith('<')) return false;
+        const t = l.trim();
+        return SUB_PLAYER_RE.test(t) || SUB_PLAYER_BRACKET_RE.test(t);
+      });
+      if (!hasSubPlayer) return cardLines;
+
+      // 破折号拆分：标题 —— 注解（与 renderBlock 完全一致）
+      const splitDash = text => {
+        const idx = text.search(/\u2014\u2014|\u2500\u2500|\s[\-\u2014]{2}\s/);
+        if (idx <= 0) return { name: text, desc: '' };
+        return {
+          name: text.slice(0, idx).trim(),
+          desc: text.slice(idx).replace(/^[\u2014\u2500\s\-]+/, '').trim()
+        };
+      };
+
+      // slot 分配（首次出现顺序）
+      const slotMap = {};
+      let slotIdx = 0;
+      const getSlot = n => { if (!(n in slotMap)) slotMap[n] = slotIdx++; return slotMap[n]; };
+
+      const result = [];
+      // { name, slot, titleText, bodyLines[], extraHtml[] }
+      let grp = null;
+      let hasGroup = false;
+
+      const pushDivider = () => {
+        if (hasGroup) result.push('<div class="result-divider"></div>');
+        hasGroup = true;
+      };
+
+      const flushGroup = () => {
+        if (!grp) return;
+        const sl = grp.slot % 3;
+        let inner = '';
+
+        // ── 主行动条目：玩家名与标题合并为同行小标题 ──
+        if (grp.titleText) {
+          const { name, desc } = splitDash(grp.titleText);
+          let subtitleHtml = `<span class="raw-player-subtitle">${highlightInline(name)}`;
+          if (desc) {
+            subtitleHtml += `<span class="dash">\u2014\u2014</span><span class="desc">${highlightInline(desc)}</span>`;
+          }
+          subtitleHtml += `</span>`;
+
+          inner += `
+<div class="raw-player-anchor with-subtitle">
+  <span class="raw-player-name action-player-tag" data-slot="${sl}">${esc(grp.name)}</span>
+  <span class="raw-player-sep">·</span>
+  ${subtitleHtml}
+</div>`.trim();
+        } else {
+          inner += `<div class="action-player-tag" data-slot="${sl}">${esc(grp.name)}</div>`;
+        }
+
+        // ── 新代码：正文行按段落渲染 ──
+        {
+          let _bodyParaBuf = [];
+          const _flushBodyPara = () => {
+            if (!_bodyParaBuf.length) return;
+            inner += `<p class="raw-para">${_bodyParaBuf.map(highlightInline).join('<br>')}</p>`;
+            _bodyParaBuf = [];
+          };
+          grp.bodyLines.forEach(bLine => {
+            // 空行 → 断段
+            if (!bLine.trim()) {
+              _flushBodyPara();
+              return;
+            }
+            // ▸ 影响行 → 独立渲染
+            if (/^▸/.test(bLine)) {
+              _flushBodyPara();
+              inner += `<div class="raw-effect">${highlightInline(bLine)}</div>`;
+              return;
+            }
+            // 普通行 → 累入段落缓冲
+            _bodyParaBuf.push(bLine);
+          });
+          _flushBodyPara();
+        }
+
+        // ── 已渲染 HTML（▸ 影响、note 等）原样附后 ──
+        inner += grp.extraHtml.join('');
+
+        result.push(`<div class="result-player-group" data-slot="${sl}">${inner}</div>`);
+        grp = null;
+      };
+
+      const startGroup = (name, title) => {
+        flushGroup();
+        pushDivider();
+        grp = { name, slot: getSlot(name), titleText: title, bodyLines: [], extraHtml: [] };
+      };
+
+      cardLines.forEach(line => {
+        if (line.startsWith('<div class="raw-player">')) {
+          const parsed = parseRawPlayer(line);
+          startGroup(parsed.name, parsed.title);
+          return;
+        }
+        if (line.startsWith('<')) {
+          if (grp) {
+            grp.extraHtml.push(line);
+          } else {
+            result.push(line);
+          }
+          return;
+        }
+        const trimmed = line.trim();
+        const m = trimmed.match(SUB_PLAYER_RE);
+        const mb = trimmed.match(SUB_PLAYER_BRACKET_RE);
+        if (m || mb) {
+          const name = m ? m[1] : mb[1];
+          const title = m ? m[2].trim() : mb[2].trim();
+          startGroup(name, title);
+        } else {
+          if (grp) grp.bodyLines.push(trimmed);
+          else result.push(`<p class="raw-para">${highlightInline(line)}</p>`);
+        }
+      });
+      flushGroup();
+      return result;
+    };
+
+    const flushCard = () => {
+      if (!currentCard) return;
+      // 对 👤 段落卡片执行子玩家分组后处理
+      const finalLines = currentCard.emoji === '👤'
+        ? _groupPlayerResultLines(currentCard.lines)
+        : currentCard.lines;
+      // 无盒版：去掉背景/边框，仅用间距分组
+      const cardHtml =
+        `<div class="raw-section-card">`
+        + `<div class="raw-section-card-body">`
+        + finalLines.join('')
+        + `</div></div>`;
+      out.push(cardHtml);
+      currentCard = null;
     };
 
     for (let i = 0; i < lines.length; i++) {
       const t = lines[i];
 
-      // 空行 → 段落分隔
+      // 空行 → 段落分隔（卡片内保留空行感，但不关闭卡片）
       if (!t.trim()) {
         flushPara();
         continue;
       }
 
-      // 占位符 → 直接输出对应 HTML
+      // 占位符 → 直接输出对应 HTML（🎯 行动建议块）
       if (t.trim() in placeholders) {
         flushPara();
+        flushCard();
         out.push(placeholders[t.trim()]);
         continue;
       }
@@ -696,52 +1149,200 @@
         if (!tLine) continue;
       }
 
-      // 分隔线
-      if (/^[═─=\-—]{4,}/.test(tLine)) {
+      // 分隔线（36个=）→ 折叠数据面板触发点
+      if (/^={10,}/.test(tLine.trim())) {
         flushPara();
+        flushCard();
+        // 收集分隔线以后的所有内容进折叠面板
+        const dataLines = [];
+        i++;
+        while (i < lines.length) {
+          dataLines.push(lines[i]);
+          i++;
+        }
+        i--; // 补偿外层 for 的 i++
+        if (dataLines.length > 0) {
+          const dataContent = dataLines.join('\n');
+          const dataHtml = dataContent.split('\n').map(dl => {
+            if (!dl.trim()) return '';
+            return `<div class="raw-data-line">${esc(dl)}</div>`;
+          }).join('');
+          out.push(
+            `<details class="raw-data-panel">`
+            + `<summary class="raw-data-summary">📊 结构化数据区 <span class="raw-data-badge">${dataLines.filter(l=>l.trim()).length} 行</span></summary>`
+            + `<div class="raw-data-body">${dataHtml}</div>`
+            + `</details>`
+          );
+        } else {
+          out.push('<div class="raw-divider"></div>');
+        }
+        continue;
+      }
+
+      // 其他分隔线
+      if (/^[═─\-—]{4,}/.test(tLine)) {
+        flushPara();
+        flushCard();
         out.push('<div class="raw-divider"></div>');
         continue;
       }
 
-      // 章节标题
-      if (SECTION_RE.test(tLine)) {
+      // ── 段落标题 emoji 检测（🎴📢🌍⚡🔥👤⏳📜🌐⚔️🏯🌅🌙）──
+      // 匹配条件：行首为规定 emoji，后跟汉字/空格/【
+      const sectionEmojiM = tLine.match(SECTION_EMOJI_RE);
+      if (sectionEmojiM && /[\u4e00-\u9fa5【\[]/.test(tLine.slice(sectionEmojiM[0].length, sectionEmojiM[0].length + 3))) {
         flushPara();
-        out.push(`<h4 class="raw-section">${highlight(tLine)}</h4>`);
+        flushCard();
+        const emoji = sectionEmojiM[1];
+        currentCard = { emoji, lines: [] };
+        // 标题行：data-emoji 属性驱动 CSS 色调，独立输出到卡片
+        currentCard.lines.push(`<h4 class="raw-section-title" data-emoji="${emoji}">${highlightInline(tLine)}</h4>`);
         continue;
       }
 
-      // 玩家行
-      if (PLAYER_RE.test(tLine)) {
+      // 章节标题（无卡片 fallback）
+      if (SECTION_RE.test(tLine) && !SECTION_EMOJI_RE.test(tLine)) {
         flushPara();
-        out.push(`<div class="raw-player">${highlight(tLine)}</div>`);
+        flushCard();
+        out.push(`<h4 class="raw-section">${highlightInline(tLine)}</h4>`);
         continue;
       }
 
-      // 战斗骰子行
+      // ── 👤 卡片内：精确识别子玩家分组标题行 ──
+      // 格式：{1-6字名号}·{行动名} 或 {1-6字名号}：{行动名}
+      // 例如："昭·犒赏北平与冀州居间"、"高·广陵平乱与紧急通商"
+      // 注意：不能匹配 "第一路·天水攻街亭" 这类子段落标题（排除 "第X路" 前缀）
+      if (currentCard && currentCard.emoji === '👤') {
+        const subTitleM = tLine.match(
+          /^([^\s:：·\u30fb\u2022\d第]{1,6})\s*[·\u30fb\u2022]\s*(.+)$/
+        );
+        if (subTitleM) {
+          flushPara();
+          // 作为纯文本行推入 cardLines，由 _groupPlayerResultLines() 处理分组
+          currentCard.lines.push(tLine);
+          continue;
+        }
+      }
+
+      // 玩家行（👤 或 👤 段落内的玩家标识）
+      if (PLAYER_RE.test(tLine) || (currentCard && currentCard.emoji === '👤' && RESULT_PLAYER_LINE_RE.test(tLine) && tLine.trim().length <= 30)) {
+        flushPara();
+
+        const nextLineRaw = lines[i + 1] || '';
+        const nextLine = nextLineRaw.trim().replace(/^[【\[][^】\]\n]{1,12}[】\]]\s*/, '');
+
+        const isActionSubtitle = s => {
+          if (!s) return false;
+          if (s.length > 30) return false;
+          if (/[。！？；,，.!?;]/.test(s)) return false;
+
+          const t = s.trim();
+          const isPNameCheck = t.length >= 1 && t.length <= 10
+            && !/[：:①②③④⑤⑥]/.test(t)
+            && !/^[\s\u3000]/.test(t)
+            && !/^[📍🔖💡⏳🎯🌍⚡📢🔥📜🎴🌐⚔️🏯🌅🌙•·▪▸▶◆◇■□=─═—]/.test(t);
+          if (isPNameCheck || PLAYER_RE.test(s)) return false;
+
+          if (/^[📍🔖💡⏳🎯🌍⚡📢🔥📜🎴🌐⚔️🏯🌅🌙•·▪▸▶◆◇■□=─═—]/.test(s)) return false;
+          if (/^[①②③④⑤⑥]/.test(s) || /^[A-Ca-c][.．、：:\s]/.test(s)) return false;
+          if (/^[=─═—]{3,}$/.test(s)) return false;
+          return true;
+        };
+
+        if (isActionSubtitle(nextLine)) {
+          const anchorHtml = `<div class="raw-player-anchor with-subtitle">
+            <span class="raw-player-name">${highlightInline(tLine)}</span>
+            <span class="raw-player-sep">·</span>
+            <span class="raw-player-subtitle">${esc(nextLine)}</span>
+          </div>`;
+          if (currentCard) {
+            currentCard.lines.push(anchorHtml);
+          } else {
+            out.push(anchorHtml);
+          }
+          i++;
+        } else {
+          if (currentCard) {
+            currentCard.lines.push(`<div class="raw-player">${highlightInline(tLine)}</div>`);
+          } else {
+            out.push(`<div class="raw-player">${highlightInline(tLine)}</div>`);
+          }
+        }
+        continue;
+      }
+
+      // ── 🎲 战斗骰子行 → 等宽框，横向可滚动 ──
       if (BATTLE_RE.test(tLine)) {
         flushPara();
-        out.push(`<div class="raw-battle">${highlight(tLine)}</div>`);
+        const battleHtml = `<div class="raw-battle"><code class="raw-battle-code">${esc(tLine)}</code></div>`;
+        if (currentCard) {
+          currentCard.lines.push(battleHtml);
+        } else {
+          out.push(battleHtml);
+        }
         continue;
       }
 
-      // ⏳ 等待行（无论是否在 action-block 内都统一渲染）
+      // ⏳ 等待/启幕尾句 → story-outro 压暗样式
       if (/^⏳/.test(tLine)) {
         flushPara();
-        out.push(`<div class="raw-wait">${highlight(tLine)}</div>`);
+        flushCard();
+        out.push(`<p class="story-outro">${highlightInline(tLine)}</p>`);
         continue;
       }
 
       // 注记行
       if (NOTE_RE.test(tLine)) {
         flushPara();
-        out.push(`<div class="raw-note">${highlight(tLine)}</div>`);
+        const noteHtml = `<div class="raw-note">${highlightInline(tLine)}</div>`;
+        if (currentCard) {
+          currentCard.lines.push(noteHtml);
+        } else {
+          out.push(noteHtml);
+        }
         continue;
       }
 
-      // 列表项
-      if (BULLET_RE.test(tLine) || NUMBULLET_RE.test(tLine)) {
+      // ── ▸ 影响行 → 降级样式（次要色 + 左缩进 + 略小字号）──
+      if (EFFECT_RE.test(tLine)) {
         flushPara();
-        out.push(`<div class="raw-bullet">${highlight(tLine)}</div>`);
+        const effectHtml = `<div class="raw-effect">${highlightInline(tLine)}</div>`;
+        if (currentCard) {
+          currentCard.lines.push(effectHtml);
+        } else {
+          out.push(effectHtml);
+        }
+        continue;
+      }
+
+      // ── ①②③④/A/B/C 编号项（仅在卡片外作为 bullet 处理；卡片内已由 _preRenderActionBlocks 处理）──
+      if (NUMBULLET_RE.test(tLine)) {
+        flushPara();
+        // 提取编号和内容
+        const numM = tLine.match(/^([①②③④⑤⑥⑦⑧⑨⑩]|[1-9]\.|[1-9]、)\s*/);
+        const numStr = numM ? numM[1] : '';
+        const rest = numStr ? tLine.slice(numM[0].length) : tLine;
+        const bulletHtml = `<div class="raw-numbered-item">`
+          + (numStr ? `<span class="raw-num-badge">${esc(numStr)}</span>` : '')
+          + `<span class="raw-num-text">${highlightInline(rest)}</span>`
+          + `</div>`;
+        if (currentCard) {
+          currentCard.lines.push(bulletHtml);
+        } else {
+          out.push(bulletHtml);
+        }
+        continue;
+      }
+
+      // 普通列表项
+      if (BULLET_RE.test(tLine)) {
+        flushPara();
+        const bHtml = `<div class="raw-bullet">${highlightInline(tLine)}</div>`;
+        if (currentCard) {
+          currentCard.lines.push(bHtml);
+        } else {
+          out.push(bHtml);
+        }
         continue;
       }
 
@@ -749,6 +1350,7 @@
       paraBuf.push(tLine);
     }
     flushPara();
+    flushCard();
 
     return out.join('');
   }
@@ -778,67 +1380,6 @@
   }
 
   // ══════════════════════════════════════════
-  //  战斗结算
-  // ══════════════════════════════════════════
-  function renderBattlesBlock(battles) {
-    const block = document.getElementById('block-battles');
-    const list  = document.getElementById('battles-list');
-    if (!block || !list) return;
-    if (!battles || !battles.length) { block.classList.add('hidden'); return; }
-    block.classList.remove('hidden');
-    list.innerHTML = '<div class="battle-list">' +
-      battles.map(b => buildBattleCard(b)).join('') +
-      '</div>';
-  }
-
-  function buildBattleCard(b) {
-    // 兼容 v2.0（attacker/defender/result/attacker_loss/defender_loss）
-    // 和旧格式（player/dice/resultTxt/narrative/success）
-    const isV2    = b.attacker !== undefined;
-    const success = isV2 ? b.result === '胜' : (b.success ?? true);
-    const isDraw  = isV2 && b.result === '平';
-    const cls     = success ? 'success' : (isDraw ? 'draw' : 'fail');
-    const resultLabel = isV2
-      ? ({ '胜':'胜利', '平':'平局', '负':'失败' }[b.result] || b.result)
-      : (success ? '成功' : '失败');
-    const resultIcon = success ? '⚔️ 胜' : (isDraw ? '🔶 平' : '💀 败');
-
-    if (isV2) {
-      // ── v2.0 重构卡片 ──
-      const atkLoss = b.attacker_loss ?? 0;
-      const defLoss = b.defender_loss ?? 0;
-      return `<div class="battle-card ${cls}">
-        <div class="bc-sides">
-          <div class="bc-side bc-atk">
-            <span class="bc-role">攻方</span>
-            <span class="bc-name">${esc(b.attacker)}</span>
-            ${atkLoss > 0 ? `<span class="bc-loss loss-atk">-${atkLoss}</span>` : ''}
-          </div>
-          <div class="bc-center">
-            <span class="bc-result-badge ${cls}">${resultIcon}</span>
-          </div>
-          <div class="bc-side bc-def">
-            <span class="bc-role">守方</span>
-            <span class="bc-name">${esc(b.defender)}</span>
-            ${defLoss > 0 ? `<span class="bc-loss loss-def">-${defLoss}</span>` : ''}
-          </div>
-        </div>
-      </div>`;
-    } else {
-      // ── 旧格式兼容 ──
-      const icon = success ? '✅' : '❌';
-      let html = `<div class="battle-card ${cls}">
-        <div class="bc-legacy">
-          ${b.player ? `<span class="bc-name">${esc(b.player)}</span>` : ''}
-          <span class="bc-result-badge ${cls}">${icon} ${resultLabel}</span>
-          ${b.dice ? `<span class="bc-dice">🎲 ${esc(b.dice)}</span>` : ''}
-        </div>`;
-      const desc = b.resultTxt || b.narrative || '';
-      if (desc) html += `<div class="bc-desc">${esc(desc.slice(0, 100))}</div>`;
-      html += `</div>`;
-      return html;
-    }
-  }
 
   // ══════════════════════════════════════════
   //  玩家势力卡 + 行动选项
@@ -847,6 +1388,9 @@
     const latestPlayers = state.rounds.length
       ? (state.rounds[state.rounds.length - 1].parsed.players || [])
       : [];
+    const latest = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
+    const battles = latest && latest.parsed.battles ? latest.parsed.battles : [];
+    const transit = latest && latest.parsed.transit ? latest.parsed.transit : [];
 
     state.players.forEach((p, i) => {
       setTxt(`pname-${i}`, p.name || `城主${['甲','乙','丙'][i]}`);
@@ -863,26 +1407,12 @@
       setTxt(`pmorale-${i}`, p.morale != null ? p.morale : '—');
       setTxt(`pcities-${i}`, p.cities != null ? p.cities : '—');
 
-      const bar = document.getElementById(`mbar-${i}`);
-      if (bar) {
-        const pct = Math.max(0, Math.min(100, p.morale ?? 60));
-        bar.style.width   = `${pct}%`;
-        bar.style.opacity = pct < 40 ? '.65' : pct > 80 ? '1' : '.85';
-      }
-
-      const badgeEl = document.getElementById(`pc-badges-${i}`);
-      if (badgeEl) {
-        const m = p.morale;
-        let bhtml = '';
-        if (m != null) {
-          if (m <= 0)       bhtml = `<span class="status-badge sb-danger">⚠️ 叛乱风险</span>`;
-          else if (m < 40)  bhtml = `<span class="status-badge sb-warn">❗ 民心低落</span>`;
-          else if (m >= 80) bhtml = `<span class="status-badge sb-alive">✨ 万民拥戴</span>`;
-        }
-        badgeEl.innerHTML = bhtml;
-      }
-
       renderGenList(i, p.generals);
+
+      // 战况嫁接到本卡底部
+      renderPlayerBattles(i, battles);
+      // 在途部队嫁接到本卡底部
+      renderPlayerTransit(i, transit);
 
       const noteEl = document.getElementById(`pc-note-${i}`);
       if (noteEl) {
@@ -893,7 +1423,6 @@
           noteEl.classList.add('hidden');
         }
       }
-
     });
   }
 
@@ -904,7 +1433,7 @@
       listEl.innerHTML = '<span class="gen-empty">——</span>';
       return;
     }
-    listEl.innerHTML = generals.map(g => buildGenTag(g)).join('');
+    listEl.innerHTML = generals.map(g => buildGenTag(g, idx)).join('');
   }
 
   // ── 武将状态颜色（按钮颜色完全由状态决定，不区分稀有度）
@@ -916,6 +1445,13 @@
     dead:   { bg:'rgba(18,18,18,.42)',  bd:'rgba(60,60,60,.35)',   c:'#686868',  bc:'rgba(60,60,60,.15)'  }
   };
 
+  // 武将胶囊势力色（v20260616a：胶囊背景按 slot，状态由左色条 CSS 表达）
+  var GEN_FACTION_STYLES = {
+    0: { bg:'rgba(231,76,60,.10)',  bd:'rgba(231,76,60,.40)',  c:'#ec9a8e' },  // 红
+    1: { bg:'rgba(61,190,108,.10)', bd:'rgba(61,190,108,.40)', c:'#9ad9b3' },  // 绿
+    2: { bg:'rgba(52,152,219,.10)', bd:'rgba(52,152,219,.40)', c:'#8ec5e8' },  // 蓝
+  };
+
   function genStatusKey(s) {
     if (!s) return 'healthy';
     if (/疲劳|疲/.test(s))    return 'tired';
@@ -925,39 +1461,26 @@
     return 'healthy';
   }
 
-  function buildGenTag(g) {
+  function buildGenTag(g, slot) {
     var statusKey = genStatusKey(g.status);
-    var sc        = GEN_STATUS_STYLES[statusKey] || GEN_STATUS_STYLES.healthy;
     var isDead    = statusKey === 'dead';
 
-    // tooltip 悬停提示
-    var titleTip = esc(g.name) + ' · ' + esc(g.status || '健康');
+    // 状态文字映射（仅用于 title tooltip）
+    var STATUS_LABEL = { healthy:'健康', tired:'疲劳', injured:'受伤', sick:'患病', dead:'阵亡' };
+    var statusLabel  = STATUS_LABEL[statusKey] || (g.status || '健康');
 
-    // ── 容器样式（完全由状态色决定）──
-    var wrapStyle = 'display:inline-flex!important;align-items:center!important;'
-      + 'border-radius:5px;padding:2px 8px 2px 7px;'
-      + 'font-size:.74rem;font-family:inherit;transition:transform .15s;cursor:default;'
-      + 'border:1px solid ' + sc.bd + '!important;'
-      + 'background:' + sc.bg + '!important;'
-      + (isDead ? 'text-decoration:line-through;opacity:.5;' : '');
+    // 势力色：slot 0/1/2 → 红/绿/蓝；其他兜底用旧状态色
+    var fc = GEN_FACTION_STYLES[slot] || GEN_STATUS_STYLES.healthy;
 
-    var nameStyle = 'font-weight:700;color:' + sc.c + '!important;letter-spacing:.02em;';
+    // inline 仅注入颜色三项（背景/边框/字色），形态与状态色条由 CSS 负责
+    var wrapStyle = 'background-color:' + fc.bg + ';'
+      + 'border:1px solid ' + fc.bd + ';'
+      + 'color:' + fc.c + ';';
 
-    var divStyle = 'display:inline-block;width:1px;height:.9em;margin:0 5px;'
-      + 'background:' + sc.bd + ';flex-shrink:0;opacity:.6;';
-
-    var statusStyle = 'font-size:.6rem;color:' + sc.c + '!important;opacity:.85;white-space:nowrap;';
-
-    // 状态文字映射
-    var STATUS_SHORT = { healthy:'健康', tired:'疲劳', injured:'受伤', sick:'患病', dead:'阵亡' };
-    var statusShort = STATUS_SHORT[statusKey] || (g.status || '健康');
-
-    // 结构：[名字] | [状态]
     return '<span class="gen-tag" data-status="' + statusKey
-      + '" style="' + wrapStyle + '" title="' + titleTip + '">'
-      + '<span style="' + nameStyle + '">' + esc(g.name) + '</span>'
-      + '<span style="' + divStyle + '"></span>'
-      + '<span style="' + statusStyle + '">' + esc(statusShort) + '</span>'
+      + '" data-name="' + esc(g.name) + '"'
+      + ' style="' + wrapStyle + '">'
+      + esc(g.name)
       + '</span>';
   }
 
@@ -1009,7 +1532,23 @@
   }
 
   // ── Layer 2：收支明细（可折叠） ──
-  const BD_ITEM_ORDER = ['产出','维护','季度','明账','府库','贸易','事件'];
+  // 收支分项显示顺序（规则 v2.7.9 §收支明细）
+  // 扩展预留：在此数组末尾追加新分项名即可自动排序，无需改动渲染逻辑
+  const BD_ITEM_ORDER = [
+    '产出',   // 常规收入：屯田/税收
+    '维护',   // 常规支出：兵力/城池维护
+    '季度',   // 每5回合季度结算（每城-40金-60粮）
+    '明账',   // 公开账目变动
+    '府库',   // 府库特殊操作（原"暗账"）
+    '贸易',   // 贸易收入
+    '事件',   // 事件奖惩
+    '赤字',   // 资源赤字扣除
+    '战损',   // 战斗兵力损失
+    '急征',   // 紧急征粮/征兵
+    '招募',   // 招募新兵
+    '逃亡',   // 兵力/民心逃亡
+    '攻城',   // 攻城相关消耗
+  ];
   function _renderBreakdown(bd, troopChanges) {
     if (!bd) return '';
     const cats = RES_ORDER.filter(k => k in bd);
@@ -1059,7 +1598,7 @@
       }
       // 新布局：资源名固定左，chips一行，兵种明细块独占次行，合计固定右
       return '<div class="cd-bd-row">'
-        + '<span class="cd-bd-cat">' + (RES_ICON[cat]||'') + cat + '</span>'
+        + '<span class="cd-bd-cat"><span class="cd-bd-cat-icon">' + (RES_ICON[cat]||'') + '</span><span class="cd-bd-cat-name">' + cat + '</span></span>'
         + '<span class="cd-bd-items">'
           + '<span class="cd-bd-chips-wrap">' + chips + '</span>'
           + troopHtml
@@ -1079,8 +1618,13 @@
   // 默认折叠，显示摘要行：「N 项变动 · 含X调度 · 府库-100金」
   function _renderAnchorGroups(groups) {
     if (!groups || !Object.keys(groups).length) return '';
-    const knownKeys   = ANCHOR_ORDER.filter(k => groups[k]);
-    const unknownKeys = Object.keys(groups).filter(k => !ANCHOR_ORDER.includes(k));
+    // 隐藏不需要独立区块显示的锚点：
+    //   状态：武将状态由玩家卡片直接展示
+    //   季度：季度结算已体现在收支明细的「季度」chip 中，独立区块是重复信息
+    //   兵种：兵种变动已在收支明细的「兵」行里展示，锚点区块重复且冗余
+    const hiddenAnchors = new Set(['状态', '季度', '兵种']);
+    const knownKeys   = ANCHOR_ORDER.filter(k => groups[k] && !hiddenAnchors.has(k));
+    const unknownKeys = Object.keys(groups).filter(k => !ANCHOR_ORDER.includes(k) && !hiddenAnchors.has(k));
     const allKeys     = [...knownKeys, ...unknownKeys];
 
     const sectionsHtml = allKeys.map(key => {
@@ -1175,18 +1719,20 @@
   function _migrateToAnchorGroups(ch) {
     const groups = Object.assign({}, ch.anchorGroups || {});
 
-    // 季度△
-    if (ch.seasonal && ch.seasonal.length) {
-      if (!groups['季度']) groups['季度'] = [];
+    // 季度△（旧存档兼容迁移：seasonal[] → anchorGroups.季度）
+    // v12 parser 不再写入 seasonal，此分支只处理 Supabase 中的历史旧存档。
+    // 保护条件 !groups['季度'] 确保：新数据（anchorGroups已由parser直接写入）不被重复追加。
+    if (ch.seasonal && ch.seasonal.length && !groups['季度']) {
+      groups['季度'] = [];
       groups['季度'].push({
-        label: '',
+        label:  '季度结算',
         deltas: ch.seasonal.map(s => ({ res: s.res, val: s.val })),
-        text: '',
+        text:   '',
       });
     }
-    // 府库△
-    if (ch.darkItems && ch.darkItems.length) {
-      if (!groups['府库']) groups['府库'] = [];
+    // 府库△（旧数据兼容：anchorGroups['府库'] 已由 v11 parser 直接写入时跳过，避免重复）
+    if (ch.darkItems && ch.darkItems.length && !groups['府库']) {
+      groups['府库'] = [];
       ch.darkItems.forEach(d => {
         groups['府库'].push({
           label:  typeof d === 'string' ? d : (d.desc || ''),
@@ -1197,12 +1743,18 @@
     }
     // 情报△（合并进 anchorGroups）
     if (ch.intel && ch.intel.length) {
-      if (!groups['情报']) groups['情报'] = [];
-      ch.intel.forEach(s => groups['情报'].push({ label: s, deltas: [], text: s }));
+      // 浅拷贝数组避免污染原始数据
+      groups['情报'] = [...(groups['情报'] || [])];
+      ch.intel.forEach(s => {
+        // 去重：避免 parser 已写入 anchorGroups 的情报被重复添加
+        if (!groups['情报'].some(it => it.text === s || it.label === s)) {
+          groups['情报'].push({ label: s, deltas: [], text: s });
+        }
+      });
     }
     // 兵种变动 ── res 字段用 type（步/弓/骑/水/蛮），val 保持原值供 valCls 正确配色
-    if (ch.troopChanges && ch.troopChanges.length) {
-      if (!groups['兵种']) groups['兵种'] = [];
+    if (ch.troopChanges && ch.troopChanges.length && !groups['兵种']) {
+      groups['兵种'] = [];
       ch.troopChanges.forEach(tc => {
         groups['兵种'].push({
           label:  tc.cityName,
@@ -1237,11 +1789,11 @@
     return groups;
   }
 
-  // ── 公共事件区（NPC动态 + v3 事件列表 + 错误提示）──
+  // ── 公共事件区（四方动态 + v3 事件列表 + 错误提示）──
   function _renderPublicEvents(publicEvents, v3Events, v3Errors) {
     let html = '';
 
-    // ── NPC 动态 / 野外动态 ──
+    // ── 四方动态 / 野外动态 ──
     if (publicEvents && publicEvents.length) {
       const npcItems = publicEvents.filter(ev =>
         ev.anchor === 'NPC状态' || ev.anchor === '野外'
@@ -1268,7 +1820,7 @@
 
         if (gridHtml) {
           html += `<div class="npc-events-block">
-            <div class="npc-events-hd">🎭 NPC 动态</div>
+            <div class="npc-events-hd">🎭 四方动态</div>
             <div class="npc-events-grid">${gridHtml}</div>
           </div>`;
         }
@@ -1321,12 +1873,17 @@
     const latest = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
     if (!latest) { el.classList.add('hidden'); return; }
 
-    // 从 rawContent 实时重解析（保证使用最新解析器逻辑）
+    // 从 rawContent 实时重解析（保证使用最新解析器逻辑 + 保留 npcStatus/wildEvents）
     let changes = latest.parsed.changes || [];
+    let freshNpcStatus  = [];
+    let freshWildEvents = [];
     if (latest.rawContent) {
       try {
         const fp = window.SGParser.parse(latest.rawContent);
         if (fp.changes && fp.changes.length) changes = fp.changes;
+        // fp.npcStatus / fp.wildEvents 来自解析器顶层，不依赖数组非索引属性，Supabase 往返安全
+        freshNpcStatus  = fp.npcStatus  || [];
+        freshWildEvents = fp.wildEvents || [];
       } catch(e) {}
     }
 
@@ -1360,15 +1917,6 @@
       // 合并旧字段进 anchorGroups（兼容已存 Supabase 旧数据）
       const anchorGroups = _migrateToAnchorGroups(ch);
 
-      // 收支校验警告
-      const warningsHtml = (ch.warnings && ch.warnings.length)
-        ? `<div class="anchor-group" style="border-left-color:rgba(230,80,50,.5)">
-            <h4 class="ag-title"><span class="ag-icon">⚠</span>数据校验</h4>
-            <ul class="ag-items">${ch.warnings.map(w =>
-              `<li class="ag-item"><span class="ag-label" style="color:#f07070">${esc(w)}</span></li>`
-            ).join('')}</ul>
-          </div>` : '';
-
       return `<div class="cd-card cd-card-${ci}">
         <div class="cd-header cd-header-${ci}">
           <div class="cd-strip cd-strip-${ci}"></div>
@@ -1378,21 +1926,29 @@
         ${_renderBreakdown(ch.breakdown, ch.troopChanges)}
         <div class="cc-anchor-groups">
           ${_renderAnchorGroups(anchorGroups)}
-          ${warningsHtml}
         </div>
         <div class="cd-card-spacer"></div>
       </div>`;
     }).join('');
 
-    // ── 公共事件区 ──
-    const publicEvents = changes.__publicEvents || changes.__npc
-      ? (changes.__publicEvents || (changes.__npc || []).map(ev => ({
-          anchor: ev.type === 'wild' ? '野外' : 'NPC状态',
-          label:  ev.city || '',
-          deltas: [],
-          text:   ev.desc || '',
-        })))
-      : [];
+    // ── 公共事件区（四方动态 + 野外动态）──
+    // 优先使用本次重解析的结果（freshNpcStatus/freshWildEvents）；
+    // rawContent 不存在时降级到 parsed 里已有的字段；
+    // 最后兜底尝试 changes.__publicEvents（内存中的新鲜解析不受 JSON 往返影响）。
+    const resolvedNpc  = freshNpcStatus.length  ? freshNpcStatus
+      : (latest.parsed.npcStatus  || []);
+    const resolvedWild = freshWildEvents.length ? freshWildEvents
+      : (latest.parsed.wildEvents || []);
+
+    // 统一转换为 _renderPublicEvents 期望的 publicEvents 格式
+    const publicEvents = [
+      ...resolvedNpc.map(ev  => ({ anchor: 'NPC状态', label: ev.city  || '', deltas: [], text: ev.desc  || '' })),
+      ...resolvedWild.map(ev => ({ anchor: '野外',    label: '',            deltas: [], text: ev.desc  || '' })),
+    ];
+    // 兼容旧版内存数据（未经 JSON 往返时 __publicEvents 仍可用）
+    if (!publicEvents.length && changes.__publicEvents && changes.__publicEvents.length) {
+      publicEvents.push(...changes.__publicEvents);
+    }
 
     const publicHtml = _renderPublicEvents(
       publicEvents,
@@ -1433,6 +1989,169 @@
     if (btns.length) btns[btns.length - 1].classList.add('active');
   }
 
+  // ══════════════════════════════════════════
+  //  军报板块渲染 v1 · 方案二(势力徽章 + 色条)
+  //  数据源:latest.parsed.transit / latest.parsed.battles
+  //  色源:  SGMap.P_COLOR(玩家)/ SGMap.getFactionColor(NPC)
+  // ══════════════════════════════════════════
+  function renderJunbao(latest) {
+    const block = document.getElementById('block-junbao');
+    const body  = document.getElementById('junbao-body');
+    if (!block || !body) return;
+
+    const parsed  = latest && latest.parsed ? latest.parsed : {};
+    const transit = Array.isArray(parsed.transit) ? parsed.transit : [];
+    const battles = Array.isArray(parsed.battles) ? parsed.battles : [];
+
+    // v27 (2026-05-26): 调度+战报均为空时隐藏整块
+    const _block = document.getElementById('block-junbao');
+    if (_block) {
+      const _hasTransit = (transit && transit.length > 0);
+      const _hasBattles = (battles && battles.length > 0);
+      if (!_hasTransit && !_hasBattles) {
+        _block.classList.add('hidden');
+        return;
+      } else {
+        _block.classList.remove('hidden');
+      }
+    }
+
+    // 无调度也无战报 → 整块隐藏
+    if (!transit.length && !battles.length) {
+      block.classList.add('hidden');
+      body.innerHTML = '';
+      return;
+    }
+    block.classList.remove('hidden');
+
+    const html = [];
+
+    // ── 调度部队段 ──
+    html.push('<div class="jbt-title">调度</div>');
+    if (transit.length) {
+      html.push('<div class="jbt-list">');
+      transit.forEach(t => {
+        const sideColor = _junbaoGetSideColor(t.slot, t.faction);
+        const badgeText = _junbaoGetBadgeText(t.slot, t.faction);
+        const statusCls = t.status === '围攻中' ? 'jbt-siege'
+                        : t.status === '客驻'   ? 'jbt-resident'
+                        : 'jbt-march';
+        const styleStr = [
+          `--strip-color:${sideColor.glow}`,
+          `--badge-bg:${sideColor.film}`,
+          `--badge-border:${sideColor.stroke}`,
+          `--badge-color:${sideColor.glow}`
+        ].join(';');
+        html.push(`
+          <div class="jbt-row ${statusCls}" style="${styleStr}">
+            <div class="jbt-strip"></div>
+            <div class="jbt-inner">
+              <span class="jbt-faction-badge">${esc(badgeText)}</span>
+              <span class="jbt-general">${esc(t.general || '')}</span>
+              <span class="jbt-route">${esc(t.from || '')}<span class="jbt-arrow">›</span>${esc(t.to || '')}</span>
+              <!-- [legacy v14] note 追加在徽章群之后,语义错位 -->
+              <!-- <span class="jbt-troop">\${esc(t.troopType || '')} \${t.troopCount || 0}</span> -->
+              <!-- <span class="jbt-status">\${esc(t.status || '')}</span> -->
+              <!-- \${t.note ? \`<span class="jbt-note">\${esc(t.note)}</span>\` : ''} -->
+              <!-- v15 (2026-05-26): note 紧贴路径,使用 ↪ 引导符,语义自洽 -->
+              ${t.note ? `<span class="jbt-note">↪ ${esc(t.note)}</span>` : ''}
+              <span class="jbt-troop">${esc(t.troopType || '')} ${t.troopCount || 0}</span>
+              <span class="jbt-status">${esc(t.status || '')}</span>
+            </div>
+          </div>
+        `);
+      });
+      html.push('</div>');
+    } else {
+      html.push('<div class="jbt-empty">本回合无调度部队</div>');
+    }
+
+    // ── 战报段 ──
+    if (battles.length) {
+      html.push('<div class="battle-list">');
+      html.push('<div class="battle-list-title">战报</div>');
+      battles.forEach(b => {
+        const cardCls = b.result === '胜' ? 'success'
+                      : b.result === '平' ? 'draw'
+                      : 'fail';
+        const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
+        const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
+        const atkBadge = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+        const defBadge = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+        const atkName  = _junbaoStripPrefix(b.attacker, atkBadge);
+        const defName  = _junbaoStripPrefix(b.defender, defBadge);
+        const atkStyle = `--badge-bg:${atkColor.film};--badge-border:${atkColor.stroke};--badge-color:${atkColor.glow}`;
+        const defStyle = `--badge-bg:${defColor.film};--badge-border:${defColor.stroke};--badge-color:${defColor.glow}`;
+        html.push(`
+          <div class="battle-card ${cardCls}">
+            <div class="bc-strip"></div>
+            <div class="bc-body">
+              <span class="bc-badge">${esc(b.result || '')}</span>
+              <div class="bc-versus">
+                <div class="bc-side-v">
+                  <span class="bc-role-v">攻</span>
+                  <span class="bc-faction-badge" style="${atkStyle}">${esc(atkBadge)}</span>
+                  <span class="bc-name-v">${esc(atkName)}</span>
+                  <span class="bc-loss-v">-${b.attacker_loss || 0}</span>
+                </div>
+                <span class="bc-vs">vs</span>
+                <div class="bc-side-v">
+                  <span class="bc-role-v">守</span>
+                  <span class="bc-faction-badge" style="${defStyle}">${esc(defBadge)}</span>
+                  <span class="bc-name-v">${esc(defName)}</span>
+                  <span class="bc-loss-v">-${b.defender_loss || 0}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+      });
+      html.push('</div>');
+    } else {
+      // [legacy v23] html.push('<div class="jbt-empty">本回合无战事</div>');
+      // v27 (2026-05-26): 套 .battle-list 外壳,配合 CSS :has() 选择器整段隐藏
+      html.push('<div class="battle-list"><div class="battle-list-title">战报</div><div class="battle-empty">本回合无战事</div></div>');
+    }
+
+    body.innerHTML = html.join('');
+  }
+
+  // 取势力色:玩家走 SGMap.P_COLOR,NPC 走 SGMap.getFactionColor;兜底暗金
+  function _junbaoGetSideColor(slot, faction) {
+    const FALLBACK = { glow:'#a07830', film:'rgba(120,90,30,.18)', stroke:'rgba(155,120,45,0.55)' };
+    if (slot === 0 || slot === 1 || slot === 2) {
+      const pc = (window.SGMap && SGMap.P_COLOR) ? SGMap.P_COLOR[slot] : null;
+      return pc ? { glow: pc.glow, film: pc.film, stroke: pc.stroke } : FALLBACK;
+    }
+    if (faction && window.SGMap && typeof SGMap.getFactionColor === 'function') {
+      const fc = SGMap.getFactionColor(faction);
+      if (fc) return { glow: fc.glow, film: fc.film, stroke: fc.stroke };
+    }
+    return FALLBACK;
+  }
+
+  // 徽章文字:玩家取名号首字,NPC 取阵营名原文
+  function _junbaoGetBadgeText(slot, faction) {
+    if (slot === 0 || slot === 1 || slot === 2) {
+      const pname = (state.players[slot] && state.players[slot].name) || '甲乙丙'[slot];
+      return pname.charAt(0);
+    }
+    return faction || '?';
+  }
+
+  // 战报 attacker/defender 原文里可能含"甲/乙/丙"或阵营名前缀,渲染时要去掉只留武将名
+  function _junbaoStripPrefix(raw, badgeText) {
+    if (!raw) return '';
+    let s = String(raw).trim();
+    // 去掉开头的 甲/乙/丙
+    s = s.replace(/^[甲乙丙]\s*/, '');
+    // 去掉开头的阵营名(如"袁绍 颜良" → "颜良")
+    if (badgeText && badgeText.length >= 2 && s.indexOf(badgeText) === 0) {
+      s = s.slice(badgeText.length).trim();
+    }
+    return s || raw;
+  }
+
   window.__showHistoryRound = function (roundNum) {
     const rd = state.rounds.find(r => r.round === roundNum);
     if (!rd) return;
@@ -1461,7 +2180,6 @@
         <div class="ib-header">
           <span class="ib-icon ib-icon--text">动态</span>
           <span class="ib-title">战局动态</span>
-          <span class="digest-tags"><span class="digest-tag tag-situation">AI 原文</span></span>
         </div>
         <div class="ib-body digest-body">
           <div class="digest-raw">${highlightRaw(rawText)}</div>
@@ -1495,12 +2213,31 @@
     }
 
     // 战斗结算
+    // [legacy v22] buildBattleCard 已删除,此处降级为纯文本列表
+    // 字段来源: parser 产物 battles[] = { attacker, defender, result,
+    //   attacker_loss, defender_loss, city? }
     if (p.battles && p.battles.length) {
+      const _resultCls = r => r === '胜' ? 'hist-bt-win'
+                            : r === '负' ? 'hist-bt-lose'
+                            : 'hist-bt-draw';
       html += `<div class="info-block block-battles" style="margin:0 0 10px">
         <div class="ib-header"><span class="ib-icon ib-icon--text">战斗</span><span class="ib-title">战斗结算</span></div>
-        <div class="ib-body"><div class="battle-list">` +
-        p.battles.map(b => buildBattleCard(b)).join('') +
-        `</div></div></div>`;
+        <div class="ib-body"><ul class="hist-battle-list">` +
+        p.battles.map(b => {
+          const atk = esc(b.attacker || '');
+          const def = esc(b.defender || '');
+          const city = b.city ? `<span class="hist-bt-city">(${esc(b.city)})</span>` : '';
+          const res = esc(b.result || '');
+          const al = b.attacker_loss != null ? `攻-${b.attacker_loss}` : '';
+          const dl = b.defender_loss != null ? `守-${b.defender_loss}` : '';
+          const losses = [al, dl].filter(Boolean).join(' / ');
+          return `<li class="hist-bt-row">
+            <span class="hist-bt-pair">${atk} <span class="hist-bt-arrow">›</span> ${def}${city}</span>
+            <span class="hist-bt-result ${_resultCls(b.result)}">${res}</span>
+            ${losses ? `<span class="hist-bt-loss">${losses}</span>` : ''}
+          </li>`;
+        }).join('') +
+        `</ul></div></div>`;
     }
 
     html += `</div>`;
@@ -1525,11 +2262,13 @@
     const res = document.getElementById('parse-result');
     if (!box || !res) return;
     const lines = parsed ? SGParser.summarize(parsed) : ['❌ 无法解析，请检查格式'];
-    // 显示下一回合号提示
+    // 显示回合号提示（优先解析结果）
     const nextRound = state.rounds.length
       ? state.rounds[state.rounds.length - 1].round + 1
       : 1;
-    const header = `<div class="pp-item"><strong>🎴 发布后将成为：</strong><span class="pp-ok">第 ${nextRound} 回合</span></div>`;
+    const detectedRound = Number.isInteger(parsed?.round) ? parsed.round : parseInt(parsed?.round, 10);
+    const roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
+    const header = `<div class="pp-item"><strong>🎴 发布后将成为：</strong><span class="pp-ok">第 ${roundNum} 回合</span></div>`;
     res.innerHTML = header + lines.map(l => `<div class="pp-item">${l}</div>`).join('');
     box.classList.remove('hidden');
   }
@@ -1541,17 +2280,20 @@
     const el = document.getElementById('footer-info');
     if (!el) return;
     if (!state.rounds.length) { el.textContent = '尚未开局'; return; }
-    const last = state.rounds[state.rounds.length - 1];
-    el.textContent = `共 ${state.rounds.length} 回合 · 当前第 ${last.round} 回合`;
+    const { latest } = getRoundStats();
+    const latestLabel = latest || state.rounds[state.rounds.length - 1].round;
+    el.textContent = `当前第 ${latestLabel} 回合`;
   }
 
   function updateSyncStatus(s) {
     const el = document.getElementById('sync-status');
     if (!el) return;
+    const { latest } = getRoundStats();
+    const roundPrefix = latest ? `当前第 ${latest} 回合` : '';
     const map = {
       loading:  ['☁️ 连接云端中…',                                                         '#3dbe6c'],
-      online:   [`☁️ 云端已连接 · ${state.rounds.length} 个回合 · 每30秒自动刷新`,        '#7dce7d'],
-      updating: ['🔄 正在同步新内容…',                                                     '#3dbe6c'],
+      online:   [`☁️ 云端已连接${roundPrefix ? ` · ${roundPrefix}` : ''} · 每30秒自动刷新`, '#7dce7d'],
+      updating: [`🔄 正在同步新内容…${roundPrefix ? ` · ${roundPrefix}` : ''}`, '#3dbe6c'],
       error:    ['⚠️ 云端连接失败，请刷新页面',                                            '#e74c3c'],
     };
     const [txt, color] = map[s] || map.online;
@@ -1732,4 +2474,34 @@
   }
 
   document.addEventListener('DOMContentLoaded', init);
+})();
+
+/* ════════════════════════════════════════
+   特效开关栏 v2 事件绑定 (2026-05-25)
+   独立 IIFE,不与 SGMap 模块耦合
+════════════════════════════════════════ */
+(function () {
+  'use strict';
+  function bindFxToggles() {
+    const bar = document.getElementById('fx-toggles');
+    if (!bar || bar.dataset.bound) return;
+    bar.dataset.bound = '1';
+    bar.addEventListener('click', function (e) {
+      const btn = e.target.closest('.fx-btn');
+      if (!btn || !bar.contains(btn)) return;
+      const fx = btn.dataset.fx;
+      if (!fx) return;
+      const pressed = btn.getAttribute('aria-pressed') !== 'false';
+      const next = !pressed;
+      btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+      document.body.classList.toggle('fx-off-' + fx, !next);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindFxToggles);
+  } else {
+    bindFxToggles();
+  }
+
+
 })();
