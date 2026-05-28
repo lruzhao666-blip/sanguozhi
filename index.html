@@ -32,6 +32,7 @@
 <!-- ===== Nav ===== -->
 <nav id="main-nav">
   <button class="nav-btn active" data-tab="arena">⚔️ 战局总览</button>
+  <button class="nav-btn sa-nav-btn" data-tab="secret">🔐 加密行动</button>
   <button class="nav-btn gm-nav-btn" data-tab="gm">🎴 GM 录入</button>
 </nav>
 
@@ -270,7 +271,193 @@
 </section>
 
 <!-- ══════════════════════════════════════════
-     TAB 2：GM 录入
+     TAB 2：加密行动
+══════════════════════════════════════════ -->
+<section id="tab-secret" class="tab-panel">
+  <div class="sa-wrap">
+
+    <!-- 顶部标题栏 -->
+    <div class="sa-header">
+      <div class="sa-header-left">
+        <span class="sa-header-icon">🔐</span>
+        <div class="sa-header-text">
+          <h2 class="sa-title">加密行动</h2>
+          <p class="sa-subtitle">各方密令，封印后不可更改 · 三方齐备方可揭晓</p>
+        </div>
+      </div>
+      <div class="sa-header-right">
+        <!-- 全局进度 -->
+        <div class="sa-progress-wrap">
+          <span class="sa-progress-label">封印进度</span>
+          <span class="sa-progress-badge" id="sa-progress-badge">0 / 3</span>
+        </div>
+        <button class="sa-new-btn" id="sa-new-session" title="清空本轮，重新开始">↺ 新一轮</button>
+      </div>
+    </div>
+
+    <!-- 表不存在警告 -->
+    <div class="sa-table-error hidden" id="sa-table-error">
+      <span class="sa-te-icon">⚠️</span>
+      <div class="sa-te-body">
+        <b>数据表未就绪</b> — 请在 Supabase SQL Editor 执行以下建表语句后刷新页面：
+        <pre class="sa-te-sql">CREATE TABLE IF NOT EXISTS public.secret_actions (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  slot         smallint NOT NULL CHECK (slot IN (0,1,2)),
+  content      text     NOT NULL DEFAULT '',
+  session_id   text     NOT NULL DEFAULT '',
+  submitted_at timestamptz DEFAULT now()
+);
+ALTER TABLE public.secret_actions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon all" ON public.secret_actions
+  FOR ALL USING (true) WITH CHECK (true);</pre>
+      </div>
+    </div>
+
+    <!-- 三方状态栏 -->
+    <div class="sa-status-bar">
+      <div class="sa-status-item" id="sa-status-item-0">
+        <span class="sa-status-dot sa-dot-pending" id="sa-status-dot-0"></span>
+        <span class="sa-status-name" id="sa-player-name-status-0">城主甲</span>
+        <span class="sa-status-txt" id="sa-status-txt-0">待行动</span>
+      </div>
+      <span class="sa-status-sep">·</span>
+      <div class="sa-status-item" id="sa-status-item-1">
+        <span class="sa-status-dot sa-dot-pending" id="sa-status-dot-1"></span>
+        <span class="sa-status-name" id="sa-player-name-status-1">城主乙</span>
+        <span class="sa-status-txt" id="sa-status-txt-1">待行动</span>
+      </div>
+      <span class="sa-status-sep">·</span>
+      <div class="sa-status-item" id="sa-status-item-2">
+        <span class="sa-status-dot sa-dot-pending" id="sa-status-dot-2"></span>
+        <span class="sa-status-name" id="sa-player-name-status-2">城主丙</span>
+        <span class="sa-status-txt" id="sa-status-txt-2">待行动</span>
+      </div>
+    </div>
+
+    <!-- 三张行动卡 -->
+    <div class="sa-cards-row">
+
+      <!-- 玩家 0 -->
+      <div class="sa-card sa-card-p0" id="sa-card-0">
+        <div class="sa-card-head">
+          <div class="sa-card-identity">
+            <span class="sa-card-icon">🏯</span>
+            <span class="sa-card-name" id="sa-player-name-0">城主甲</span>
+          </div>
+          <span class="sa-card-seal-badge hidden" id="sa-seal-badge-0">已封印</span>
+        </div>
+        <label class="sa-label" id="sa-label-0">城主甲 的行动</label>
+        <div class="sa-ta-wrap">
+          <textarea class="sa-ta" id="sa-ta-0" rows="6"
+            placeholder="在此填写本回合行动指令…&#10;提交后立即锁定，不可更改，他人不可见。"></textarea>
+          <!-- 锁定遮罩 -->
+          <div class="sa-locked-mask hidden" id="sa-locked-mask-0">
+            <div class="sa-lock-inner">
+              <span class="sa-lock-icon">🔒</span>
+              <span class="sa-lock-txt">行动已封印</span>
+              <span class="sa-lock-sub">等待其他玩家…</span>
+            </div>
+          </div>
+        </div>
+        <div class="sa-card-foot">
+          <span class="sa-char-count" id="sa-char-count-0">0 / 2000</span>
+          <button class="sa-submit-btn" id="sa-submit-0">封印行动 🔒</button>
+        </div>
+      </div>
+
+      <!-- 玩家 1 -->
+      <div class="sa-card sa-card-p1" id="sa-card-1">
+        <div class="sa-card-head">
+          <div class="sa-card-identity">
+            <span class="sa-card-icon">🏯</span>
+            <span class="sa-card-name" id="sa-player-name-1">城主乙</span>
+          </div>
+          <span class="sa-card-seal-badge hidden" id="sa-seal-badge-1">已封印</span>
+        </div>
+        <label class="sa-label" id="sa-label-1">城主乙 的行动</label>
+        <div class="sa-ta-wrap">
+          <textarea class="sa-ta" id="sa-ta-1" rows="6"
+            placeholder="在此填写本回合行动指令…&#10;提交后立即锁定，不可更改，他人不可见。"></textarea>
+          <div class="sa-locked-mask hidden" id="sa-locked-mask-1">
+            <div class="sa-lock-inner">
+              <span class="sa-lock-icon">🔒</span>
+              <span class="sa-lock-txt">行动已封印</span>
+              <span class="sa-lock-sub">等待其他玩家…</span>
+            </div>
+          </div>
+        </div>
+        <div class="sa-card-foot">
+          <span class="sa-char-count" id="sa-char-count-1">0 / 2000</span>
+          <button class="sa-submit-btn" id="sa-submit-1">封印行动 🔒</button>
+        </div>
+      </div>
+
+      <!-- 玩家 2 -->
+      <div class="sa-card sa-card-p2" id="sa-card-2">
+        <div class="sa-card-head">
+          <div class="sa-card-identity">
+            <span class="sa-card-icon">🏯</span>
+            <span class="sa-card-name" id="sa-player-name-2">城主丙</span>
+          </div>
+          <span class="sa-card-seal-badge hidden" id="sa-seal-badge-2">已封印</span>
+        </div>
+        <label class="sa-label" id="sa-label-2">城主丙 的行动</label>
+        <div class="sa-ta-wrap">
+          <textarea class="sa-ta" id="sa-ta-2" rows="6"
+            placeholder="在此填写本回合行动指令…&#10;提交后立即锁定，不可更改，他人不可见。"></textarea>
+          <div class="sa-locked-mask hidden" id="sa-locked-mask-2">
+            <div class="sa-lock-inner">
+              <span class="sa-lock-icon">🔒</span>
+              <span class="sa-lock-txt">行动已封印</span>
+              <span class="sa-lock-sub">等待其他玩家…</span>
+            </div>
+          </div>
+        </div>
+        <div class="sa-card-foot">
+          <span class="sa-char-count" id="sa-char-count-2">0 / 2000</span>
+          <button class="sa-submit-btn" id="sa-submit-2">封印行动 🔒</button>
+        </div>
+      </div>
+
+    </div><!-- /sa-cards-row -->
+
+    <!-- 全员就绪横幅 -->
+    <div class="sa-all-ready-banner hidden" id="sa-all-ready-banner">
+      <div class="sa-arb-inner">
+        <span class="sa-arb-icon">⚔️</span>
+        <div class="sa-arb-text">
+          <b>三方行动已全部封印</b>
+          <span>点击下方按钮复制，云端记录将自动清空</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部复制区（始终可见，仅复制按钮激活状态变化）-->
+    <div class="sa-bottom-bar">
+      <button class="sa-copy-btn-main" id="sa-copy-btn" disabled>
+        📋 一键复制全部行动
+      </button>
+      <span class="sa-copy-hint">三方全部封印后解锁 · 复制后云端自动清空</span>
+    </div>
+
+  </div><!-- /sa-wrap -->
+
+  <!-- 降级复制弹窗（不支持 clipboard API 时） -->
+  <div class="sa-fallback-overlay hidden" id="sa-fallback-overlay">
+    <div class="sa-fallback-card">
+      <div class="sa-fallback-head">
+        <span>📋 手动复制</span>
+        <button class="sa-fallback-close" id="sa-fallback-close">✕</button>
+      </div>
+      <p class="sa-fallback-hint">浏览器不支持自动复制，请手动全选后复制：</p>
+      <textarea class="sa-fallback-ta" id="sa-fallback-ta" readonly rows="12"></textarea>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══════════════════════════════════════════
+     TAB 3：GM 录入
 ══════════════════════════════════════════ -->
 <section id="tab-gm" class="tab-panel">
   <div class="gm-page">
@@ -340,5 +527,6 @@
 <script src="js/tips.js?v=v20260628a"></script>
 <script src="js/generals-tooltip.js?v=v20260628a"></script>
 <script src="js/main.js?v=v20260628a"></script>
+<script src="js/secret-action.js?v=v20260628b"></script>
 </body>
 </html>
