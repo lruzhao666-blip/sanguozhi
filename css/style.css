@@ -5896,3 +5896,20 @@ body.fx-off-captured [data-ctype="captured"] {
 .pcard.pcard-v4[data-slot="0"] { border-left-color: var(--p0-color); }
 .pcard.pcard-v4[data-slot="1"] { border-left-color: var(--p1-color); }
 .pcard.pcard-v4[data-slot="2"] { border-left-color: var(--p2-color); }
+
+/* ════════════════════════════════════════════
+   v20260704a 工单#pcard-v4-fix-D
+   强制修复玩家卡左侧 3px 色条
+   策略:用三个独立的最高特异性选择器钉死 border-left
+        覆盖任何潜在的 border 简写或后置规则
+   ════════════════════════════════════════════ */
+
+.pcard.pcard-v4[data-slot="0"] {
+  border-left: 3px solid #e74c3c !important;
+}
+.pcard.pcard-v4[data-slot="1"] {
+  border-left: 3px solid #3dbe6c !important;
+}
+.pcard.pcard-v4[data-slot="2"] {
+  border-left: 3px solid #3498db !important;
+}
