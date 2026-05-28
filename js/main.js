@@ -1391,9 +1391,33 @@
     const latest = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
     const battles = latest && latest.parsed.battles ? latest.parsed.battles : [];
     const transit = latest && latest.parsed.transit ? latest.parsed.transit : [];
+    const changes = latest && latest.parsed.changes ? latest.parsed.changes : [];
+
+    // 从最新回合原始文本提取各玩家称号（格式：【玩家名】称号 或 玩家名·称号）
+    const _extractTitles = () => {
+      const raw = (latest && latest.rawContent) || '';
+      const titleMap = {}; // name → title
+      const SEP36 = '='.repeat(36);
+      // 仅看剧情区（分隔线上方），避免数据区干扰
+      const storyZone = raw.includes(SEP36) ? raw.split(SEP36)[0] : raw;
+      // 格式A：【玩家名】称号 —— 取行首
+      storyZone.split('\n').forEach(line => {
+        const t = line.replace(/<[^>]+>/g, '').trim();
+        const mB = t.match(/^[【\[]([^】\]]{1,12})[】\]]\s+(.{1,12})$/);
+        if (mB && mB[2]) { titleMap[mB[1]] = mB[2].trim(); return; }
+        // 格式B：玩家名·称号
+        const mD = t.match(/^([^\s:：·\u30fb\u2022\d第]{1,6})\s*[·\u30fb\u2022]\s*(.{1,12})$/);
+        if (mD && mD[2]) { titleMap[mD[1]] = mD[2].trim(); }
+      });
+      return titleMap;
+    };
+    const titleMap = _extractTitles();
 
     state.players.forEach((p, i) => {
       setTxt(`pname-${i}`, p.name || `城主${['甲','乙','丙'][i]}`);
+      // 称号：写入隐藏 span 供加密行动模块读取
+      const titleEl = document.getElementById(`ptitle-${i}`);
+      if (titleEl) titleEl.textContent = (p.name && titleMap[p.name]) || '';
 
       const cityEl = document.getElementById(`pcity-${i}`);
       if (cityEl) {

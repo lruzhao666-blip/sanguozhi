@@ -6891,8 +6891,13 @@ body.fx-off-captured [data-ctype="captured"] {
   gap: 12px;
   margin-bottom: 12px;
 }
-@media (max-width: 900px) { .sa-cards-row { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 560px) { .sa-cards-row { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+  .sa-cards-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sa-ib-body { padding: 10px 12px 12px; }
+}
+@media (max-width: 560px) {
+  .sa-cards-row { grid-template-columns: 1fr; gap: 6px; margin-bottom: 8px; }
+}
 
 /* ── 单张行动卡 ── */
 .sa-card {
@@ -7078,9 +7083,42 @@ body.fx-off-captured [data-ctype="captured"] {
   font-size: .63rem; color: var(--text-dim);
   letter-spacing: .05em; white-space: nowrap;
 }
+/* ── 移动端紧凑优化（≤560px）── */
 @media (max-width: 560px) {
-  .sa-bottom-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .sa-copy-btn-main { width: 100%; text-align: center; padding: 10px; }
+  /* header 压缩 */
+  .sa-ib-header { padding: 8px 12px; gap: 5px 8px; }
+  .sa-status-bar { gap: 4px 6px; }
+  .sa-status-item { gap: 3px; }
+  .sa-status-dot { width: 5px; height: 5px; }
+  .sa-status-name { font-size: .68rem; }
+  .sa-status-txt { display: none; }          /* 手机端隐藏"待行动"文字，只留状态点 */
+  .sa-status-sep { font-size: .5rem; }
+  .sa-progress-badge { font-size: .66rem; padding: 1px 7px; }
+  .sa-new-btn { font-size: .64rem; padding: 3px 7px; }
+
+  /* body 压缩 */
+  .sa-ib-body { padding: 8px 10px 10px; }
+
+  /* 卡头 */
+  .sa-card-head { padding: 7px 10px 6px; }
+  .sa-card-name { font-size: .82rem; }
+  .sa-card-seal-badge { font-size: .55rem; padding: 1px 5px; }
+
+  /* label 隐藏（移动端卡头已有名字，label 冗余） */
+  .sa-label { display: none; }
+
+  /* textarea 更矮 */
+  .sa-ta { min-height: 80px; font-size: .76rem; padding: 7px 10px; }
+
+  /* 卡底紧凑 */
+  .sa-card-foot { padding: 5px 10px 7px; }
+  .sa-char-count { font-size: .58rem; }
+  .sa-submit-btn { font-size: .72rem; padding: 4px 11px; }
+
+  /* 底部栏 */
+  .sa-bottom-bar { flex-direction: row; flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
+  .sa-all-ready-banner { flex: 1 1 100%; }
+  .sa-copy-btn-main { flex: 1; text-align: center; padding: 8px 10px; font-size: .78rem; }
   .sa-copy-hint { display: none; }
 }
 

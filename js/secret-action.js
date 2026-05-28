@@ -129,20 +129,27 @@
   function refreshPlayerNames() {
     [0, 1, 2].forEach(slot => {
       // 读 pcard 上已渲染的玩家名
-      const nameEl = document.getElementById(`pname-${slot}`);
-      const name   = nameEl ? nameEl.textContent.trim() : `城主${'甲乙丙'[slot]}`;
+      const nameEl  = document.getElementById(`pname-${slot}`);
+      const name    = nameEl ? nameEl.textContent.trim() : `城主${'甲乙丙'[slot]}`;
+
+      // 读称号（由 renderPlayerCards 写入 ptitle-{slot}）
+      const titleEl = document.getElementById(`ptitle-${slot}`);
+      const title   = titleEl ? titleEl.textContent.trim() : '';
+
+      // 显示名：有称号则只用称号，否则用玩家名
+      const displayName = title || name;
 
       // 卡头名字
       const headEl = $(`sa-player-name-${slot}`);
-      if (headEl) headEl.textContent = name;
+      if (headEl) headEl.textContent = displayName;
 
       // 状态栏名字
       const statusNameEl = $(`sa-player-name-status-${slot}`);
-      if (statusNameEl) statusNameEl.textContent = name;
+      if (statusNameEl) statusNameEl.textContent = displayName;
 
-      // textarea label
+      // textarea label（保留完整名+称号信息）
       const labelEl = $(`sa-label-${slot}`);
-      if (labelEl) labelEl.textContent = `${name} 的行动`;
+      if (labelEl) labelEl.textContent = title ? `${name}（${title}）的行动` : `${name} 的行动`;
     });
   }
 
