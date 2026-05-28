@@ -440,8 +440,10 @@
     const countEl = document.getElementById(`pc-battles-count-${slot}`);
     if (!wrapEl || !listEl || !countEl) return;
 
-    // 过滤：本玩家作为攻方的战斗
-    const mine = (battles || []).filter(b => b.attackerSlot === slot);
+  // 归属规则:玩家作为攻方 或 玩家作为守方都归到本卡
+  const mine = (battles || []).filter(b =>
+    b.attackerSlot === slot || b.defenderSlot === slot
+  );
 
     wrapEl.classList.remove('hidden');
 
