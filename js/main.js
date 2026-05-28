@@ -479,38 +479,83 @@
   //  - 空态:整个 <details> 加 .hidden,连标题都不显示
   //  - 有内容:显示但不主动 open(默认 closed,由 HTML 已删 open 属性保证)
   //  - 不再渲染 .pc-transit-empty 占位
+  // 在途部队嫁接渲染 v20260628a
+  // 数据源:parser _parseTransit 输出
+  //   { faction, slot(0/1/2|null), general, from, to, troopType, troopCount, status, note }
+  // 归属规则:
+  //   1) t.slot === slot       → 玩家自己的调度
+  //   2) t.slot === null 且 t.to ∈ 当前玩家城池列表 → NPC 朝该玩家来的调度(标记为 NPC 行)
+  // 状态映射:
+  //   '围攻中' → siege  (红色色条)
+  //   '客驻'   → guest  (蓝色色条)
+  //   '剩N' 或其他 → march (暗金色条)
+  // NPC 行额外加 .is-npc class,色条强制为红色(NPC 来攻)
   function renderPlayerTransit(slot, transit) {
     const wrapEl  = document.getElementById(`pc-transit-${slot}`);
     const listEl  = document.getElementById(`pc-transit-list-${slot}`);
     const countEl = document.getElementById(`pc-transit-count-${slot}`);
     if (!wrapEl || !listEl || !countEl) return;
 
-    const mine = (transit || []).filter(t => t.slot === slot);
+    // 当前玩家城池名集合(用于 NPC 调度归属判断)
+    const myCities = new Set();
+    const sp = state.players[slot];
+    if (sp && sp.cities_list && sp.cities_list.length) {
+      sp.cities_list.forEach(c => { if (c && c.name) myCities.add(c.name); });
+    } else if (sp && sp.city) {
+      myCities.add(sp.city);
+    }
+
+    // 过滤 + 标记 NPC
+    const mine = (transit || []).map(t => {
+      if (t.slot === slot) return { t, isNpc: false };
+      if (t.slot === null && t.to && myCities.has(t.to)) return { t, isNpc: true };
+      return null;
+    }).filter(Boolean);
 
     wrapEl.classList.remove('hidden');
 
     // 空态
     if (!mine.length) {
       wrapEl.removeAttribute('open');
-      listEl.innerHTML = '<div class="no-battle">— 暂无在途部队 —</div>';
+      listEl.innerHTML = '<div class="no-battle">— 本回合无调度 —</div>';
       countEl.textContent = '0 支';
       return;
     }
 
-    // 有内容:显示 details
+    // 有内容
     wrapEl.setAttribute('open', '');
     countEl.textContent = `${mine.length} 支`;
 
-    listEl.innerHTML = mine.map(t => {
-      const statusCls = (t.state === '围攻' || t.state === 'siege') ? 'siege'
-                      : (t.state === '驻守' || t.state === 'resident') ? 'resident'
+    listEl.innerHTML = mine.map(({ t, isNpc }) => {
+      // 状态映射
+      const statusCls = t.status === '围攻中' ? 'siege'
+                      : t.status === '客驻'   ? 'resident'
                       : 'march';
-      return `<div class="pc-transit-item" data-status="${statusCls}">
-        <span class="pc-transit-general">${esc(t.general || '')}</span>
-        <span class="pc-transit-route">
-          ${esc(t.from || '')}<span class="pc-transit-arrow">›</span>${esc(t.to || '')}
-        </span>
-        ${t.troop ? `<span class="pc-transit-troop">${esc(t.troop)}</span>` : ''}
+      // NPC 行强制红色色条(覆盖默认 march 暗金)
+      const npcCls = isNpc ? ' is-npc' : '';
+
+      // 兵种 + 数量(显式 != null,允许 0)
+      const troopStr = (t.troopType && t.troopCount != null)
+        ? `${esc(t.troopType)} ${t.troopCount}`
+        : '';
+
+      // 主体:武将名 → 路线 (NPC 行武将名前加阵营字角标)
+      const factionTag = isNpc && t.faction
+        ? `<span class="pc-transit-faction">${esc(t.faction)}</span>`
+        : '';
+
+      // 状态文字
+      const statusText = esc(t.status || '');
+
+      // note(尾部备注,小灰字)
+      const noteHtml = t.note ? `<span class="pc-transit-note">${esc(t.note)}</span>` : '';
+
+      return `<div class="pc-transit-item${npcCls}" data-status="${statusCls}">
+        ${factionTag}<span class="pc-transit-general">${esc(t.general || '')}</span>
+        <span class="pc-transit-route">${esc(t.from || '')}<span class="pc-transit-arrow">→</span>${esc(t.to || '')}</span>
+        ${troopStr ? `<span class="pc-transit-troop">${troopStr}</span>` : ''}
+        <span class="pc-transit-status">${statusText}</span>
+        ${noteHtml}
       </div>`;
     }).join('');
   }

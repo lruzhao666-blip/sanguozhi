@@ -6045,3 +6045,61 @@ body.fx-off-captured [data-ctype="captured"] {
 .pcard.pcard-v3 .pc-transit-status:empty {
   display: none !important;
 }
+
+/* ══════════════════════════════════════════
+   v20260628a · 工单#2-FIX · 调度区视觉补全
+   ----------------------------------------------------------------
+   配合 main.js renderPlayerTransit v20260628a:
+   - 修复字段名 troopType/troopCount/status 后,补全视觉
+   - 新增 NPC 行 .is-npc:.78 透明度 + 红色色条 + 阵营字角标
+   - 客驻态 ti-tone 已是蓝(#8ec5e8) / 围攻态已是红(#e05858) / 行军态已是暗金(#a07830)
+   - 修复 v20260618b 段中 .pc-transit-status 的 ::empty 与小标签冲突
+   ══════════════════════════════════════════ */
+
+/* 阵营字角标(NPC 调度行的"袁""曹"等字) */
+.pcard.pcard-v3 .pc-transit-faction {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 14px !important;
+  padding: 0 4px !important;
+  font-family: var(--font-serif) !important;
+  font-size: .58rem !important;
+  font-weight: 700 !important;
+  color: #c8a060 !important;
+  background: rgba(160,120,40,.15) !important;
+  border: 1px solid rgba(180,140,60,.4) !important;
+  border-radius: 3px !important;
+  letter-spacing: 0 !important;
+  margin-right: 2px !important;
+}
+
+/* note 备注:尾部灰字 */
+.pcard.pcard-v3 .pc-transit-note {
+  font-size: .58rem !important;
+  color: #7a6a5a !important;
+  letter-spacing: .04em !important;
+  opacity: .75 !important;
+  white-space: nowrap !important;
+}
+.pcard.pcard-v3 .pc-transit-note::before {
+  content: '·' !important;
+  margin-right: 3px !important;
+  opacity: .55 !important;
+}
+
+/* NPC 调度行:整体降一档 + 色条强制红色(威胁感) */
+.pcard.pcard-v3 .pc-transit-item.is-npc {
+  opacity: .82 !important;
+  --ti-tone: #c84a3a !important;
+}
+.pcard.pcard-v3 .pc-transit-item.is-npc .pc-transit-general {
+  color: #d8c8aa !important;
+}
+
+/* pc-transit-status 空字符串时隐藏(避免空标签留白) */
+.pcard.pcard-v3 .pc-transit-status:empty {
+  display: none !important;
+}
+
+/* pc-transit-troop 空字符串时隐藏(已在 v20260618c 处理,本段不重复) */
