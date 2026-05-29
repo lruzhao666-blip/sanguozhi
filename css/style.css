@@ -6005,3 +6005,206 @@ body.fx-off-captured [data-ctype="captured"] {
 .ach-toast-body{ display: flex; flex-direction: column; gap: 1px; }
 .ach-toast-label{ font-size: .62rem; color: var(--text-dim); letter-spacing: .14em; }
 .ach-toast-name{ font-size: .92rem; color: var(--gold-light); font-weight: 700; letter-spacing: .05em; }
+/* ════════════════════════════════════════════════════
+   v20260721a 工单#ach-modal-B:成就模态弹窗 + 分类筛选
+   ════════════════════════════════════════════════════ */
+
+/* 遮罩层 */
+.ach-modal-overlay{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.78);
+  z-index: 10000;
+  display: none;
+  align-items: flex-start; justify-content: center;
+  padding: 4vh 16px;
+  overflow-y: auto;
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+.ach-modal-overlay.visible{ display: flex; }
+
+/* 模态主卡 */
+.ach-modal{
+  background: linear-gradient(135deg, rgba(16,6,6,.99), rgba(8,3,3,.98));
+  border: 1px solid var(--border-gold);
+  border-radius: var(--rl);
+  max-width: 880px; width: 100%;
+  box-shadow: 0 0 40px rgba(70,0,0,.35);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  max-height: 92vh;
+}
+
+/* 头部 */
+.ach-modal-head{
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border-gold);
+  background: linear-gradient(90deg, rgba(60,30,0,.5), rgba(30,12,0,.3));
+  flex-wrap: wrap; gap: 8px;
+  flex-shrink: 0;
+}
+.ach-modal-title{
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700;
+  color: var(--gold-light); letter-spacing: .1em;
+}
+.ach-modal-title .title-deco{
+  display: inline-block; width: 20px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.ach-modal-right{
+  display: flex; align-items: center; gap: 14px;
+}
+.ach-modal-stats{
+  font-size: .74rem; color: var(--text-sub); letter-spacing: .06em;
+}
+.ach-modal-stats b{
+  color: var(--gold-light); font-size: .88rem; font-weight: 700; margin: 0 2px;
+}
+.ach-modal-close{
+  background: transparent;
+  border: 1px solid var(--border-red);
+  color: var(--text-dim);
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer; font-size: .9rem;
+  transition: all .2s;
+}
+.ach-modal-close:hover{
+  color: var(--red-bright); border-color: var(--red-bright);
+}
+
+/* 分类筛选条 */
+.ach-filter-bar{
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 12px 22px 10px;
+  border-bottom: 1px solid rgba(80,40,15,.25);
+  background: rgba(8,3,3,.65);
+  flex-shrink: 0;
+}
+.ach-filter-btn{
+  font-family: var(--font-serif); font-size: .72rem;
+  background: rgba(0,0,0,.38);
+  border: 1px solid var(--border-red);
+  color: var(--text-dim);
+  border-radius: 14px;
+  padding: 4px 13px;
+  cursor: pointer; transition: all .2s;
+  letter-spacing: .06em;
+}
+.ach-filter-btn:hover{
+  color: var(--text-main); border-color: var(--red-bright);
+}
+.ach-filter-btn.active{
+  background: rgba(80,30,0,.45);
+  border-color: var(--gold-dim);
+  color: var(--gold-light);
+}
+
+/* 成就列表网格 */
+.ach-list{
+  padding: 18px 22px 22px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+@media(max-width: 720px){
+  .ach-list{ grid-template-columns: 1fr; padding: 14px; }
+}
+.ach-list-empty{
+  grid-column: 1 / -1;
+  text-align: center; padding: 40px 20px;
+  color: var(--text-dim); font-size: .82rem;
+  font-family: var(--font-serif); letter-spacing: .08em;
+}
+
+/* 单条成就卡 */
+.ach-card{
+  position: relative;
+  background: rgba(0,0,0,.32);
+  border: 1px solid rgba(255,255,255,.06);
+  border-left: 3px solid var(--rar-color, var(--text-dim));
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 11px 13px 10px;
+  transition: all .25s;
+}
+.ach-card.unlocked:hover{
+  background: rgba(0,0,0,.45);
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.12);
+  border-left-color: var(--rar-color);
+}
+.ach-card.locked{
+  opacity: .38;
+  filter: grayscale(.7);
+}
+.ach-card.rar-bronze    { --rar-color: var(--rar-bronze); }
+.ach-card.rar-common    { --rar-color: var(--rar-common); }
+.ach-card.rar-rare      { --rar-color: var(--rar-rare); }
+.ach-card.rar-epic      { --rar-color: var(--rar-epic); }
+.ach-card.rar-legendary { --rar-color: var(--rar-legendary); }
+.ach-card.rar-legendary{
+  box-shadow: inset 0 0 0 1px rgba(212,168,67,.12);
+}
+
+.ach-card-head{
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.ach-card-name{
+  font-family: var(--font-serif);
+  font-size: .92rem; font-weight: 700;
+  color: var(--text-main); letter-spacing: .04em; flex: 1;
+}
+.ach-card.rar-legendary .ach-card-name{ color: var(--gold-light); }
+.ach-rar-badge{
+  font-size: .62rem;
+  padding: 1px 8px; border-radius: 9px;
+  border: 1px solid var(--rar-color);
+  color: var(--rar-color);
+  font-family: var(--font-serif);
+  letter-spacing: .08em;
+  white-space: nowrap;
+  background: rgba(0,0,0,.3);
+}
+.ach-card-desc{
+  font-size: .76rem; color: var(--text-sub);
+  line-height: 1.7; letter-spacing: .01em;
+  margin-bottom: 7px;
+}
+.ach-card-trigger{
+  font-size: .68rem; color: var(--text-dim);
+  line-height: 1.6;
+  padding: 4px 9px;
+  background: rgba(0,0,0,.32);
+  border-left: 2px solid rgba(255,255,255,.08);
+  border-radius: 0 4px 4px 0;
+  margin-bottom: 6px;
+}
+.ach-card-trigger::before{
+  content: '触发 · ';
+  color: var(--gold-dim);
+  font-weight: 700;
+}
+.ach-card-footer{
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: .66rem; color: var(--text-dim);
+  padding-top: 5px;
+  border-top: 1px dashed rgba(255,255,255,.06);
+  letter-spacing: .04em;
+}
+.ach-card.unlocked .ach-card-footer{ color: var(--rar-color); }
+.ach-card.unlocked .ach-card-footer span:first-child::before{ content: '◆ '; }
+.ach-card.locked .ach-card-footer span:first-child::before{ content: '◇ '; }
+.ach-card-cat{
+  color: var(--text-dim); font-size: .64rem;
+  padding: 0 6px;
+  border-left: 1px solid rgba(255,255,255,.06);
+}
+
+/* 列表滚动条 */
+.ach-list::-webkit-scrollbar{ width: 4px; }
+.ach-list::-webkit-scrollbar-track{ background: rgba(0,0,0,.4); }
+.ach-list::-webkit-scrollbar-thumb{ background: var(--red-deep); border-radius: 3px; }
