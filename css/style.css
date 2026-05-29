@@ -1,3 +1,4 @@
+/* v20260730a 工单#generals-tooltip-portrait-A:武将悬浮卡新增立绘左栏(方向A·440宽·145立绘·contain无装饰) */
 /* v20260701a 工单#pcard-v4-cleanup-A:清理旧玩家卡相关 CSS,等待 v4 装载 */
 /* ============================================
    三国志文字版 — 战旗赤红风 CSS v9
@@ -5918,3 +5919,176 @@ body.fx-off-captured [data-ctype="captured"] {
 .pcard.pcard-v4 .res-emoji,
 .pcard.pcard-v4 .pcc-icon,
 .pcard.pcard-v4 .pcs-icon { opacity: 1; }
+
+/* ══════════════════════════════════════════
+   武将悬浮档案面板 v2.1 — 立绘左栏（方向 A · 左像右档）
+   工单 #generals-tooltip-portrait-A
+══════════════════════════════════════════ */
+
+#gen-tooltip {
+  position: fixed;
+  z-index: 9999;
+  width: 440px;
+  max-width: calc(100vw - 16px);
+  background: linear-gradient(180deg, rgba(20,8,8,.98), rgba(10,4,4,.98));
+  border: 1px solid var(--border-gold);
+  border-radius: var(--rl);
+  box-shadow: 0 8px 32px rgba(0,0,0,.7), 0 0 0 1px rgba(0,0,0,.4);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease-out;
+}
+#gen-tooltip.gtp-visible { opacity: 1; }
+
+.gtp-tier-bar { height: 3px; width: 100%; }
+
+.gtp-body {
+  display: grid;
+  grid-template-columns: 145px 1fr;
+  gap: 14px;
+  padding: 14px 16px 16px;
+}
+
+.gtp-portrait-wrap {
+  width: 145px;
+  aspect-ratio: 240 / 340;
+  align-self: start;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: rgba(0,0,0,.3);
+}
+.gtp-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+.gtp-portrait-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 4.2rem;
+  font-weight: 900;
+  color: var(--gold-light);
+  text-shadow: 0 0 16px rgba(212,168,67,.35), 0 2px 6px rgba(0,0,0,.6);
+  background:
+    radial-gradient(ellipse at center, rgba(100,70,15,.35) 0%, rgba(30,18,4,.55) 70%),
+    linear-gradient(135deg, rgba(60,40,8,.5), rgba(20,10,2,.7));
+  user-select: none;
+}
+
+.gtp-info { min-width: 0; }
+
+.gtp-header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.gtp-name {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--gold-light);
+  letter-spacing: .08em;
+  text-shadow: 0 0 12px rgba(212,168,67,.25);
+}
+.gtp-courtesy {
+  font-family: var(--font-serif);
+  font-size: .78rem;
+  color: var(--text-sub);
+  letter-spacing: .06em;
+}
+.gtp-nickname {
+  font-family: var(--font-serif);
+  font-size: .78rem;
+  color: var(--gold-dim);
+  font-style: italic;
+  margin-bottom: 8px;
+  letter-spacing: .04em;
+}
+
+.gtp-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+.gtp-badge {
+  font-size: .66rem;
+  font-family: var(--font-sans);
+  border-radius: 10px;
+  padding: 2px 9px;
+  border: 1px solid;
+  white-space: nowrap;
+  letter-spacing: .04em;
+}
+
+.gtp-divider {
+  height: 1px;
+  margin: 10px 0 8px;
+  background: linear-gradient(90deg, transparent, rgba(180,120,40,.4), rgba(212,168,67,.6), rgba(180,120,40,.4), transparent);
+}
+
+.gtp-bio {
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  color: var(--text-sub);
+  line-height: 1.75;
+  letter-spacing: .02em;
+  margin-bottom: 10px;
+}
+
+.gtp-roles-label {
+  font-size: .6rem;
+  color: var(--text-dim);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin: 10px 0 6px;
+  font-family: var(--font-sans);
+}
+.gtp-roles { display: flex; flex-wrap: wrap; gap: 5px; }
+.gtp-role {
+  font-size: .7rem;
+  padding: 2px 9px;
+  border-radius: 4px;
+  font-family: var(--font-sans);
+}
+.gtp-role-normal {
+  background: rgba(60,90,40,.18);
+  border: 1px solid rgba(120,170,80,.3);
+  color: #9dc870;
+}
+.gtp-role-warn {
+  background: rgba(140,40,20,.18);
+  border: 1px solid rgba(220,80,50,.3);
+  color: #e08a70;
+}
+
+.gtp-empty {
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+  line-height: 1.8;
+}
+
+@media (max-width: 480px) {
+  #gen-tooltip { width: calc(100vw - 16px); }
+  .gtp-body {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .gtp-portrait-wrap {
+    width: 120px;
+    justify-self: center;
+  }
+  .gtp-portrait-fallback { font-size: 3.4rem; }
+}
