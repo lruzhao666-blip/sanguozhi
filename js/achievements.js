@@ -1,6 +1,7 @@
 /**
  * achievements.js — 三国志文字版 · 成就系统 v1
  * v1 (2026-XX-XX 工单#ach-skeleton-A): 模块骨架 + 50 条成就定义 + 检测引擎
+ * v2 (2026-XX-XX 工单#ach-modal-B): open/close 实装 + 模态弹窗渲染 + 分类筛选
  *
  * 设计要点:
  *  - 纯派生:不持久化,每次 detect() 重算
@@ -91,6 +92,7 @@ window.SGAch = (function () {
   const ACHIEVEMENTS = [
     {id:'first_recruit',name:'招贤纳士',rarity:'bronze',category:'开局',
       desc:'麾下首次新增一员武将。乱世立身,先在得人,一旅之始,始于一人。',
+      trigger_human:'麾下武将数首次超过开局基线',
       trigger:(ctx)=>{
         const me = ctx.currentRound.parsed.players.find(p=>p.slot===['甲','乙','丙'][ctx.self]);
         if (!me) return false;
@@ -99,39 +101,51 @@ window.SGAch = (function () {
       }},
     {id:'first_sortie',name:'首度出征',rarity:'bronze',category:'开局',
       desc:'麾下兵马首次离开本城。旌旗一动,天下侧目,自此与乱世共呼吸。',
+      trigger_human:'transit 中本局首次出现属于自己的调度记录',
       trigger:(ctx)=>ctx.history.everTransited[ctx.self]},
     {id:'first_blood',name:'初阵告捷',rarity:'bronze',category:'开局',
       desc:'首场战斗便奏凯歌。沙场无侥幸,一鼓作气见真章。',
+      trigger_human:'本局首次自己作为攻方且 result === 胜',
       trigger:(ctx)=>ctx.history.firstWinRound[ctx.self] != null},
     {id:'first_city',name:'破城而入',rarity:'bronze',category:'开局',
       desc:'首次将一座城纳入治下。鼓角声中城头易帜,自此名实皆为主公。',
+      trigger_human:'持城数首次达到 2',
       trigger:(ctx)=>ctx.history.maxCities[ctx.self] >= 2},
     {id:'first_county',name:'得一郡城',rarity:'bronze',category:'开局',
       desc:'麾下首次拥有一座郡城。州郡之要,户口辐辏,自此方有钱粮供养精兵。',
+      trigger_human:'首次持有任意一座郡城',
       trigger:(ctx)=>ctx.history.ownedTiers[ctx.self].has('郡城')},
     {id:'first_general_fall',name:'马革裹尸',rarity:'bronze',category:'开局',
       desc:'首位麾下武将沙场殒命。乱世为将,生死有命,姓名留于碑石,魂魄归于山河。',
+      trigger_human:'麾下武将首次出现 status === 阵亡',
       trigger:(ctx)=>ctx.history.everSawStatus[ctx.self].has('阵亡')},
     {id:'three_cities',name:'鼎足初成',rarity:'bronze',category:'扩张',
       desc:'治下城池达三座。三足而立,基业雏成,自此可与诸侯论短长。',
+      trigger_human:'持城数首次达到 3',
       trigger:(ctx)=>ctx.history.maxCities[ctx.self] >= 3},
     {id:'five_cities',name:'五城连袂',rarity:'bronze',category:'扩张',
       desc:'治下城池达五座。烽燧相望,旌节相接,已成一方气候。',
+      trigger_human:'持城数首次达到 5',
       trigger:(ctx)=>ctx.history.maxCities[ctx.self] >= 5},
     {id:'ten_cities',name:'十城连横',rarity:'common',category:'扩张',
       desc:'治下城池达十座。一州之地半在掌中,关山虽远,马首所向皆为疆土。',
+      trigger_human:'持城数首次达到 10',
       trigger:(ctx)=>ctx.history.maxCities[ctx.self] >= 10},
     {id:'fifteen_cities',name:'十五连城',rarity:'rare',category:'扩张',
       desc:'治下城池达十五座。烽火台连绵不绝,粮道纵横如织,霸业之相已显。',
+      trigger_human:'持城数首次达到 15',
       trigger:(ctx)=>ctx.history.maxCities[ctx.self] >= 15},
     {id:'take_state_capital',name:'据有州治',rarity:'common',category:'扩张',
       desc:'首次攻下一座州治。坐拥州治,可号令一方,文武百官皆望风而拜。',
+      trigger_human:'首次新增一座等级为州治的城池',
       trigger:(ctx)=>ctx.history.conqueredTiers[ctx.self].has('州治')},
     {id:'take_metropolis',name:'雄都易主',rarity:'rare',category:'扩张',
       desc:'首次将一座雄都纳入治下。洛许邺业,长安成建,得其一便可窥天下。',
+      trigger_human:'首次新增一座等级为雄都的城池',
       trigger:(ctx)=>ctx.history.conqueredTiers[ctx.self].has('雄都')},
     {id:'take_fortress',name:'险关在握',rarity:'common',category:'扩张',
       desc:'首次攻下一座带险关标签的城池。一夫当关,万夫莫开,自此进可攻退可守。',
+      trigger_human:'首次攻下一座带险关地利标签的城池',
       trigger:(ctx)=>{
         for (const c of ctx.history.conqueredCities[ctx.self]) {
           if (FORTRESS_CITIES.has(c)) return true;
@@ -140,6 +154,7 @@ window.SGAch = (function () {
       }},
     {id:'three_in_row',name:'连下三城',rarity:'rare',category:'扩张',
       desc:'三回合内连续攻下三座城池。兵贵神速,势如破竹,敌方未及合纵已先溃。',
+      trigger_human:'连续 3 回合内累计攻下 ≥ 3 座城池',
       trigger:(ctx)=>{
         const arr = ctx.history.conquestByRound[ctx.self]; // [{round,count}]
         for (let i=0;i<arr.length;i++){
@@ -151,6 +166,7 @@ window.SGAch = (function () {
       }},
     {id:'take_three_metropolis',name:'三都归心',rarity:'legendary',category:'扩张',
       desc:'单局之内攻下三座雄都。洛邑长安、邺城建业、许成之属,得其三者,天下已半。',
+      trigger_human:'本局累计攻下雄都数 ≥ 3',
       trigger:(ctx)=>{
         let n=0;
         for (const c of ctx.history.conqueredCities[ctx.self]) {
@@ -160,9 +176,11 @@ window.SGAch = (function () {
       }},
     {id:'twenty_cities',name:'二十连城',rarity:'legendary',category:'扩张',
       desc:'治下城池达二十座,达成胜利之基。山河半属一人,天下侧目而望。',
+      trigger_human:'持城数首次达到 20',
       trigger:(ctx)=>ctx.history.maxCities[ctx.self] >= 20},
     {id:'field_victory',name:'野战奏凯',rarity:'bronze',category:'战斗',
       desc:'首次在野外击败敌军。山林为阵,溪水为壕,胜负不系于城池高低。',
+      trigger_human:'首次野外战(无城名)中自己作为攻方且胜利',
       trigger:(ctx)=>{
         for (const rd of ctx.rounds){
           for (const b of (rd.parsed.battles||[])){
@@ -173,9 +191,11 @@ window.SGAch = (function () {
       }},
     {id:'siege_master',name:'攻城拔寨',rarity:'common',category:'战斗',
       desc:'累计攻下五座城池。云梯叠云,鼓声如雷,城头一面又一面易帜。',
+      trigger_human:'本局累计攻下城池数 ≥ 5',
       trigger:(ctx)=>ctx.history.conqueredCities[ctx.self].size >= 5},
     {id:'outnumbered_win',name:'以寡敌众',rarity:'rare',category:'战斗',
       desc:'以明显劣势兵力赢得一战。败势之中现奇兵,寡可胜众,势可逆转。',
+      trigger_human:'攻方胜利,且守方伤亡 ≥ 攻方伤亡 × 2.5',
       trigger:(ctx)=>{
         for (const rd of ctx.rounds){
           for (const b of (rd.parsed.battles||[])){
@@ -187,6 +207,7 @@ window.SGAch = (function () {
       }},
     {id:'low_casualty_win',name:'兵不血刃',rarity:'rare',category:'战斗',
       desc:'一场胜战中己方伤亡不足守军伤亡三分之一。运筹于幄,克敌于阵,锋刃未沾血而功成。',
+      trigger_human:'攻方胜利,且守方伤亡 ≥ 攻方伤亡 × 3',
       trigger:(ctx)=>{
         for (const rd of ctx.rounds){
           for (const b of (rd.parsed.battles||[])){
@@ -198,6 +219,7 @@ window.SGAch = (function () {
       }},
     {id:'defend_capital',name:'孤城死守',rarity:'common',category:'战斗',
       desc:'作为守方击退一次敌军进攻。城在人在,一夫立于雉堞之上,千军止于护城之外。',
+      trigger_human:'首次自己作为守方且攻方负(守方胜)',
       trigger:(ctx)=>{
         for (const rd of ctx.rounds){
           for (const b of (rd.parsed.battles||[])){
@@ -208,6 +230,7 @@ window.SGAch = (function () {
       }},
     {id:'win_streak_five',name:'五战连捷',rarity:'rare',category:'战斗',
       desc:'累计五场战斗连续告捷。鼓未停而捷报又至,士气如沸,旌旗所指无不破。',
+      trigger_human:'攻方连续 5 场战斗 result === 胜',
       trigger:(ctx)=>{
         let streak = 0;
         for (const rd of ctx.rounds){
@@ -222,12 +245,15 @@ window.SGAch = (function () {
       }},
     {id:'slay_named_general',name:'阵斩敌将',rarity:'common',category:'战斗',
       desc:'首次于战中斩杀一员敌将。一骑当先,长戈过处,敌阵中一名将名归青史。',
+      trigger_human:'攻方胜利后,敌方主将下一回合从所有守将列表消失,累计 ≥ 1',
       trigger:(ctx)=>ctx.history.slainEnemies[ctx.self] >= 1},
     {id:'slay_three_generals',name:'三将授首',rarity:'rare',category:'战斗',
       desc:'累计在战斗中导致三员敌将阵亡。沙场点将名册愈薄,刀光过处皆为绝响。',
+      trigger_human:'攻方胜利后敌方主将于下一回合消失,累计 ≥ 3',
       trigger:(ctx)=>ctx.history.slainEnemies[ctx.self] >= 3},
     {id:'epic_battle',name:'尸横遍野',rarity:'epic',category:'战斗',
       desc:'单场战斗双方伤亡总和过万。血流漂橹,白骨蔽野,自此一战写入史册。',
+      trigger_human:'单场战斗双方伤亡总和 ≥ 10000',
       trigger:(ctx)=>{
         for (const rd of ctx.rounds){
           for (const b of (rd.parsed.battles||[])){
@@ -239,6 +265,7 @@ window.SGAch = (function () {
       }},
     {id:'take_stronghold',name:'拔其根本',rarity:'epic',category:'战斗',
       desc:'攻下一座强力势力大本营。一城既破,一姓已亡,中原震动,诸侯失色。',
+      trigger_human:'首次攻下六大强力势力大本营(邺许长洛建成)之一',
       trigger:(ctx)=>{
         for (const c of ctx.history.conqueredCities[ctx.self]){
           if (STRONGHOLD_CITIES.has(c)) return true;
@@ -247,9 +274,11 @@ window.SGAch = (function () {
       }},
     {id:'raze_faction',name:'覆其宗庙',rarity:'epic',category:'战斗',
       desc:'亲手令一个 NPC 阵营彻底覆灭。山河变色,旧主成尘,昔日割据自此归于一统。',
+      trigger_human:'某 NPC 阵营标签消失,且其最后一城由自己攻下',
       trigger:(ctx)=>ctx.history.razedFactions[ctx.self] >= 1},
     {id:'kill_two_birds',name:'一鼓双城',rarity:'rare',category:'战斗',
       desc:'同一回合内攻下两座城池。鼓声两起,旌旗双立,势如双刃同剖一囊。',
+      trigger_human:'同一回合内攻下 ≥ 2 座城池',
       trigger:(ctx)=>{
         for (const item of ctx.history.conquestByRound[ctx.self]){
           if (item.count >= 2) return true;
@@ -258,27 +287,35 @@ window.SGAch = (function () {
       }},
     {id:'rich_man',name:'府库充盈',rarity:'bronze',category:'内政',
       desc:'金币首次累积至 1500。仓廪既实而后知礼节,钱粮足而后兵戈精。',
+      trigger_human:'金币首次达到 1500',
       trigger:(ctx)=>ctx.history.maxGold[ctx.self] >= 1500},
     {id:'grain_mountain',name:'积粟如山',rarity:'common',category:'内政',
       desc:'粮草首次累积至 15000。屯田之利,日久方见,囷仓相望,十年之储。',
+      trigger_human:'粮草首次达到 15000',
       trigger:(ctx)=>ctx.history.maxFood[ctx.self] >= 15000},
     {id:'great_army',name:'带甲十万',rarity:'rare',category:'内政',
       desc:'麾下兵力首次突破一万。旌旗蔽日,甲胄连营,自此可与中原诸侯并论。',
+      trigger_human:'兵力首次达到 10000',
       trigger:(ctx)=>ctx.history.maxTroop[ctx.self] >= 10000},
     {id:'popular_lord',name:'民心所向',rarity:'common',category:'内政',
       desc:'民心首次达到 90 及以上。箪食壶浆,父老相迎,主公之名已传于阡陌。',
+      trigger_human:'民心首次达到 90',
       trigger:(ctx)=>ctx.history.maxMorale[ctx.self] >= 90},
     {id:'morale_full',name:'万民归心',rarity:'rare',category:'内政',
       desc:'民心达到满值 100。野无饿殍,路不拾遗,治世之象初现于乱世。',
+      trigger_human:'民心达到 100',
       trigger:(ctx)=>ctx.history.maxMorale[ctx.self] >= 100},
     {id:'stable_rule',name:'长治久安',rarity:'rare',category:'内政',
       desc:'连续五回合民心保持 85 以上。岁稔时和,百姓乐业,主公之德渐入人心。',
+      trigger_human:'连续 5 回合民心 ≥ 85',
       trigger:(ctx)=>ctx.history.moraleStreak85[ctx.self] >= 5},
     {id:'ten_cities_held',name:'坐拥十城',rarity:'common',category:'内政',
       desc:'稳守十座城池满三回合,内政有方。十城之地,户口殷实,赋税岁入,可养精兵数万。',
+      trigger_human:'连续 3 回合持城数 ≥ 10',
       trigger:(ctx)=>ctx.history.cities10Streak[ctx.self] >= 3},
     {id:'recruit_legendary',name:'贤臣来归',rarity:'epic',category:'武将',
       desc:'麾下首次入一员传奇级名将。良禽择木,贤臣择主,自此可与天下英才论高下。',
+      trigger_human:'麾下首次出现传奇级武将(关张赵诸葛周瑜司马懿等)',
       trigger:(ctx)=>{
         for (const name of ctx.history.everGenerals[ctx.self]){
           if (LEGENDARY_GENERALS.has(name)) return true;
@@ -287,21 +324,27 @@ window.SGAch = (function () {
       }},
     {id:'five_generals',name:'五将齐聚',rarity:'common',category:'武将',
       desc:'麾下同时拥有五员武将。五人之众,可分守五方,亦可合击一处。',
+      trigger_human:'麾下武将数首次达到 5',
       trigger:(ctx)=>ctx.history.maxGenerals[ctx.self] >= 5},
     {id:'ten_generals',name:'群英荟萃',rarity:'rare',category:'武将',
       desc:'麾下武将达十人之众。文有谋臣,武有勇将,坐而论道,起而执戈。',
+      trigger_human:'麾下武将数首次达到 10',
       trigger:(ctx)=>ctx.history.maxGenerals[ctx.self] >= 10},
     {id:'five_tigers',name:'五虎入帐',rarity:'epic',category:'武将',
       desc:'麾下同时拥有五虎将中任意三人。关张赵马黄,得其半亦可横扫西州。',
+      trigger_human:'麾下同时拥有 ≥ 3 位五虎将(关张赵马黄)且均未阵亡',
       trigger:(ctx)=>checkAliveSetMaxOverlap(ctx, FIVE_TIGERS) >= 3},
     {id:'five_good',name:'五子在列',rarity:'epic',category:'武将',
       desc:'麾下同时拥有五子良将中任意三人。张乐于张徐,皆魏之爪牙,得三可比方面之任。',
+      trigger_human:'麾下同时拥有 ≥ 3 位五子良将(张乐于张徐)且均未阵亡',
       trigger:(ctx)=>checkAliveSetMaxOverlap(ctx, FIVE_GOOD) >= 3},
     {id:'jiangdong_tigers',name:'江东虎臣',rarity:'epic',category:'武将',
       desc:'麾下同时拥有江东十二虎臣中任意三人。程黄韩蒋周陈董甘凌徐潘丁,各领一州亦无愧。',
+      trigger_human:'麾下同时拥有 ≥ 3 位江东十二虎臣且均未阵亡',
       trigger:(ctx)=>checkAliveSetMaxOverlap(ctx, JIANGDONG_TIGERS) >= 3},
     {id:'wolong_fengchu',name:'卧龙凤雏',rarity:'legendary',category:'武将',
       desc:'同时收得诸葛亮与庞统。卧龙凤雏,得一可安天下,二者并立,神鬼当避。',
+      trigger_human:'麾下同时拥有诸葛亮与庞统且均未阵亡',
       trigger:(ctx)=>{
         for (const rd of ctx.rounds){
           const me = rd.parsed.players.find(p=>p.slot===['甲','乙','丙'][ctx.self]);
@@ -313,6 +356,7 @@ window.SGAch = (function () {
       }},
     {id:'father_son',name:'父子同营',rarity:'rare',category:'武将',
       desc:'麾下同时拥有一对三国父子名将。家学相传,血脉相承,父执戈而子持戟。',
+      trigger_human:'麾下同时拥有任一对三国父子名将(孙坚-孙策/孙权、马腾-马超、关羽-关平/关兴、张飞-张苞)',
       trigger:(ctx)=>{
         for (const rd of ctx.rounds){
           const me = rd.parsed.players.find(p=>p.slot===['甲','乙','丙'][ctx.self]);
@@ -326,9 +370,11 @@ window.SGAch = (function () {
       }},
     {id:'long_serve',name:'肱股之臣',rarity:'common',category:'武将',
       desc:'有一员武将随主公征战二十回合以上。共历风霜,同饮兵血,主臣之分自此牢不可破。',
+      trigger_human:'某武将随主公征战 ≥ 20 回合',
       trigger:(ctx)=>ctx.history.maxGenServeRounds[ctx.self] >= 20},
     {id:'faction_pressure',name:'削藩有功',rarity:'common',category:'暗战',
       desc:'令一个 NPC 阵营丢失三座以上城池。其势既衰,其威自损,墙倒众人推之时也。',
+      trigger_human:'某 NPC 阵营累计失城 ≥ 3,且至少一城由自己攻下',
       trigger:(ctx)=>{
         const lost = ctx.history.factionCityLoss; // {faction: {lost,bySelf:[0/1/2 sets]}}
         for (const f in lost){
@@ -338,21 +384,27 @@ window.SGAch = (function () {
       }},
     {id:'besieged',name:'四面楚歌',rarity:'rare',category:'悲情',
       desc:'本玩家所有持城同时被敌方阵营城池围绕,绝境之中犹存战意。山河四塞,一灯独明,主臣相顾而不言。',
+      trigger_human:'某回合持城数 ≥ 2,且每座己方城在六边形相邻 6 格内均无另一座己方城',
       trigger:(ctx)=>ctx.history.besiegedEver[ctx.self]},
     {id:'no_war_five',name:'韬光养晦',rarity:'rare',category:'暗战',
       desc:'连续五回合无任何涉己战斗,默默经营。藏锋于鞘,蓄势于野,一朝出鞘必雷霆万钧。',
+      trigger_human:'连续 5 回合无任何涉己战斗',
       trigger:(ctx)=>ctx.history.noWarStreak[ctx.self] >= 5},
     {id:'lord_wounded',name:'折翼归阵',rarity:'rare',category:'悲情',
       desc:'麾下大将曾陷入受伤而后归队。九死一生,血染征袍,归来不忘旧时盟。',
+      trigger_human:'麾下某武将曾受伤后回到健康',
       trigger:(ctx)=>ctx.history.woundedRecovered[ctx.self]},
     {id:'rise_from_exile',name:'流亡归位',rarity:'epic',category:'悲情',
       desc:'曾失去所有城池而后再度夺得城池。山穷水尽之时未折,绝处逢生之地复起。',
+      trigger_human:'历史曾出现持城 = 0,其后某回合持城 ≥ 1',
       trigger:(ctx)=>ctx.history.exileRecovered[ctx.self]},
     {id:'fallen_hero',name:'良将折戟',rarity:'bronze',category:'悲情',
       desc:'麾下一员武将于战中重伤未愈。一臂之伤,半年不能执戈,沙场之险,人各有时。',
+      trigger_human:'麾下武将首次出现 status === 受伤',
       trigger:(ctx)=>ctx.history.everSawStatus[ctx.self].has('受伤')},
     {id:'plague_survive',name:'瘟疫不侵',rarity:'common',category:'悲情',
       desc:'麾下武将曾患病而后痊愈。瘴疠之地,药石难求,得归者皆为天幸。',
+      trigger_human:'麾下某武将曾患病后回到健康',
       trigger:(ctx)=>ctx.history.illRecovered[ctx.self]},
   ];
 
@@ -797,13 +849,146 @@ window.SGAch = (function () {
     pushUnlockToasts();
   }
 
+  // ─────────────────────────────────────────
+  //  模态弹窗:open / close / 渲染 / 筛选
+  // ─────────────────────────────────────────
+  let _modalCurrentSlot = null;
+  let _modalCurrentFilter = 'all';
+  const PLAYER_NAMES_FALLBACK = ['城主甲','城主乙','城主丙'];
+
+  function openModal(slot){
+    if (typeof slot !== 'number' || slot < 0 || slot > 2) return;
+    _modalCurrentSlot = slot;
+    _modalCurrentFilter = 'all';
+
+    const modal = document.getElementById('ach-modal');
+    if (!modal) return;
+
+    // 玩家名:优先从玩家卡 DOM 读取(避免硬依赖 main.js 内部 state)
+    const nameEl = document.getElementById(`pname-${slot}`);
+    const playerName = (nameEl && nameEl.textContent.trim()) || PLAYER_NAMES_FALLBACK[slot];
+    const titleEl = document.getElementById('ach-modal-player');
+    if (titleEl) titleEl.textContent = playerName;
+
+    // 统计数字
+    const cnt = getCounts(slot);
+    const unlEl = document.getElementById('ach-stat-unlocked');
+    const totEl = document.getElementById('ach-stat-total');
+    if (unlEl) unlEl.textContent = cnt.unlocked;
+    if (totEl) totEl.textContent = cnt.total;
+
+    // 渲染筛选条 + 列表
+    renderFilterBar();
+    renderAchList();
+
+    // 展示模态
+    modal.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+
+    // 绑定关闭事件(只绑一次,后续靠 flag 防重)
+    if (!modal._bound){
+      modal.addEventListener('click', (e)=>{
+        if (e.target === modal) closeModal();
+      });
+      document.addEventListener('keydown', (e)=>{
+        if (e.key === 'Escape' && modal.classList.contains('visible')) closeModal();
+      });
+      modal._bound = true;
+    }
+  }
+
+  function closeModal(){
+    const modal = document.getElementById('ach-modal');
+    if (!modal) return;
+    modal.classList.remove('visible');
+    document.body.style.overflow = '';
+    _modalCurrentSlot = null;
+  }
+
+  // 渲染分类筛选条
+  function renderFilterBar(){
+    const bar = document.getElementById('ach-filter-bar');
+    if (!bar) return;
+    // 统计每类总数
+    const catCounts = {};
+    ACHIEVEMENTS.forEach(a => { catCounts[a.category] = (catCounts[a.category]||0) + 1; });
+    const CATS = ['开局','扩张','战斗','内政','武将','暗战','悲情'];
+
+    let html = `<button class="ach-filter-btn ${_modalCurrentFilter==='all'?'active':''}" data-cat="all">全部 ${ACHIEVEMENTS.length}</button>`;
+    CATS.forEach(c => {
+      if (!catCounts[c]) return;
+      html += `<button class="ach-filter-btn ${_modalCurrentFilter===c?'active':''}" data-cat="${c}">${c} ${catCounts[c]}</button>`;
+    });
+    bar.innerHTML = html;
+
+    // 绑定点击
+    bar.querySelectorAll('.ach-filter-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        _modalCurrentFilter = btn.dataset.cat;
+        renderFilterBar();
+        renderAchList();
+      });
+    });
+  }
+
+  // 渲染成就列表
+  function renderAchList(){
+    const listEl = document.getElementById('ach-list');
+    if (!listEl || _modalCurrentSlot == null) return;
+
+    const unlockedMap = {};
+    const unlockedList = _lastResult?.[_modalCurrentSlot]?.unlocked || [];
+    unlockedList.forEach(u => { unlockedMap[u.id] = u; });
+
+    // 按筛选条件过滤
+    let pool = ACHIEVEMENTS.slice();
+    if (_modalCurrentFilter !== 'all'){
+      pool = pool.filter(a => a.category === _modalCurrentFilter);
+    }
+
+    // 排序:已解锁优先,然后稀有度降序,然后 id 字典序
+    pool.sort((a,b)=>{
+      const ua = unlockedMap[a.id] ? 1 : 0;
+      const ub = unlockedMap[b.id] ? 1 : 0;
+      if (ua !== ub) return ub - ua;
+      const ra = RARITY_RANK[a.rarity], rb = RARITY_RANK[b.rarity];
+      if (ra !== rb) return rb - ra;
+      return a.id.localeCompare(b.id);
+    });
+
+    if (!pool.length){
+      listEl.innerHTML = '<div class="ach-list-empty">该分类下暂无成就</div>';
+      return;
+    }
+
+    listEl.innerHTML = pool.map(a => buildAchCard(a, unlockedMap[a.id])).join('');
+  }
+
+  function buildAchCard(a, unlock){
+    const isUnlocked = !!unlock;
+    const stateCls = isUnlocked ? 'unlocked' : 'locked';
+    const rarLabel = RARITY_LABEL[a.rarity] || a.rarity;
+    const footer = isUnlocked
+      ? `<span>已解锁 · 第 ${unlock.round} 回合</span>`
+      : `<span>未解锁</span>`;
+    return `<div class="ach-card ${stateCls} rar-${a.rarity}">
+  <div class="ach-card-head">
+    <div class="ach-card-name">${esc(a.name)}</div>
+    <span class="ach-rar-badge">${esc(rarLabel)}</span>
+  </div>
+  <div class="ach-card-desc">${esc(a.desc)}</div>
+  <div class="ach-card-trigger">${esc(a.trigger_human || '—')}</div>
+  <div class="ach-card-footer">${footer}<span class="ach-card-cat">${esc(a.category)}</span></div>
+</div>`;
+  }
+
   function esc(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
   return {
     detect, refresh, getMostRare, getCounts, getAll,
     getRarityRank, getRarityLabel,
     renderSlots, pushUnlockToasts,
-    open: function(slot){ console.log('[SGAch] open() 占位,等待工单 B 实装,slot=',slot); },
-    close: function(){ console.log('[SGAch] close() 占位'); },
+    open: openModal,
+    close: closeModal,
   };
 })();
