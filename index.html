@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=v20260721a-ach2" />
+  <link rel="stylesheet" href="css/style.css?v=v20260720a-ach" />
 </head>
 <body>
 
@@ -489,7 +489,7 @@
   </div>
 </section>
 
-<!-- ══ 成就墙模态 v5 · 工单#ach-modal-B 实装 ══ -->
+<!-- ══ 成就墙模态 v4 ══ -->
 <div class="ach-modal-overlay" id="ach-modal">
   <div class="ach-modal">
     <div class="ach-modal-head">
@@ -499,11 +499,13 @@
         <span class="title-deco" style="transform:rotate(180deg)"></span>
       </div>
       <div class="ach-modal-right">
-        <div class="ach-modal-stats">已解锁 <b id="ach-stat-unlocked">0</b> / <span id="ach-stat-total">50</span></div>
+        <div class="ach-modal-stats">已解锁 <b id="ach-stat-unlocked">0</b> / <span id="ach-stat-total">5</span></div>
         <button class="ach-modal-close" onclick="window.SGAch && SGAch.close()">✕</button>
       </div>
     </div>
-    <div class="ach-filter-bar" id="ach-filter-bar"></div>
+    <div class="ach-empty-note">
+      <b>开发预留</b> · 当前 5 个为新手测试成就。后续将通过 Supabase 接入更多成就,由 GM 在 AI 推演中触发解锁。
+    </div>
     <div class="ach-list" id="ach-list"></div>
   </div>
 </div>
@@ -538,7 +540,7 @@
 <script src="js/map.js?v=v20260628a"></script>
 <script src="js/tips.js?v=v20260628a"></script>
 <script src="js/generals-tooltip.js?v=v20260628a"></script>
-<script src="js/achievements.js?v=v20260721a"></script>
+<script src="js/achievements.js?v=v20260720a"></script>
 <script src="js/main.js?v=v20260628a"></script>
 <script src="js/secret-action.js?v=v20260704c"></script>
 <script>
