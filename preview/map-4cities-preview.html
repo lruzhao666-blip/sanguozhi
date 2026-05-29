@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>四城落位预览 · v1</title>
+<style>
+  :root {
+    --gold: #d4a843;
+    --gold-light: #f0c060;
+    --text-main: #f0e6d3;
+    --text-sub: #c8b89a;
+    --text-dim: #7a6a5a;
+    --font-sans: system-ui, -apple-system, sans-serif;
+    --font-serif: 'Noto Serif SC', serif;
+  }
+  body {
+    margin: 0; padding: 0;
+    background-color: #0a0508;
+    color: var(--text-main);
+    font-family: var(--font-sans);
+  }
+  .toolbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: rgba(60,0,0,0.95);
+    border-bottom: 2px solid var(--gold);
+    height: 50px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    z-index: 10000;
+  }
+  .toolbar-title {
+    font-size: 1.2rem; font-weight: bold; color: var(--gold-light);
+  }
+  .toolbar-controls button {
+    background: transparent; border: 1px solid var(--gold);
+    color: var(--gold); padding: 4px 10px; margin-left: 10px;
+    cursor: pointer; font-size: 0.9rem; border-radius: 4px;
+  }
+  .toolbar-controls button.active {
+    background: var(--gold); color: #000;
+  }
+  .map-wrapper {
+    margin-top: 50px;
+    width: 100%;
+    display: flex; justify-content: center;
+    overflow-x: auto;
+  }
+  .map-container {
+    width: 100%;
+    max-width: 1200px;
+    transition: max-width 0.3s ease;
+  }
+  .map-container.mobile-view {
+    max-width: 380px;
+  }
+  svg { width: 100%; height: auto; display: block; }
+
+  @keyframes pulseGold {
+    0% { opacity: 0.4; stroke-width: 2.5; }
+    50% { opacity: 1; stroke-width: 3.5; }
+    100% { opacity: 0.4; stroke-width: 2.5; }
+  }
+  .new-city-ring {
+    stroke: rgba(255,210,120,0.95);
+    fill: none;
+    animation: pulseGold 1.5s ease-in-out infinite;
+  }
+
+
+/* ════ 城池悬浮卡 v15 ════ */
+.sgmap-tooltip {
+  position:fixed; z-index:9999; pointer-events:none;
+  opacity:0; transition:opacity .12s;
+  background: rgba(7,6,13,.96);
+  border: 1px solid rgba(200,160,70,.28);
+  border-radius: 10px; padding: 12px 16px 14px;
+  font-size: .8rem; width: 310px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.05);
+  color:#c8b89a;
+}
+.sgmap-tooltip.visible { opacity:1; }
+.sgmap-tooltip .sgt-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 7px; padding-bottom: 7px;
+  border-bottom: 1px solid rgba(180,148,68,.22);
+  flex-wrap: wrap;
+}
+.sgmap-tooltip .sgt-name { font-family:'Noto Serif SC',serif; font-size:1.02rem; font-weight:900; letter-spacing:.06em; color:#f0e6d3; }
+.sgmap-tooltip .sgt-faction-chip {
+  display:inline-block;
+  font-size:.62rem;
+  padding:2px 9px;
+  border-radius:10px;
+  font-weight:600;
+  letter-spacing:.04em;
+  line-height:1.4;
+  white-space:nowrap;
+}
+.sgmap-tooltip .sgt-badges { display:flex; gap:4px; margin-left:auto; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+.sgmap-tooltip .sgt-badge {
+  font-size:.58rem; border:1px solid rgba(212,168,67,.30); border-radius:9px; padding:1px 7px;
+  color:#a07830; font-weight:600; background:rgba(212,168,67,.08);
+}
+.sgmap-tooltip .sgt-badge.tier-4 { border-color:rgba(220,90,70,.5); color:#f0a878; background:rgba(220,80,60,.14); }
+.sgmap-tooltip .sgt-badge.tier-3 { border-color:rgba(212,168,67,.55); color:#f0c060; background:rgba(212,168,67,.16); }
+.sgmap-tooltip .sgt-desc {
+  font-size:.71rem; color:#7a6a5a; line-height:1.65; margin-bottom:7px; font-family:'Noto Serif SC',serif;
+}
+.sgmap-tooltip .sgt-info-block {
+  display:flex; flex-direction:column; gap:5px;
+  padding:7px 9px; background:rgba(255,255,255,.03);
+  border-radius:5px; border:1px solid rgba(180,148,68,.10);
+}
+.sgmap-tooltip .sgt-row { display:flex; align-items:center; gap:8px; font-family:'Noto Serif SC',serif; }
+.sgmap-tooltip .sgt-lbl { font-size:.60rem; color:#7a6a5a; white-space:nowrap; flex-shrink:0; letter-spacing:.04em; }
+.sgmap-tooltip .sgt-holder b { font-weight:700; font-size:.82rem; font-family:'Noto Sans SC',sans-serif; color:#f0e6d3; letter-spacing:.04em; }
+.sgmap-tooltip .sgt-troops { flex-wrap:wrap; }
+.sgmap-tooltip .sgt-troop-list { display:flex; flex-wrap:wrap; gap:2px 10px; }
+.sgmap-tooltip .sgt-troop-chip { display:inline-flex; align-items:baseline; gap:3px; }
+.sgmap-tooltip .sgt-troop-chip b { font-size:.68rem; font-weight:600; color:#7a6a5a; letter-spacing:.04em; }
+.sgmap-tooltip .sgt-troop-chip span { font-size:.82rem; font-weight:700; color:#c8b89a; }
+.sgmap-tooltip .sgt-dim { font-size:.7rem; color:#5a4d3a; }
+.sgmap-tooltip .sgt-prod-block {
+  margin-top:8px; padding:8px 10px 9px;
+  background:linear-gradient(135deg,rgba(80,55,15,.16),rgba(40,28,8,.10));
+  border:1px solid rgba(180,148,68,.20); border-radius:5px;
+}
+.sgmap-tooltip .sgt-prod-block-title {
+  font-size:.60rem; color:#a07830; letter-spacing:.14em;
+  margin-bottom:6px; font-family:'Noto Sans SC',sans-serif;
+  display:flex; align-items:center; gap:5px;
+}
+.sgmap-tooltip .sgt-prod-block-title::before { content:''; width:2px; height:9px; background:rgba(212,168,67,.5); }
+.sgmap-tooltip .sgt-prod-block-title .pt-tag { margin-left:auto; font-size:.56rem; color:#7a6a5a; letter-spacing:.05em; font-weight:400; }
+.sgmap-tooltip .sgt-prod-main { display:flex; gap:14px; align-items:baseline; padding:2px 0 4px; }
+.sgmap-tooltip .sgt-prod-item { display:inline-flex; align-items:baseline; gap:4px; }
+.sgmap-tooltip .sgt-prod-emoji { font-size:.85rem; }
+.sgmap-tooltip .sgt-prod-approx { font-size:.58rem; color:#7a6a5a; letter-spacing:.05em; }
+.sgmap-tooltip .sgt-prod-num { font-size:1.05rem; font-weight:700; color:#f0c060; letter-spacing:.02em; }
+.sgmap-tooltip .sgt-prod-unit { font-size:.62rem; color:#c8b89a; letter-spacing:.04em; }
+.sgmap-tooltip .sgt-prod-chain { font-size:.62rem; color:#7a6a5a; line-height:1.6; margin-top:5px; letter-spacing:.02em; }
+.sgmap-tooltip .sgt-prod-chain .ch-step { color:#c8b89a; }
+.sgmap-tooltip .sgt-prod-chain .ch-step b { color:#a07830; font-weight:600; }
+.sgmap-tooltip .sgt-prod-chain .ch-arrow { color:rgba(180,148,68,.4); margin:0 4px; font-size:.7rem; }
+.sgmap-tooltip .sgt-prod-chain .ch-policy { color:#98d09a; font-weight:600; }
+.sgmap-tooltip .sgt-prod-chain .ch-adept { color:#98d09a; font-size:1em; font-weight:600; }
+.sgmap-tooltip .sgt-prod-badge-row { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
+.sgmap-tooltip .sgt-prod-mini-badge { font-size:.56rem; letter-spacing:.06em; padding:1px 6px; border-radius:8px; font-weight:600; }
+.sgmap-tooltip .sgt-prod-mini-badge.policy { background:rgba(80,140,80,.16); border:1px solid rgba(100,170,100,.28); color:#98d09a; }
+
+.sgt-adept-row {
+  width: 100%;
+  background: linear-gradient(90deg, rgba(212,168,67,.10), rgba(212,168,67,.02));
+  border-left: 3px solid #d4a843;
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 4px 8px;
+  margin-top: 4px;
+  font-size: .72rem;
+  line-height: 1.4;
+  font-family: inherit;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.sgt-adept-row .adept-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.sgt-adept-row .adept-sep {
+  color: #7a6a5a;
+  margin: 0 2px;
+}
+
+.sgt-adept-row .adept-gen { color: #f0c060; font-weight: 700; }
+.sgt-adept-row .adept-desc { color: #c8b89a; }
+.sgt-adept-row .adept-val { color: #d4a843; font-weight: 700; }
+
+
+/* ── 武将胶囊:字号下调一档 + padding 收紧 + 透明底 + 发丝灰边 ── */
+.sgmap-tooltip .sgt-gen-pill-row {
+  gap: 4px 4px;
+}
+
+.sgmap-tooltip .sgt-gen-pill {
+  padding: 1.5px 7px;
+  font-size: .72rem;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 3px;
+  color: #f0e6d3;
+  letter-spacing: .025em;
+  line-height: 1.5;
+}
+
+
+
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <div class="toolbar-title">四城落位预览 · v1</div>
+    <div class="toolbar-controls">
+      <button id="btn-view-desktop" class="active">桌面</button>
+      <button id="btn-view-mobile">移动</button>
+      <button id="btn-toggle-new" class="active">隐藏新城</button>
+    </div>
+  </div>
+
+  <div class="map-wrapper">
+    <div id="map-container" class="map-container"></div>
+  </div>
+
+  <div id="sgmap-tooltip" class="sgmap-tooltip"></div>
+
+  <script>
+    const CITIES = [
+    /* ══ 幽州 ══ */
+    { id:'xiangping', name:'襄平',  region:'幽州', hx:19, hy:0,  tier:'郡城', bonusKey:'偏远', bonusKeys:['偏远','骑兵强'],  terrain:'山地', npcGuard:'公孙度', terrainDesc:'辽东孤城，北接鲜卑，骑兵之利冠绝北疆。' },
+    { id:'beiping',   name:'北平',  region:'幽州', hx:17, hy:1,  tier:'郡城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','骑兵强'],   terrain:'山地', npcGuard:'公孙瓒', terrainDesc:'燕山脚下雄关，白马义从所出之地。' },
+    { id:'ji',        name:'蓟县',  region:'幽州', hx:15, hy:1,  tier:'州治', bonusKey:'骑兵强', bonusKeys:['骑兵强','谋略+'],terrain:'苦寒', npcGuard:'刘虞',   terrainDesc:'幽州治所，渔阳沃野，百姓殷实。' },
+
+    /* ══ 冀州 ══ */
+    { id:'nanpi',     name:'南皮',  region:'冀州', hx:16, hy:2,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],    terrain:'平原', npcGuard:'袁谭',   terrainDesc:'渤海郡治，水陆码头，袁氏起家之所。' },
+    { id:'pingyuan',  name:'平原',  region:'冀州', hx:15, hy:3,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],    terrain:'平原', npcGuard:'管亥',   terrainDesc:'黄河故道，一马平川，刘备曾在此为相。' },
+    { id:'ye',        name:'邺城',  region:'冀州', hx:14, hy:2,  tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+','防御+'],   terrain:'平原', npcGuard:'袁尚',   terrainDesc:'冀州治所，河北第一坚城。' },
+
+    /* ══ 并州 ══ */
+    { id:'jinyang',   name:'晋阳',  region:'并州', hx:12, hy:2,  tier:'州治', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','骑兵强'],  terrain:'山地', npcGuard:'高干',   terrainDesc:'太原郡治，并州铁骑出没之地。' },
+    { id:'shangdang', name:'上党',  region:'并州', hx:13, hy:3,  tier:'郡城', bonusKey:'险关', bonusKeys:['险关','防御+'],   terrain:'山地', npcGuard:'郭援',   terrainDesc:'天下之脊，群山环抱，兵家必争之地。' },
+
+    /* ══ 青州 ══ */
+    { id:'beihai',    name:'北海',  region:'青州', hx:17, hy:3,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],  terrain:'水域', npcGuard:'孔融',   terrainDesc:'青州治所，东临大海，渔盐之利甲于天下。' },
+    { id:'jinan',     name:'济南',  region:'青州', hx:16, hy:4,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','金丰'],    terrain:'平原', npcGuard:'田楷',   terrainDesc:'泰山之北，济水之南，土地肥沃。' },
+
+    /* ══ 司隶 ══ */
+    { id:'henei',     name:'河内',  region:'司隶', hx:13, hy:4,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+'],    terrain:'平原', npcGuard:'张杨',   terrainDesc:'黄河北岸，沃野千里，洛阳屏障。' },
+    { id:'luoyang',   name:'洛阳',  region:'司隶', hx:12, hy:5,  tier:'雄都', bonusKey:'金丰', bonusKeys:['金丰','谋略+','防御+'],   terrain:'平原', npcGuard:'华雄',   terrainDesc:'九朝古都，八关锁钥，虎牢函谷拱卫。' },
+    { id:'hongnong',  name:'弘农',  region:'司隶', hx:11, hy:5,  tier:'郡城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'段煨',   terrainDesc:'函谷关下，西通关中，东接洛阳。' },
+    { id:'huguan',    name:'虎牢关',region:'司隶', hx:13, hy:5,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'华雄',   terrainDesc:'天下第一雄关，扼守洛阳东大门。' },
+    { id:'tongguan',  name:'潼关',  region:'司隶', hx:11, hy:6,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'李蒙',   terrainDesc:'关中东大门，崤函险道之锁钥。' },
+
+    /* ══ 雍凉 ══ */
+    { id:'changan',   name:'长安',  region:'雍凉', hx:10, hy:6,  tier:'雄都', bonusKey:'金丰', bonusKeys:['金丰','谋略+','防御+'],  terrain:'平原', npcGuard:'李傕',   terrainDesc:'前汉旧都，关中沃野，八百里秦川。' },
+    { id:'anding',    name:'安定',  region:'雍凉', hx:9,  hy:5,  tier:'郡城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产'],  terrain:'山地', npcGuard:'梁兴',   terrainDesc:'泾水之畔，黄土高原，胡笳声不绝。' },
+    { id:'jietingx',  name:'街亭',  region:'雍凉', hx:8,  hy:5,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'马遵',   terrainDesc:'陇右门户，失此则陇道断绝。' },
+    { id:'tianshui',  name:'天水',  region:'雍凉', hx:8,  hy:6,  tier:'郡城', bonusKey:'骑兵强', bonusKeys:['骑兵强'],   terrain:'山地', npcGuard:'姜冏',   terrainDesc:'陇右重镇，胡汉杂居，出名马良将。' },
+    { id:'wuwei',     name:'武威',  region:'雍凉', hx:5,  hy:5,  tier:'郡城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','骑兵强','偏远'],  terrain:'平原', npcGuard:'韩遂',   terrainDesc:'河西走廊咽喉，大漠孤烟，长河落日。' },
+    { id:'xiping',    name:'西平',  region:'雍凉', hx:3,  hy:6,  tier:'县城', bonusKey:'偏远', bonusKeys:['偏远','骑兵强'],terrain:'苦寒', npcGuard:'麴演',   terrainDesc:'湟水之滨，羌氐聚居，雪山在望。' },
+
+    /* ══ 兖豫 ══ */
+    { id:'puyang',    name:'濮阳',  region:'兖豫', hx:14, hy:4,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'吕旷',   terrainDesc:'黄河南岸要冲，曹操与吕布鏖战之地。' },
+    { id:'chenliu',   name:'陈留',  region:'兖豫', hx:14, hy:5,  tier:'州治', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+'],    terrain:'平原', npcGuard:'张邈',   terrainDesc:'曹操起兵之地，中原通衢。' },
+    { id:'xuchang',   name:'许昌',  region:'兖豫', hx:13, hy:6,  tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','金丰','谋略+'],   terrain:'平原', npcGuard:'夏侯惇', terrainDesc:'颍川之地，人才渊薮，天子所在。' },
+    { id:'qiao',      name:'谯郡',  region:'兖豫', hx:14, hy:7,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'夏侯渊', terrainDesc:'曹氏故乡，沛国精兵，民风彪悍。' },
+    { id:'runan',     name:'汝南',  region:'兖豫', hx:13, hy:7,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'刘辟',   terrainDesc:'袁氏根基，门生故吏遍天下。' },
+
+    /* ══ 徐州 ══ */
+    { id:'xiaopei',   name:'小沛',  region:'徐州', hx:14, hy:6,  tier:'县城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'陈宫',   terrainDesc:'沛县小城，刘备数度寄居，交通要冲。' },
+    { id:'xiapi',     name:'下邳',  region:'徐州', hx:16, hy:5,  tier:'州治', bonusKey:'粮丰', bonusKeys:['粮丰','金丰'],   terrain:'平原', npcGuard:'臧霸',   terrainDesc:'徐州治所，泗水绕城，吕布殒命处。' },
+    { id:'guangling', name:'广陵',  region:'徐州', hx:17, hy:5,  tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强'],  terrain:'水域', npcGuard:'陈登',   terrainDesc:'长江北岸，与江东隔水相望。' },
+
+    /* ══ 荆襄 ══ */
+    { id:'wan',       name:'宛城',  region:'荆襄', hx:12, hy:7,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+'],   terrain:'关隘', npcGuard:'张绣',   terrainDesc:'南阳郡治，北扼洛阳，南通襄阳。' },
+    { id:'xinye',     name:'新野',  region:'荆襄', hx:12, hy:8,  tier:'县城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'刘磐',   terrainDesc:'南阳南境小城，刘备屯兵之所。' },
+    { id:'xiangyang', name:'襄阳',  region:'荆襄', hx:12, hy:9,  tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','水战强','防御+'],  terrain:'水域', npcGuard:'蔡瑁',   terrainDesc:'汉水之滨，荆州治所，水陆要冲。' },
+    { id:'jiangxia',  name:'江夏',  region:'荆襄', hx:14, hy:9,  tier:'州治', bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'黄祖',   terrainDesc:'长江汉水交汇，水军重镇。' },
+    { id:'jiangling', name:'江陵',  region:'荆襄', hx:12, hy:10, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强','粮丰'],    terrain:'平原', npcGuard:'文聘',   terrainDesc:'南郡治所，荆州粮仓军械所在。' },
+    { id:'wuling',    name:'武陵',  region:'荆襄', hx:10, hy:11, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远'],  terrain:'瘴林', npcGuard:'金旋',   terrainDesc:'湘西群山，五溪蛮聚居，瘴气弥漫。' },
+    { id:'changsha',  name:'长沙',  region:'荆襄', hx:13, hy:11, tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'森林', npcGuard:'韩玄',   terrainDesc:'湘江之滨，荆南重镇，黄忠坐镇。' },
+    { id:'guiyang',   name:'桂阳',  region:'荆襄', hx:14, hy:12, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远'],    terrain:'山地', npcGuard:'赵范',   terrainDesc:'湘南矿藏丰饶，金银铜铁皆出于此。' },
+    { id:'lingling',  name:'零陵',  region:'荆襄', hx:11, hy:12, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远','粮丰'],   terrain:'森林', npcGuard:'刘度',   terrainDesc:'湘江上游，山林幽深，隐士辈出。' },
+
+    /* ══ 扬州 ══ */
+    { id:'shouchun',  name:'寿春',  region:'扬州', hx:15, hy:8,  tier:'州治', bonusKey:'粮丰', bonusKeys:['粮丰','水战强'],    terrain:'平原', npcGuard:'纪灵',   terrainDesc:'淮南重镇，袁术僭号之地。' },
+    { id:'hefei',     name:'合肥',  region:'扬州', hx:15, hy:9,  tier:'郡城', bonusKey:'防御+', bonusKeys:['防御+','水战强'],   terrain:'水域', npcGuard:'刘馥',   terrainDesc:'淮南门户，东吴无数次北伐折戟之地。' },
+    { id:'lujiang',   name:'庐江',  region:'扬州', hx:15, hy:10, tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','水战强'],  terrain:'水域', npcGuard:'陆康',   terrainDesc:'大别山东麓，长江北岸，陆氏世居之地。' },
+    { id:'jianye',    name:'建业',  region:'扬州', hx:16, hy:10, tier:'雄都', bonusKey:'水战强', bonusKeys:['水战强','金丰','粮丰'],   terrain:'水域', npcGuard:'凌操',   terrainDesc:'钟山龙蟠，石城虎踞，孙氏江东根基。' },
+    { id:'wu',        name:'吴郡',  region:'扬州', hx:17, hy:10, tier:'州治', bonusKey:'金丰', bonusKeys:['金丰','水战强'],    terrain:'水域', npcGuard:'朱治',   terrainDesc:'太湖之滨，鱼米之乡，丝绸织造甲天下。' },
+    { id:'chaisang',  name:'柴桑',  region:'扬州', hx:15, hy:11, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强'],  terrain:'水域', npcGuard:'太史慈', terrainDesc:'鄱阳湖口，周瑜操练水军之所。' },
+    { id:'kuaiji',    name:'会稽',  region:'扬州', hx:18, hy:12, tier:'郡城', bonusKey:'金丰', bonusKeys:['金丰','水战强'],  terrain:'水域', npcGuard:'王朗',   terrainDesc:'钱塘潮涌，稽山如黛，百越遗风犹存。' },
+    { id:'luling',    name:'庐陵',  region:'扬州', hx:16, hy:12, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远','粮丰'],  terrain:'森林', npcGuard:'贺齐',   terrainDesc:'赣江之畔，山越聚居，山民骁勇。' },
+
+    /* ══ 益州 ══ */
+    { id:'wudu',      name:'武都',  region:'益州', hx:6,  hy:8,  tier:'县城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','偏远'],    terrain:'山地', npcGuard:'杨秋',   terrainDesc:'陇南山地，氐羌杂居，雪山阻隔。' },
+    { id:'yangpingg', name:'阳平关',region:'益州', hx:8,  hy:8,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'杨任',   terrainDesc:'汉中西大门，扼守褒斜道入口。' },
+    { id:'hanzhong',  name:'汉中',  region:'益州', hx:9,  hy:8,  tier:'州治', bonusKey:'险关', bonusKeys:['险关','粮丰'],    terrain:'关隘', npcGuard:'张鲁',   terrainDesc:'秦岭巴山之间，五斗米道圣地。' },
+    { id:'shangyong', name:'上庸',  region:'益州', hx:11, hy:9,  tier:'郡城', bonusKey:'险关', bonusKeys:['险关','偏远'],   terrain:'山地', npcGuard:'申耽',   terrainDesc:'汉水中游，群山环抱。' },
+    { id:'jiange',    name:'剑阁',  region:'益州', hx:6,  hy:9,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'费诗',   terrainDesc:'剑门七十二峰，蜀道之天险。' },
+    { id:'jiameng',   name:'葭萌关',region:'益州', hx:7,  hy:9,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'孟达',   terrainDesc:'入蜀要冲，益州北大门。' },
+    { id:'zitong',    name:'梓潼',  region:'益州', hx:7,  hy:10, tier:'郡城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'刘璝',   terrainDesc:'剑阁之北，蜀道咽喉。' },
+    { id:'chengdu',   name:'成都',  region:'益州', hx:6,  hy:11, tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','金丰','谋略+'],    terrain:'平原', npcGuard:'刘璋',   terrainDesc:'天府之国，锦江绕城，蜀锦甲天下。' },
+    { id:'jiangzhou', name:'江州',  region:'益州', hx:8,  hy:11, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'费观',   terrainDesc:'嘉陵江与长江交汇，水路辐辏。' },
+    { id:'yongan',    name:'永安',  region:'益州', hx:9,  hy:11, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强','险关'],    terrain:'关隘', npcGuard:'严颜',   terrainDesc:'三峡咽喉，白帝城高，益州东大门。' },
+
+    /* ══ 南中 ══ */
+    { id:'jianning',  name:'建宁',  region:'南中', hx:7,  hy:13, tier:'郡城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],  terrain:'瘴林', npcGuard:'雍闿',   terrainDesc:'南中腹地，滇池之畔，瘴气弥漫。' },
+    { id:'yunnan',    name:'云南',  region:'南中', hx:5,  hy:14, tier:'县城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],    terrain:'瘴林', npcGuard:'高定',   terrainDesc:'苍山洱海，瘴疠不绝，蛮兵以毒箭见长。' },
+    { id:'yongchang', name:'永昌',  region:'南中', hx:3,  hy:14, tier:'县城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],    terrain:'苦寒', npcGuard:'吕凯',   terrainDesc:'化外极西，产琥珀翡翠香料，路途艰险。' },
+    { id:'jiaozhi',   name:'交趾',  region:'南中', hx:13, hy:14, tier:'郡城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],  terrain:'水域', npcGuard:'士燮',   terrainDesc:'南海之滨，海舶云集，珠玳犀象堆积。' },
+  ];
+const ROADS = [
+    ['xiangping','beiping'],['beiping','ji'],
+    ['ji','nanpi'],['ji','ye'],['beiping','nanpi'],
+    ['nanpi','pingyuan'],['nanpi','ye'],['ye','pingyuan'],
+    ['ye','jinyang'],['ye','shangdang'],['jinyang','shangdang'],
+    ['nanpi','beihai'],['pingyuan','beihai'],['pingyuan','jinan'],
+    ['jinan','puyang'],['beihai','puyang'],
+    ['ye','henei'],['jinyang','henei'],['shangdang','henei'],['shangdang','luoyang'],
+    ['henei','luoyang'],['luoyang','hongnong'],['luoyang','huguan'],
+    ['hongnong','tongguan'],['tongguan','changan'],
+    ['changan','anding'],['changan','tianshui'],['anding','tianshui'],
+    ['anding','wuwei'],['wuwei','xiping'],['tianshui','jietingx'],['jietingx','anding'],
+    ['luoyang','xuchang'],['luoyang','puyang'],
+    ['puyang','chenliu'],['puyang','xiaopei'],['chenliu','xuchang'],['xuchang','runan'],
+    ['xuchang','qiao'],['qiao','runan'],
+    ['qiao','xiaopei'],['xiaopei','xiapi'],['xiaopei','xuchang'],['xiapi','guangling'],
+    ['luoyang','wan'],['runan','wan'],['runan','xinye'],
+    ['wan','xinye'],['xinye','xiangyang'],['xiangyang','jiangling'],
+    ['xiangyang','jiangxia'],['jiangling','jiangxia'],
+    ['jiangling','wuling'],['jiangling','changsha'],
+    ['changsha','lingling'],['changsha','guiyang'],['wuling','lingling'],
+    ['guangling','shouchun'],['shouchun','hefei'],['hefei','lujiang'],
+    ['lujiang','jianye'],['jianye','wu'],['jianye','chaisang'],
+    ['wu','kuaiji'],['chaisang','luling'],['chaisang','lujiang'],
+    ['jiangxia','hefei'],['jiangxia','jianye'],
+    ['tongguan','hanzhong'],['tianshui','wudu'],['wudu','yangpingg'],['wudu','jiange'],
+    ['hanzhong','yangpingg'],['yangpingg','jiange'],
+    ['jiange','jiameng'],['jiameng','zitong'],['zitong','chengdu'],
+    ['hanzhong','shangyong'],
+    ['chengdu','jiangzhou'],['jiangzhou','yongan'],
+    ['yongan','jiangling'],['yongan','chaisang'],['yongan','jiangxia'],
+    ['shangyong','yongan'],['shangyong','xiangyang'],['shangyong','xinye'],
+    ['chengdu','jianning'],['jiangzhou','jianning'],
+    ['jianning','yunnan'],['yunnan','yongchang'],['jianning','jiaozhi'],
+    ['guangling','jianye'],['guiyang','luling'],
+  ];
+const CITY_TIER_MAP = {
+  '襄平':'郡城','北平':'郡城','蓟县':'州治',
+  '南皮':'郡城','平原':'郡城','邺城':'雄都',
+  '晋阳':'州治','上党':'郡城',
+  '北海':'郡城','济南':'郡城',
+  '洛阳':'雄都','弘农':'郡城','河内':'郡城','虎牢关':'县城','潼关':'县城',
+  '长安':'雄都','天水':'郡城','安定':'郡城','武威':'郡城','西平':'县城','街亭':'县城',
+  '濮阳':'郡城','陈留':'州治','许昌':'雄都','汝南':'郡城','谯郡':'郡城',
+  '下邳':'州治','小沛':'县城','广陵':'郡城',
+  '宛城':'郡城','新野':'县城','襄阳':'雄都','江夏':'州治','江陵':'郡城',
+  '武陵':'县城','长沙':'郡城','桂阳':'县城','零陵':'县城',
+  '寿春':'州治','合肥':'郡城','庐江':'郡城','建业':'雄都','吴郡':'州治',
+  '会稽':'郡城','柴桑':'郡城','庐陵':'县城',
+  '汉中':'州治','上庸':'郡城','梓潼':'郡城','成都':'雄都','永安':'郡城',
+  '江州':'郡城','武都':'县城','剑阁':'县城','葭萌关':'县城','阳平关':'县城',
+  '建宁':'郡城','云南':'县城','永昌':'县城','交趾':'郡城',
+  '夷陵':'郡城','西陵':'县城','濡须口':'县城','陈仓':'县城',
+};
+const CITY_TIER_BASE = {
+  '雄都': { gold: 300, food: 600 },
+  '州治': { gold: 200, food: 400 },
+  '郡城': { gold: 120, food: 250 },
+  '县城': { gold: 60,  food: 120 },
+};
+const BONUS_MULT = {
+  '粮丰':     { food: 1.5  },
+  '金丰':     { gold: 1.5  },
+  '进攻+':    { gold: 1.2  },
+  '谋略+':    { gold: 1.1  },
+  '水战强':   { food: 1.15 },
+  '苦寒减产': { gold: 0.8, food: 0.8 },
+  '瘴气':     { food: 0.75 },
+  '偏远':     { gold: 0.9, food: 0.9 },
+};
+const TERRAIN = {
+    '平原': { fill:'rgba(195,178,125,0.13)', stroke:'rgba(188,162,88,0.22)',  patternId:null },
+    '山地': { fill:'rgba(108,100, 88,0.16)', stroke:'rgba(148,130,100,0.30)', patternId:null },
+    '水域': { fill:'rgba( 22, 72,138,0.20)', stroke:'rgba( 50,118,195,0.35)', patternId:null },
+    '森林': { fill:'rgba( 42, 88, 50,0.16)', stroke:'rgba( 68,128, 72,0.30)', patternId:null },
+    '关隘': { fill:'rgba(135, 95, 42,0.18)', stroke:'rgba(195,155, 58,0.36)', patternId:null },
+    '苦寒': { fill:'rgba(118,148,192,0.16)', stroke:'rgba(150,178,220,0.30)', patternId:null },
+    '瘴林': { fill:'rgba( 38, 80, 50,0.17)', stroke:'rgba( 58,118, 68,0.30)', patternId:null },
+    _default:{ fill:'rgba(100,100,100,0.05)', stroke:'rgba(160,135,75,0.12)', patternId:null },
+  };
+const BONUS_ICON = {
+    '防御+':'\uD83D\uDEE1\uFE0F',  // 🛡️
+    '进攻+':'\u2694\uFE0F',         // ⚔️
+    '粮丰':'\uD83C\uDF3E',          // 🌾
+    '金丰':'\uD83D\uDCB0',          // 💰
+    '骑兵强':'\uD83D\uDC34',        // 🐴
+    '水战强':'\u2693\uFE0F',        // ⚓️
+    '谋略+':'\uD83D\uDCD6',         // 📖
+    '民心+':'\uD83D\uDC65',         // 👥
+    '险关':'\u26F0\uFE0F',          // ⛰️
+    '蛮兵强':'\uD83C\uDFF9',        // 🏹
+    '瘴气':'\uD83C\uDF2B\uFE0F',   // 🌫️
+    '苦寒减产':'\u2744\uFE0F',      // ❄️
+    '偏远':'\uD83D\uDDFA\uFE0F',      // 🗺️
+  };
+const P_COLOR = [
+    { fill:'rgba(80,10, 8,0.82)',  film:'rgba(210,55,40,0.20)',  stroke:'rgba(225,85,65,0.75)',  glow:'#ec7a62', text:'#fdeae6' },  // 赤
+    { fill:'rgba( 8,55,22,0.82)',  film:'rgba(40,185,85,0.18)',  stroke:'rgba(55,200,100,0.70)', glow:'#52d478', text:'#e2f8ec' },  // 翠
+    { fill:'rgba( 8,40,90,0.82)',  film:'rgba(40,125,220,0.20)', stroke:'rgba(65,150,240,0.70)', glow:'#60aef0', text:'#daeeff' },  // 青
+  ];
+const NPC_FACTION_COLORS = [
+  // 索引 0 — 玄青（袁绍）H:185°
+  { fill:'rgba(15,72,82,0.82)',   film:'rgba(55,160,180,0.22)',  stroke:'rgba(90,185,200,0.75)',  glow:'#5fb8c8', text:'#d8eef2' },
+  // 索引 1 — 玄铁青（曹魏）H:220° 冷峻铁器质感
+  { fill:'rgba(20,32,52,0.82)',   film:'rgba(70,95,135,0.22)',   stroke:'rgba(95,120,160,0.75)',  glow:'#3a5878', text:'#ccd6e4' },
+  // 索引 2 — 赭石（刘表）H:25°
+  { fill:'rgba(98,55,18,0.82)',   film:'rgba(200,128,55,0.22)',  stroke:'rgba(220,150,82,0.75)',  glow:'#cf9560', text:'#f2e0c8' },
+  // 索引 3 — 赭褐红（孙吴）H:350°
+  { fill:'rgba(72,28,32,0.82)',   film:'rgba(145,65,78,0.22)',   stroke:'rgba(170,90,100,0.75)',  glow:'#6e2838', text:'#e8c8ce' },
+  // 索引 4 — 青松墨（蜀汉）H:165°
+  { fill:'rgba(15,55,45,0.82)',   film:'rgba(55,120,102,0.22)',  stroke:'rgba(80,145,128,0.75)',  glow:'#2d6858', text:'#c8e0d8' },
+  // 索引 5 — 沙金棕（韩遂）H:35°
+  { fill:'rgba(92,62,25,0.82)',   film:'rgba(195,150,75,0.22)',  stroke:'rgba(220,175,108,0.75)', glow:'#c89860', text:'#f0e0c8' },
+  // 索引 6 — 铁灰（马腾）H:210° 西凉铁骑冷金属质感
+  { fill:'rgba(38,42,52,0.82)',   film:'rgba(100,115,140,0.22)', stroke:'rgba(130,145,170,0.75)', glow:'#8090a8', text:'#d0d8e2' },
+  // 索引 7 — 道袍紫（张鲁）H:275° 五斗米道神秘感
+  { fill:'rgba(55,30,72,0.82)',   film:'rgba(130,80,170,0.22)',  stroke:'rgba(155,105,195,0.75)', glow:'#9868b8', text:'#e2d4f0' },
+  // 索引 8 — 枯叶褐（备用1）H:40° 朴素中立
+  { fill:'rgba(72,55,30,0.82)',   film:'rgba(160,125,65,0.22)',  stroke:'rgba(185,150,90,0.75)',  glow:'#a8884c', text:'#e8dcc8' },
+  // 索引 9 — 霜蓝（备用2）H:200° 冷淡北方感
+  { fill:'rgba(22,48,68,0.82)',   film:'rgba(70,135,175,0.22)',  stroke:'rgba(95,160,200,0.75)',  glow:'#5898c0', text:'#d0e4f2' },
+  // 索引 10 — 暗翠（备用3）H:150° 山林隐逸
+  { fill:'rgba(20,58,42,0.82)',   film:'rgba(60,140,100,0.22)',  stroke:'rgba(85,165,125,0.75)', glow:'#48a070', text:'#c8e8d8' },
+];
+const TROOP_TYPES = ['步','弓','骑','水','蛮'];
+const NPC_C = { fill:'rgba(10,11,16,0.55)', film:'rgba(40,45,55,0.12)', stroke:'rgba(175,148,82,0.16)', glow:'#887760', text:'rgba(185,158,100,0.32)' };
+const EMPTY_C = { fill:'rgba(10,11,16,0.55)',  film:'rgba(40, 45,55,0.12)',  stroke:'rgba(175,148,82,0.16)', glow:'#887760', text:'rgba(185,158,100,0.32)' };
+
+const HEX_R = 25, HEX_H = HEX_R * Math.sqrt(3);
+const COL_STEP = HEX_R * 1.5;
+const ROW_STEP = HEX_H / 2;
+
+  const GRID_COL_START = 3;
+  const GRID_COL_END   = 19;
+  const GRID_ROW_START = 0;
+  const GRID_ROW_END   = 14;
+  const GRID_COLS      = GRID_COL_END - GRID_COL_START + 1;
+  const GRID_ROWS      = GRID_ROW_END - GRID_ROW_START + 1;
+
+
+
+
+let _cityMap = {};
+let cityOwnership = {};
+let players = [];
+let _npcFactionSlots = {};
+
+function _esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;')
+                  .replace(/'/g, '&#39;');
+}
+
+function hexToXY(col, row) {
+    const c = col - GRID_COL_START;
+    const r = row - GRID_ROW_START;
+    const x = HEX_R + 2 + c * COL_STEP;
+    const y = HEX_H / 2 + 2 + r * ROW_STEP + (col % 2 === 1 ? HEX_H / 2 : 0);
+    return { x, y };
+  }
+function hexPoints(cx, cy, r) {
+    const pts = [];
+    for (let i = 0; i < 6; i++) {
+      const a = (Math.PI / 3) * i;
+      pts.push(`${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`);
+    }
+    return pts.join(' ');
+  }
+function _emptyTerrain(col, row) {
+    // 极西苦寒（西域方向）
+    if (col <= 2 && row <= 8) return '苦寒';
+    if (col <= 1) return '苦寒';
+    // 西平/永昌方向苦寒
+    if (col <= 4 && row >= 12) return '苦寒';
+    // 东北沿海（幽州/青州海域）
+    if (col >= 18 && row >= 2) return '水域';
+    if (col >= 19) return '水域';
+    // 东南扬州水域
+    if (col >= 16 && row >= 9) return '水域';
+    if (col >= 17 && row >= 6) return '水域';
+    // 北方苦寒（幽州北部）
+    if (row <= 0 && col >= 12) return '苦寒';
+    if (row <= 1 && col >= 15) return '苦寒';
+    // 并州/雍凉山地
+    if (col >= 9 && col <= 14 && row <= 3) return '山地';
+    if (col >= 5 && col <= 9 && row <= 5) return '山地';
+    // 益州山地（蜀道群山）
+    if (col >= 4 && col <= 9 && row >= 7 && row <= 12) return '山地';
+    // 南中瘴林
+    if (col >= 4 && col <= 10 && row >= 12) return '瘴林';
+    if (col <= 6 && row >= 10) return '瘴林';
+    // 荆南森林
+    if (col >= 10 && col <= 14 && row >= 11) return '森林';
+    // 中原/平原（默认）
+    return '平原';
+  }
+function _calcViewBox() {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (let col = GRID_COL_START; col <= GRID_COL_END; col++) {
+      for (let row = GRID_ROW_START; row <= GRID_ROW_END; row++) {
+        const { x, y } = hexToXY(col, row);
+        minX = Math.min(minX, x - HEX_R);
+        minY = Math.min(minY, y - HEX_H / 2);
+        maxX = Math.max(maxX, x + HEX_R);
+        maxY = Math.max(maxY, y + HEX_H / 2);
+      }
+    }
+    const pad = 8;
+    return {
+      x: minX - pad,
+      y: minY - pad,
+      w: maxX - minX + pad * 2,
+      h: maxY - minY + pad * 2,
+    };
+  }
+
+
+
+  function _defs() {
+    const shadow = `
+    <filter id="fshadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#000" flood-opacity="0.75"/>
+    </filter>`;
+    const hlWhite = `
+    <linearGradient id="hexHL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fff" stop-opacity="0.20"/>
+      <stop offset="50%"  stop-color="#fff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>`;
+    const hlGold = `
+    <linearGradient id="hexHLGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#ffe8a0" stop-opacity="0.22"/>
+      <stop offset="50%"  stop-color="#ffe8a0" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#ffe8a0" stop-opacity="0"/>
+    </linearGradient>`;
+    return `<defs>${shadow}${hlWhite}${hlGold}</defs>`;
+  }
+
+  function _roadLines() {
+    const newRoadsList = [["yiling","jiangling"],["yiling","wuling"],["yiling","yongan"],["xiling","jiangling"],["xiling","jiangxia"],["xiling","changsha"],["ruxukou","hefei"],["ruxukou","jianye"],["ruxukou","lujiang"],["chencang","changan"],["chencang","hanzhong"],["chencang","tianshui"]];
+    return newRoadsList.map(([aid, bid]) => {
+      const ca = CITIES.find(c => c.id === aid);
+      const cb = CITIES.find(c => c.id === bid);
+      if (!ca || !cb) return '';
+      const p1 = hexToXY(ca.hx, ca.hy);
+      const p2 = hexToXY(cb.hx, cb.hy);
+      return `<line class="new-city-road" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="rgba(255,210,120,0.7)" stroke-width="1.2" stroke-dasharray="3,2" />`;
+    }).join('');
+  }
+
+function _terrainLayer() {
+    const R = HEX_R; // 满半径，顶点精确对齐
+    const parts = [];
+    for (let col = GRID_COL_START; col <= GRID_COL_END; col++) {
+      for (let row = GRID_ROW_START; row <= GRID_ROW_END; row++) {
+        const { x, y } = hexToXY(col, row);
+        parts.push(`<polygon points="${hexPoints(x, y, R)}" fill="rgba(10,8,18,0.18)" stroke="none"/>`);
+      }
+    }
+    return parts.join('\n');
+  }
+
+  /* ── Layer 2: 中立地形蜂巢网格（仅非城池格）
+     · 半透明淡灰填充，让底图水墨透出
+     · 暗金细边线，营造"中立地形"感
+     · hover：灰色加深 + 暖橙金边高亮
+     · pointer-events 只在格子本身，不干扰城池点击
+  ── */
+  function _neutralGridLayer() {
+    const R = HEX_R; // 满半径，与相邻格子顶点精确重合
+    const parts = [];
+    for (let col = GRID_COL_START; col <= GRID_COL_END; col++) {
+      for (let row = GRID_ROW_START; row <= GRID_ROW_END; row++) {
+        if (_cityMap[`${col},${row}`]) continue;
+        const { x, y } = hexToXY(col, row);
+        const pts = hexPoints(x, y, R);
+        parts.push(
+          `<polygon class="sgmap-neutral-hex" points="${pts}"` +
+          ` fill="rgba(0,0,0,0.15)"` +
+          ` stroke="rgba(180,150,90,0.35)" stroke-width="0.8"` +
+          ` style="filter:blur(0.3px);pointer-events:none"/>`
+        );
+      }
+    }
+    return `<g class="sgmap-neutral-grid">\n${parts.join('\n')}\n</g>`;
+  }
+
+  /* ── Layer 4: 城池主体（有城格全部绘制） ── */
+  function _cityLayer() {
+    const R  = HEX_R;      // 满半径外边框，与中立格完全对齐
+    const Ri = HEX_R - 5;  // 内圈缩进5px
+    const parts = [];
+
+    CITIES.forEach(city => {
+      const { x, y } = hexToXY(city.hx, city.hy);
+      const ow = cityOwnership[city.name];
+      let isPlayer = false, pidx = -1, isNPC = false, color = EMPTY_C;
+
+      if (!ow || ow.owner === '') {
+        color = EMPTY_C;
+      } else if (ow.owner === 'npc') {
+        isNPC = true;
+        const slotIdx = ow.faction != null ? _npcFactionSlots[ow.faction] : undefined;
+        color = (slotIdx !== undefined) ? NPC_FACTION_COLORS[slotIdx] : NPC_C;
+      } else {
+        pidx = ow.playerIdx;
+        color = P_COLOR[pidx] || EMPTY_C;
+        isPlayer = true;
+      }
+
+      const tc         = TERRAIN[city.terrain || '平原'] || TERRAIN._default;
+      const isCityOwned = isPlayer || isNPC;
+      const hlGrad     = isNPC ? 'hexHLGold' : 'hexHL';
+      const bonusIcon  = BONUS_ICON[city.bonusKey] || '';
+      const fontSize   = 8.0;
+      const fw         = 400;
+
+      parts.push(`
+      <g class="sgmap-city" data-id="${city.id}" data-name="${_esc(city.name)}" data-stroke="${color.stroke}" style="cursor:pointer">
+
+        <!-- 外边框：满半径，与中立格对齐 -->
+        <polygon points="${hexPoints(x, y, R)}"
+          fill="none" stroke="rgba(175,155,95,0.38)" stroke-width="0.8"
+          style="pointer-events:none"/>
+
+        ${isCityOwned ? `
+        <!-- 城池主体（内缩） -->
+        <polygon points="${hexPoints(x, y, Ri)}"
+          fill="${color.fill}"
+          stroke="${color.stroke}" stroke-width="1.4"
+          filter="url(#fshadow)"/>
+
+        <!-- 势力色薄膜 -->
+        <polygon points="${hexPoints(x, y, Ri)}"
+          fill="${color.film}" stroke="none"
+          style="pointer-events:none"/>
+
+        <!-- 顶部高光 -->
+        <polygon points="${hexPoints(x, y - 1, Ri * 0.86)}"
+          fill="url(#${hlGrad})" stroke="none"
+          style="pointer-events:none"/>
+
+        <!-- hover 光环 -->
+        <polygon class="sgmap-city-ring" points="${hexPoints(x, y, Ri + 2)}"
+          fill="none" stroke="${color.stroke}" stroke-width="2.5"
+          style="opacity:0;pointer-events:none"/>
+
+        <!-- 城名 -->
+        <text x="${x}" y="${y - 1}"
+          font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif"
+          font-size="${fontSize}" font-weight="${fw}"
+          fill="${color.text}" text-anchor="middle"
+          dominant-baseline="middle"
+          filter="url(#fshadow)">${_esc(city.name)}</text>
+
+        <!-- 奖励图标 -->
+        <text x="${x}" y="${y + fontSize * 0.85}"
+          font-size="6.5" text-anchor="middle" dominant-baseline="middle" opacity="0.80"
+          style="font-family:Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif"
+          >${bonusIcon}</text>
+
+        ` : `
+        <!-- 空城内圈 -->
+        <polygon points="${hexPoints(x, y, Ri)}"
+          fill="rgba(7,6,13,0.60)" stroke="rgba(180,148,72,0.13)" stroke-width="0.8"/>
+
+        <!-- 空城城名 -->
+        <text class="sgmap-city-label-empty" x="${x}" y="${y}"
+          font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif"
+          font-size="${fontSize}" font-weight="400"
+          fill="rgba(195,162,95,0.28)"
+          text-anchor="middle" dominant-baseline="middle">${_esc(city.name)}</text>
+        `}
+      </g>`);
+    });
+
+    return parts.join('\n');
+  }
+
+
+  /* ── 公共城池查找表（_terrainLayer / _neutralGridLayer 共用） ── */
+
+
+  /* ── 统一入口（保持旧名称，外部调用不变） ── */
+  function _allHexes() {
+    // 重建城池查找表
+    _cityMap = {};
+    CITIES.forEach(c => { _cityMap[`${c.hx},${c.hy}`] = c; });
+
+    return (
+      _terrainLayer()    + '\n' +   // L1: 水墨地形底色
+      _neutralGridLayer()+ '\n' +   // L2: 中立蜂巢网格（灰色半透明）
+      _cityLayer()                   // L4: 城池主体（含势力薄膜 + 高光 + 城名）
+    );
+  }
+
+  /* ── 道路连线 ── */
+
+  function _defs() {
+    const shadow = `
+    <filter id="fshadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#000" flood-opacity="0.75"/>
+    </filter>`;
+    const hlWhite = `
+    <linearGradient id="hexHL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fff" stop-opacity="0.20"/>
+      <stop offset="50%"  stop-color="#fff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>`;
+    const hlGold = `
+    <linearGradient id="hexHLGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#ffe8a0" stop-opacity="0.22"/>
+      <stop offset="50%"  stop-color="#ffe8a0" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#ffe8a0" stop-opacity="0"/>
+    </linearGradient>`;
+    return `<defs>${shadow}${hlWhite}${hlGold}</defs>`;
+  }
+
+  function _roadLines() {
+    const drawn = new Set();
+    return ROADS.map(([aid, bid]) => {
+      const key = [aid, bid].sort().join('-');
+      if (drawn.has(key)) return '';
+      drawn.add(key);
+      const ca = CITIES.find(c => c.id === aid);
+      const cb = CITIES.find(c => c.id === bid);
+      if (!ca || !cb) return '';
+      const pa = hexToXY(ca.hx, ca.hy);
+      const pb = hexToXY(cb.hx, cb.hy);
+      const owA = cityOwnership[ca.name];
+      const owB = cityOwnership[cb.name];
+      const same = owA && owB
+        && owA.owner !== '' && owA.owner !== 'npc'
+        && owA.owner === owB.owner;
+      if (same) {
+        const pc = P_COLOR[owA.playerIdx] || NPC_C;
+        return `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}"
+          x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}"
+          stroke="${pc.glow}" stroke-width="1.5" stroke-opacity="0.4"
+          stroke-dasharray="3.5,3" stroke-linecap="round"/>`;
+      }
+      return `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}"
+        x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}"
+        stroke="rgba(255,255,255,0.04)" stroke-width="0.7"
+        stroke-dasharray="2,5" stroke-linecap="round"/>`;
+    }).join('');
+  }
+function _neutralGridLayer() {
+    const R = HEX_R; // 满半径，与相邻格子顶点精确重合
+    const parts = [];
+    for (let col = GRID_COL_START; col <= GRID_COL_END; col++) {
+      for (let row = GRID_ROW_START; row <= GRID_ROW_END; row++) {
+        if (_cityMap[`${col},${row}`]) continue;
+        const { x, y } = hexToXY(col, row);
+        const pts = hexPoints(x, y, R);
+        parts.push(
+          `<polygon class="sgmap-neutral-hex" points="${pts}"` +
+          ` fill="rgba(0,0,0,0.15)"` +
+          ` stroke="rgba(180,150,90,0.35)" stroke-width="0.8"` +
+          ` style="filter:blur(0.3px);pointer-events:none"/>`
+        );
+      }
+    }
+    return `<g class="sgmap-neutral-grid">\n${parts.join('\n')}\n</g>`;
+  }
+
+  /* ── Layer 4: 城池主体（有城格全部绘制） ── */
+  function _cityLayer() {
+    const R  = HEX_R;      // 满半径外边框，与中立格完全对齐
+    const Ri = HEX_R - 5;  // 内圈缩进5px
+    const parts = [];
+
+    CITIES.forEach(city => {
+      const { x, y } = hexToXY(city.hx, city.hy);
+      const ow = cityOwnership[city.name];
+      let isPlayer = false, pidx = -1, isNPC = false, color = EMPTY_C;
+
+      if (!ow || ow.owner === '') {
+        color = EMPTY_C;
+      } else if (ow.owner === 'npc') {
+        isNPC = true;
+        const slotIdx = ow.faction != null ? _npcFactionSlots[ow.faction] : undefined;
+        color = (slotIdx !== undefined) ? NPC_FACTION_COLORS[slotIdx] : NPC_C;
+      } else {
+        pidx = ow.playerIdx;
+        color = P_COLOR[pidx] || EMPTY_C;
+        isPlayer = true;
+      }
+
+      const tc         = TERRAIN[city.terrain || '平原'] || TERRAIN._default;
+      const isCityOwned = isPlayer || isNPC;
+      const hlGrad     = isNPC ? 'hexHLGold' : 'hexHL';
+      const bonusIcon  = BONUS_ICON[city.bonusKey] || '';
+      const fontSize   = 8.0;
+      const fw         = 400;
+
+      parts.push(`
+      <g class="sgmap-city" data-id="${city.id}" data-name="${_esc(city.name)}" data-stroke="${color.stroke}" style="cursor:pointer">
+
+        <!-- 外边框：满半径，与中立格对齐 -->
+        <polygon points="${hexPoints(x, y, R)}"
+          fill="none" stroke="rgba(175,155,95,0.38)" stroke-width="0.8"
+          style="pointer-events:none"/>
+
+        ${isCityOwned ? `
+        <!-- 城池主体（内缩） -->
+        <polygon points="${hexPoints(x, y, Ri)}"
+          fill="${color.fill}"
+          stroke="${color.stroke}" stroke-width="1.4"
+          filter="url(#fshadow)"/>
+
+        <!-- 势力色薄膜 -->
+        <polygon points="${hexPoints(x, y, Ri)}"
+          fill="${color.film}" stroke="none"
+          style="pointer-events:none"/>
+
+        <!-- 顶部高光 -->
+        <polygon points="${hexPoints(x, y - 1, Ri * 0.86)}"
+          fill="url(#${hlGrad})" stroke="none"
+          style="pointer-events:none"/>
+
+        <!-- hover 光环 -->
+        <polygon class="sgmap-city-ring" points="${hexPoints(x, y, Ri + 2)}"
+          fill="none" stroke="${color.stroke}" stroke-width="2.5"
+          style="opacity:0;pointer-events:none"/>
+
+        <!-- 城名 -->
+        <text x="${x}" y="${y - 1}"
+          font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif"
+          font-size="${fontSize}" font-weight="${fw}"
+          fill="${color.text}" text-anchor="middle"
+          dominant-baseline="middle"
+          filter="url(#fshadow)">${_esc(city.name)}</text>
+
+        <!-- 奖励图标 -->
+        <text x="${x}" y="${y + fontSize * 0.85}"
+          font-size="6.5" text-anchor="middle" dominant-baseline="middle" opacity="0.80"
+          style="font-family:Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif"
+          >${bonusIcon}</text>
+
+        ` : `
+        <!-- 空城内圈 -->
+        <polygon points="${hexPoints(x, y, Ri)}"
+          fill="rgba(7,6,13,0.60)" stroke="rgba(180,148,72,0.13)" stroke-width="0.8"/>
+
+        <!-- 空城城名 -->
+        <text class="sgmap-city-label-empty" x="${x}" y="${y}"
+          font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif"
+          font-size="${fontSize}" font-weight="400"
+          fill="rgba(195,162,95,0.28)"
+          text-anchor="middle" dominant-baseline="middle">${_esc(city.name)}</text>
+        `}
+      </g>`);
+    });
+
+    return parts.join('\n');
+  }
+
+
+  /* ── 公共城池查找表（_terrainLayer / _neutralGridLayer 共用） ── */
+
+
+  /* ── 统一入口（保持旧名称，外部调用不变） ── */
+  function _allHexes() {
+    // 重建城池查找表
+    _cityMap = {};
+    CITIES.forEach(c => { _cityMap[`${c.hx},${c.hy}`] = c; });
+
+    return (
+      _terrainLayer()    + '\n' +   // L1: 水墨地形底色
+      _neutralGridLayer()+ '\n' +   // L2: 中立蜂巢网格（灰色半透明）
+      _cityLayer()                   // L4: 城池主体（含势力薄膜 + 高光 + 城名）
+    );
+  }
+
+  /* ── 道路连线 ── */
+
+  function _defs() {
+    const shadow = `
+    <filter id="fshadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#000" flood-opacity="0.75"/>
+    </filter>`;
+    const hlWhite = `
+    <linearGradient id="hexHL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fff" stop-opacity="0.20"/>
+      <stop offset="50%"  stop-color="#fff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>`;
+    const hlGold = `
+    <linearGradient id="hexHLGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#ffe8a0" stop-opacity="0.22"/>
+      <stop offset="50%"  stop-color="#ffe8a0" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#ffe8a0" stop-opacity="0"/>
+    </linearGradient>`;
+    return `<defs>${shadow}${hlWhite}${hlGold}</defs>`;
+  }
+
+  function _roadLines() {
+    const drawn = new Set();
+    return ROADS.map(([aid, bid]) => {
+      const key = [aid, bid].sort().join('-');
+      if (drawn.has(key)) return '';
+      drawn.add(key);
+      const ca = CITIES.find(c => c.id === aid);
+      const cb = CITIES.find(c => c.id === bid);
+      if (!ca || !cb) return '';
+      const pa = hexToXY(ca.hx, ca.hy);
+      const pb = hexToXY(cb.hx, cb.hy);
+      const owA = cityOwnership[ca.name];
+      const owB = cityOwnership[cb.name];
+      const same = owA && owB
+        && owA.owner !== '' && owA.owner !== 'npc'
+        && owA.owner === owB.owner;
+      if (same) {
+        const pc = P_COLOR[owA.playerIdx] || NPC_C;
+        return `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}"
+          x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}"
+          stroke="${pc.glow}" stroke-width="1.5" stroke-opacity="0.4"
+          stroke-dasharray="3.5,3" stroke-linecap="round"/>`;
+      }
+      return `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}"
+        x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}"
+        stroke="rgba(255,255,255,0.04)" stroke-width="0.7"
+        stroke-dasharray="2,5" stroke-linecap="round"/>`;
+    }).join('');
+  }
+function _cityLayer() {
+    const R  = HEX_R;      // 满半径外边框，与中立格完全对齐
+    const Ri = HEX_R - 5;  // 内圈缩进5px
+    const parts = [];
+
+    CITIES.forEach(city => {
+      const { x, y } = hexToXY(city.hx, city.hy);
+      const ow = cityOwnership[city.name];
+      let isPlayer = false, pidx = -1, isNPC = false, color = EMPTY_C;
+
+      if (!ow || ow.owner === '') {
+        color = EMPTY_C;
+      } else if (ow.owner === 'npc') {
+        isNPC = true;
+        const slotIdx = ow.faction != null ? _npcFactionSlots[ow.faction] : undefined;
+        color = (slotIdx !== undefined) ? NPC_FACTION_COLORS[slotIdx] : NPC_C;
+      } else {
+        pidx = ow.playerIdx;
+        color = P_COLOR[pidx] || EMPTY_C;
+        isPlayer = true;
+      }
+
+      const tc         = TERRAIN[city.terrain || '平原'] || TERRAIN._default;
+      const isCityOwned = isPlayer || isNPC;
+      const hlGrad     = isNPC ? 'hexHLGold' : 'hexHL';
+      const bonusIcon  = BONUS_ICON[city.bonusKey] || '';
+      const fontSize   = 8.0;
+      const fw         = 400;
+
+      parts.push(`
+      <g class="sgmap-city" data-id="${city.id}" data-name="${_esc(city.name)}" data-stroke="${color.stroke}" style="cursor:pointer">
+
+        <!-- 外边框：满半径，与中立格对齐 -->
+        <polygon points="${hexPoints(x, y, R)}"
+          fill="none" stroke="rgba(175,155,95,0.38)" stroke-width="0.8"
+          style="pointer-events:none"/>
+
+        ${isCityOwned ? `
+        <!-- 城池主体（内缩） -->
+        <polygon points="${hexPoints(x, y, Ri)}"
+          fill="${color.fill}"
+          stroke="${color.stroke}" stroke-width="1.4"
+          filter="url(#fshadow)"/>
+
+        <!-- 势力色薄膜 -->
+        <polygon points="${hexPoints(x, y, Ri)}"
+          fill="${color.film}" stroke="none"
+          style="pointer-events:none"/>
+
+        <!-- 顶部高光 -->
+        <polygon points="${hexPoints(x, y - 1, Ri * 0.86)}"
+          fill="url(#${hlGrad})" stroke="none"
+          style="pointer-events:none"/>
+
+        <!-- hover 光环 -->
+        <polygon class="sgmap-city-ring" points="${hexPoints(x, y, Ri + 2)}"
+          fill="none" stroke="${color.stroke}" stroke-width="2.5"
+          style="opacity:0;pointer-events:none"/>
+
+        <!-- 城名 -->
+        <text x="${x}" y="${y - 1}"
+          font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif"
+          font-size="${fontSize}" font-weight="${fw}"
+          fill="${color.text}" text-anchor="middle"
+          dominant-baseline="middle"
+          filter="url(#fshadow)">${_esc(city.name)}</text>
+
+        <!-- 奖励图标 -->
+        <text x="${x}" y="${y + fontSize * 0.85}"
+          font-size="6.5" text-anchor="middle" dominant-baseline="middle" opacity="0.80"
+          style="font-family:Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif"
+          >${bonusIcon}</text>
+
+        ` : `
+        <!-- 空城内圈 -->
+        <polygon points="${hexPoints(x, y, Ri)}"
+          fill="rgba(7,6,13,0.60)" stroke="rgba(180,148,72,0.13)" stroke-width="0.8"/>
+
+        <!-- 空城城名 -->
+        <text class="sgmap-city-label-empty" x="${x}" y="${y}"
+          font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif"
+          font-size="${fontSize}" font-weight="400"
+          fill="rgba(195,162,95,0.28)"
+          text-anchor="middle" dominant-baseline="middle">${_esc(city.name)}</text>
+        `}
+      </g>`);
+    });
+
+    return parts.join('\n');
+  }
+
+
+  /* ── 公共城池查找表（_terrainLayer / _neutralGridLayer 共用） ── */
+
+
+  /* ── 统一入口（保持旧名称，外部调用不变） ── */
+  function _allHexes() {
+    // 重建城池查找表
+    _cityMap = {};
+    CITIES.forEach(c => { _cityMap[`${c.hx},${c.hy}`] = c; });
+
+    return (
+      _terrainLayer()    + '\n' +   // L1: 水墨地形底色
+      _neutralGridLayer()+ '\n' +   // L2: 中立蜂巢网格（灰色半透明）
+      _cityLayer()                   // L4: 城池主体（含势力薄膜 + 高光 + 城名）
+    );
+  }
+
+  /* ── 道路连线 ── */
+
+  function _defs() {
+    const shadow = `
+    <filter id="fshadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#000" flood-opacity="0.75"/>
+    </filter>`;
+    const hlWhite = `
+    <linearGradient id="hexHL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fff" stop-opacity="0.20"/>
+      <stop offset="50%"  stop-color="#fff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>`;
+    const hlGold = `
+    <linearGradient id="hexHLGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#ffe8a0" stop-opacity="0.22"/>
+      <stop offset="50%"  stop-color="#ffe8a0" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#ffe8a0" stop-opacity="0"/>
+    </linearGradient>`;
+    return `<defs>${shadow}${hlWhite}${hlGold}</defs>`;
+  }
+
+  function _roadLines() {
+    const drawn = new Set();
+    return ROADS.map(([aid, bid]) => {
+      const key = [aid, bid].sort().join('-');
+      if (drawn.has(key)) return '';
+      drawn.add(key);
+      const ca = CITIES.find(c => c.id === aid);
+      const cb = CITIES.find(c => c.id === bid);
+      if (!ca || !cb) return '';
+      const pa = hexToXY(ca.hx, ca.hy);
+      const pb = hexToXY(cb.hx, cb.hy);
+      const owA = cityOwnership[ca.name];
+      const owB = cityOwnership[cb.name];
+      const same = owA && owB
+        && owA.owner !== '' && owA.owner !== 'npc'
+        && owA.owner === owB.owner;
+      if (same) {
+        const pc = P_COLOR[owA.playerIdx] || NPC_C;
+        return `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}"
+          x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}"
+          stroke="${pc.glow}" stroke-width="1.5" stroke-opacity="0.4"
+          stroke-dasharray="3.5,3" stroke-linecap="round"/>`;
+      }
+      return `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}"
+        x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}"
+        stroke="rgba(255,255,255,0.04)" stroke-width="0.7"
+        stroke-dasharray="2,5" stroke-linecap="round"/>`;
+    }).join('');
+  }
+function _allHexes() {
+    // 重建城池查找表
+    _cityMap = {};
+    CITIES.forEach(c => { _cityMap[`${c.hx},${c.hy}`] = c; });
+
+    return (
+      _terrainLayer()    + '\n' +   // L1: 水墨地形底色
+      _neutralGridLayer()+ '\n' +   // L2: 中立蜂巢网格（灰色半透明）
+      _cityLayer()                   // L4: 城池主体（含势力薄膜 + 高光 + 城名）
+    );
+  }
+function _svg() {
+    const b = _calcViewBox();
+    return `<svg xmlns="http://www.w3.org/2000/svg"
+      id="sgmap-svg"
+      viewBox="${b.x.toFixed(1)} ${b.y.toFixed(1)} ${b.w.toFixed(1)} ${b.h.toFixed(1)}"
+      preserveAspectRatio="xMidYMid meet"
+      style="display:block;width:100%;height:auto;">
+      ${_defs()}
+
+      <!-- ── 最底层：水墨战略底图 ── -->
+
+
+      <!-- ── 暗化蒙版：压深底图，突出城池与网格 ── -->
+      <rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"
+        fill="rgba(5,4,10,0.62)" style="pointer-events:none"/>
+
+      ${_allHexes()}
+      <g id="road-layer">${_roadLines()}</g>
+    </svg>`;
+  }
+
+function _calcProd(city, ow) {
+    const tier = CITY_TIER_MAP[city.name] || '郡城';
+    const base = CITY_TIER_BASE[tier];
+    let gold = base.gold, food = base.food;
+    const mults = [];
+    (city.bonusKeys || [city.bonusKey] || []).forEach(k => {
+      const m = BONUS_MULT[k]; if (!m) return;
+      if (m.gold) { gold *= m.gold; mults.push({k, type:'gold', v:m.gold}); }
+      if (m.food) { food *= m.food; mults.push({k, type:'food', v:m.food}); }
+    });
+    const isPlayer = ow && ow.owner && ow.owner !== 'npc' && ow.owner !== '';
+    const chain = { base, tier, mults };
+    return { gold: Math.round(gold), food: Math.round(food), chain, isPlayer };
+  }
+
+
+
+
+// Event binding mock because map.js bindEvents depends on dom
+let _tooltip = null;
+function init() {
+  _tooltip = document.getElementById('sgmap-tooltip');
+
+  // Set empty ownership for all cities
+  CITIES.forEach(c => {
+    cityOwnership[c.name] = {
+      owner: 'npc', playerIdx: -1, playerName: '',
+      holder: c.npcGuard || '', troops: {}, isMulti: false,
+    };
+  });
+
+  const mapContainer = document.getElementById('map-container');
+  mapContainer.innerHTML = _svg();
+
+  // Bind hover
+  const svg = document.getElementById('sgmap-svg');
+  if(svg) {
+      const gHover = svg.querySelector('g') || svg; // any element
+      svg.addEventListener('mousemove', e => {
+        const t = e.target.closest('.sgmap-city');
+        if (!t) { _hideTip(); return; }
+        const cname = t.getAttribute('data-name');
+        const city = CITIES.find(x => x.name === cname);
+        if (city) {
+            // fake e, _moveTip needs clientX
+            _showTip(e, city);
+        }
+      });
+      svg.addEventListener('mouseleave', () => _hideTip());
+  }
+}
+
+window.onload = function() {
+  init();
+
+  const btnDesktop = document.getElementById('btn-view-desktop');
+  const btnMobile = document.getElementById('btn-view-mobile');
+  const btnToggleNew = document.getElementById('btn-toggle-new');
+  const mapContainer = document.getElementById('map-container');
+
+  btnDesktop.addEventListener('click', () => {
+    btnDesktop.classList.add('active');
+    btnMobile.classList.remove('active');
+    mapContainer.classList.remove('mobile-view');
+  });
+
+  btnMobile.addEventListener('click', () => {
+    btnMobile.classList.add('active');
+    btnDesktop.classList.remove('active');
+    mapContainer.classList.add('mobile-view');
+  });
+
+  let showNew = true;
+  btnToggleNew.addEventListener('click', () => {
+    showNew = !showNew;
+    if (showNew) {
+      btnToggleNew.textContent = '隐藏新城';
+      btnToggleNew.classList.remove('hidden-new');
+      btnToggleNew.classList.add('active');
+
+      const newRings = document.querySelectorAll('.new-city-ring');
+      const newMarkers = document.querySelectorAll('.new-city-marker');
+      const newRoads = document.querySelectorAll('.new-city-road');
+
+      newRings.forEach(el => el.style.display = '');
+      newMarkers.forEach(el => el.style.display = '');
+      newRoads.forEach(el => el.style.display = '');
+
+    } else {
+      btnToggleNew.textContent = '显示新城';
+      btnToggleNew.classList.add('hidden-new');
+      btnToggleNew.classList.remove('active');
+
+      const newRings = document.querySelectorAll('.new-city-ring');
+      const newMarkers = document.querySelectorAll('.new-city-marker');
+      const newRoads = document.querySelectorAll('.new-city-road');
+
+      newRings.forEach(el => el.style.display = 'none');
+      newMarkers.forEach(el => el.style.display = 'none');
+      newRoads.forEach(el => el.style.display = 'none');
+    }
+  });
+};
+
+// Mock map.js global properties just in case
+const SGMap = { getFactionColor: () => null, P_COLOR: [] };
+
+  </script>
+</body>
+</html>
