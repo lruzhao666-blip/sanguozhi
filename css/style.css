@@ -6092,3 +6092,38 @@ body.fx-off-captured [data-ctype="captured"] {
   }
   .gtp-portrait-fallback { font-size: 3.4rem; }
 }
+
+/* v20260801a 工单#generals-tooltip-divider-mobileslim-A:
+   1)分隔线改单色暗金细线 去掉五段对称金渐变
+   2)移动端≤480保持左右双栏 立绘100px 正文字号紧凑一档 */
+
+/* ── 1. 分隔线：单色暗金细线 ── */
+.gtp-divider {
+  background: rgba(180,120,40,.20) !important;
+}
+
+/* ── 2. 移动端瘦身（覆盖原 @media 480 单列规则）── */
+@media (max-width: 480px) {
+  #gen-tooltip .gtp-body {
+    grid-template-columns: 100px 1fr;
+    gap: 10px;
+    padding: 12px 12px 12px;
+  }
+  #gen-tooltip .gtp-portrait-wrap {
+    width: 100px;
+    justify-self: start;
+  }
+  #gen-tooltip .gtp-portrait-fallback {
+    font-size: 2.8rem;
+  }
+  #gen-tooltip .gtp-name      { font-size: 1.02rem; letter-spacing: .06em; }
+  #gen-tooltip .gtp-courtesy  { font-size: .72rem; }
+  #gen-tooltip .gtp-nickname  { font-size: .72rem; margin: 4px 0 6px; }
+  #gen-tooltip .gtp-badges    { gap: 5px; margin-top: 6px; }
+  #gen-tooltip .gtp-badge     { font-size: .6rem; padding: 1px 7px; }
+  #gen-tooltip .gtp-divider   { margin: 8px 0 6px; }
+  #gen-tooltip .gtp-bio       { font-size: .76rem; line-height: 1.7; margin-bottom: 8px; }
+  #gen-tooltip .gtp-roles-label { font-size: .56rem; margin: 8px 0 5px; }
+  #gen-tooltip .gtp-role      { font-size: .64rem; padding: 1px 7px; }
+  #gen-tooltip .gtp-roles     { gap: 4px; }
+}
