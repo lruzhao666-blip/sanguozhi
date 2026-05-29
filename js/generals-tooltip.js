@@ -1,11 +1,12 @@
 /**
- * generals-tooltip.js — 武将悬浮档案面板 v2.0
+ * generals-tooltip.js — 武将悬浮档案面板 v2.1
  *
  * 功能：
  *  1. 鼠标悬停 .gen-tag 元素 → 查询 Supabase generals_static 表
  *  2. 显示武将姓名、字、外号、归属、档次、生平、适配职务
  *  3. 查询不到时显示"暂无档案"兜底，绝不报错
  *  4. 移出鼠标 200ms 后消失，避免抖动
+ *  6. v2.1 新增人物立绘左栏（方向 A · 左像右档，无装饰，contain 完整显示）
  *
  * UI 设计语言与城池弹框（sgt-*）一致：
  *  - 顶部色条（档次色）
@@ -107,20 +108,44 @@
 
     // ── 无档案兜底 ──────────────────────────
     if (!data) {
+      var emptyChar = _esc((name || '？').charAt(0));
       _tip.innerHTML =
         '<div class="gtp-tier-bar" style="background:rgba(120,120,120,.4)"></div>' +
         '<div class="gtp-body">' +
-          '<div class="gtp-header">' +
-            '<span class="gtp-name">' + _esc(name) + '</span>' +
+          '<div class="gtp-portrait-wrap">' +
+            '<div class="gtp-portrait-fallback">' + emptyChar + '</div>' +
           '</div>' +
-          '<div class="gtp-divider"></div>' +
-          '<div class="gtp-empty">暂无档案，正在补录中。</div>' +
+          '<div class="gtp-info">' +
+            '<div class="gtp-header">' +
+              '<span class="gtp-name">' + _esc(name) + '</span>' +
+            '</div>' +
+            '<div class="gtp-divider"></div>' +
+            '<div class="gtp-empty">暂无档案，正在补录中。</div>' +
+          '</div>' +
         '</div>';
       return;
     }
 
     var ts = TIER_STYLE[data.tier]       || TIER_STYLE['常规'];
     var fs = FACTION_STYLE[data.faction_hint] || FACTION_STYLE['群雄'];
+
+    // ── 立绘左栏（v2.1 新增）──────────────
+    var portraitHtml = '';
+    var portraitUrl = data.portrait_url || '';
+    if (portraitUrl) {
+      var fallbackChar = _esc((data.name || '？').charAt(0));
+      portraitHtml =
+        '<div class="gtp-portrait-wrap">' +
+          '<img class="gtp-portrait-img" src="' + _esc(portraitUrl) + '" alt="" ' +
+            'onerror="this.parentNode.innerHTML=\'<div class=&quot;gtp-portrait-fallback&quot;>' + fallbackChar + '</div>\'">' +
+        '</div>';
+    } else {
+      var firstChar = _esc((data.name || '？').charAt(0));
+      portraitHtml =
+        '<div class="gtp-portrait-wrap">' +
+          '<div class="gtp-portrait-fallback">' + firstChar + '</div>' +
+        '</div>';
+    }
 
     // ── 顶部色条 ────────────────────────────
     var barHtml = '<div class="gtp-tier-bar" style="background:' + ts.bar + '"></div>';
@@ -177,7 +202,12 @@
     // ── body 容器关 ──────────────────────────
     var bodyClose = '</div>';
 
-    _tip.innerHTML = barHtml + bodyOpen + headerHtml + nicknameHtml + badgeHtml + divHtml + bioHtml + rolesHtml + bodyClose;
+    _tip.innerHTML = barHtml + bodyOpen +
+      portraitHtml +
+      '<div class="gtp-info">' +
+        headerHtml + nicknameHtml + badgeHtml + divHtml + bioHtml + rolesHtml +
+      '</div>' +
+      bodyClose;
   }
 
   // 徽章 span（带 inline bg/border/color，复用 faction/tier 色对象）
@@ -229,7 +259,7 @@
   function fetchGeneral(name) {
     var url = SUPABASE_URL + '/rest/v1/generals_static'
       + '?name=eq.' + encodeURIComponent(name)
-      + '&select=name,courtesy_name,nickname,faction_hint,tier,biography,suitable_roles'
+      + '&select=name,courtesy_name,nickname,faction_hint,tier,biography,suitable_roles,portrait_url'
       + '&limit=1';
 
     fetch(url, {
