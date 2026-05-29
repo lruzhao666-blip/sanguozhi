@@ -5918,3 +5918,90 @@ body.fx-off-captured [data-ctype="captured"] {
 .pcard.pcard-v4 .res-emoji,
 .pcard.pcard-v4 .pcc-icon,
 .pcard.pcard-v4 .pcs-icon { opacity: 1; }
+
+/* ════════════════════════════════════════════════════
+   v20260720a 工单#ach-skeleton-A:成就槽 + toast 视觉
+   ════════════════════════════════════════════════════ */
+
+/* 5 档稀有度色变量(全部沿用既有色,不引入新色) */
+:root{
+  --rar-bronze:    #a07830;
+  --rar-common:    #c8b89a;
+  --rar-rare:      #5fb8c8;
+  --rar-epic:      #9868b8;
+  --rar-legendary: #d4a843;
+}
+
+/* 玩家卡头部 · 成就槽 */
+.pc-ach-slot{
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 11px 5px 9px;
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 14px;
+  cursor: pointer; transition: all .2s;
+  font-family: var(--font-serif);
+  position: relative;
+}
+.pc-ach-slot:hover{
+  background: rgba(0,0,0,.55);
+  border-color: var(--ach-rar-color, var(--gold-dim));
+  transform: translateY(-1px);
+}
+.pc-ach-slot::before{
+  content:''; width:6px; height:6px; border-radius:50%;
+  background: var(--ach-rar-color, var(--text-dim));
+  box-shadow: 0 0 6px var(--ach-rar-color, transparent);
+  flex-shrink: 0;
+}
+.pc-ach-slot .ach-title{
+  font-size: .78rem; color: var(--text-main); font-weight: 600;
+  letter-spacing: .04em;
+  max-width: 6.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pc-ach-slot .ach-count{
+  font-size: .68rem; color: var(--text-dim); font-weight: 500;
+  padding-left: 7px;
+  border-left: 1px solid rgba(255,255,255,.08);
+  letter-spacing: .04em;
+}
+.pc-ach-slot.rar-bronze    { --ach-rar-color: var(--rar-bronze); }
+.pc-ach-slot.rar-common    { --ach-rar-color: var(--rar-common); }
+.pc-ach-slot.rar-rare      { --ach-rar-color: var(--rar-rare); }
+.pc-ach-slot.rar-epic      { --ach-rar-color: var(--rar-epic); }
+.pc-ach-slot.rar-legendary { --ach-rar-color: var(--rar-legendary); }
+.pc-ach-slot.rar-legendary .ach-title { color: var(--gold-light); }
+.pc-ach-slot.rar-epic      .ach-title { color: #e0c8f0; }
+.pc-ach-slot.rar-rare      .ach-title { color: #d8eef2; }
+.pc-ach-slot.rar-none      { opacity: .55; }
+.pc-ach-slot.rar-none      .ach-title { color: var(--text-dim); font-style: italic; }
+
+/* 解锁 Toast */
+.ach-toast{
+  position: fixed; bottom: 32px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: linear-gradient(135deg, rgba(40,15,0,.97), rgba(20,5,0,.97));
+  border: 1px solid var(--rar-color, var(--gold));
+  border-left: 3px solid var(--rar-color, var(--gold));
+  border-radius: var(--rl);
+  color: var(--text-main);
+  padding: 11px 22px 11px 18px;
+  font-family: var(--font-serif);
+  z-index: 9999; opacity: 0; transition: all .3s cubic-bezier(.2,.8,.3,1);
+  box-shadow: 0 6px 28px rgba(0,0,0,.55), 0 0 24px rgba(212,168,67,.12);
+  pointer-events: none;
+  display: flex; align-items: center; gap: 12px;
+}
+.ach-toast.show{
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
+.ach-toast-icon{
+  font-size: .85rem; color: var(--rar-color, var(--gold)); font-weight: 900;
+  width: 24px; height: 24px;
+  border: 1px solid var(--rar-color, var(--gold));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.ach-toast-body{ display: flex; flex-direction: column; gap: 1px; }
+.ach-toast-label{ font-size: .62rem; color: var(--text-dim); letter-spacing: .14em; }
+.ach-toast-name{ font-size: .92rem; color: var(--gold-light); font-weight: 700; letter-spacing: .05em; }
