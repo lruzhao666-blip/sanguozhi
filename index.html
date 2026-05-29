@@ -7,7 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=v20260721a-rollback" />
+  <link rel="stylesheet" href="css/style.css?v=v20260729a-cleanup" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
 
@@ -542,49 +543,5 @@
 <script src="js/generals-tooltip.js?v=v20260628a"></script>
 <script src="js/main.js?v=v20260628a"></script>
 <script src="js/secret-action.js?v=v20260704c"></script>
-<script>
-/* v20260706a-debug 工单#debug-locate-小长条 — 上线后即可删除 */
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    console.log('═══════════ 小长条尸检开始 ═══════════');
-    const arena = document.querySelector('.arena-body') || document.body;
-    const suspects = [];
-    arena.querySelectorAll('*').forEach(el => {
-      const r = el.getBoundingClientRect();
-      const cs = getComputedStyle(el);
-      const blw = parseFloat(cs.borderLeftWidth) || 0;
-      // 嫌疑条件：宽 < 30px、高 > 150px、且有可见 border-left 或背景
-      const hasVisibleEdge = blw >= 2 || (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent');
-      if (r.width > 0 && r.width < 30 && r.height > 150 && hasVisibleEdge) {
-        suspects.push({
-          el,
-          tag: el.tagName,
-          id: el.id || '(no-id)',
-          cls: el.className || '(no-class)',
-          rect: `${Math.round(r.width)}×${Math.round(r.height)} @ left:${Math.round(r.left)}`,
-          borderLeft: cs.borderLeft,
-          background: cs.backgroundColor,
-          outerHTML: el.outerHTML.slice(0, 300)
-        });
-      }
-    });
-    if (suspects.length === 0) {
-      console.warn('未找到符合"细长 + 有边/底"特征的元素，请人工检查 .players-block 范围。');
-    } else {
-      console.log(`找到 ${suspects.length} 个嫌疑元素：`);
-      suspects.forEach((s, i) => {
-        console.log(`──── 嫌疑 #${i+1} ────`);
-        console.log('标签 / id / class :', s.tag, '#'+s.id, '.'+s.cls);
-        console.log('尺寸位置 :', s.rect);
-        console.log('border-left :', s.borderLeft);
-        console.log('background :', s.background);
-        console.log('outerHTML :', s.outerHTML);
-        console.log('DOM 节点 (点开看父链) :', s.el);
-      });
-    }
-    console.log('═══════════ 尸检结束 ═══════════');
-  }, 800);
-});
-</script>
 </body>
 </html>
