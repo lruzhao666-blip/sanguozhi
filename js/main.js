@@ -419,7 +419,6 @@
     }
     updateFooter();
     updateUndoBtn();
-    if (window.SGAch && SGAch.refresh) SGAch.refresh(state.rounds);
   }
 
 // ─────────────────────────────────────────
