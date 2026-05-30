@@ -6338,3 +6338,30 @@ body.fx-off-captured [data-ctype="captured"] {
     min-width:56px !important;
   }
 }
+
+/* v20260819a 工单#generals-tag-color-lock-v1:
+   清除武将 tag 文字色与边框色的势力色残留
+   - color  直写 #f0e6d3,绕开被污染的 --gt-glow 变量
+   - border 四分量全部 !important,防止 border-color / border-X-color 单独压过 shorthand
+   ──────────────────────────────────────────────────────── */
+.pcard-v4[data-slot] .gen-tag,
+.pcard-v4[data-slot] .gen-tag:hover{
+  color:#f0e6d3 !important;
+}
+
+.pcard-v4[data-slot] .gen-tag{
+  border:1px solid rgba(212,168,67,.28) !important;
+  border-color:rgba(212,168,67,.28) !important;
+  border-top-color:rgba(212,168,67,.28) !important;
+  border-right-color:rgba(212,168,67,.28) !important;
+  border-bottom-color:rgba(212,168,67,.28) !important;
+  border-left-color:rgba(212,168,67,.28) !important;
+}
+.pcard-v4[data-slot] .gen-tag:hover{
+  border:1px solid rgba(212,168,67,.55) !important;
+  border-color:rgba(212,168,67,.55) !important;
+  border-top-color:rgba(212,168,67,.55) !important;
+  border-right-color:rgba(212,168,67,.55) !important;
+  border-bottom-color:rgba(212,168,67,.55) !important;
+  border-left-color:rgba(212,168,67,.55) !important;
+}
