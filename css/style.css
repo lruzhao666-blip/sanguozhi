@@ -6543,3 +6543,65 @@ body.fx-off-captured [data-ctype="captured"] {
     min-width:auto !important;
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20260902a 工单#gen-tag-B-v2-refine-dim-gradient:
+   武将徽章 UI 精修
+   — 字色融入 · 双线立体描边(压暗) · 紧凑无 min-width · 角标内嵌 · 渐变底色
+
+   设计决策(基于 v20260901a 之上的增量微调):
+   1. 字色 #f0e6d3 → #c8b89a(站点 --text-sub),不再"顶"出来,融入暗金底
+   2. 描边 1.5px → 1px,透明度 .55 → .6,顶部高光+底部暗压 inset 阴影
+      做出"古籍烫金双线装裱"立体感(压暗版,不抢一级标题视觉权重)
+   3. min-width:58px 砍掉,padding 10px,二字名自然紧凑、三字名不挤
+   4. overflow:hidden + 角标 8px → 9px,三角内嵌进圆角不外露
+   5. hover 移除外投影(被 overflow 裁掉无意义),改为加深内阴影+边框提亮
+   6. 底色 rgba(40,26,8,.6) 纯色 → 180° 线性渐变(上 #34220A 下 #1C1205),
+      明度差约 12%,配合内阴影做"微凸金属铭牌"立体感
+   ══════════════════════════════════════════════════════════════ */
+
+.pcard-v4[data-slot] .gen-tag{
+  min-width:auto !important;
+  padding:5px 10px !important;
+  color:#c8b89a !important;
+  background:linear-gradient(180deg, rgba(52,34,10,.65) 0%, rgba(28,18,5,.65) 100%) !important;
+  background-color:rgba(40,26,8,.6) !important;
+  border:1px solid rgba(212,168,67,.6) !important;
+  border-color:rgba(212,168,67,.6) !important;
+  border-top-color:rgba(212,168,67,.6) !important;
+  border-right-color:rgba(212,168,67,.6) !important;
+  border-bottom-color:rgba(212,168,67,.6) !important;
+  border-left-color:rgba(212,168,67,.6) !important;
+  overflow:hidden !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(240,192,96,.12),
+    inset 0 1px 0 rgba(255,220,140,.08),
+    inset 0 -1px 0 rgba(0,0,0,.28) !important;
+  transition:color .18s, background .18s, border-color .18s, transform .18s !important;
+}
+.pcard-v4[data-slot] .gen-tag:hover{
+  color:#f0e6d3 !important;
+  background:linear-gradient(180deg, rgba(84,56,18,.72) 0%, rgba(52,34,10,.72) 100%) !important;
+  background-color:rgba(70,46,14,.7) !important;
+  border:1px solid #f0c060 !important;
+  border-color:#f0c060 !important;
+  border-top-color:#f0c060 !important;
+  border-right-color:#f0c060 !important;
+  border-bottom-color:#f0c060 !important;
+  border-left-color:#f0c060 !important;
+  transform:translateY(-1px) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(240,192,96,.22),
+    inset 0 1px 0 rgba(255,220,140,.14),
+    inset 0 -1px 0 rgba(0,0,0,.3) !important;
+}
+.pcard-v4[data-slot] .gen-tag::after{
+  border-width:9px 9px 0 0 !important;
+}
+@media (max-width:720px){
+  .pcard-v4[data-slot] .gen-tag{
+    padding:4px 9px !important;
+    font-size:.78rem !important;
+    min-width:auto !important;
+  }
+}
