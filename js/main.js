@@ -1488,13 +1488,6 @@
   }
 
   function buildGenTag(g, slot) {
-    var statusKey = genStatusKey(g.status);
-    var isDead    = statusKey === 'dead';
-
-    // 状态文字映射（仅用于 title tooltip）
-    var STATUS_LABEL = { healthy:'健康', tired:'疲劳', injured:'受伤', sick:'患病', dead:'阵亡' };
-    var statusLabel  = STATUS_LABEL[statusKey] || (g.status || '健康');
-
     // 势力色：slot 0/1/2 → 红/绿/蓝；其他兜底用旧状态色
     var fc = GEN_FACTION_STYLES[slot] || GEN_STATUS_STYLES.healthy;
 
@@ -1503,7 +1496,7 @@
       + 'border:1px solid ' + fc.bd + ';'
       + 'color:' + fc.c + ';';
 
-    return '<span class="gen-tag" data-status="' + statusKey
+    return '<span class="gen-tag" data-status="' + esc(g.status || '健康')
       + '" data-name="' + esc(g.name) + '"'
       + ' style="' + wrapStyle + '">'
       + esc(g.name)
