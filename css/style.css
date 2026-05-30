@@ -6199,3 +6199,76 @@ body.fx-off-captured [data-ctype="captured"] {
   .pcard-v4 .gen-list,
   .pcard-v4 .gen-list-expand{gap:6px}
 }
+
+/* v20260816a 工单#generals-status-ui-v1-fix:
+   - 修复:旧规则 .pcard-v4[data-slot="N"] .gen-tag 优先级(0,3,0)压过 v20260815a(0,2,0)
+     → 本段全部选择器升级为 .pcard-v4[data-slot] .gen-tag,优先级追平并靠后写覆盖
+   - 升级:尺寸从 1a 改为 1b 加宽版 — padding 6/14,字号 .86rem,gap 8,min-width 64
+   ──────────────────────────────────────────────────────── */
+
+/* 基底:中性暗金 + 1b 加宽 — 用 [data-slot] 提优先级,覆盖三家势力色底 */
+.pcard-v4[data-slot] .gen-tag{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:64px;
+  padding:6px 14px;
+  font-family:var(--font-serif);
+  font-size:.86rem;
+  color:var(--text-main);
+  background:rgba(212,168,67,.06);
+  border:1px solid rgba(212,168,67,.28);
+  border-radius:3px;
+  letter-spacing:.04em;
+  cursor:default;
+  transition:background .18s, border-color .18s, transform .18s;
+}
+.pcard-v4[data-slot] .gen-tag:hover{
+  background:rgba(212,168,67,.14);
+  border-color:rgba(212,168,67,.55);
+  transform:translateY(-1px);
+}
+.pcard-v4[data-slot] .gen-list,
+.pcard-v4[data-slot] .gen-list-expand{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+/* 封角小旗 — 左上角 9px 直角三角(三角尺寸维持 v20260815a,显眼度足够) */
+.pcard-v4[data-slot] .gen-tag::after{
+  content:'';
+  position:absolute;
+  left:0; top:0;
+  width:0; height:0;
+  border-style:solid;
+  border-width:9px 9px 0 0;
+  border-color:transparent transparent transparent transparent;
+  pointer-events:none;
+}
+
+/* 四种状态色(健康无三角) */
+.pcard-v4[data-slot] .gen-tag[data-status="疲劳"]::after{border-top-color:var(--gt-st-tired)}
+.pcard-v4[data-slot] .gen-tag[data-status="受伤"]::after{border-top-color:var(--gt-st-hurt)}
+.pcard-v4[data-slot] .gen-tag[data-status="患病"]::after{border-top-color:var(--gt-st-sick)}
+.pcard-v4[data-slot] .gen-tag[data-status="阵亡"]::after{border-top-color:var(--gt-st-dead)}
+
+/* 阵亡:保留显示但灰掉 + 删除线 */
+.pcard-v4[data-slot] .gen-tag[data-status="阵亡"]{
+  opacity:.45;
+  text-decoration:line-through;
+  text-decoration-color:#888;
+  text-decoration-thickness:1px;
+}
+
+/* 移动端微调 */
+@media (max-width:720px){
+  .pcard-v4[data-slot] .gen-tag{
+    font-size:.80rem;
+    padding:5px 11px;
+    min-width:56px;
+  }
+  .pcard-v4[data-slot] .gen-list,
+  .pcard-v4[data-slot] .gen-list-expand{gap:6px}
+}
