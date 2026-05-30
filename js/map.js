@@ -172,6 +172,7 @@ const CITY_TIER_MAP = {
   '汉中':'州治','上庸':'郡城','梓潼':'郡城','成都':'雄都','永安':'郡城',
   '江州':'郡城','武都':'县城','剑阁':'县城','葭萌关':'县城','阳平关':'县城',
   '建宁':'郡城','云南':'县城','永昌':'县城','交趾':'郡城',
+  '阳翟':'郡城','琅琊':'郡城','平阳':'县城','巴丘':'县城','夷陵':'郡城',
 };
 
 // v15 城等基础产出
@@ -278,6 +279,12 @@ const BONUS_MULT = {
     { id:'yunnan',    name:'云南',  region:'南中', hx:5,  hy:14, tier:'县城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],    terrain:'瘴林', npcGuard:'高定',   terrainDesc:'苍山洱海，瘴疠不绝，蛮兵以毒箭见长。' },
     { id:'yongchang', name:'永昌',  region:'南中', hx:3,  hy:14, tier:'县城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],    terrain:'苦寒', npcGuard:'吕凯',   terrainDesc:'化外极西，产琥珀翡翠香料，路途艰险。' },
     { id:'jiaozhi',   name:'交趾',  region:'南中', hx:13, hy:14, tier:'郡城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],  terrain:'水域', npcGuard:'士燮',   terrainDesc:'南海之滨，海舶云集，珠玳犀象堆积。' },
+    /* ══ 新增 5 城（工单 #map-add-5cities-v1）══ */
+    { id:'yangzhai', name:'阳翟', region:'兖豫', hx:12, hy:6,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰'],          terrain:'平原', npcGuard:'李典', terrainDesc:'颍川郡治,北望洛阳,南通宛许,中原腹心之地。' },
+    { id:'langya',   name:'琅琊', region:'徐州', hx:17, hy:4,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰','偏远'],   terrain:'平原', npcGuard:'臧霸', terrainDesc:'东海之滨,沂蒙余脉,诸葛氏与琅琊王氏故里。' },
+    { id:'pingyang', name:'平阳', region:'并州', hx:11, hy:4,  tier:'县城', bonusKey:'粮丰',   bonusKeys:['粮丰','苦寒减产'],terrain:'山地', npcGuard:'徐晃', terrainDesc:'汾水之畔,河东屏障,匈奴南庭旧地。' },
+    { id:'baqiu',    name:'巴丘', region:'荆襄', hx:14, hy:10, tier:'县城', bonusKey:'水战强', bonusKeys:['水战强','粮丰'], terrain:'水域', npcGuard:'黄盖', terrainDesc:'洞庭湖口,大江南岸,扼荆湘入江东之水路。' },
+    { id:'yiling',   name:'夷陵', region:'荆襄', hx:11, hy:10, tier:'郡城', bonusKey:'险关',   bonusKeys:['险关','水战强'], terrain:'关隘', npcGuard:'文聘', terrainDesc:'长江三峡之口,西控巴蜀,东接荆襄,夷陵鏖兵处。' },
   ];
 
   /* ─────────────────────────────────
@@ -318,6 +325,12 @@ const BONUS_MULT = {
     ['chengdu','jianning'],['jiangzhou','jianning'],
     ['jianning','yunnan'],['yunnan','yongchang'],['jianning','jiaozhi'],
     ['guangling','jianye'],['guiyang','luling'],
+    /* 新增 5 城道路（工单 #map-add-5cities-v1）*/
+    ['yangzhai','luoyang'],['yangzhai','xuchang'],['yangzhai','wan'],
+    ['langya','xiapi'],['langya','beihai'],['langya','guangling'],
+    ['pingyang','henei'],['pingyang','shangdang'],['pingyang','luoyang'],
+    ['baqiu','jiangxia'],['baqiu','changsha'],['baqiu','jiangling'],
+    ['yiling','jiangling'],['yiling','yongan'],['yiling','shangyong'],
   ];
 
   /* ─────────────────────────────────
