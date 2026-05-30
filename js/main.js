@@ -1497,8 +1497,7 @@
       + 'color:' + fc.c + ';';
 
     return '<span class="gen-tag" data-status="' + esc(g.status || '健康')
-      + '" data-name="' + esc(g.name) + '"'
-      + ' style="' + wrapStyle + '">'
+      + '" data-name="' + esc(g.name) + '">'
       + esc(g.name)
       + '</span>';
   }
