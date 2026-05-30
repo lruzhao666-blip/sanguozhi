@@ -6272,3 +6272,69 @@ body.fx-off-captured [data-ctype="captured"] {
   .pcard-v4[data-slot] .gen-list,
   .pcard-v4[data-slot] .gen-list-expand{gap:6px}
 }
+
+/* v20260817a 工单#generals-status-ui-v1-fix2:
+   - 根因:JS 渲染 .gen-tag 时注入 inline style 势力色(优先级 1,0,0,0),压过所有 CSS
+   - 修复:① JS 端已删 inline style ② CSS 兜底加 !important,防回归
+   ──────────────────────────────────────────────────────── */
+
+/* 基底:中性暗金 + 1b 加宽 + !important 兜底 */
+.pcard-v4[data-slot] .gen-tag{
+  position:relative !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-width:64px !important;
+  padding:6px 14px !important;
+  font-family:var(--font-serif) !important;
+  font-size:.86rem !important;
+  color:var(--text-main) !important;
+  background:rgba(212,168,67,.06) !important;
+  background-color:rgba(212,168,67,.06) !important;
+  border:1px solid rgba(212,168,67,.28) !important;
+  border-radius:3px !important;
+  letter-spacing:.04em !important;
+  cursor:default !important;
+  transition:background .18s, border-color .18s, transform .18s;
+}
+.pcard-v4[data-slot] .gen-tag:hover{
+  background:rgba(212,168,67,.14) !important;
+  background-color:rgba(212,168,67,.14) !important;
+  border-color:rgba(212,168,67,.55) !important;
+  transform:translateY(-1px);
+}
+
+/* 封角小旗 — 左上角 9px 直角三角 */
+.pcard-v4[data-slot] .gen-tag::after{
+  content:'' !important;
+  position:absolute !important;
+  left:0 !important; top:0 !important;
+  width:0 !important; height:0 !important;
+  border-style:solid !important;
+  border-width:9px 9px 0 0 !important;
+  border-color:transparent transparent transparent transparent !important;
+  pointer-events:none !important;
+}
+
+/* 四种状态色(健康无三角) */
+.pcard-v4[data-slot] .gen-tag[data-status="疲劳"]::after{border-top-color:var(--gt-st-tired) !important}
+.pcard-v4[data-slot] .gen-tag[data-status="受伤"]::after{border-top-color:var(--gt-st-hurt) !important}
+.pcard-v4[data-slot] .gen-tag[data-status="患病"]::after{border-top-color:var(--gt-st-sick) !important}
+.pcard-v4[data-slot] .gen-tag[data-status="阵亡"]::after{border-top-color:var(--gt-st-dead) !important}
+
+/* 阵亡:保留显示但灰掉 + 删除线 */
+.pcard-v4[data-slot] .gen-tag[data-status="阵亡"]{
+  opacity:.45 !important;
+  text-decoration:line-through !important;
+  text-decoration-color:#888 !important;
+  text-decoration-thickness:1px !important;
+}
+
+/* 移动端微调 */
+@media (max-width:720px){
+  .pcard-v4[data-slot] .gen-tag{
+    font-size:.80rem !important;
+    padding:5px 11px !important;
+    min-width:56px !important;
+  }
+}
