@@ -6380,3 +6380,107 @@ body.fx-off-captured [data-ctype="captured"] {
   filter:none !important;
   outline:none !important;
 }
+
+/* v20260901a 工单#gen-tag-A-v1-flat-compact:
+   武将徽章 UI 升级 — 拓本印章风·紧凑扁平·黑体 500·5px 圆角
+   --------------------------------------------------------------------
+   设计语言:
+   - 字体 = 黑体 500(对齐站点数据/UI 标签语言)
+   - 背景 = 单色暗金哑光底,完全扁平(去渐变去内阴影)
+   - 边框 = 1.5px 暖金中透明度,撑场骨力
+   - 尺寸 = 5/12 padding · 58 min-width · .84rem · gap 6
+   - 圆角 = 5px(柔和但仍硬挺)
+   保留:
+   - 左上角状态封角小旗(疲劳/受伤/患病/阵亡)
+   - 主公金竖条 .is-lord
+   - 阵亡态 .45 透明度 + 删除线
+   优先级:本段写在文件末尾,自然覆盖 v20260820a 等旧规则
+   全程 !important 钉死,防 JS 端 inline style 或势力色变量回流污染
+   ──────────────────────────────────────────────────────── */
+
+.pcard-v4[data-slot] .gen-tag{
+  position:relative !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-width:58px !important;
+  padding:5px 12px !important;
+  font-family:var(--font-sans) !important;
+  font-size:.84rem !important;
+  font-weight:500 !important;
+  color:#f0e6d3 !important;
+  background:rgba(48,32,8,.55) !important;
+  background-color:rgba(48,32,8,.55) !important;
+  border:1.5px solid rgba(212,168,67,.55) !important;
+  border-color:rgba(212,168,67,.55) !important;
+  border-top-color:rgba(212,168,67,.55) !important;
+  border-right-color:rgba(212,168,67,.55) !important;
+  border-bottom-color:rgba(212,168,67,.55) !important;
+  border-left-color:rgba(212,168,67,.55) !important;
+  border-radius:5px !important;
+  letter-spacing:.04em !important;
+  cursor:default !important;
+  box-shadow:none !important;
+  filter:none !important;
+  outline:none !important;
+  transition:background .18s, border-color .18s, transform .18s !important;
+}
+
+.pcard-v4[data-slot] .gen-tag:hover{
+  background:rgba(75,50,12,.7) !important;
+  background-color:rgba(75,50,12,.7) !important;
+  border:1.5px solid #f0c060 !important;
+  border-color:#f0c060 !important;
+  border-top-color:#f0c060 !important;
+  border-right-color:#f0c060 !important;
+  border-bottom-color:#f0c060 !important;
+  border-left-color:#f0c060 !important;
+  color:#f0e6d3 !important;
+  transform:translateY(-1px) !important;
+  box-shadow:none !important;
+}
+
+/* gen-list 容器间距同步收紧 */
+.pcard-v4[data-slot] .gen-list,
+.pcard-v4[data-slot] .gen-list-expand{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:6px !important;
+}
+
+/* 状态封角小旗 — 配合整体瘦身,9 → 8 */
+.pcard-v4[data-slot] .gen-tag::after{
+  content:'' !important;
+  position:absolute !important;
+  left:0 !important; top:0 !important;
+  width:0 !important; height:0 !important;
+  border-style:solid !important;
+  border-width:8px 8px 0 0 !important;
+  border-color:transparent transparent transparent transparent !important;
+  pointer-events:none !important;
+}
+.pcard-v4[data-slot] .gen-tag[data-status="疲劳"]::after{border-top-color:var(--gt-st-tired) !important}
+.pcard-v4[data-slot] .gen-tag[data-status="受伤"]::after{border-top-color:var(--gt-st-hurt) !important}
+.pcard-v4[data-slot] .gen-tag[data-status="患病"]::after{border-top-color:var(--gt-st-sick) !important}
+.pcard-v4[data-slot] .gen-tag[data-status="阵亡"]::after{border-top-color:var(--gt-st-dead) !important}
+
+/* 阵亡态:保留显示但灰掉 + 删除线(沿用现状) */
+.pcard-v4[data-slot] .gen-tag[data-status="阵亡"]{
+  opacity:.45 !important;
+  text-decoration:line-through !important;
+  text-decoration-color:#888 !important;
+  text-decoration-thickness:1px !important;
+}
+
+/* 移动端微调:进一步紧凑 */
+@media (max-width:720px){
+  .pcard-v4[data-slot] .gen-tag{
+    font-size:.78rem !important;
+    padding:4px 10px !important;
+    min-width:52px !important;
+  }
+  .pcard-v4[data-slot] .gen-list,
+  .pcard-v4[data-slot] .gen-list-expand{
+    gap:5px !important;
+  }
+}
