@@ -6365,3 +6365,18 @@ body.fx-off-captured [data-ctype="captured"] {
   border-bottom-color:rgba(212,168,67,.55) !important;
   border-left-color:rgba(212,168,67,.55) !important;
 }
+/* v20260820a 工单#generals-tag-shadow-lock-v1:
+   消除武将 tag 的势力色外发光残留
+   - box-shadow / filter / outline 三项全部 !important 清零
+   - hover 态可保留极淡的暗金辉光,与整体金线呼应,但不再走势力色
+   ──────────────────────────────────────────────────────── */
+.pcard-v4[data-slot] .gen-tag{
+  box-shadow:none !important;
+  filter:none !important;
+  outline:none !important;
+}
+.pcard-v4[data-slot] .gen-tag:hover{
+  box-shadow:0 0 6px rgba(212,168,67,.18) !important;
+  filter:none !important;
+  outline:none !important;
+}
