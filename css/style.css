@@ -6127,23 +6127,3 @@ body.fx-off-captured [data-ctype="captured"] {
   #gen-tooltip .gtp-role      { font-size: .64rem; padding: 1px 7px; }
   #gen-tooltip .gtp-roles     { gap: 4px; }
 }
-
-/* v20260815a 工单#pcard-general-status-B3A: 武将胶囊按 data-status 显示状态色条 + 阵亡半透明 */
-/*   - 结构：B3 方案，box-shadow inset 模拟左侧 3px 色条，零结构改动
-     - 色值：A 组（克制低饱和，贴合战旗赤红风）
-     - 选择器优先级：.gen-list .gen-tag[data-status="..."] 双层，覆盖 inline style 之外的属性
-     - inline 的 background-color/border/color（势力色）保留不动，仅叠加色条与透明度 */
-
-.gen-list .gen-tag[data-status="tired"] {
-  box-shadow: inset 3px 0 0 0 #a89878;
-}
-.gen-list .gen-tag[data-status="injured"] {
-  box-shadow: inset 3px 0 0 0 #a85858;
-}
-.gen-list .gen-tag[data-status="sick"] {
-  box-shadow: inset 3px 0 0 0 #7a6a88;
-}
-.gen-list .gen-tag[data-status="dead"] {
-  box-shadow: inset 3px 0 0 0 #555555;
-  opacity: 0.5;
-}
