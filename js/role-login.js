@@ -79,6 +79,16 @@
     return matched ? matched.role : null;
   }
 
+  // ── 按指定身份登录(比对该身份的口令 hash)──
+  async function loginBySpecificRole(role, password) {
+    const hash = await sha256(password);
+    const res = await fetch(BASE_URL + '?select=role,password_hash&role=eq.' + encodeURIComponent(role), { headers: HEADERS });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    if (!rows.length) return null;
+    return rows[0].password_hash === hash ? rows[0].role : null;
+  }
+
   // ── 显示浮层 ──
   function showOverlay() {
     const overlay = document.getElementById('role-login-overlay');
@@ -89,48 +99,59 @@
     if (overlay) overlay.classList.remove('show');
   }
 
-  // ── 渲染浮层内容 ──
+  // ── 渲染浮层内容(统一混合模式)──
   function renderOverlay() {
     const inner = document.getElementById('role-login-inner');
     if (!inner) return;
 
-    const allOccupied = occupiedRoles.length >= 3;
-    mode = allOccupied ? 'login' : 'register';
+    // 默认无身份选中,等用户点
+    if (selectedRole === null) selectedRole = '';
 
-    if (mode === 'login') {
-      inner.innerHTML = `
-        <div class="rl-icon">⚔️</div>
-        <div class="rl-title">密报阁</div>
-        <div class="rl-sub">请输入您的口令</div>
-        <input type="password" class="rl-input" id="rl-pwd" placeholder="口令" autocomplete="off" />
-        <div class="rl-error" id="rl-err"></div>
-        <button class="rl-btn" id="rl-submit">进 入</button>
-        <div class="rl-hint">忘记口令？请联系房主重置</div>
-      `;
+    const roleBtns = ['甲','乙','丙'].map(r => {
+      const occ = occupiedRoles.includes(r);
+      const sel = selectedRole === r;
+      // 占用态:仍可点,加 "·已注册" 提示,样式偏暗但不 disabled
+      return `<button class="rl-role-btn ${occ ? 'rl-registered' : ''} ${sel ? 'rl-selected' : ''}"
+        data-role="${r}" data-occ="${occ ? '1' : '0'}">${r}${occ ? ' · 已注册' : ''}</button>`;
+    }).join('');
+
+    // 根据当前选中的身份动态切换 placeholder / 按钮文字
+    let placeholder, btnText, hintText;
+    if (!selectedRole) {
+      placeholder = `请先选择身份`;
+      btnText     = `进 入`;
+      hintText    = `首次选择身份将设定口令<br>之后可在任意设备用同一口令登录`;
     } else {
-      const roleBtns = ['甲','乙','丙'].map(r => {
-        const occ = occupiedRoles.includes(r);
-        return `<button class="rl-role-btn ${occ ? 'rl-occupied' : ''} ${selectedRole===r?'rl-selected':''}"
-          data-role="${r}" ${occ?'disabled':''}>${r}${occ?' · 已占':''}</button>`;
-      }).join('');
-      inner.innerHTML = `
-        <div class="rl-icon">⚔️</div>
-        <div class="rl-title">密报阁</div>
-        <div class="rl-sub">请选择身份并设置口令</div>
-        <div class="rl-role-group">${roleBtns}</div>
-        <input type="password" class="rl-input" id="rl-pwd" placeholder="口令(至少 ${MIN_PWD} 字符)" autocomplete="off" />
-        <div class="rl-error" id="rl-err"></div>
-        <button class="rl-btn" id="rl-submit">注册并进入</button>
-        <div class="rl-hint">口令一旦设定无法找回，请记牢</div>
-      `;
-      inner.querySelectorAll('.rl-role-btn:not(.rl-occupied)').forEach(btn => {
-        btn.addEventListener('click', () => {
-          selectedRole = btn.dataset.role;
-          inner.querySelectorAll('.rl-role-btn').forEach(b => b.classList.remove('rl-selected'));
-          btn.classList.add('rl-selected');
-        });
-      });
+      const isOcc = occupiedRoles.includes(selectedRole);
+      if (isOcc) {
+        placeholder = `请输入「${selectedRole}」的口令登录`;
+        btnText     = `登录进入`;
+        hintText    = `该身份已在其他设备注册<br>输入正确口令即可在本设备登录`;
+      } else {
+        placeholder = `为「${selectedRole}」设置口令(至少 ${MIN_PWD} 字符)`;
+        btnText     = `注册并进入`;
+        hintText    = `口令一旦设定无法找回,请记牢<br>之后可在任意设备用此口令登录`;
+      }
     }
+
+    inner.innerHTML = `
+      <div class="rl-icon">⚔️</div>
+      <div class="rl-title">密报阁</div>
+      <div class="rl-sub">请选择身份并输入口令</div>
+      <div class="rl-role-group">${roleBtns}</div>
+      <input type="password" class="rl-input" id="rl-pwd" placeholder="${placeholder}" autocomplete="off" />
+      <div class="rl-error" id="rl-err"></div>
+      <button class="rl-btn" id="rl-submit">${btnText}</button>
+      <div class="rl-hint">${hintText}</div>
+    `;
+
+    // 身份按钮点击 → 更新 selectedRole → 重渲染(刷新 placeholder/按钮文字)
+    inner.querySelectorAll('.rl-role-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedRole = btn.dataset.role;
+        renderOverlay();
+      });
+    });
 
     const submitBtn = document.getElementById('rl-submit');
     const pwdInput  = document.getElementById('rl-pwd');
@@ -152,40 +173,46 @@
     }
   }
 
-  // ── 提交 ──
+  // ── 提交(按身份占用状态分流)──
   async function onSubmit() {
     const pwd = (document.getElementById('rl-pwd') || {}).value || '';
     const errEl = document.getElementById('rl-err');
     if (errEl) errEl.textContent = '';
 
+    if (!selectedRole) { showError('请先选择身份'); return; }
     if (pwd.length < MIN_PWD) { showError(`口令至少 ${MIN_PWD} 字符`); return; }
 
     const submitBtn = document.getElementById('rl-submit');
+    const isOcc = occupiedRoles.includes(selectedRole);
+    const oldText = submitBtn ? submitBtn.textContent : '';
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '处理中…'; }
 
     try {
-      if (mode === 'register') {
-        if (!selectedRole) { showError('请先选择身份'); return; }
+      if (isOcc) {
+        // 已占用 → 走登录流程,比对该身份口令
+        const matchedRole = await loginBySpecificRole(selectedRole, pwd);
+        if (!matchedRole) {
+          showError(`「${selectedRole}」口令错误,请重试`);
+          return;
+        }
+        localStorage.setItem(LS_KEY, matchedRole);
+        hideOverlay();
+        updateFooterRole();
+        window.dispatchEvent(new CustomEvent('sg-role-changed', { detail: { role: matchedRole } }));
+      } else {
+        // 未占用 → 走注册流程
         await registerRole(selectedRole, pwd);
         localStorage.setItem(LS_KEY, selectedRole);
         hideOverlay();
         updateFooterRole();
-        // 触发后续模块感知身份
         window.dispatchEvent(new CustomEvent('sg-role-changed', { detail: { role: selectedRole } }));
-      } else {
-        const role = await loginByPassword(pwd);
-        if (!role) { showError('口令错误，请重试'); return; }
-        localStorage.setItem(LS_KEY, role);
-        hideOverlay();
-        updateFooterRole();
-        window.dispatchEvent(new CustomEvent('sg-role-changed', { detail: { role } }));
       }
     } catch (e) {
-      showError('网络错误：' + e.message);
+      showError('网络错误:' + e.message);
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = mode === 'register' ? '注册并进入' : '进 入';
+        submitBtn.textContent = oldText || '进 入';
       }
     }
   }
