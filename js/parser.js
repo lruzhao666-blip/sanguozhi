@@ -80,6 +80,11 @@ window.SGParser = (function () {
     const result = _empty();
     result.rawDigest = storyZone;
 
+    // 先解析密报标签:从 storyZone 切出 [[密|X]]...[[/密]] 块,
+    // 写入 result.secrets,并从 storyZone 中移除密报块(防泄露)。
+    storyZone = _parseSecrets(storyZone, result);
+    result.rawDigest = storyZone;
+
     if (dataZone) {
       _parseDataZone(dataZone, result);
     } else {
@@ -110,7 +115,138 @@ window.SGParser = (function () {
       wildEvents:    [],      // [{desc}]        ← 新增
       events:        [],      // v3 格式事件
       errors:        [],      // v3 格式错误
+      secrets:       [],      // [{slots:['甲'], title:'细作回报', body:'...'}] 密报阁条目
     };
+  }
+
+  // ─────────────────────────────────────────
+  //  密报标签解析(M-39 信息可见性契约)
+  //  输入:剧情区原文(含 [[密|X]]...[[/密]] 标签)
+  //  输出:返回剥除密报块后的剧情区文本;
+  //       result.secrets 写入密报条目数组
+  //
+  //  密报块结构:
+  //    [[密|甲]] 或 [[密|甲,丙]]
+  //    🔒 四字小标题
+  //    正文内容(可多行)
+  //
+  //    🔒 另一条小标题
+  //    正文内容
+  //    [[/密]]
+  //
+  //  小标题特例:🔒 密令选项
+  //    每行格式: ⑤ 四字行动名 —— 注解
+  //    解析时拆为 { isCmd: true, num: '⑤', name: '四字行动名', note: '注解' }
+  //
+  //  返回的 secrets 数组元素:
+  //    普通密报: { slots:['甲'], title:'细作回报', body:'…', isCmd:false }
+  //    密令选项: { slots:['甲'], title:'密令选项', isCmd:true,
+  //                items:[{num:'⑤', name:'…', note:'…'}, ...] }
+  // ─────────────────────────────────────────
+  function _parseSecrets(text, result) {
+    if (!text) return text;
+    const RE = /\[\[密\|([甲乙丙,]+)\]\]([\s\S]*?)\[\[\/密\]\]/g;
+
+    let m;
+    while ((m = RE.exec(text)) !== null) {
+      const slotsRaw = m[1].trim();
+      const slots = slotsRaw.split(',').map(s => s.trim()).filter(Boolean);
+      if (!slots.length) continue;
+
+      // 按 🔒 小标题切分一个密报块内的多条密报
+      const inner = m[2].trim();
+      const blocks = _splitSecretBlocks(inner);
+      blocks.forEach(b => {
+        if (b.isCmd) {
+          result.secrets.push({
+            slots,
+            title: '密令选项',
+            isCmd: true,
+            items: b.items,
+          });
+        } else {
+          result.secrets.push({
+            slots,
+            title: b.title,
+            body:  b.body,
+            isCmd: false,
+          });
+        }
+      });
+    }
+
+    // 从原文中剥除所有密报块,防止泄露到 rawDigest
+    return text.replace(RE, '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  // ─────────────────────────────────────────
+  //  辅助:将一个密报块(标签内文本)按 🔒 小标题切分
+  //  返回 [{ title, body, isCmd, items? }, ...]
+  // ─────────────────────────────────────────
+  function _splitSecretBlocks(text) {
+    if (!text) return [];
+    // 按行扫描,🔒 开头视为新条目
+    const lines = text.split('\n');
+    const out = [];
+    let cur = null;
+
+    const flushCur = () => {
+      if (!cur) return;
+      if (cur.isCmd) {
+        // 密令选项:解析每行为 { num, name, note }
+        cur.items = _parseCmdItems(cur.bodyLines.join('\n'));
+        delete cur.bodyLines;
+      } else {
+        cur.body = cur.bodyLines.join('\n').trim();
+        delete cur.bodyLines;
+      }
+      out.push(cur);
+      cur = null;
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const t = line.trim();
+      // 🔒 开头(允许前导空格)= 新条目标题
+      const headM = t.match(/^🔒\uFE0F?\s*(.+)$/);
+      if (headM) {
+        flushCur();
+        const title = headM[1].trim();
+        const isCmd = /密令选项/.test(title);
+        cur = { title, isCmd, bodyLines: [] };
+        continue;
+      }
+      if (cur) cur.bodyLines.push(line);
+    }
+    flushCur();
+    return out;
+  }
+
+  // ─────────────────────────────────────────
+  //  辅助:解析"密令选项"块的多行
+  //  每行格式:⑤ 四字行动名 —— 注解
+  //          或 ⑥ ...
+  //  破折号支持 —— / -- / —— / 全角 / 半角组合
+  // ─────────────────────────────────────────
+  function _parseCmdItems(text) {
+    const items = [];
+    if (!text) return items;
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const numRe = /^([⑤⑥⑦⑧⑨⑩])\s*(.+)$/;
+    for (const line of lines) {
+      const m = line.match(numRe);
+      if (!m) continue;
+      const rest = m[2].trim();
+      // 拆破折号
+      const dashIdx = rest.search(/——|──|\s[-—]{2}\s/);
+      let name = rest, note = '';
+      if (dashIdx > 0) {
+        name = rest.slice(0, dashIdx).trim();
+        note = rest.slice(dashIdx).replace(/^[——──\s\-—]+/, '').trim();
+      }
+      items.push({ num: m[1], name, note });
+    }
+    return items;
   }
 
   // ─────────────────────────────────────────
