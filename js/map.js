@@ -1,5 +1,6 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v25.3
+ * v25.5.1 (2026-05-30): 工单#map-tooltip-empty-polish · 文案"空"回滚"空缺"
  * v25.5 (2026-05-30): 工单#map-tooltip-font-unify · 玩家城驻将兜底"空" + 文案"空缺"→"空"
  * v25.4 (2026-05-27): 工单#map-tooltip-1 · 城池悬浮卡守将区极简化 — 去势力色 + 去状态后缀 + 阵亡不渲染
  * v25.3 (变更): 公开 API 追加 getFactionColor(factionName),供军报/战报读取 NPC 阵营色
@@ -1063,7 +1064,7 @@ const BONUS_MULT = {
     // - 半角空格 join 改为不 join(由 CSS flex gap 控制间距)
     let holderHtml = '';
     if (!holderDisp || holderDisp === '无' || holderDisp === '空' || holderDisp === '空缺') {
-      holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空</div>';
+      holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空缺</div>';
     } else {
       // 兼容 / , ， 、 四种分隔符
       const pills = holderDisp.split(/[\/,，、]/).map(s => s.trim()).filter(Boolean);
@@ -1089,7 +1090,7 @@ const BONUS_MULT = {
 
       // 全部阵亡或解析后为空 → 显示空缺
       if (pillHtmls.length === 0) {
-        holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空</div>';
+        holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空缺</div>';
       } else {
         // 不 join 空格,由 CSS flex gap 控制
         holderHtml = `<div class="sgt-holder-names">${pillHtmls.join('')}</div>`;

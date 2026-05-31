@@ -6639,3 +6639,21 @@ body.fx-off-captured [data-ctype="captured"] {
   font-style: normal !important;
   line-height: 1.6 !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20260530b 工单#map-tooltip-empty-polish-v25.5.1
+   空态字重对齐到 600 + 强制基线对齐
+   ════════════════════════════════════════════════════════════ */
+
+/* 空态字重升至 600,与 .sgt-lbl 完全一致 */
+.sgmap-tooltip .sgt-dim,
+.sgmap-tooltip .sgt-gen-empty {
+  font-weight: 600 !important;
+  margin: 0 !important;
+}
+
+/* 强制驻将/兵力行按文字基线对齐,消除 div/span 容器差异 */
+.sgmap-tooltip .sgt-holder,
+.sgmap-tooltip .sgt-troops {
+  align-items: baseline !important;
+}
