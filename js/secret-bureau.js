@@ -117,21 +117,21 @@
   function renderCmdBlock(s) {
     const items = Array.isArray(s.items) ? s.items : [];
     if (!items.length) return '';
+    // [cmd-polish-2] 行内单条样式,⑤⑥ 由 parser 从原文捞出,前端直接渲染
     const html = items.map(it => {
       const name = it.name || '';
       const note = it.note || '';
-      // 用 encodeURIComponent 避免引号转义问题
+      const num  = it.num  || '';
       const argName = encodeURIComponent(name);
       const argNote = encodeURIComponent(note);
       return `
-        <div class="cmd-item">
-          <div class="cmd-body">
-            <div class="cmd-title">${esc(name)}</div>
-            ${note ? `<div class="cmd-note">${esc(note)}</div>` : ''}
-          </div>
-          <button class="sb-cmd-btn"
+        <div class="sb-cmd-row">
+          <span class="sb-cmd-num">${esc(num)}</span>
+          <span class="sb-cmd-name">${esc(name)}</span>
+          ${note ? `<span class="sb-cmd-sep">——</span><span class="sb-cmd-note">${esc(note)}</span>` : ''}
+          <button class="sb-cmd-copy-btn"
             onclick="window.__sbCopyCmd(decodeURIComponent('${argName}'), decodeURIComponent('${argNote}'))">
-            📋 复制为密令
+            📋 复制
           </button>
         </div>
       `;
@@ -216,7 +216,11 @@
 
     // ── 历史密报折叠区 ──
     if (historyRounds.length) {
-      const totalCount = historyRounds.reduce((a, b) => a + b.items.length, 0);
+      // [cmd-polish-1] 排除密令选项,徽章数应 = 实际渲染数(历史密令不重复渲染)
+      const totalCount = historyRounds.reduce(
+        (a, b) => a + b.items.filter(s => !s.isCmd).length,
+        0
+      );
       bodyHtml += `
         <details class="sb-history">
           <summary>📜 历史密报
