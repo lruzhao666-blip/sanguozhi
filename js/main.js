@@ -132,6 +132,8 @@
       changes_json:        JSON.stringify(rd.parsed.changes        || []),
       livelihood_json:     JSON.stringify(rd.parsed.transit        || []),
       city_ownership_json: JSON.stringify(rd.parsed.cityOwnership || {}),
+      // [secret-bureau-fix-A] 密报数据正本清源
+      secrets_json:        JSON.stringify(rd.parsed.secrets       || []),
     };
     const existId = await findRoundId(rd.round);
     if (existId) {
