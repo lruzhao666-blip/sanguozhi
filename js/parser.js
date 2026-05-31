@@ -116,6 +116,7 @@ window.SGParser = (function () {
       events:        [],      // v3 格式事件
       errors:        [],      // v3 格式错误
       secrets:       [],      // [{slots:['甲'], title:'细作回报', body:'...'}] 密报阁条目
+      world:         [],      // [{name,status,location,remaining,raw}] 世界段武将
     };
   }
 
@@ -300,6 +301,11 @@ window.SGParser = (function () {
       result.transit = _parseTransit(blocks['在途']);
     }
 
+    // [世界](v3.39 M-31 新增):被俘/在野/客途三态武将
+    if (blocks['世界']) {
+      result.world = _parseWorld(blocks['世界']);
+    }
+
     // [变动]
     if (blocks['变动']) {
       const { changes, npcStatus, wildEvents } = _parseChangesBlock(blocks['变动']);
@@ -330,7 +336,7 @@ window.SGParser = (function () {
   //  按方括号标签切块
   // ─────────────────────────────────────────
   function _splitBlocks(text) {
-    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','调度','变动','驻城']);
+    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','调度','世界','变动','驻城']);
     const lines  = text.split('\n');
     const blocks = {};
     let curKey = null, curBuf = [];
@@ -726,6 +732,54 @@ window.SGParser = (function () {
       events.push({ type: 'wild', city: '野外', desc: m[1].trim() });
     }
     return events;
+  }
+
+  // ─────────────────────────────────────────
+  //  解析 [世界] 段(M-31 / M-39 v3.39 新增)
+  //  格式:武将名|状态|位置|剩N回合
+  //  状态白名单:被俘 / 在野 / 客途
+  //  剩余回合:数字或 ∞
+  //  示例:
+  //    审配|被俘|甲方下邳|剩∞回合
+  //    颜良|在野|河北一带|剩2回合
+  //    张辽|客途|许昌→宛城|剩3回合
+  //  无内容时 GM 写:本回合世界无事
+  // ─────────────────────────────────────────
+  function _parseWorld(raw) {
+    if (!raw || !raw.trim()) return [];
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 1 && /本回合世界无事/.test(lines[0])) return [];
+
+    const VALID_STATUS_W = ['被俘', '在野', '客途'];
+    const re = /^(\S+?)\|(被俘|在野|客途)\|(\S+?)\|剩(\d+|∞)回合$/;
+    const result = [];
+
+    for (const line of lines) {
+      const m = line.match(re);
+      if (!m) {
+        console.warn('[SGParser] [世界] 段行格式不符,跳过:', line);
+        continue;
+      }
+      const name      = m[1].trim();
+      const status    = m[2];
+      const location  = m[3].trim();
+      const remRaw    = m[4];
+      const remaining = remRaw === '∞' ? Infinity : parseInt(remRaw, 10);
+
+      if (!VALID_STATUS_W.includes(status)) {
+        console.warn(`[SGParser] [世界] 武将"${name}"状态"${status}"不在白名单,跳过`);
+        continue;
+      }
+
+      result.push({
+        name,
+        status,
+        location,
+        remaining,
+        raw: line,
+      });
+    }
+    return result;
   }
 
   // ─────────────────────────────────────────
