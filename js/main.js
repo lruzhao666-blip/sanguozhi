@@ -198,6 +198,22 @@
           situation:     row.situation  || '',
           events:        safeJson(row.events_json, []),
           narration:     row.narration  || '',
+          // [secret-bureau-fix-C] 临时止血:secrets 字段补解析
+          // 优先用 row.secrets_json(将来 Supabase 加列后启用),
+          // 否则用 SGParser 重新解析 raw_content 兜底。
+          // parser 抛错时退回空数组,避免 secret-bureau.js 渲染崩溃。
+          secrets: (function () {
+            if (row.secrets_json) {
+              return safeJson(row.secrets_json, []);
+            }
+            try {
+              const reparsed = SGParser.parse(row.raw_content || '');
+              return Array.isArray(reparsed.secrets) ? reparsed.secrets : [];
+            } catch (e) {
+              console.warn('[secret-bureau-fix-C] secrets 兜底解析失败:', e);
+              return [];
+            }
+          })(),
         },
         rawContent: row.raw_content || '',
         _apiId:     row.id,
