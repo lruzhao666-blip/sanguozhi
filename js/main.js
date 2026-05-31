@@ -46,6 +46,8 @@
     lastUpdatedAt: 0,
     publishing:    false,
   };
+  // M39-5: 暴露给 secret-bureau.js 读取回合数据
+  window.SGState = state;
 
   function defaultPlayers() {
     return [
@@ -419,6 +421,10 @@
     }
     updateFooter();
     updateUndoBtn();
+    // M39-5: 广播回合更新事件,触发密报阁重渲染
+    try {
+      window.dispatchEvent(new CustomEvent('sg-rounds-updated'));
+    } catch (e) { /* 兜底,不影响主流程 */ }
   }
 
 // ─────────────────────────────────────────
@@ -1913,6 +1919,28 @@
         `</ul></div></div>`;
     }
 
+    // M39-5: 密报提示(按当前身份判断该回合有无密报)
+    // 不在历史详情里重复渲染密报正文,只挂一行提示,
+    // 引导用户去密报阁主区的"📜 历史密报"折叠区查看
+    if (p.secrets && p.secrets.length) {
+      const role = (window.SGRole && SGRole.get) ? SGRole.get() : null;
+      const myCount = role
+        ? p.secrets.filter(s => Array.isArray(s.slots) && s.slots.indexOf(role) !== -1).length
+        : 0;
+      if (myCount > 0) {
+        html += `<div class="info-block block-history-secret-hint" style="margin:0 0 10px;border-color:rgba(160,50,38,.25);background:rgba(20,10,8,.5)">
+          <div class="ib-body" style="padding:9px 14px;font-size:.78rem;color:var(--text-sub);line-height:1.6;font-family:var(--font-serif);letter-spacing:.04em">
+            <span style="font-size:.86rem">🔒</span>
+            <span style="margin:0 4px">本回合共有</span>
+            <b style="color:var(--gold-light);font-weight:700;padding:0 2px">${myCount}</b>
+            <span>条与你相关的密报</span>
+            <span style="color:var(--text-dim);margin-left:6px">·</span>
+            <span style="color:var(--text-dim);margin-left:6px">详见上方密报阁的「📜 历史密报」折叠区</span>
+          </div>
+        </div>`;
+      }
+    }
+
     html += `</div>`;
     return html;
   }
@@ -1925,6 +1953,76 @@
       p.morale != null ? `<span class="res-chip res-chip--morale">心<b>${p.morale}</b></span>` : '',
       p.cities != null ? `<span class="res-chip res-chip--city">城<b>${p.cities}</b></span>` : '',
     ].filter(Boolean).join('');
+  }
+
+  // ══════════════════════════════════════════
+  //  M39-5: 密报清单渲染(GM 校验用,不过滤身份)
+  //  - 列出每条密报的 slots / title / body 前 30 字 / 是否密令
+  //  - 校验 slots 是否在 [甲,乙,丙] 白名单内
+  //  - 校验 slots 是否为空数组
+  //  - 校验密令选项 items 是否为空
+  //  - 异常用红色 ⚠ 警示,正常用绿色 ✓
+  // ══════════════════════════════════════════
+  function _buildParsePreviewSecrets(parsed) {
+    if (!parsed) return '';
+    const secrets = (parsed.secrets && Array.isArray(parsed.secrets)) ? parsed.secrets : [];
+    if (!secrets.length) {
+      return `<div class="pp-item"><strong>📨 密报阁:</strong><span class="pp-nil">本回合无密报</span></div>`;
+    }
+
+    const VALID_SLOTS = ['甲', '乙', '丙'];
+    const lines = [];
+    lines.push(`<div class="pp-item"><strong>📨 密报阁:</strong><span class="pp-ok">共 ${secrets.length} 条</span></div>`);
+
+    secrets.forEach((s, i) => {
+      // slots 合法性
+      const slots = Array.isArray(s.slots) ? s.slots : [];
+      const slotsBad = !slots.length;
+      const invalidSlots = slots.filter(sl => VALID_SLOTS.indexOf(sl) === -1);
+      const slotsHtml = slotsBad
+        ? `<span style="color:#f07070">⚠ slots 为空</span>`
+        : invalidSlots.length
+          ? `<span style="color:#f07070">⚠ 非法 slots: ${esc(invalidSlots.join(','))}</span>`
+          : `<span class="pp-ok">${esc(slots.join('+'))}</span>`;
+
+      // 标题
+      const title = s.title || '(无标题)';
+
+      // 内容预览
+      let bodyPreview = '';
+      if (s.isCmd) {
+        const items = Array.isArray(s.items) ? s.items : [];
+        if (!items.length) {
+          bodyPreview = `<span style="color:#f0b040">⚠ 密令选项为空</span>`;
+        } else {
+          const itemsTxt = items.map(it => (it.num || '') + ' ' + (it.name || '')).join(' / ');
+          bodyPreview = `<span style="color:var(--text-sub)">密令 ${items.length} 条: ${esc(itemsTxt.slice(0, 40))}${itemsTxt.length > 40 ? '…' : ''}</span>`;
+        }
+      } else {
+        const body = (s.body || '').replace(/\s+/g, ' ').trim();
+        if (!body) {
+          bodyPreview = `<span style="color:#f0b040">⚠ 密报正文为空</span>`;
+        } else {
+          bodyPreview = `<span style="color:var(--text-sub)">${esc(body.slice(0, 30))}${body.length > 30 ? '…' : ''}</span>`;
+        }
+      }
+
+      const cmdTag = s.isCmd
+        ? `<span style="color:#f0c060;font-size:.7rem;margin-left:4px">[密令]</span>`
+        : '';
+
+      lines.push(
+        `<div class="pp-item" style="padding-left:18px">` +
+        `<span style="color:var(--text-dim)">#${i + 1}</span>` +
+        ` ${slotsHtml}` +
+        ` <strong style="color:var(--gold-light);margin:0 4px">${esc(title)}</strong>` +
+        cmdTag +
+        ` ${bodyPreview}` +
+        `</div>`
+      );
+    });
+
+    return lines.join('');
   }
 
   // ══════════════════════════════════════════
@@ -1942,7 +2040,11 @@
     const detectedRound = Number.isInteger(parsed?.round) ? parsed.round : parseInt(parsed?.round, 10);
     const roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
     const header = `<div class="pp-item"><strong>🎴 发布后将成为：</strong><span class="pp-ok">第 ${roundNum} 回合</span></div>`;
-    res.innerHTML = header + lines.map(l => `<div class="pp-item">${l}</div>`).join('');
+
+    // M39-5: 密报清单 + slots 校验(GM 校验用,不过滤身份)
+    const secretsHtml = _buildParsePreviewSecrets(parsed);
+
+    res.innerHTML = header + secretsHtml + lines.map(l => `<div class="pp-item">${l}</div>`).join('');
     box.classList.remove('hidden');
   }
 
