@@ -1,5 +1,6 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v25.3
+ * v25.5 (2026-05-30): 工单#map-tooltip-font-unify · 玩家城驻将兜底"空" + 文案"空缺"→"空"
  * v25.4 (2026-05-27): 工单#map-tooltip-1 · 城池悬浮卡守将区极简化 — 去势力色 + 去状态后缀 + 阵亡不渲染
  * v25.3 (变更): 公开 API 追加 getFactionColor(factionName),供军报/战报读取 NPC 阵营色
  * v25.2 (2026-05-28): 移除 _showTip 内 sgt-combat-section 在途/战况段渲染,该信息迁移至军报板块
@@ -1034,20 +1035,25 @@ const BONUS_MULT = {
     //   ? rawHolder
     //   : (isNPC ? (city.npcGuard || '无') : '无');
 
+    // [legacy v13] 当 holder 为空时无条件回退到 city.npcGuard,
+    // 导致 "谯郡(空)" 被自动填成 "夏侯渊"
+    // const rawHolder = (ow?.holder || '').trim();
+    // const holderDisp = (rawHolder && rawHolder !== '无')
+    //   ? rawHolder
+    //   : (isNPC ? (city.npcGuard || '无') : '无');
+
     // v14 (2026-05-26): 尊重用户录入的"空"标记。
     // 仅当本回合数据完全没有该城的 NPC 条目 (ow 为 undefined) 时,
     // 才回退到 city.npcGuard 作为静态展示;
     // 一旦 ow 存在且 holder 为空/'无',必定显示 "无",不再自动补 npcGuard。
+    // v25.5 (2026-05-30): 兜底统一为"空"。
+    // 主持人忘填驻将一律显示"空",不再回退到 city.npcGuard 静态默认值。
     const rawHolder = (ow?.holder || '').trim();
     let holderDisp;
     if (rawHolder && rawHolder !== '无') {
       holderDisp = rawHolder;
-    } else if (ow) {
-      // 用户明确录入了该城但 holder 为空 → 必须显示 "无"
-      holderDisp = '无';
     } else {
-      // 本回合数据中根本没有该城条目 → 退回静态默认值
-      holderDisp = isNPC ? (city.npcGuard || '无') : '无';
+      holderDisp = '空';
     }
 
     // ══ v20260617a · 工单#map-tooltip-1 · 守将区极简化 ══
@@ -1057,7 +1063,7 @@ const BONUS_MULT = {
     // - 半角空格 join 改为不 join(由 CSS flex gap 控制间距)
     let holderHtml = '';
     if (!holderDisp || holderDisp === '无' || holderDisp === '空' || holderDisp === '空缺') {
-      holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空缺</div>';
+      holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空</div>';
     } else {
       // 兼容 / , ， 、 四种分隔符
       const pills = holderDisp.split(/[\/,，、]/).map(s => s.trim()).filter(Boolean);
@@ -1083,7 +1089,7 @@ const BONUS_MULT = {
 
       // 全部阵亡或解析后为空 → 显示空缺
       if (pillHtmls.length === 0) {
-        holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空缺</div>';
+        holderHtml = '<div class="sgt-gen-pill-row sgt-gen-empty">空</div>';
       } else {
         // 不 join 空格,由 CSS flex gap 控制
         holderHtml = `<div class="sgt-holder-names">${pillHtmls.join('')}</div>`;
