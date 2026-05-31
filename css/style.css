@@ -6754,14 +6754,7 @@ body.fx-off-captured [data-ctype="captured"] {
   letter-spacing: .14em;
   margin-bottom: 8px;
   padding-bottom: 6px;
-  border-bottom: 1px dashed rgba(180,140,60,.18);
   text-transform: uppercase;
-}
-.sb-group-title::before {
-  content: '';
-  width: 14px;
-  height: 1px;
-  background: linear-gradient(90deg, var(--gold-dim), transparent);
 }
 
 /* ══════════ 私域密报条目(封蜡红色条) ══════════ */
