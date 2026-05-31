@@ -6605,3 +6605,37 @@ body.fx-off-captured [data-ctype="captured"] {
     min-width:auto !important;
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20260530a 工单#map-tooltip-font-unify-v25.5
+   城池悬浮卡字体优化:
+   1. 标签字号 .60 → .72 / 字重 400 → 600
+   2. 兵种字母字号 .68 → .78 / 字重 600 → 700 / 色彩提亮
+   3. 「空」「无兵」两种空态像素级统一
+   ════════════════════════════════════════════════════════════ */
+
+/* 标签:驻将/兵力 */
+.sgmap-tooltip .sgt-lbl {
+  font-size: .72rem !important;
+  font-weight: 600 !important;
+}
+
+/* 兵种字母:步/弓/骑/水/蛮 */
+.sgmap-tooltip .sgt-troop-chip b {
+  font-size: .78rem !important;
+  font-weight: 700 !important;
+  color: #a08862 !important;
+}
+
+/* 空态统一规格:「空」与「无兵」完全一致 */
+.sgmap-tooltip .sgt-dim,
+.sgmap-tooltip .sgt-gen-empty {
+  font-size: .78rem !important;
+  font-weight: 500 !important;
+  color: #6a5d4a !important;
+  letter-spacing: 0 !important;
+  opacity: 1 !important;
+  padding: 0 !important;
+  font-style: normal !important;
+  line-height: 1.6 !important;
+}
