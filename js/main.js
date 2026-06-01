@@ -216,6 +216,17 @@
               return [];
             }
           })(),
+          // [world-3] world 字段兜底:parser 重新解析 raw_content
+          // 旧存档无 [世界] 段时返回空数组,不影响渲染
+          world: (function () {
+            try {
+              const reparsed = SGParser.parse(row.raw_content || '');
+              return Array.isArray(reparsed.world) ? reparsed.world : [];
+            } catch (e) {
+              console.warn('[world-3] world 兜底解析失败:', e);
+              return [];
+            }
+          })(),
         },
         rawContent: row.raw_content || '',
         _apiId:     row.id,
@@ -434,6 +445,7 @@
       renderDigest(latest);
       renderPlayerCards();
       renderMap();
+      renderWorld(latest);
       renderChangesDetail();
       renderHistorySection();
     }
@@ -1847,6 +1859,145 @@
       s = s.slice(badgeText.length).trim();
     }
     return s || raw;
+  }
+
+  // ══════════════════════════════════════════
+  //  「世界」面板渲染 v1 (工单 #world-3)
+  //  数据源:
+  //    武将动态 = latest.parsed.world[]
+  //              字段 {name,status,location,remaining,raw}
+  //    烽烟    = latest.parsed.transit[] 中 slot===null 的 NPC 调度
+  //  排序:紧迫度优先(剩余回合升序,∞ 排尾,同剩余按状态权重)
+  // ══════════════════════════════════════════
+  function renderWorld(latest) {
+    const block   = document.getElementById('block-world');
+    if (!block) return;
+    const genList = document.getElementById('world-gen-list');
+    const milList = document.getElementById('world-mil-list');
+    const genCnt  = document.getElementById('world-gen-count');
+    const milCnt  = document.getElementById('world-mil-count');
+    if (!genList || !milList || !genCnt || !milCnt) return;
+
+    const parsed = (latest && latest.parsed) ? latest.parsed : {};
+    const world   = Array.isArray(parsed.world)   ? parsed.world   : [];
+    const transit = Array.isArray(parsed.transit) ? parsed.transit : [];
+
+    // ── 武将动态:整段 world 数组 ──
+    _renderWorldGen(genList, genCnt, world);
+
+    // ── 烽烟:只取 slot===null 的 NPC 调度 ──
+    const npcTransit = transit.filter(t => t && t.slot === null);
+    _renderWorldMil(milList, milCnt, npcTransit);
+  }
+
+  // 武将动态排序:剩余升序,∞ 排尾,同剩余按状态权重
+  function _sortWorldGen(list) {
+    const ORDER = { '被俘': 0, '在野': 1, '客途': 2 };
+    return list.slice().sort((a, b) => {
+      const ar = (a.remaining === Infinity || a.remaining === '∞') ? 99999 : Number(a.remaining);
+      const br = (b.remaining === Infinity || b.remaining === '∞') ? 99999 : Number(b.remaining);
+      if (ar !== br) return ar - br;
+      const so = (ORDER[a.status] || 99) - (ORDER[b.status] || 99);
+      if (so !== 0) return so;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN');
+    });
+  }
+
+  function _renderWorldGen(listEl, cntEl, data) {
+    cntEl.textContent = data.length;
+    if (!data.length) {
+      listEl.innerHTML = '<div class="world-empty">天下安定,江湖无事</div>';
+      return;
+    }
+    const sorted = _sortWorldGen(data);
+    listEl.innerHTML = sorted.map(g => {
+      const status = String(g.status || '');
+      const name   = String(g.name || '');
+      const loc    = String(g.location || '');
+      const rem    = g.remaining;
+      return '<div class="world-gen-row" data-status="' + esc(status) + '">' +
+        '<span class="world-gen-status">' + esc(status) + '</span>' +
+        '<div class="world-gen-main">' +
+          '<span class="world-gen-name">' + esc(name) + '</span>' +
+          '<span class="world-gen-loc">' + _renderWorldLoc(loc) + '</span>' +
+        '</div>' +
+        _renderWorldRem(rem) +
+      '</div>';
+    }).join('');
+  }
+
+  function _renderWorldMil(listEl, cntEl, data) {
+    cntEl.textContent = data.length;
+    if (!data.length) {
+      listEl.innerHTML = '<div class="world-empty">四境无兵动</div>';
+      return;
+    }
+    listEl.innerHTML = data.map(t => {
+      const faction = String(t.faction || '?');
+      const general = String(t.general || '');
+      const from    = String(t.from || '');
+      const to      = String(t.to || '');
+      const troopT  = String(t.troopType || '');
+      const troopN  = (t.troopCount != null) ? t.troopCount : '';
+      const status  = String(t.status || '');
+
+      // 阵营色:优先 SGMap.getFactionColor,兜底暗金
+      let mc = '#a07830';
+      if (window.SGMap && typeof SGMap.getFactionColor === 'function') {
+        const fc = SGMap.getFactionColor(faction);
+        if (fc && fc.glow) mc = fc.glow;
+      }
+
+      return '<div class="world-mil-row" style="--wm-c:' + mc + '">' +
+        '<span class="world-mil-faction">' + esc(faction) + '</span>' +
+        '<div class="world-mil-main">' +
+          '<span class="world-mil-general">' + esc(general) + '</span>' +
+          '<span class="world-mil-route">' + esc(from) + '<span class="arrow">›</span>' + esc(to) + '</span>' +
+        '</div>' +
+        (troopT || troopN !== ''
+          ? '<span class="world-mil-troop">' + esc(troopT) + ' <b>' + esc(String(troopN)) + '</b></span>'
+          : '') +
+        _renderWorldStatus(status) +
+      '</div>';
+    }).join('');
+  }
+
+  // 位置渲染:含 → 时按箭头切分,其他原样输出
+  function _renderWorldLoc(loc) {
+    if (!loc) return '';
+    if (loc.indexOf('→') !== -1) {
+      return loc.split('→').map((p, i) =>
+        (i > 0 ? '<span class="arrow">›</span>' : '') + esc(p)
+      ).join('');
+    }
+    return esc(loc);
+  }
+
+  // 剩余回合渲染:∞ 金色,≤2 橙红警示,其他暗金
+  function _renderWorldRem(rem) {
+    if (rem === Infinity || rem === '∞') {
+      return '<span class="world-gen-rem infinity">∞</span>';
+    }
+    const n = Number(rem);
+    if (!Number.isFinite(n)) {
+      return '<span class="world-gen-rem">—</span>';
+    }
+    const cls = n <= 2 ? 'world-gen-rem urgent' : 'world-gen-rem';
+    return '<span class="' + cls + '">剩 ' + n + '</span>';
+  }
+
+  // 烽烟状态渲染:围攻中橙、剩N≤1 红、客驻蓝、其他暗金
+  function _renderWorldStatus(s) {
+    if (!s) return '<span class="world-mil-status">—</span>';
+    if (s === '围攻中') return '<span class="world-mil-status siege">围攻中</span>';
+    if (s === '客驻')   return '<span class="world-mil-status guest">客驻</span>';
+    const m = s.match(/^剩(\d+)$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      const cls = n <= 1 ? 'world-mil-status urgent' : 'world-mil-status march';
+      return '<span class="' + cls + '">' + esc(s) + '</span>';
+    }
+    return '<span class="world-mil-status">' + esc(s) + '</span>';
   }
 
   window.__showHistoryRound = function (roundNum) {
