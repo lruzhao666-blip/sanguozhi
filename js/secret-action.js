@@ -790,15 +790,7 @@
       return `${head}\n${body}`;
     });
 
-    let result = parts.join('\n\n');
-
-    // [gm-copy-tail-v1] 末尾追加 GM 小尾巴(若非空)
-    if (window.SGCopyTail && typeof window.SGCopyTail.get === 'function') {
-      const tail = window.SGCopyTail.get();
-      if (tail) result += '\n\n' + tail;
-    }
-
-    return result;
+    return parts.join('\n\n');
   }
 
   async function clearRemote() {
