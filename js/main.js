@@ -2533,3 +2533,575 @@
   // 对外暴露
   window.SGAch = { open: open, close: close };
 })();
+
+
+/* ============================================================
+   SGAdvice  ·  我的建议渲染模块  v20260920a
+   ------------------------------------------------------------
+   职责:
+   - 从最新一轮 rd.parsed.rawDigest 解析 🎯 行动建议
+   - 按当前登录身份(SGRole.get())过滤出属于本人的建议项
+   - 渲染到 #sa-advice-content 内(采纳/撤销/分支弹窗交互)
+   - 监听 sg-rounds-updated、sg-role-changed 自动重渲染
+
+   依赖:
+   - PR2:#sa-advice-content、#sa-advice-role-tip、
+          #sa-branch-overlay 及其子元素
+   - PR3:.sa-advice-card / .sa-advice-head / .sa-advice-num /
+          .sa-advice-name / .sa-advice-note /
+          .sa-advice-branches / .sa-advice-branch /
+          .sa-advice-branch-label / .sa-advice-branch-text /
+          .sa-advice-actions / .sa-advice-btn / .is-undo /
+          .sa-advice-accepted-tag / .is-accepted /
+          .sa-advice-fallback / .sa-advice-empty / .sa-advice-list /
+          .sa-branch-opt / .sa-branch-opt-radio /
+          .sa-branch-opt-body / .sa-branch-opt-label /
+          .sa-branch-opt-text / .sa-branch-opt.selected
+   - PR4:window.SGArmyCouncil.{acceptToFirstEmpty, undoAccept,
+          findAcceptedOrderIdx, isSlotLocked, buildAcceptText}
+
+   不动现有逻辑:与 _preRenderActionBlocks 平行存在,
+   通过末尾追加 IIFE 实现,零侵入。
+   ============================================================ */
+(function () {
+  'use strict';
+
+  /* ── 角色 → slot 映射(对齐 role-login.js 的 '甲'/'乙'/'丙') ── */
+  const ROLE_TO_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
+  const SLOT_TO_LORD = ['城主甲', '城主乙', '城主丙'];
+
+  /* ── HTML 转义 ── */
+  function escAd(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* ── 剥除 GM 标注 ── */
+  function stripGM(l) {
+    return String(l || '').trim()
+      .replace(/^[【\[][^】\]\n]{1,12}[】\]]\s*/, '').trim();
+  }
+
+  /* ── 本地 toast(不依赖 secret-action.js 内部私有函数) ── */
+  function adToast(msg) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    el.classList.add('show');
+    setTimeout(() => {
+      el.classList.remove('show');
+      setTimeout(() => el.classList.add('hidden'), 320);
+    }, 2800);
+  }
+
+  /* ─────────────────────────────────────────────
+     从 rawDigest 解析建议为结构化数据
+     输出格式:
+     [
+       { playerSlot: 0,
+         playerLabel: '昭',
+         items: [
+           { idx: 1, name: '联合孙权', note: '共抗曹操', branches: [] },
+           { idx: 2, name: '夺取荆州', note: '...',
+             branches: [ {key:'A', text:'走水路'}, {key:'B', text:'走陆路'} ] }
+         ]
+       }, ...
+     ]
+     说明:playerSlot 通过出现顺序 0/1/2 映射,与玩家卡顺序一致。
+     正则规则与 main.js 内 _preRenderActionBlocks 保持一致。
+  ───────────────────────────────────────────── */
+  function parseAdviceStructured(text) {
+    if (!text || !text.trim()) return [];
+    const lines = text.split('\n');
+    const result = [];
+    let i = 0;
+
+    const isOpt  = l => /^\s*[①②③④⑤⑥]\s*.+/.test(l);
+    const isSingleLine = l => /^[^:：①②③④⑤⑥\s][^:：]{0,12}[：:]\s*.*[①②③④⑤⑥]/.test(l.trim());
+    const isPName = l => {
+      const t = l.trim();
+      return t.length >= 1 && t.length <= 10
+        && !/[：:①②③④⑤⑥]/.test(t)
+        && !/^[\s\u3000]/.test(t)
+        && !/^[📍🔖💡⏳🎯🌍⚡📢🔥📜🎴🌐⚔️🏯🌅🌙•·▪▸▶◆◇■□=─═—]/.test(t);
+    };
+    const isPNameColon = l => {
+      const t = l.trim();
+      return /^[^:：①②③④⑤⑥\s][^:：①②③④⑤⑥]{0,7}[：:]\s*$/.test(t)
+        && !/^[📍🔖💡⏳🎯🌍⚡📢🔥📜🎴🌐⚔️🏯🌅🌙•·▪▸▶◆◇■□=─═—]/.test(t);
+    };
+    const isWait = l => /^⏳/.test(l.trim());
+    const isBranchLine = l => /^\s*[A-Ca-c](?:[.．、]|[：:]|\s)\s*.+/.test(l);
+    const branchLetter = l => l.trim().slice(0, 1).toUpperCase();
+    const branchText   = l => l.trim().replace(/^[A-Ca-c](?:[.．、]|[：:]|\s)\s*/, '');
+
+    function splitNameNote(raw) {
+      const dashIdx = raw.search(/——|──|\s[-—]{2}\s/);
+      if (dashIdx > 0) {
+        return {
+          name: raw.slice(0, dashIdx).trim(),
+          note: raw.slice(dashIdx).replace(/^[——──\s-—]+/, '').trim()
+        };
+      }
+      return { name: raw.trim(), note: '' };
+    }
+
+    while (i < lines.length) {
+      const stripped = stripGM(lines[i]);
+      if (!/^🎯\s*行动建议/.test(stripped)) { i++; continue; }
+
+      // 进入 🎯 行动建议块
+      i++;
+      const pendingPlayers = [];
+      let pendingPlayer = null;
+      let pendingOpts = [];
+      let emptyCount = 0;
+
+      const flushP = () => {
+        if (pendingPlayer !== null && pendingOpts.length) {
+          pendingPlayers.push({ playerLabel: pendingPlayer, opts: pendingOpts });
+        }
+        pendingPlayer = null;
+        pendingOpts = [];
+      };
+
+      while (i < lines.length) {
+        const s2 = stripGM(lines[i]);
+        if (isWait(s2)) { flushP(); i++; break; }
+        if (!s2) {
+          emptyCount++;
+          if (emptyCount > 1) { flushP(); break; }
+          i++; continue;
+        }
+        emptyCount = 0;
+
+        // 单行格式:「名: ① xxx ② xxx」(无分支)
+        if (isSingleLine(s2)) {
+          flushP();
+          const cm = s2.match(/^([^:：①②③④⑤⑥\s][^:：]{0,12})[：:]\s*(.+)$/);
+          if (cm) {
+            const pLabel = cm[1].trim();
+            const rest = cm[2].trim();
+            const opts = [];
+            const re = /[①②③④⑤⑥]\s*([^①②③④⑤⑥]+)/g;
+            let m;
+            while ((m = re.exec(rest)) !== null) {
+              const txt = m[1].trim().replace(/[,,]+$/, '');
+              const nn = splitNameNote(txt);
+              opts.push({ name: nn.name, note: nn.note, branches: [] });
+            }
+            pendingPlayers.push({ playerLabel: pLabel, opts });
+          }
+          i++; continue;
+        }
+
+        // 纯选项行:① xxx
+        if (isOpt(s2)) {
+          const optTxt = s2.trim().replace(/^[①②③④⑤⑥]\s*/, '').replace(/[,,]+$/, '');
+          const nn = splitNameNote(optTxt);
+          const branches = [];
+          i++;
+          while (i < lines.length) {
+            const ahead = stripGM(lines[i]);
+            if (!ahead) { i++; continue; }
+            if (isBranchLine(ahead)) {
+              branches.push({ key: branchLetter(ahead), text: branchText(ahead) });
+              i++;
+            } else break;
+          }
+          pendingOpts.push({ name: nn.name, note: nn.note, branches });
+          continue;
+        }
+
+        if (isPNameColon(s2)) {
+          flushP();
+          pendingPlayer = s2.trim().replace(/[：:]\s*$/, '');
+          i++; continue;
+        }
+        if (isPName(s2)) {
+          flushP();
+          pendingPlayer = s2;
+          i++; continue;
+        }
+        if (isBranchLine(s2)) { i++; continue; }
+
+        flushP();
+        break;
+      }
+      flushP();
+
+      // 按出现顺序映射 slot
+      pendingPlayers.forEach((p, idx) => {
+        const items = p.opts.map((o, oi) => ({
+          idx: oi + 1,
+          name: o.name,
+          note: o.note,
+          branches: o.branches || []
+        }));
+        result.push({ playerSlot: idx % 3, playerLabel: p.playerLabel, items });
+      });
+
+      // 只取第一个 🎯 行动建议块
+      break;
+    }
+
+    return result;
+  }
+
+  /* ─────────────────────────────────────────────
+     根据角色获取本人建议
+     返回 { slot, playerLabel, items:[] } 或 null
+  ───────────────────────────────────────────── */
+  function getForRole(role) {
+    const slot = ROLE_TO_SLOT[role];
+    if (slot === undefined) return null;
+
+    const st = window.SGState;
+    if (!st || !st.rounds || !st.rounds.length) {
+      return { slot, playerLabel: '', items: [] };
+    }
+    const last = st.rounds[st.rounds.length - 1];
+    const rawDigest =
+      (last && last.parsed && last.parsed.rawDigest) ||
+      (last && last.rawDigest) || '';
+    const all = parseAdviceStructured(rawDigest);
+    const mine = all.find(p => p.playerSlot === slot);
+    return {
+      slot,
+      playerLabel: mine ? mine.playerLabel : '',
+      items: mine ? mine.items : []
+    };
+  }
+
+  /* ─────────────────────────────────────────────
+     adviceKey 生成器:用于 PR4 的 SGArmyCouncil 追踪
+     格式:slot{N}::{ICON}   如 slot0::①
+  ───────────────────────────────────────────── */
+  const ICONS = ['①','②','③','④','⑤','⑥'];
+  function buildAdviceKey(slot, idx) {
+    return `slot${slot}::${ICONS[idx] || (idx + 1)}`;
+  }
+
+  /* ─────────────────────────────────────────────
+     渲染到 #sa-advice-content(对齐 PR2 HTML + PR3 CSS)
+  ───────────────────────────────────────────── */
+  function render() {
+    const panel = document.getElementById('sa-advice-content');
+    if (!panel) return;
+
+    // 角色提示位(标题旁,PR2 提供 #sa-advice-role-tip)
+    const tipEl = document.getElementById('sa-advice-role-tip');
+
+    const role = (window.SGRole && typeof window.SGRole.get === 'function')
+      ? window.SGRole.get() : null;
+
+    // 未登录态
+    if (!role) {
+      panel.innerHTML =
+        '<div class="sa-advice-empty">🔐 请先登录身份后查看专属建议</div>';
+      if (tipEl) tipEl.textContent = '';
+      return;
+    }
+
+    const data = getForRole(role);
+    const slot = data ? data.slot : -1;
+
+    // 标题旁显示视角
+    if (tipEl) {
+      tipEl.textContent = ` · ${SLOT_TO_LORD[slot] || ''}视角`;
+    }
+
+    if (!data || !data.items || !data.items.length) {
+      panel.innerHTML =
+        '<div class="sa-advice-empty">本回合暂无属于你的行动建议</div>';
+      return;
+    }
+
+    // 已锁定 → 仍渲染卡片,但全部按钮置禁用
+    const locked = !!(window.SGArmyCouncil
+      && typeof window.SGArmyCouncil.isSlotLocked === 'function'
+      && window.SGArmyCouncil.isSlotLocked(slot));
+
+    let html = '<div class="sa-advice-list">';
+    data.items.forEach((it, idx) => {
+      const adviceKey = buildAdviceKey(slot, idx);
+      const hasBranch = it.branches && it.branches.length > 0;
+
+      // 已采纳查询(PR4 API)
+      let acceptedOrderIdx = -1;
+      if (window.SGArmyCouncil && typeof window.SGArmyCouncil.findAcceptedOrderIdx === 'function') {
+        try { acceptedOrderIdx = window.SGArmyCouncil.findAcceptedOrderIdx(slot, adviceKey); }
+        catch (e) { acceptedOrderIdx = -1; }
+      }
+      const isAccepted = acceptedOrderIdx >= 0;
+
+      html += `<div class="sa-advice-card${isAccepted ? ' is-accepted' : ''}" data-advice-key="${escAd(adviceKey)}" data-idx="${idx}">`;
+
+      // 头部:序号 + 行动名 + 已采纳标签
+      html += `<div>`;
+      html += `<div class="sa-advice-head">`;
+      html += `<span class="sa-advice-num">${ICONS[idx] || (idx + 1)}</span>`;
+      html += `<span class="sa-advice-name">${escAd(it.name)}</span>`;
+      if (isAccepted) {
+        const orderNum = ICONS[acceptedOrderIdx] || (acceptedOrderIdx + 1);
+        html += `<span class="sa-advice-accepted-tag">✓ 已采纳到 ${orderNum} 军令框</span>`;
+      }
+      html += `</div>`; // .sa-advice-head
+
+      // 注解
+      if (it.note) {
+        html += `<div class="sa-advice-note">${escAd(it.note)}</div>`;
+      }
+
+      // 分支列表
+      if (hasBranch) {
+        html += `<div class="sa-advice-branches">`;
+        it.branches.forEach(br => {
+          html += `<div class="sa-advice-branch">`;
+          html += `<span class="sa-advice-branch-label">${escAd(br.key)}</span>`;
+          html += `<span class="sa-advice-branch-text">${escAd(br.text)}</span>`;
+          html += `</div>`;
+        });
+        html += `</div>`; // .sa-advice-branches
+      }
+      html += `</div>`; // body 包裹
+
+      // 操作按钮区
+      html += `<div class="sa-advice-actions">`;
+      if (isAccepted) {
+        html += `<button class="sa-advice-btn is-undo" data-act="undo" data-advice-key="${escAd(adviceKey)}" data-idx="${idx}"${locked ? ' disabled' : ''}>撤销</button>`;
+      } else {
+        html += `<button class="sa-advice-btn" data-act="accept" data-advice-key="${escAd(adviceKey)}" data-idx="${idx}"${locked ? ' disabled' : ''}>${hasBranch ? '采纳…' : '采纳'}</button>`;
+      }
+      html += `</div>`; // .sa-advice-actions
+
+      html += `</div>`; // .sa-advice-card
+    });
+    html += `</div>`; // .sa-advice-list
+
+    // 锁定提示
+    if (locked) {
+      html += `<div class="sa-advice-fallback">该方军令已锁定,如需采纳建议请先解除锁定。</div>`;
+    }
+
+    panel.innerHTML = html;
+
+    // 缓存当前数据,供事件回调取用
+    panel._sgAdviceData = { slot, items: data.items, locked };
+  }
+
+  /* ─────────────────────────────────────────────
+     事件委托:采纳 / 撤销
+  ───────────────────────────────────────────── */
+  function bindEvents() {
+    const panel = document.getElementById('sa-advice-content');
+    if (!panel || panel._sgAdviceBound) return;
+    panel._sgAdviceBound = true;
+
+    panel.addEventListener('click', function (ev) {
+      const btn = ev.target.closest('.sa-advice-btn');
+      if (!btn || btn.disabled) return;
+      const act = btn.getAttribute('data-act');
+      const adviceKey = btn.getAttribute('data-advice-key');
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      const data = panel._sgAdviceData;
+      if (!data || !data.items) return;
+
+      const it = data.items[idx];
+      if (!it) return;
+
+      const SAC = window.SGArmyCouncil;
+      if (!SAC) {
+        adToast('⚠️ 军帐模块未就绪');
+        return;
+      }
+
+      // 槽位已锁定 → 拒绝
+      if (typeof SAC.isSlotLocked === 'function' && SAC.isSlotLocked(data.slot)) {
+        adToast('⚠️ 该方军令已锁定,请先解除锁定');
+        return;
+      }
+
+      if (act === 'undo') {
+        SAC.undoAccept(data.slot, adviceKey);
+        render();
+        adToast('✓ 已撤销采纳');
+        return;
+      }
+
+      if (act === 'accept') {
+        // 有分支 → 弹窗选择
+        if (it.branches && it.branches.length > 0) {
+          openBranchModal(data.slot, adviceKey, it);
+          return;
+        }
+        // 无分支 → 直接采纳
+        const text = (typeof SAC.buildAcceptText === 'function')
+          ? SAC.buildAcceptText(it.name, '')
+          : it.name;
+        const r = SAC.acceptToFirstEmpty(data.slot, text, adviceKey);
+        handleAcceptResult(r);
+      }
+    });
+  }
+
+  function handleAcceptResult(r) {
+    if (!r || typeof r !== 'object') { render(); return; }
+    if (r.ok) {
+      render();
+      const orderNum = ICONS[r.orderIdx] || (r.orderIdx + 1);
+      adToast(`✓ 已采纳到 ${orderNum} 军令框`);
+      return;
+    }
+    if (r.reason === 'full') {
+      adToast('⚠️ 军令已满,请先清空一个框再采纳');
+    } else if (r.reason === 'locked') {
+      adToast('⚠️ 该方军令已锁定,请先解除锁定');
+    } else {
+      adToast('⚠️ 采纳失败');
+    }
+    render();
+  }
+
+  /* ─────────────────────────────────────────────
+     分支选择弹窗(对齐 PR2 HTML + PR3 CSS)
+     使用 #sa-branch-overlay / #sa-branch-title /
+          #sa-branch-options / #sa-branch-cancel /
+          #sa-branch-confirm
+     交互:单选 radio 模式,选中后"确定"按钮才可点
+  ───────────────────────────────────────────── */
+  let _branchState = null; // { slot, adviceKey, item, selectedKey }
+  let _branchBound = false;
+
+  function openBranchModal(slot, adviceKey, item) {
+    const overlay = document.getElementById('sa-branch-overlay');
+    const titleEl = document.getElementById('sa-branch-title');
+    const optsEl  = document.getElementById('sa-branch-options');
+    const cancelBtn  = document.getElementById('sa-branch-cancel');
+    const confirmBtn = document.getElementById('sa-branch-confirm');
+
+    if (!overlay || !optsEl || !confirmBtn) {
+      // DOM 不存在 → 降级:原生 prompt
+      const keys = item.branches.map(b => b.key).join('/');
+      const pick = (prompt(`选择「${item.name}」的分支(${keys}):`, item.branches[0].key) || '').trim().toUpperCase();
+      const br = item.branches.find(b => b.key === pick);
+      if (!br) return;
+      doAcceptWithBranch(slot, adviceKey, item, br);
+      return;
+    }
+
+    // 标题
+    if (titleEl) titleEl.textContent = `选择「${item.name}」的分支`;
+
+    // 渲染选项(对齐 PR3 .sa-branch-opt 结构)
+    let html = '';
+    item.branches.forEach(br => {
+      html += `<div class="sa-branch-opt" data-key="${escAd(br.key)}">`;
+      html += `<div class="sa-branch-opt-radio"></div>`;
+      html += `<div class="sa-branch-opt-body">`;
+      html += `<div class="sa-branch-opt-label">${escAd(br.key)}</div>`;
+      html += `<div class="sa-branch-opt-text">${escAd(br.text)}</div>`;
+      html += `</div>`;
+      html += `</div>`;
+    });
+    optsEl.innerHTML = html;
+
+    // 重置选中态 + 确定按钮
+    confirmBtn.disabled = true;
+    _branchState = { slot, adviceKey, item, selectedKey: null };
+
+    // 显示
+    overlay.classList.remove('hidden');
+
+    // 绑定事件(幂等)
+    if (!_branchBound) {
+      _branchBound = true;
+
+      optsEl.addEventListener('click', function (ev) {
+        const opt = ev.target.closest('.sa-branch-opt');
+        if (!opt) return;
+        const key = opt.getAttribute('data-key');
+        if (!_branchState) return;
+        _branchState.selectedKey = key;
+        // 视觉刷新
+        optsEl.querySelectorAll('.sa-branch-opt').forEach(el => {
+          el.classList.toggle('selected', el.getAttribute('data-key') === key);
+        });
+        confirmBtn.disabled = false;
+      });
+
+      cancelBtn && cancelBtn.addEventListener('click', closeBranchModal);
+
+      // 点击遮罩外区域关闭
+      overlay.addEventListener('click', function (ev) {
+        if (ev.target === overlay) closeBranchModal();
+      });
+
+      confirmBtn.addEventListener('click', function () {
+        if (!_branchState || !_branchState.selectedKey) return;
+        const st = _branchState;
+        const br = st.item.branches.find(b => b.key === st.selectedKey);
+        closeBranchModal();
+        if (br) doAcceptWithBranch(st.slot, st.adviceKey, st.item, br);
+      });
+
+      // ESC 关闭
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape' && overlay && !overlay.classList.contains('hidden')) {
+          closeBranchModal();
+        }
+      });
+    }
+  }
+
+  function closeBranchModal() {
+    const overlay = document.getElementById('sa-branch-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    _branchState = null;
+  }
+
+  function doAcceptWithBranch(slot, adviceKey, item, br) {
+    const SAC = window.SGArmyCouncil;
+    if (!SAC || typeof SAC.acceptToFirstEmpty !== 'function') return;
+
+    const text = (typeof SAC.buildAcceptText === 'function')
+      ? SAC.buildAcceptText(item.name, br.text)
+      : `${item.name} - ${br.text}`;
+
+    const r = SAC.acceptToFirstEmpty(slot, text, adviceKey);
+    handleAcceptResult(r);
+  }
+
+  /* ─────────────────────────────────────────────
+     启动
+  ───────────────────────────────────────────── */
+  function init() {
+    bindEvents();
+    render();
+
+    // 监听全局事件
+    window.addEventListener('sg-rounds-updated', render);
+    window.addEventListener('sg-role-changed',  render);
+  }
+
+  // 等待 DOM 就绪;稍微延迟确保 secret-action.js 的 SGArmyCouncil 已挂载
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(init, 50);
+    });
+  } else {
+    setTimeout(init, 50);
+  }
+
+  // 暴露给外部
+  // - render():无参,PR4 在用户手改军令框 / 新一轮 / 锁定切换时调用
+  // - getForRole(role):供调试或扩展
+  // - parseAdviceStructured(text):纯函数,供单测或调试
+  window.SGAdvice = {
+    render: render,
+    getForRole: getForRole,
+    parseAdviceStructured: parseAdviceStructured,
+  };
+})();
