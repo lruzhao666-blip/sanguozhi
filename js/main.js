@@ -567,8 +567,12 @@
     countEl.textContent = `${mine.length} 支`;
 
     listEl.innerHTML = mine.map(({ t, isNpc }) => {
-      // 状态映射
-      const statusCls = t.status === '围攻中' ? 'siege'
+      // v15: 7 状态映射,旧词「围攻中」与新词「攻城中」同义
+      const statusCls = (t.status === '攻城中' || t.status === '围攻中') ? 'siege'
+                      : t.status === '交战中' ? 'battle'
+                      : t.status === '对峙中' ? 'standoff'
+                      : t.status === '撤退中' ? 'retreat'
+                      : t.status === '驻屯中' ? 'garrison'
                       : t.status === '客驻'   ? 'resident'
                       : 'march';
       // NPC 行强制红色色条(覆盖默认 march 暗金)
@@ -1742,7 +1746,12 @@
       transit.forEach(t => {
         const sideColor = _junbaoGetSideColor(t.slot, t.faction);
         const badgeText = _junbaoGetBadgeText(t.slot, t.faction);
-        const statusCls = t.status === '围攻中' ? 'jbt-siege'
+        // v15: 7 状态映射,旧词「围攻中」与新词「攻城中」同义
+        const statusCls = (t.status === '攻城中' || t.status === '围攻中') ? 'jbt-siege'
+                        : t.status === '交战中' ? 'jbt-battle'
+                        : t.status === '对峙中' ? 'jbt-standoff'
+                        : t.status === '撤退中' ? 'jbt-retreat'
+                        : t.status === '驻屯中' ? 'jbt-garrison'
                         : t.status === '客驻'   ? 'jbt-resident'
                         : 'jbt-march';
         const styleStr = [
@@ -1987,9 +1996,14 @@
   }
 
   // 烽烟状态渲染:围攻中橙、剩N≤1 红、客驻蓝、其他暗金
+  // v15: 7 状态映射,旧词「围攻中」与新词「攻城中」同义
   function _renderWorldStatus(s) {
     if (!s) return '<span class="world-mil-status">—</span>';
-    if (s === '围攻中') return '<span class="world-mil-status siege">围攻中</span>';
+    if (s === '攻城中' || s === '围攻中') return '<span class="world-mil-status siege">' + esc(s) + '</span>';
+    if (s === '交战中') return '<span class="world-mil-status battle">交战中</span>';
+    if (s === '对峙中') return '<span class="world-mil-status standoff">对峙中</span>';
+    if (s === '撤退中') return '<span class="world-mil-status retreat">撤退中</span>';
+    if (s === '驻屯中') return '<span class="world-mil-status garrison">驻屯中</span>';
     if (s === '客驻')   return '<span class="world-mil-status guest">客驻</span>';
     const m = s.match(/^剩(\d+)$/);
     if (m) {
