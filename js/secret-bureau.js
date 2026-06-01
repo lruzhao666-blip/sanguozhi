@@ -114,25 +114,61 @@
   }
 
   // ── 渲染密令选项块(整块封装) ──
-  function renderCmdBlock(s) {
+  // [secret-adopt-v1] 复制按钮 → 采纳按钮(对齐军帐 SGAdvice 交互)
+  // 行为:点击 → 调 SGArmyCouncil.acceptToFirstEmpty(slot, text, adviceKey, {secret:true})
+  //       已采纳 → 显示"撤销"按钮 + "✓ 已采纳到 N 军令框"标签
+  //       槽位锁定 → 按钮 disabled
+  function renderCmdBlock(s, currentRole, roundNum, secretIdx) {
     const items = Array.isArray(s.items) ? s.items : [];
     if (!items.length) return '';
-    // [cmd-polish-2] 行内单条样式,⑤⑥ 由 parser 从原文捞出,前端直接渲染
-    const html = items.map(it => {
+
+    const ROLE_TO_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
+    const ICONS = ['①','②','③','④'];
+    const slot = ROLE_TO_SLOT[currentRole];
+    const hasSAC = !!(window.SGArmyCouncil);
+    const locked = hasSAC && typeof SGArmyCouncil.isSlotLocked === 'function'
+      ? SGArmyCouncil.isSlotLocked(slot) : false;
+
+    const html = items.map((it, itemIdx) => {
       const name = it.name || '';
       const note = it.note || '';
       const num  = it.num  || '';
-      const argName = encodeURIComponent(name);
-      const argNote = encodeURIComponent(note);
+      const adviceKey = `secret::r${roundNum}::s${secretIdx}::i${itemIdx}`;
+
+      // 反查是否已采纳
+      let acceptedOrderIdx = -1;
+      if (hasSAC && typeof SGArmyCouncil.findAcceptedOrderIdx === 'function' && slot !== undefined) {
+        try { acceptedOrderIdx = SGArmyCouncil.findAcceptedOrderIdx(slot, adviceKey); }
+        catch (e) { acceptedOrderIdx = -1; }
+      }
+      const isAccepted = acceptedOrderIdx >= 0;
+
+      // 按钮 HTML(复用军帐 .sa-advice-btn 样式)
+      let btnHtml;
+      if (isAccepted) {
+        btnHtml = `<button class="sa-advice-btn is-undo sb-cmd-adopt-btn"
+          data-act="undo" data-advice-key="${esc(adviceKey)}"
+          data-name="${esc(name)}" data-note="${esc(note)}"
+          ${locked ? 'disabled' : ''}>撤销</button>`;
+      } else {
+        btnHtml = `<button class="sa-advice-btn sb-cmd-adopt-btn"
+          data-act="accept" data-advice-key="${esc(adviceKey)}"
+          data-name="${esc(name)}" data-note="${esc(note)}"
+          ${locked ? 'disabled' : ''}>采纳</button>`;
+      }
+
+      // 已采纳标签(复用军帐 .sa-advice-accepted-tag)
+      const acceptedTag = isAccepted
+        ? `<span class="sa-advice-accepted-tag">✓ 已采纳到 ${ICONS[acceptedOrderIdx] || (acceptedOrderIdx + 1)} 军令框</span>`
+        : '';
+
       return `
-        <div class="sb-cmd-row">
+        <div class="sb-cmd-row${isAccepted ? ' is-accepted' : ''}">
           <span class="sb-cmd-num">${esc(num)}</span>
           <span class="sb-cmd-name">${esc(name)}</span>
           ${note ? `<span class="sb-cmd-sep">——</span><span class="sb-cmd-note">${esc(note)}</span>` : ''}
-          <button class="sb-cmd-copy-btn"
-            onclick="window.__sbCopyCmd(decodeURIComponent('${argName}'), decodeURIComponent('${argNote}'))">
-            📋 复制
-          </button>
+          ${acceptedTag}
+          ${btnHtml}
         </div>
       `;
     }).join('');
@@ -201,7 +237,13 @@
       if (cmdSecrets.length) {
         bodyHtml += '<div class="sb-group">';
         bodyHtml += '<div class="sb-group-title">密令选项</div>';
-        bodyHtml += cmdSecrets.map(s => renderCmdBlock(s)).join('');
+        // [secret-adopt-v1] 传入 role / round / secretIdx 用于构造 adviceKey
+        // secretIdx 需基于过滤前的原数组定位,避免 normal/cmd 拆分后索引错位
+        const allSecrets = (latest.parsed && latest.parsed.secrets) || [];
+        bodyHtml += cmdSecrets.map(s => {
+          const secretIdx = allSecrets.indexOf(s);
+          return renderCmdBlock(s, role, latest.round, secretIdx);
+        }).join('');
         bodyHtml += '</div>';
       }
     } else {
@@ -260,6 +302,71 @@
   } else {
     init();
   }
+
+  // ── [secret-adopt-v1] 采纳/撤销事件委托 ──
+  // 委托到 #secret-bureau-body,处理 .sb-cmd-adopt-btn 点击
+  function bindAdoptEvents() {
+    const body = document.getElementById('secret-bureau-body');
+    if (!body || body._sbAdoptBound) return;
+    body._sbAdoptBound = true;
+
+    body.addEventListener('click', function (ev) {
+      const btn = ev.target.closest('.sb-cmd-adopt-btn');
+      if (!btn || btn.disabled) return;
+
+      const SAC = window.SGArmyCouncil;
+      if (!SAC) { showToast('⚠️ 军帐模块未就绪'); return; }
+
+      const role = getCurrentRole();
+      const ROLE_TO_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
+      const slot = ROLE_TO_SLOT[role];
+      if (slot === undefined) { showToast('⚠️ 请先登录身份'); return; }
+
+      if (typeof SAC.isSlotLocked === 'function' && SAC.isSlotLocked(slot)) {
+        showToast('⚠️ 该方军令已锁定,请先解除锁定');
+        return;
+      }
+
+      const act = btn.getAttribute('data-act');
+      const adviceKey = btn.getAttribute('data-advice-key');
+      const name = btn.getAttribute('data-name') || '';
+      const note = btn.getAttribute('data-note') || '';
+
+      if (act === 'undo') {
+        SAC.undoAccept(slot, adviceKey);
+        render();
+        showToast('✓ 已撤销采纳');
+        return;
+      }
+
+      if (act === 'accept') {
+        const text = (typeof SAC.buildAcceptText === 'function')
+          ? SAC.buildAcceptText(name, note)
+          : (note ? `${name} - ${note}` : name);
+        const ICONS = ['①','②','③','④'];
+        // 第 4 参数 {secret:true} 让采纳后默认勾选密令
+        const r = SAC.acceptToFirstEmpty(slot, text, adviceKey, { secret: true });
+        if (r && r.ok) {
+          render();
+          const orderNum = ICONS[r.orderIdx] || (r.orderIdx + 1);
+          showToast(`✓ 已采纳到 ${orderNum} 军令框`);
+        } else if (r && r.reason === 'full') {
+          showToast('⚠️ 军令已满,请先清空一个框再采纳');
+        } else if (r && r.reason === 'locked') {
+          showToast('⚠️ 该方军令已锁定,请先解除锁定');
+        } else {
+          showToast('⚠️ 采纳失败');
+        }
+      }
+    });
+  }
+
+  // 在 render() 后自动绑(幂等,只绑一次)
+  const _origRender_sbAdopt = render;
+  render = function () {
+    _origRender_sbAdopt.apply(this, arguments);
+    bindAdoptEvents();
+  };
 
   // 暴露给其他模块手动触发
   window.SGSecretBureau = { render };

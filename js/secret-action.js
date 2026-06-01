@@ -850,8 +850,9 @@
   // 把建议内容写入第一个空军令框
   // text:已经组装好的字符串(行动名 或 行动名 - 分支名)
   // adviceKey:唯一标识(如 "slot0::①"),用于撤销时定位
+  // opts:可选 { secret: boolean } 控制采纳后是明令还是密令(默认明令)
   // 返回:{ ok:true, orderIdx:N } 或 { ok:false, reason:'full'/'locked'/'no-role' }
-  function acceptToFirstEmpty(slot, text, adviceKey) {
+  function acceptToFirstEmpty(slot, text, adviceKey, opts) {
     if (slot < 0 || slot > 2) return { ok: false, reason: 'bad-slot' };
     const data = localState.slots[slot];
     if (data.locked) return { ok: false, reason: 'locked' };
@@ -859,8 +860,9 @@
     const emptyIdx = data.orders.findIndex(o => !o.text || !o.text.trim());
     if (emptyIdx === -1) return { ok: false, reason: 'full' };
 
+    const asSecret = !!(opts && opts.secret);
     data.orders[emptyIdx].text = text;
-    data.orders[emptyIdx].secret = false; // 采纳建议默认明令
+    data.orders[emptyIdx].secret = asSecret;
     if (adviceKey) data.fromAdvice[adviceKey] = emptyIdx;
 
     renderCard(slot);
