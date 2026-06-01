@@ -7270,3 +7270,348 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ══ v20260601a END ══ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260601e 工单#world-2B · 「世界」面板 v1 落地
+   设计目标:武将动态 + 烽烟 双列;桌面左右 ≤900px 上下;
+            v6 质感(宋体衬线 + 三层渐变背景 + 双层金线 + 等宽数字)
+   状态色:被俘暗红 / 在野苔绿 / 客途驼金 / 紧迫≤2 橙红
+   ──────────────────────────────────────────────────────────── */
+
+/* 状态色变量(v1 新增) */
+:root {
+  --w-captured:        #9c8b7a;
+  --w-wild:            #8aa370;
+  --w-courier:         #d4b870;
+  --w-urgent:          #d4734a;
+}
+
+/* ── 板块外壳:覆盖默认 .info-block 的扁平边框,加 v6 质感 ── */
+.block-world {
+  position: relative;
+  border: 1px solid rgba(212,168,67,.38);
+  background:
+    radial-gradient(ellipse 700px 120px at 50% 0, rgba(212,168,67,.07), transparent 70%),
+    radial-gradient(ellipse 900px 220px at 50% 100%, rgba(40,0,0,.45), transparent 70%),
+    linear-gradient(180deg, rgba(14,8,8,.96), rgba(8,3,3,.98));
+  box-shadow:
+    0 0 0 1px rgba(212,168,67,.06),
+    inset 0 1px 0 rgba(255,220,150,.08),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 6px 24px rgba(0,0,0,.55);
+}
+
+/* ── 板块头部:暗金渐变 + 底部对称金线 ── */
+.block-world .ib-header {
+  padding: 11px 20px;
+  background:
+    linear-gradient(90deg, rgba(80,15,8,.45), rgba(45,8,4,.25) 60%, transparent),
+    radial-gradient(ellipse 400px 60px at 30% 50%, rgba(212,168,67,.05), transparent);
+  border-bottom: 1px solid rgba(212,168,67,.18);
+  position: relative;
+}
+.block-world .ib-header::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(180,120,40,.4),
+    rgba(212,168,67,.55),
+    rgba(180,120,40,.4),
+    transparent);
+  pointer-events: none;
+}
+.block-world .ib-icon--text {
+  font-family: var(--font-serif);
+  font-size: .6rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  background: linear-gradient(180deg, rgba(212,168,67,.18), rgba(160,120,40,.08));
+  border: 1px solid rgba(212,168,67,.45);
+  border-radius: 3px;
+  padding: 2px 8px;
+  letter-spacing: .1em;
+  line-height: 1.5;
+  box-shadow: inset 0 1px 0 rgba(255,220,150,.12);
+}
+.block-world .ib-title {
+  font-family: var(--font-serif);
+  font-size: .95rem;
+  font-weight: 900;
+  color: var(--gold-light);
+  letter-spacing: .14em;
+  text-shadow: 0 0 12px rgba(212,168,67,.25), 0 2px 4px rgba(0,0,0,.8);
+}
+
+/* ── 板块主体 ── */
+.block-world .ib-body { padding: 14px 18px 16px; }
+
+/* ── 双列网格:桌面左右等宽,≤900px 自动叠成单列 ── */
+.world-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+}
+@media (max-width: 900px) {
+  .world-cols { grid-template-columns: 1fr; gap: 18px; }
+}
+
+.world-sec { min-width: 0; }
+
+/* ── 段标题:金色色条 + 衬线 + 计数 ── */
+.world-sec-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+  padding: 3px 0 7px 10px;
+  margin: 0 0 6px;
+  border-bottom: 1px solid rgba(212,168,67,.18);
+  color: var(--gold-light);
+  position: relative;
+}
+.world-sec-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 9px;
+  width: 2px;
+  background: var(--gold);
+  border-radius: 1px;
+}
+.world-sec-cnt {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: .64rem;
+  color: var(--text-dim);
+  font-weight: 400;
+  letter-spacing: .04em;
+}
+.world-sec-cnt b {
+  color: var(--gold-dim);
+  font-weight: 700;
+  padding: 0 2px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* ── 列表容器 ── */
+.world-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* ══════════════════════════════════════════
+   武将动态行 .world-gen-row
+   字段:状态文字 / 武将名 + 位置 / 剩余回合
+   ══════════════════════════════════════════ */
+.world-gen-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 12px;
+  border-left: 2px solid var(--wg-c, var(--text-dim));
+  border-radius: 0 var(--r) var(--r) 0;
+  background: rgba(18,10,6,.42);
+  transition: background .18s;
+}
+.world-gen-row:hover { background: rgba(35,18,10,.7); }
+.world-gen-row[data-status="被俘"] { --wg-c: var(--w-captured); }
+.world-gen-row[data-status="在野"] { --wg-c: var(--w-wild); }
+.world-gen-row[data-status="客途"] { --wg-c: var(--w-courier); }
+
+.world-gen-status {
+  font-family: var(--font-serif);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  color: var(--wg-c);
+  text-align: center;
+}
+.world-gen-main {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  overflow: hidden;
+}
+.world-gen-name {
+  font-family: var(--font-serif);
+  font-size: .94rem;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: .03em;
+  flex-shrink: 0;
+}
+.world-gen-loc {
+  font-size: .74rem;
+  color: var(--text-sub);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.world-gen-loc .arrow {
+  color: var(--wg-c);
+  margin: 0 4px;
+  font-weight: 700;
+}
+.world-gen-rem {
+  font-size: .76rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  white-space: nowrap;
+  text-align: right;
+  min-width: 42px;
+}
+.world-gen-rem.urgent {
+  color: var(--w-urgent);
+  font-weight: 700;
+}
+.world-gen-rem.infinity {
+  color: var(--gold-dim);
+  font-weight: 700;
+  font-size: .92rem;
+}
+
+/* ══════════════════════════════════════════
+   烽烟行 .world-mil-row
+   字段:势力徽 / 武将+路线 / 兵力 / 状态
+   桌面 4 列横排,手机 grid-areas 重排为 2 行
+   ══════════════════════════════════════════ */
+.world-mil-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 12px;
+  border-left: 2px solid var(--wm-c, var(--gold-dim));
+  border-radius: 0 var(--r) var(--r) 0;
+  background: rgba(18,10,6,.42);
+  transition: background .18s;
+}
+.world-mil-row:hover { background: rgba(35,18,10,.7); }
+
+.world-mil-faction {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  font-family: var(--font-serif);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  border-radius: 3px;
+  border: 1px solid var(--wm-c);
+  color: var(--wm-c);
+  background: rgba(0,0,0,.2);
+  white-space: nowrap;
+  line-height: 1.5;
+}
+.world-mil-main {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  overflow: hidden;
+}
+.world-mil-general {
+  font-family: var(--font-serif);
+  font-size: .9rem;
+  font-weight: 900;
+  color: var(--text-main);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.world-mil-route {
+  font-size: .74rem;
+  color: var(--text-sub);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.world-mil-route .arrow {
+  color: var(--wm-c);
+  margin: 0 4px;
+  font-weight: 700;
+}
+.world-mil-troop {
+  font-size: .7rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  white-space: nowrap;
+}
+.world-mil-troop b {
+  color: var(--text-sub);
+  font-weight: 600;
+}
+.world-mil-status {
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  white-space: nowrap;
+  text-align: right;
+  min-width: 50px;
+}
+.world-mil-status.march    { color: var(--gold-dim); }
+.world-mil-status.siege    { color: #e8884c; }
+.world-mil-status.guest    { color: #8ec5e8; }
+.world-mil-status.urgent   { color: var(--w-urgent); }
+
+/* ── 空态 ── */
+.world-empty {
+  padding: 18px 6px;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: .76rem;
+  color: var(--text-dim);
+  letter-spacing: .14em;
+  opacity: .55;
+}
+
+/* ── 移动端 ≤600px:武将主体两行;烽烟 grid-areas 重排 ── */
+@media (max-width: 600px) {
+  .block-world .ib-header { padding: 9px 14px; }
+  .block-world .ib-body   { padding: 11px 12px 13px; }
+
+  .world-gen-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+  }
+  .world-gen-loc {
+    font-size: .68rem;
+    color: var(--text-dim);
+  }
+
+  .world-mil-row {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "fac main status"
+      "fac troop status";
+    gap: 2px 10px;
+  }
+  .world-mil-faction { grid-area: fac; align-self: center; }
+  .world-mil-main {
+    grid-area: main;
+    flex-direction: column;
+    gap: 1px;
+    align-items: flex-start;
+  }
+  .world-mil-troop  { grid-area: troop; }
+  .world-mil-status { grid-area: status; align-self: center; }
+  .world-mil-route  { font-size: .68rem; }
+  .world-mil-general { font-size: .84rem; }
+}
+
+/* ══ v20260601e 工单#world-2B END ══ */
