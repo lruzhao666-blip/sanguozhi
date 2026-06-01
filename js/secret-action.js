@@ -1,30 +1,43 @@
 /* ============================================================
-   secret-action.js  ·  加密行动板块  v1.0
+   secret-action.js  ·  军帐板块  v5  (v20260920a)
    ------------------------------------------------------------
-   表结构（需在 Supabase SQL Editor 执行一次）：
+   由「加密行动 / 密令」板块升级而来。
+   核心变更:
+   - 每位玩家 4 个独立军令框(原单 textarea)
+   - 每框可勾选「□ 改为密令」,明面/密令双层
+   - Supabase 新增 secret_text 列,与 content 同行配对
+   - 三家全部锁定才解锁复制;复制后清空云端本局
+   - 复制格式:=== 城主X === \n ① 内容 \n\n 【密】内容
+   - 术语:「封印」全部替换为「锁定」
+   - 规则速览 / 我的建议 折叠条 localStorage 记忆
+   - 暴露 window.SGArmyCouncil 接口供 main.js(PR5)调用
 
-   CREATE TABLE IF NOT EXISTS public.secret_actions (
-     id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-     slot       smallint NOT NULL CHECK (slot IN (0,1,2)),
-     content    text     NOT NULL DEFAULT '',
-     session_id text     NOT NULL DEFAULT '',
-     submitted_at timestamptz DEFAULT now()
-   );
-   ALTER TABLE public.secret_actions ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY "anon all" ON public.secret_actions FOR ALL USING (true) WITH CHECK (true);
+   兼容:
+   - 旧记录(secret_text=NULL)按"该 slot 本回合无密令"渲染
+   - sessionId 仍固定 'global',跨设备共享
+   - 所有现有 ID 保留(#sa-card-i / #sa-submit-i / #sa-locked-mask-i
+     / #sa-seal-badge-i / #sa-status-dot-i / #sa-status-txt-i /
+     #sa-player-name-i / #sa-player-name-status-i /
+     #sa-progress-badge / #sa-copy-btn / #sa-new-session /
+     #sa-table-error / #sa-all-ready-banner /
+     #sa-fallback-overlay / #sa-fallback-ta / #sa-fallback-close)
 
-   逻辑：
-   - 每次打开页面生成一个 sessionId（存 sessionStorage），
-     作为本回合"局"标识，避免跨回合串数据
-   - 每个 slot (0/1/2) 提交后不可撤回，远端写入，本地锁定
-   - 轮询检测三方是否全部提交
-   - 全员提交后，一键复制按钮亮起；复制后自动清空本局所有行
+   表结构(PR1 已执行):
+   public.secret_actions
+   ├─ id            uuid PRIMARY KEY DEFAULT gen_random_uuid()
+   ├─ slot          smallint NOT NULL CHECK (slot IN (0,1,2))
+   ├─ content       text     NOT NULL DEFAULT ''   ← 明令拼合
+   ├─ secret_text   text     NULL                  ← 密令拼合(NEW)
+   ├─ session_id    text     NOT NULL DEFAULT ''
+   └─ submitted_at  timestamptz DEFAULT now()
    ============================================================ */
 
 (function () {
   'use strict';
 
-  /* ── 常量 ── */
+  /* ─────────────────────────────────────────────
+     常量
+  ───────────────────────────────────────────── */
   const BASE_URL  = 'https://smiifcbmmtolimtaxpip.supabase.co/rest/v1/secret_actions';
   const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaWlmY2JtbXRvbGltdGF4cGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTM4MzgsImV4cCI6MjA5Mzg4OTgzOH0.9pMRTaWDqXqWb_Ttti93dj8-FXgQMjAAbIZL5E-zN54';
   const HEADERS   = {
@@ -33,41 +46,60 @@
     'Content-Type':  'application/json',
     'Prefer':        'return=representation',
   };
-  const POLL_MS   = 4000;   // 轮询间隔（毫秒）
-  const MAX_CHARS = 2000;   // 单条行动最大字数
+  const POLL_MS   = 4000;          // 轮询间隔
+  const ORDER_NUMS = ['①','②','③','④'];
+  const ORDERS_PER_CARD = 4;
 
-  /* ── 本局会话 ID（刷新重置）── */
-  let sessionId = sessionStorage.getItem('sa_session_id');
-  if (!sessionId) {
-    sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-    sessionStorage.setItem('sa_session_id', sessionId);
-  }
-  // v20260704c · 跨设备同步修复:强制覆盖为固定全局 ID,所有设备共享同一份数据
-  sessionId = 'global';
+  // 跨设备同步:固定全局 ID(与旧版一致)
+  const sessionId = 'global';
 
-  /* ── 本地状态 ── */
+  // localStorage 键
+  const LS_RULES_COLLAPSED  = 'sa-rules-collapsed';   // 默认 '1'(收起)
+  const LS_ADVICE_COLLAPSED = 'sa-advice-collapsed';  // 默认 '0'(展开)
+
+  /* ─────────────────────────────────────────────
+     本地状态
+  ───────────────────────────────────────────── */
+  // 每个 slot 的本地数据模型:
+  //   { orders: [{text, secret}, {text, secret}, {text, secret}, {text, secret}],
+  //     locked: bool,
+  //     fromAdvice: { [adviceKey]: orderIdx }  ← PR5 注入,记录哪些条来自建议采纳
+  //   }
   const localState = {
-    submitted: [false, false, false],   // 本设备已提交
-    contents:  ['', '', ''],            // 提交的文案（用于拼接）
-    allDone:   false,                   // 三方全部提交
-    pollTimer: null,
-    tableError: false,                  // 表不存在
+    slots: [makeEmptySlot(), makeEmptySlot(), makeEmptySlot()],
+    allDone:     false,
+    pollTimer:   null,
+    tableError:  false,
+    remoteSlots: [],
   };
 
-  /* ── 工具函数 ── */
-  function esc(s) {
-    return String(s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function makeEmptySlot() {
+    return {
+      orders: [
+        { text: '', secret: false },
+        { text: '', secret: false },
+        { text: '', secret: false },
+        { text: '', secret: false },
+      ],
+      locked: false,
+      fromAdvice: {},
+    };
   }
+
+  /* ─────────────────────────────────────────────
+     工具函数
+  ───────────────────────────────────────────── */
+  const $ = id => document.getElementById(id);
+
   function fetchSA(url, opts = {}, ms = 8000) {
     const ctrl  = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), ms);
     return fetch(url, { ...opts, signal: ctrl.signal })
       .finally(() => clearTimeout(timer));
   }
+
   function saShowToast(msg) {
-    const el = document.getElementById('toast');
+    const el = $('toast');
     if (!el) return;
     el.textContent = msg;
     el.classList.remove('hidden');
@@ -79,351 +111,564 @@
   }
 
   /* ─────────────────────────────────────────────
-     DOM 快捷获取
-  ───────────────────────────────────────────── */
-  const $ = id => document.getElementById(id);
-
-  /* ─────────────────────────────────────────────
-     初始化入口（等 DOM ready）
+     初始化入口
   ───────────────────────────────────────────── */
   function init() {
     bindUI();
-    refreshPlayerNames();   // 读取主模块中已渲染的玩家名
+    refreshPlayerNames();
+    initToggles();
+    renderAllCards();
     startPoll();
     checkTableExists();
+  }
+
+  /* ─────────────────────────────────────────────
+     折叠条:规则速览 + 我的建议
+     localStorage 记忆,默认值见常量
+  ───────────────────────────────────────────── */
+  function initToggles() {
+    // 规则速览(默认收起)
+    bindToggle({
+      toggleEl: $('sa-rules-toggle'),
+      panelEl:  $('sa-rules-panel'),
+      arrowEl:  $('sa-rules-arrow'),
+      lsKey:    LS_RULES_COLLAPSED,
+      defaultCollapsed: true,
+      expandClass: 'sa-rules-expanded',
+    });
+
+    // 我的建议(默认展开)
+    bindToggle({
+      toggleEl: $('sa-advice-toggle'),
+      panelEl:  $('sa-advice-panel'),
+      arrowEl:  $('sa-advice-arrow'),
+      lsKey:    LS_ADVICE_COLLAPSED,
+      defaultCollapsed: false,
+      expandClass: 'sa-advice-expanded',
+    });
+  }
+
+  function bindToggle({ toggleEl, panelEl, arrowEl, lsKey, defaultCollapsed, expandClass }) {
+    if (!toggleEl || !panelEl || !arrowEl) return;
+
+    // 读取记忆(未设置时走默认)
+    let stored = null;
+    try { stored = localStorage.getItem(lsKey); } catch (e) {}
+    let collapsed = (stored === null) ? defaultCollapsed : (stored === '1');
+
+    const apply = () => {
+      if (collapsed) {
+        panelEl.classList.remove(expandClass);
+        arrowEl.textContent = '[展开 ▼]';
+      } else {
+        panelEl.classList.add(expandClass);
+        arrowEl.textContent = '[收起 ▲]';
+      }
+      toggleEl.setAttribute('data-collapsed', collapsed ? '1' : '0');
+    };
+    apply();
+
+    toggleEl.addEventListener('click', () => {
+      collapsed = !collapsed;
+      try { localStorage.setItem(lsKey, collapsed ? '1' : '0'); } catch (e) {}
+      apply();
+    });
   }
 
   /* ─────────────────────────────────────────────
      绑定 UI 事件
   ───────────────────────────────────────────── */
   function bindUI() {
-    // 三个提交按钮
+    // 三个锁定/解锁按钮
     [0, 1, 2].forEach(slot => {
       const btn = $(`sa-submit-${slot}`);
-      if (btn) btn.addEventListener('click', () => onSubmit(slot));
+      if (btn) btn.addEventListener('click', () => onToggleLock(slot));
     });
 
     // 一键复制
     const copyBtn = $('sa-copy-btn');
     if (copyBtn) copyBtn.addEventListener('click', onCopyAll);
 
-    // 新建一局（重置本地 session，重新开始）
+    // 新一轮
     const newBtn = $('sa-new-session');
     if (newBtn) newBtn.addEventListener('click', onNewSession);
 
-    // 字符计数
-    [0, 1, 2].forEach(slot => {
-      const ta = $(`sa-ta-${slot}`);
-      const counter = $(`sa-char-count-${slot}`);
-      if (ta && counter) {
-        ta.addEventListener('input', () => {
-          const len = ta.value.length;
-          counter.textContent = `${len} / ${MAX_CHARS}`;
-          counter.classList.toggle('sa-char-warn', len > MAX_CHARS * 0.85);
-        });
+    // 降级复制弹窗关闭
+    document.addEventListener('click', e => {
+      if (e.target && (e.target.id === 'sa-fallback-close' || e.target.id === 'sa-fallback-overlay')) {
+        const overlay = $('sa-fallback-overlay');
+        if (overlay) overlay.classList.add('hidden');
       }
     });
   }
 
   /* ─────────────────────────────────────────────
-     从主模块读取玩家名并更新卡头
+     渲染玩家名(从 #pname-{i} / #ptitle-{i} 读)
   ───────────────────────────────────────────── */
   function refreshPlayerNames() {
     [0, 1, 2].forEach(slot => {
-      // 读 pcard 上已渲染的玩家名
       const nameEl  = document.getElementById(`pname-${slot}`);
       const name    = nameEl ? nameEl.textContent.trim() : `城主${'甲乙丙'[slot]}`;
 
-      // 读称号（由 renderPlayerCards 写入 ptitle-{slot}）
       const titleEl = document.getElementById(`ptitle-${slot}`);
-      const title   = titleEl ? titleEl.textContent.trim() : '';
+      const title   = (titleEl && titleEl.textContent.trim()) || '';
 
-      // 显示名：有称号则只用称号，否则用玩家名
       const displayName = title || name;
 
-      // 卡头名字
       const headEl = $(`sa-player-name-${slot}`);
       if (headEl) headEl.textContent = displayName;
 
-      // 状态栏名字
       const statusNameEl = $(`sa-player-name-status-${slot}`);
       if (statusNameEl) statusNameEl.textContent = displayName;
-
-      // textarea label（保留完整名+称号信息）
-      const labelEl = $(`sa-label-${slot}`);
-      if (labelEl) labelEl.textContent = title ? `${name}（${title}）的行动` : `${name} 的行动`;
     });
   }
 
   /* ─────────────────────────────────────────────
-     检查表是否存在
+     卡片渲染:把 localState 同步到 DOM
+     注意:由于 HTML 已经有静态结构,这里只更新 textarea 值
+           + checkbox 状态 + 行高度,不重建 DOM
   ───────────────────────────────────────────── */
-  async function checkTableExists() {
-    try {
-      const res = await fetchSA(`${BASE_URL}?limit=0`, { headers: HEADERS }, 5000);
-      if (res.status === 404 || res.status === 400) {
-        localState.tableError = true;
-        showTableError();
-      }
-    } catch (e) { /* 网络错误忽略 */ }
+  function renderAllCards() {
+    [0, 1, 2].forEach(renderCard);
+    updateProgress();
   }
 
-  function showTableError() {
-    const el = $('sa-table-error');
-    if (el) el.classList.remove('hidden');
+  function renderCard(slot) {
+    const data = localState.slots[slot];
+    const card = $(`sa-card-${slot}`);
+    if (!card) return;
+
+    // 4 个军令行
+    data.orders.forEach((o, idx) => {
+      const row = card.querySelector(`.sa-order-row[data-slot="${slot}"][data-idx="${idx}"]`);
+      if (!row) return;
+      const ta  = row.querySelector('.sa-order-input');
+      const cb  = row.querySelector('.sa-secret-checkbox');
+
+      if (ta) {
+        if (ta.value !== o.text) ta.value = o.text;
+        ta.disabled = data.locked;
+        ta.placeholder = o.secret ? '写下一条密令…' : '写下一条军令…';
+        // 自适应高度
+        ta.style.height = 'auto';
+        ta.style.height = (ta.scrollHeight) + 'px';
+
+        // 绑定 input 监听(幂等)
+        if (!ta._saBound) {
+          ta.addEventListener('input', onOrderInput);
+          ta._saBound = true;
+        }
+      }
+      if (cb) {
+        cb.checked = !!o.secret;
+        cb.disabled = data.locked;
+        if (!cb._saBound) {
+          cb.addEventListener('change', onSecretToggle);
+          cb._saBound = true;
+        }
+      }
+      row.classList.toggle('is-secret', !!o.secret);
+    });
+
+    // 卡片整体锁定态
+    card.classList.toggle('sa-card-locked', data.locked);
+
+    // 锁定遮罩
+    const mask = $(`sa-locked-mask-${slot}`);
+    if (mask) mask.classList.toggle('hidden', !data.locked);
+
+    // 已锁定徽章
+    const seal = $(`sa-seal-badge-${slot}`);
+    if (seal) seal.classList.toggle('hidden', !data.locked);
+
+    // 锁定/解锁按钮
+    const btn = $(`sa-submit-${slot}`);
+    if (btn) {
+      btn.disabled = false;
+      if (data.locked) {
+        btn.textContent = '解除锁定';
+        btn.classList.add('sa-btn-unlock');
+      } else {
+        btn.textContent = '锁定行动 🔒';
+        btn.classList.remove('sa-btn-unlock');
+      }
+    }
+
+    // 额度条
+    updateQuota(slot);
+  }
+
+  function onOrderInput(e) {
+    const ta   = e.currentTarget;
+    const slot = parseInt(ta.dataset.slot, 10);
+    const idx  = parseInt(ta.dataset.idx, 10);
+    if (isNaN(slot) || isNaN(idx)) return;
+    localState.slots[slot].orders[idx].text = ta.value;
+
+    // 自适应高度
+    ta.style.height = 'auto';
+    ta.style.height = (ta.scrollHeight) + 'px';
+
+    // 用户手动改了此框 → 解绑该框上挂的"我来自某条建议"标记
+    clearAdviceMapForOrder(slot, idx);
+
+    updateQuota(slot);
+
+    // 通知 PR5 重渲染建议区(撤销已采纳态)
+    notifyAdviceMaybeChanged(slot);
+  }
+
+  function onSecretToggle(e) {
+    const cb   = e.currentTarget;
+    const slot = parseInt(cb.dataset.slot, 10);
+    const idx  = parseInt(cb.dataset.idx, 10);
+    if (isNaN(slot) || isNaN(idx)) return;
+    localState.slots[slot].orders[idx].secret = cb.checked;
+
+    const row = cb.closest('.sa-order-row');
+    if (row) row.classList.toggle('is-secret', cb.checked);
+
+    const ta = row && row.querySelector('.sa-order-input');
+    if (ta) ta.placeholder = cb.checked ? '写下一条密令…' : '写下一条军令…';
+
+    updateQuota(slot);
   }
 
   /* ─────────────────────────────────────────────
-     提交行动（单个玩家）
+     额度条更新:明令/密令分别计数,三态色
+     - ≤2 ✓ 绿
+     - =3 ⚠️ 金
+     - ≥4 ❌ 红
+     - 空内容不计入(即便勾了密令)
   ───────────────────────────────────────────── */
-  async function onSubmit(slot) {
-    if (localState.submitted[slot]) return;
+  function updateQuota(slot) {
+    const data = localState.slots[slot];
+    let pub = 0, sec = 0;
+    data.orders.forEach(o => {
+      if (!o.text || !o.text.trim()) return;
+      if (o.secret) sec++; else pub++;
+    });
+    const bar     = $(`sa-quota-bar-${slot}`);
+    const pubEl   = $(`sa-quota-public-${slot}`);
+    const secEl   = $(`sa-quota-secret-${slot}`);
+    const tipEl   = $(`sa-quota-tip-${slot}`);
+    if (!bar || !pubEl || !secEl || !tipEl) return;
+
+    pubEl.textContent = pub;
+    secEl.textContent = sec;
+
+    const tone = n => n <= 2 ? 'tone-ok' : (n === 3 ? 'tone-warn' : 'tone-error');
+    pubEl.className = 'sa-quota-value ' + tone(pub);
+    secEl.className = 'sa-quota-value ' + tone(sec);
+
+    bar.classList.remove('bar-warn', 'bar-error');
+    if (pub >= 4 || sec >= 4)       bar.classList.add('bar-error');
+    else if (pub === 3 || sec === 3) bar.classList.add('bar-warn');
+
+    let tipText = `合计 ${pub + sec} 条`;
+    if (pub >= 4 && sec >= 4)      tipText = '⚠️ 明令与密令均过多,建议合并';
+    else if (pub >= 4)             tipText = '⚠️ 明令过多,建议精简';
+    else if (sec >= 4)             tipText = '⚠️ 密令过多,部分可能被婉拒';
+    else if (pub === 3 && sec === 3) tipText = '⚠️ 行动偏多,GM 可能聚合';
+    else if (pub === 3)            tipText = '提醒:明令偏多';
+    else if (sec === 3)            tipText = '提醒:密令偏多';
+    tipEl.textContent = tipText;
+  }
+
+  /* ─────────────────────────────────────────────
+     建表错误检查
+  ───────────────────────────────────────────── */
+  async function checkTableExists() {
+    try {
+      const res = await fetchSA(`${BASE_URL}?select=secret_text&limit=0`, { headers: HEADERS }, 5000);
+      if (res.status === 404 || res.status === 400) {
+        localState.tableError = true;
+        const el = $('sa-table-error');
+        if (el) {
+          el.classList.remove('hidden');
+          const body = el.querySelector('.sa-te-body');
+          if (body) {
+            body.innerHTML = '<b>数据表未就绪</b> — secret_text 列尚未添加,请在 Supabase SQL Editor 执行 PR1 工单后刷新。';
+          }
+        }
+      }
+    } catch (e) { /* 静默 */ }
+  }
+
+  /* ─────────────────────────────────────────────
+     锁定 / 解锁切换
+  ───────────────────────────────────────────── */
+  async function onToggleLock(slot) {
+    const data = localState.slots[slot];
+    if (data.locked) {
+      await onUnlock(slot);
+    } else {
+      await onLock(slot);
+    }
+  }
+
+  async function onLock(slot) {
     if (localState.tableError) {
-      saShowToast('⚠️ 数据表未就绪，请先建表');
+      saShowToast('⚠️ 数据表未就绪,请先建表');
       return;
     }
+    const data = localState.slots[slot];
 
-    const ta = $(`sa-ta-${slot}`);
-    const content = ta ? ta.value.trim() : '';
-    if (!content) { saShowToast('⚠️ 请先填写行动内容'); return; }
-    if (content.length > MAX_CHARS) { saShowToast(`⚠️ 超出 ${MAX_CHARS} 字上限`); return; }
+    // 拼合明令与密令
+    const publicText = data.orders
+      .filter(o => !o.secret && o.text && o.text.trim())
+      .map((o, i, arr) => `${ORDER_NUMS[i]} ${o.text.trim()}`)
+      .join('\n');
+    const secretArr = data.orders
+      .filter(o => o.secret && o.text && o.text.trim())
+      .map(o => o.text.trim());
+    const secretText = secretArr.length ? secretArr.map(t => `【密】${t}`).join('\n') : null;
+
+    // 全空仍允许锁定(代表"本回合无行动")— 与原版语义一致
 
     const btn = $(`sa-submit-${slot}`);
     if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
 
     try {
-      // 先删除本 session 该 slot 的旧记录（幂等）
+      // 幂等删除旧记录
       await fetchSA(
         `${BASE_URL}?session_id=eq.${encodeURIComponent(sessionId)}&slot=eq.${slot}`,
         { method: 'DELETE', headers: HEADERS }, 5000
       );
-      // 写入新记录
+      // 写入新记录(明面 + 密令)
+      const payload = {
+        slot,
+        content:     publicText,
+        secret_text: secretText,
+        session_id:  sessionId,
+      };
       const res = await fetchSA(BASE_URL, {
         method: 'POST',
         headers: HEADERS,
-        body: JSON.stringify({ slot, content, session_id: sessionId }),
+        body: JSON.stringify(payload),
       }, 8000);
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || res.status);
       }
 
-      // 本地锁定
-      localState.submitted[slot] = true;
-      localState.contents[slot]  = content;
-      lockSlot(slot);
+      data.locked = true;
+      renderCard(slot);
       updateProgress();
-      saShowToast('✅ 行动已封印，不可更改');
-
+      saShowToast('🔒 行动已锁定');
     } catch (e) {
-      saShowToast('❌ 提交失败：' + e.message);
-      if (btn) { btn.disabled = false; btn.textContent = '封印行动 🔒'; }
+      saShowToast('❌ 锁定失败:' + e.message);
+      if (btn) { btn.disabled = false; btn.textContent = '锁定行动 🔒'; }
+    }
+  }
+
+  // 解除锁定:直接生效,无二次确认
+  async function onUnlock(slot) {
+    const btn = $(`sa-submit-${slot}`);
+    if (btn) { btn.disabled = true; btn.textContent = '处理中…'; }
+    try {
+      await fetchSA(
+        `${BASE_URL}?session_id=eq.${encodeURIComponent(sessionId)}&slot=eq.${slot}`,
+        { method: 'DELETE', headers: HEADERS }, 5000
+      );
+      localState.slots[slot].locked = false;
+      // allDone 若已置位需重置(因为不再三家齐)
+      if (localState.allDone) {
+        localState.allDone = false;
+        startPoll();
+      }
+      renderCard(slot);
+      updateProgress();
+      saShowToast('🔓 已解除锁定');
+    } catch (e) {
+      saShowToast('❌ 解锁失败:' + e.message);
+      if (btn) { btn.disabled = false; btn.textContent = '解除锁定'; }
     }
   }
 
   /* ─────────────────────────────────────────────
-     锁定单个槽位 UI
-  ───────────────────────────────────────────── */
-  function lockSlot(slot) {
-    const ta  = $(`sa-ta-${slot}`);
-    const btn = $(`sa-submit-${slot}`);
-    const card = $(`sa-card-${slot}`);
-    const mask = $(`sa-locked-mask-${slot}`);
-
-    if (ta)   { ta.disabled = true; ta.value = ''; }  // 清空显示，内容已上云
-    if (btn)  { btn.disabled = true; btn.textContent = '已封印 🔒'; btn.classList.add('sa-btn-locked'); }
-    if (card) card.classList.add('sa-card-locked');
-    if (mask) mask.classList.remove('hidden');
-  }
-
-  /* ─────────────────────────────────────────────
-     进度更新（徽章数量）
+     进度刷新 + 状态点
   ───────────────────────────────────────────── */
   function updateProgress() {
-    const count = localState.submitted.filter(Boolean).length;
-    const badge = $('sa-progress-badge');
-    if (badge) badge.textContent = `${count} / 3`;
+    const localCount = localState.slots.filter(s => s.locked).length;
+    const remoteSet  = new Set(localState.remoteSlots || []);
+    // 综合本地与远端,任意一处显示"已锁定"
+    const merged = [0, 1, 2].map(i => localState.slots[i].locked || remoteSet.has(i));
 
-    // 同步本地已知的远端状态
-    renderReadyState(localState.remoteSlots || []);
+    const lockedCount = merged.filter(Boolean).length;
+    const badge = $('sa-progress-badge');
+    if (badge) badge.textContent = `${lockedCount} / 3`;
+
+    [0, 1, 2].forEach(slot => {
+      const dot = $(`sa-status-dot-${slot}`);
+      const txt = $(`sa-status-txt-${slot}`);
+      const done = merged[slot];
+      if (dot) dot.className = 'sa-status-dot' + (done ? ' sa-dot-done' : ' sa-dot-pending');
+      if (txt) txt.textContent = done ? '已锁定' : '待行动';
+    });
+
+    // 复制按钮 / 提示语 / banner
+    const copyBtn = $('sa-copy-btn');
+    const hint    = $('sa-copy-disabled-hint');
+    const banner  = $('sa-all-ready-banner');
+
+    if (lockedCount >= 3) {
+      if (copyBtn) copyBtn.disabled = false;
+      if (hint)    hint.style.display = 'none';
+      if (banner)  banner.classList.remove('hidden');
+    } else {
+      if (copyBtn) copyBtn.disabled = true;
+      if (hint)    hint.style.display = '';
+      if (banner)  banner.classList.add('hidden');
+    }
   }
 
   /* ─────────────────────────────────────────────
-     轮询：检测三方是否全部提交
+     轮询远端,同步其他设备的锁定
   ───────────────────────────────────────────── */
   function startPoll() {
     if (localState.pollTimer) clearInterval(localState.pollTimer);
     localState.pollTimer = setInterval(pollRemote, POLL_MS);
-    pollRemote(); // 立即执行一次
+    pollRemote();
   }
 
   async function pollRemote() {
     if (localState.allDone) return;
     try {
       const res = await fetchSA(
-        `${BASE_URL}?session_id=eq.${encodeURIComponent(sessionId)}&select=slot,content&order=slot.asc`,
+        `${BASE_URL}?session_id=eq.${encodeURIComponent(sessionId)}&select=slot,content,secret_text&order=slot.asc`,
         { headers: { ...HEADERS, 'Prefer': '' } }, 6000
       );
       if (!res.ok) return;
       const rows = await res.json();
+      localState.remoteSlots = rows.map(r => Number(r.slot));
 
-      // 记录已提交的 slots（远端）
-      const slots = rows.map(r => Number(r.slot));
-      localState.remoteSlots = slots;
-
-      // 远端已提交但本地未知的 → 更新本地状态（其他设备提交的）
-      slots.forEach(s => {
-        if (!localState.submitted[s]) {
-          localState.submitted[s] = true;
-          lockSlot(s);
-        }
-      });
-
-      renderReadyState(slots);
-
-      if (slots.length >= 3) {
-        // 三方全部提交：缓存内容，亮起复制按钮
-        rows.forEach(r => { localState.contents[Number(r.slot)] = r.content; });
+      // 远端三家齐 → 触发就绪态
+      if (localState.remoteSlots.length >= 3) {
+        // 把远端内容缓存,方便复制时使用(避免远端是其他设备提交的)
+        localState._remoteRows = rows;
         onAllReady();
       }
-
       updateProgress();
-    } catch (e) { /* 网络抖动忽略 */ }
+    } catch (e) { /* 静默 */ }
   }
 
-  /* ─────────────────────────────────────────────
-     渲染各槽状态（远端已提交 ≠ 本设备提交）
-  ───────────────────────────────────────────── */
-  function renderReadyState(slots) {
-    [0, 1, 2].forEach(slot => {
-      const dot = $(`sa-status-dot-${slot}`);
-      const txt = $(`sa-status-txt-${slot}`);
-      const done = slots.includes(slot);
-      if (dot) dot.className = 'sa-status-dot' + (done ? ' sa-dot-done' : ' sa-dot-pending');
-      if (txt) txt.textContent = done ? '已封印' : '待行动';
-    });
-  }
-
-  /* ─────────────────────────────────────────────
-     三方全部就绪
-  ───────────────────────────────────────────── */
   function onAllReady() {
     if (localState.allDone) return;
     localState.allDone = true;
-
-    // 停止轮询
-    clearInterval(localState.pollTimer);
-    localState.pollTimer = null;
-
-    // 亮起复制按钮
-    const copyBtn = $('sa-copy-btn');
-    if (copyBtn) {
-      copyBtn.disabled = false;
-      copyBtn.classList.add('sa-btn-ready');
+    if (localState.pollTimer) {
+      clearInterval(localState.pollTimer);
+      localState.pollTimer = null;
     }
-
-    // 全员状态区提示
-    const allReadyBanner = $('sa-all-ready-banner');
-    if (allReadyBanner) allReadyBanner.classList.remove('hidden');
-
-    saShowToast('⚔️ 三方行动已全部封印！');
+    saShowToast('⚔️ 三方行动已全部锁定!');
   }
 
   /* ─────────────────────────────────────────────
-     一键复制
+     一键复制:格式 === 城主X === \n ① 内容 \n\n 【密】内容
+     - 仅在三家全部锁定时可点
+     - 空内容跳过
+     - 全空时写 (本回合无行动)
+     - 优先用本地缓存内容;远端同步的他人内容用 _remoteRows
+     - 复制成功后清空云端
   ───────────────────────────────────────────── */
   async function onCopyAll() {
+    const text = buildCopyText();
+    try {
+      await navigator.clipboard.writeText(text);
+      saShowToast('📋 已复制,正在清空云端…');
+      await clearRemote();
+      resetLocal();
+      saShowToast('✅ 云端已清空,可开始下一轮');
+    } catch (e) {
+      // 降级
+      showFallbackCopy(text);
+    }
+  }
+
+  function buildCopyText() {
     const names = [0, 1, 2].map(slot => {
       const el = $(`sa-player-name-${slot}`);
       return el ? el.textContent.trim() : `城主${'甲乙丙'[slot]}`;
     });
 
-    const text = [0, 1, 2].map(slot => {
-      const name = names[slot];
-      const content = (localState.contents[slot] || '').trim();
-      return `【${name}】\n${content}`;
-    }).join('\n\n');
+    // 把本地与远端合并:本地 locked 用本地数据;否则用远端
+    const remoteMap = {};
+    (localState._remoteRows || []).forEach(r => {
+      remoteMap[Number(r.slot)] = r;
+    });
 
-    try {
-      await navigator.clipboard.writeText(text);
-      saShowToast('📋 已复制！正在清空云端记录…');
+    const parts = [0, 1, 2].map(slot => {
+      const localSlot = localState.slots[slot];
+      let pubLines = [];
+      let secLines = [];
 
-      // 复制成功后清空云端
-      await clearRemote();
+      if (localSlot.locked) {
+        // 用本地数据(本设备锁定的)
+        let pubIdx = 0;
+        localSlot.orders.forEach(o => {
+          if (!o.text || !o.text.trim()) return;
+          if (o.secret) {
+            secLines.push(`【密】${o.text.trim()}`);
+          } else {
+            pubLines.push(`${ORDER_NUMS[pubIdx]} ${o.text.trim()}`);
+            pubIdx++;
+          }
+        });
+      } else if (remoteMap[slot]) {
+        // 用远端数据(其他设备锁定的)
+        const c = (remoteMap[slot].content  || '').trim();
+        const s = (remoteMap[slot].secret_text || '').trim();
+        if (c) pubLines = c.split('\n').filter(Boolean);
+        if (s) secLines = s.split('\n').filter(Boolean);
+      }
 
-      // 重置本局
-      resetLocal();
-      saShowToast('✅ 云端已清空，可开始下一轮');
+      const head = `=== ${names[slot]} ===`;
+      if (!pubLines.length && !secLines.length) {
+        return `${head}\n(本回合无行动)`;
+      }
+      let body = pubLines.join('\n');
+      if (secLines.length) {
+        body += (pubLines.length ? '\n\n' : '') + secLines.join('\n');
+      }
+      return `${head}\n${body}`;
+    });
 
-    } catch (e) {
-      // 降级：弹出文本框让用户手动复制
-      showFallbackCopy(text);
-    }
+    return parts.join('\n\n');
   }
 
-  /* ─────────────────────────────────────────────
-     清空云端本局记录
-  ───────────────────────────────────────────── */
   async function clearRemote() {
     try {
       await fetchSA(
         `${BASE_URL}?session_id=eq.${encodeURIComponent(sessionId)}`,
         { method: 'DELETE', headers: HEADERS }, 8000
       );
-    } catch (e) { /* 清空失败不影响体验 */ }
+    } catch (e) { /* 失败不影响 UX */ }
   }
 
   /* ─────────────────────────────────────────────
-     重置本地，开启新一轮
+     重置本地,开启新一轮
   ───────────────────────────────────────────── */
   function resetLocal() {
-    localState.submitted = [false, false, false];
-    localState.contents  = ['', '', ''];
-    localState.allDone   = false;
+    localState.slots = [makeEmptySlot(), makeEmptySlot(), makeEmptySlot()];
+    localState.allDone     = false;
     localState.remoteSlots = [];
+    localState._remoteRows = [];
 
-    // 生成新 sessionId
-    sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-    sessionStorage.setItem('sa_session_id', sessionId);
-    // v20260704c · 跨设备同步修复:resetLocal 后仍使用固定全局 ID
-    sessionId = 'global';
-
-    // 恢复 UI
-    [0, 1, 2].forEach(slot => {
-      const ta   = $(`sa-ta-${slot}`);
-      const btn  = $(`sa-submit-${slot}`);
-      const card = $(`sa-card-${slot}`);
-      const mask = $(`sa-locked-mask-${slot}`);
-
-      if (ta)   { ta.disabled = false; ta.value = ''; }
-      if (btn)  { btn.disabled = false; btn.textContent = '封印行动 🔒'; btn.classList.remove('sa-btn-locked'); }
-      if (card) card.classList.remove('sa-card-locked');
-      if (mask) mask.classList.add('hidden');
-    });
+    renderAllCards();
 
     const copyBtn = $('sa-copy-btn');
-    if (copyBtn) { copyBtn.disabled = true; copyBtn.classList.remove('sa-btn-ready'); }
-
+    if (copyBtn) copyBtn.disabled = true;
     const banner = $('sa-all-ready-banner');
     if (banner) banner.classList.add('hidden');
+    const hint = $('sa-copy-disabled-hint');
+    if (hint) hint.style.display = '';
 
-    // 重置进度
-    const badge = $('sa-progress-badge');
-    if (badge) badge.textContent = '0 / 3';
-
-    renderReadyState([]);
-    updateProgress();
-
-    // 重新轮询
     startPoll();
+    notifyAdviceMaybeChanged(null); // 全局重渲染建议区(撤销所有已采纳态)
   }
 
-  /* ─────────────────────────────────────────────
-     新建一局（手动）
-  ───────────────────────────────────────────── */
   async function onNewSession() {
-    const ok = confirm('确认清空当前所有行动，开始新一轮？\n（此操作不可撤回）');
+    const ok = confirm('确认清空当前所有行动,开始新一轮?\n(此操作不可撤回)');
     if (!ok) return;
     await clearRemote();
     resetLocal();
@@ -431,41 +676,122 @@
   }
 
   /* ─────────────────────────────────────────────
-     降级复制（不支持 clipboard API 时）
+     降级复制(剪贴板 API 不可用时)
   ───────────────────────────────────────────── */
   function showFallbackCopy(text) {
     const overlay = $('sa-fallback-overlay');
     const ta      = $('sa-fallback-ta');
     if (overlay) overlay.classList.remove('hidden');
-    if (ta) {
-      ta.value = text;
-      ta.select();
-    }
+    if (ta) { ta.value = text; ta.select(); }
   }
 
   /* ─────────────────────────────────────────────
-     当切换到"加密行动"tab 时刷新玩家名
+     ★ 暴露接口给 main.js(PR5「我的建议」模块)★
+     接口规约见文末 SGArmyCouncil API。
   ───────────────────────────────────────────── */
-  document.addEventListener('click', e => {
-    const btn = e.target.closest('[data-tab="secret"]');
-    if (btn) {
-      setTimeout(refreshPlayerNames, 50); // 等主模块渲染完
-    }
-  });
 
-  /* ─────────────────────────────────────────────
-     关闭降级弹窗
-  ───────────────────────────────────────────── */
-  document.addEventListener('click', e => {
-    if (e.target.id === 'sa-fallback-close' || e.target.id === 'sa-fallback-overlay') {
-      const overlay = $('sa-fallback-overlay');
-      if (overlay) overlay.classList.add('hidden');
+  // 把建议内容写入第一个空军令框
+  // text:已经组装好的字符串(行动名 或 行动名 - 分支名)
+  // adviceKey:唯一标识(如 "slot0::①"),用于撤销时定位
+  // 返回:{ ok:true, orderIdx:N } 或 { ok:false, reason:'full'/'locked'/'no-role' }
+  function acceptToFirstEmpty(slot, text, adviceKey) {
+    if (slot < 0 || slot > 2) return { ok: false, reason: 'bad-slot' };
+    const data = localState.slots[slot];
+    if (data.locked) return { ok: false, reason: 'locked' };
+
+    const emptyIdx = data.orders.findIndex(o => !o.text || !o.text.trim());
+    if (emptyIdx === -1) return { ok: false, reason: 'full' };
+
+    data.orders[emptyIdx].text = text;
+    data.orders[emptyIdx].secret = false; // 采纳建议默认明令
+    if (adviceKey) data.fromAdvice[adviceKey] = emptyIdx;
+
+    renderCard(slot);
+    return { ok: true, orderIdx: emptyIdx };
+  }
+
+  // 撤销采纳:清空对应 order
+  function undoAccept(slot, adviceKey) {
+    if (slot < 0 || slot > 2) return false;
+    const data = localState.slots[slot];
+    if (data.locked) return false;
+    const idx = data.fromAdvice[adviceKey];
+    if (idx === undefined) return false;
+    data.orders[idx] = { text: '', secret: false };
+    delete data.fromAdvice[adviceKey];
+    renderCard(slot);
+    return true;
+  }
+
+  // 查询某 advice 是否已被采纳到当前 slot
+  // 返回 orderIdx(0..3) 或 -1
+  function findAcceptedOrderIdx(slot, adviceKey) {
+    if (slot < 0 || slot > 2) return -1;
+    const data = localState.slots[slot];
+    const idx = data.fromAdvice[adviceKey];
+    if (idx === undefined) return -1;
+    // 验证:该 order 仍然存在且非空(用户可能手改清空)
+    const o = data.orders[idx];
+    if (!o || !o.text || !o.text.trim()) {
+      delete data.fromAdvice[adviceKey];
+      return -1;
     }
-  });
+    return idx;
+  }
+
+  // 当用户手改某框时,清掉所有指向该框的 advice 映射
+  function clearAdviceMapForOrder(slot, idx) {
+    const data = localState.slots[slot];
+    Object.keys(data.fromAdvice).forEach(k => {
+      if (data.fromAdvice[k] === idx) delete data.fromAdvice[k];
+    });
+  }
+
+  // 通知 PR5 模块重渲染建议区
+  // 若 PR5 尚未加载,本调用静默忽略
+  function notifyAdviceMaybeChanged(slot) {
+    if (window.SGAdvice && typeof window.SGAdvice.render === 'function') {
+      try { window.SGAdvice.render(); } catch (e) {}
+    }
+  }
+
+  // 暴露给外部读取:当前 slot 的锁定状态
+  function isSlotLocked(slot) {
+    if (slot < 0 || slot > 2) return false;
+    return !!localState.slots[slot].locked;
+  }
+
+  // 暴露格式化的「行动名 / 行动名 - 分支名」串构造器,供 PR5 直接调
+  // 这里只是一个纯函数,不依赖内部 state,放这里集中维护文案规约
+  function buildAcceptText(actionName, branchName) {
+    const a = (actionName || '').trim();
+    const b = (branchName || '').trim();
+    if (a && b) return `${a} - ${b}`;
+    return a;
+  }
+
+  window.SGArmyCouncil = {
+    acceptToFirstEmpty,
+    undoAccept,
+    findAcceptedOrderIdx,
+    isSlotLocked,
+    buildAcceptText,
+  };
 
   /* ─────────────────────────────────────────────
      启动
   ───────────────────────────────────────────── */
+  // 切换 tab 时刷新玩家名(沿用旧版)
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-tab="arena"]');
+    if (btn) setTimeout(refreshPlayerNames, 50);
+  });
+
+  // 主模块完成数据加载后刷新(玩家名/称号可能在此时变更)
+  window.addEventListener('sg-rounds-updated', () => {
+    refreshPlayerNames();
+  });
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
