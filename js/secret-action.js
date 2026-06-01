@@ -74,12 +74,14 @@
   };
 
   function makeEmptySlot() {
+    // _blank:用于标记队友视角下的密令空白占位(不可编辑、不可见)
+    // 默认 false,正常编辑模式不打标记
     return {
       orders: [
-        { text: '', secret: false },
-        { text: '', secret: false },
-        { text: '', secret: false },
-        { text: '', secret: false },
+        { text: '', secret: false, _blank: false },
+        { text: '', secret: false, _blank: false },
+        { text: '', secret: false, _blank: false },
+        { text: '', secret: false, _blank: false },
       ],
       locked: false,
       fromAdvice: {},
@@ -240,36 +242,40 @@
     const card = $(`sa-card-${slot}`);
     if (!card) return;
 
-    // 4 个军令行
+    // 4 个军令行(v20260921a · 增加 _blank 空白态处理)
     data.orders.forEach((o, idx) => {
       const row = card.querySelector(`.sa-order-row[data-slot="${slot}"][data-idx="${idx}"]`);
       if (!row) return;
       const ta  = row.querySelector('.sa-order-input');
       const cb  = row.querySelector('.sa-secret-checkbox');
 
+      // _blank 模式:队友视角下密令位置的占位行,不渲染任何内容
+      const isBlank = !!o._blank;
+
       if (ta) {
-        if (ta.value !== o.text) ta.value = o.text;
-        ta.disabled = data.locked;
-        ta.placeholder = o.secret ? '写下一条密令…' : '写下一条军令…';
+        const desiredVal = isBlank ? '' : o.text;
+        if (ta.value !== desiredVal) ta.value = desiredVal;
+        ta.disabled = data.locked || isBlank;
+        ta.placeholder = isBlank ? '' : (o.secret ? '写下一条密令…' : '写下一条军令…');
         // 自适应高度
         ta.style.height = 'auto';
         ta.style.height = (ta.scrollHeight) + 'px';
 
-        // 绑定 input 监听(幂等)
         if (!ta._saBound) {
           ta.addEventListener('input', onOrderInput);
           ta._saBound = true;
         }
       }
       if (cb) {
-        cb.checked = !!o.secret;
-        cb.disabled = data.locked;
+        cb.checked = !isBlank && !!o.secret;
+        cb.disabled = data.locked || isBlank;
         if (!cb._saBound) {
           cb.addEventListener('change', onSecretToggle);
           cb._saBound = true;
         }
       }
-      row.classList.toggle('is-secret', !!o.secret);
+      row.classList.toggle('is-secret', !isBlank && !!o.secret);
+      row.classList.toggle('sa-order-row-blank', isBlank);
     });
 
     // 卡片整体锁定态
@@ -553,23 +559,28 @@
       // 缓存远端原始行(buildCopyText 用)
       localState._remoteRows = rows;
 
-      // v20260920c · 回填本方 orders(君子协议:仅回填本人 slot,不回填队友)
+      // v20260921a · 回填策略改造(君子协议:明令公示,密令私密)
+      //   - 本人 slot:回填明令 + 密令(全部可见)
+      //   - 队友 slot:仅回填明令(密令完全不读)
       const mySlot = getMySlot();
       rows.forEach(r => {
         const s = Number(r.slot);
         const localSlot = localState.slots[s];
         if (!localSlot) return;
 
-        // 把云端"已锁定"事实同步到本地(所有 slot 都同步,用于显示遮罩)
+        // 同步"已锁定"事实(所有 slot 都同步)
         if (!localSlot.locked) localSlot.locked = true;
 
-        // 仅回填本方 slot 的 orders 内容;队友的不读原文,只显示锁定态
+        // 刷新场景:本地 orders 仍为空时才回填,避免覆盖正在编辑的内容
+        const isEmpty = localSlot.orders.every(o => !o.text);
+        if (!isEmpty) return;
+
         if (s === mySlot) {
-          // 若本地 orders 还是空的(刷新场景),则反解析回填
-          const isEmpty = localSlot.orders.every(o => !o.text);
-          if (isEmpty) {
-            localSlot.orders = parseRemoteToOrders(r.content, r.secret_text);
-          }
+          // 本人:完整反解析(明令 + 密令)
+          localSlot.orders = parseRemoteToOrders(r.content, r.secret_text);
+        } else {
+          // 队友:仅反解析明令,密令位置留空且打标记
+          localSlot.orders = parsePublicOnlyOrders(r.content);
         }
       });
 
@@ -662,6 +673,40 @@
       }
     }
 
+    return orders;
+  }
+
+  /* ─────────────────────────────────────────────
+     v20260921a · 工具:仅解析明令(队友视角用)
+     - 输入:云端 content 字符串
+     - 输出:4 个 orders,密令位置保持 text:'' 且 secret:false
+       并打 _blank:true 标记,供 renderCard 渲染为空白行
+  ───────────────────────────────────────────── */
+  function parsePublicOnlyOrders(content) {
+    const orders = [
+      { text: '', secret: false, _blank: true },
+      { text: '', secret: false, _blank: true },
+      { text: '', secret: false, _blank: true },
+      { text: '', secret: false, _blank: true },
+    ];
+    const NUM_TO_IDX = { '①': 0, '②': 1, '③': 2, '④': 3 };
+    const c = (content || '').trim();
+    if (!c) return orders;
+
+    const lines = c.split('\n').map(l => l.trim()).filter(Boolean);
+    let matched = 0;
+    lines.forEach(line => {
+      const m = line.match(/^([①②③④])\s+(.+)$/);
+      if (m && NUM_TO_IDX[m[1]] !== undefined) {
+        const idx = NUM_TO_IDX[m[1]];
+        orders[idx] = { text: m[2].trim(), secret: false, _blank: false };
+        matched++;
+      }
+    });
+    // 兜底:格式不匹配,整段塞 idx 0
+    if (matched === 0) {
+      orders[0] = { text: c, secret: false, _blank: false };
+    }
     return orders;
   }
 
@@ -904,16 +949,18 @@
     refreshPlayerNames();
   });
 
-  // v20260920c · 身份切换时立即重新轮询(若切到本人 slot,把原文回填)
+  // v20260921a · 身份切换时立即重新轮询
+  //   切身份后,原本是"本人"的卡可能变成"队友卡"(密令需清空)
+  //   原本是"队友"的卡可能变成"本人卡"(密令需回填)
+  //   策略:清空所有已锁定 slot 的本地 orders,让 pollRemote 按新身份重填
   window.addEventListener('sg-role-changed', () => {
-    // 清空所有 orders,让 pollRemote 重新决定回填范围
     [0, 1, 2].forEach(s => {
       if (localState.slots[s].locked) {
         localState.slots[s].orders = [
-          { text: '', secret: false },
-          { text: '', secret: false },
-          { text: '', secret: false },
-          { text: '', secret: false },
+          { text: '', secret: false, _blank: false },
+          { text: '', secret: false, _blank: false },
+          { text: '', secret: false, _blank: false },
+          { text: '', secret: false, _blank: false },
         ];
       }
     });

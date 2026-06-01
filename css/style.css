@@ -8669,3 +8669,68 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ╚══ END v20260920a 军帐板块 v5 ══════════════════════════════ */
+
+/* ╔════════════════════════════════════════════════════════════
+   ║ v20260921a · 军帐板块 锁定态显示改造
+   ║ 工单:#PR8(明令公示 君子协议)
+   ║ 变更:
+   ║   - 锁定后不再显示中央全黑遮罩(.sa-locked-mask 永远隐藏)
+   ║   - 锁定卡显示右上角"已锁定"徽章 + textarea disabled 半透明
+   ║   - 已锁定卡边框加金色细线,与未锁定卡视觉区分
+   ║ 回滚:整段删除即可,自动恢复 PR3 全黑遮罩
+   ╚════════════════════════════════════════════════════════════ */
+
+/* 锁定遮罩永远隐藏(取代 PR3 中央全黑遮罩) */
+.sa-block-v5 .sa-locked-mask {
+  display: none !important;
+}
+
+/* 锁定卡:整体加微金色边框 + 微微变暗,与未锁定卡视觉区分 */
+.sa-block-v5 .sa-card.sa-card-locked {
+  border-color: rgba(212,168,67,.4);
+  opacity: 1;
+}
+.sa-block-v5 .sa-card.sa-card-locked .sa-card-head {
+  background-image: linear-gradient(110deg, rgba(212,168,67,.08), transparent);
+}
+
+/* 锁定卡内的 textarea:disabled 时保持文字清晰可读,只是不可编辑 */
+.sa-block-v5 .sa-card.sa-card-locked .sa-order-input:disabled {
+  opacity: .85;
+  color: var(--text-main);
+  cursor: default;
+}
+.sa-block-v5 .sa-card.sa-card-locked .sa-order-row {
+  background: rgba(0,0,0,.18);
+}
+.sa-block-v5 .sa-card.sa-card-locked .sa-order-row:hover {
+  background: rgba(0,0,0,.18);   /* 锁定后悬停不再变色,提示不可交互 */
+}
+
+/* 队友视角下,本人不可见密令的空军令框样式(标记 .sa-order-row-blank) */
+.sa-block-v5 .sa-order-row.sa-order-row-blank {
+  background: rgba(255,255,255,.02);
+  border: 1px dashed rgba(255,255,255,.05);
+  opacity: .35;
+}
+.sa-block-v5 .sa-order-row.sa-order-row-blank .sa-order-num {
+  color: rgba(255,255,255,.18);
+}
+.sa-block-v5 .sa-order-row.sa-order-row-blank .sa-order-input {
+  color: transparent;
+}
+.sa-block-v5 .sa-order-row.sa-order-row-blank .sa-order-input::placeholder {
+  color: transparent;
+}
+.sa-block-v5 .sa-order-row.sa-order-row-blank .sa-order-meta {
+  visibility: hidden;
+}
+
+/* 已锁定徽章微调:更醒目一点(因为它现在是主要的锁定指示器) */
+.sa-block-v5 .sa-card-seal-badge {
+  font-size: .66rem;
+  padding: 2px 9px;
+  box-shadow: 0 0 8px rgba(93,218,138,.18);
+}
+
+/* ╚══ END v20260921a 锁定态改造 ═══════════════════════════════ */
