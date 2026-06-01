@@ -7346,7 +7346,7 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ── 板块主体 ── */
-.block-world .ib-body { padding: 14px 18px 16px; }
+.block-world .ib-body { padding: 10px 18px 12px; }
 
 /* ── 双列网格:桌面左右等宽,≤900px 自动叠成单列 ── */
 .world-cols {
@@ -7366,11 +7366,11 @@ body.fx-off-captured [data-ctype="captured"] {
   align-items: baseline;
   gap: 8px;
   font-family: var(--font-serif);
-  font-size: .82rem;
+  font-size: .78rem;
   font-weight: 900;
   letter-spacing: .14em;
-  padding: 3px 0 7px 10px;
-  margin: 0 0 6px;
+  padding: 2px 0 5px 10px;
+  margin: 0 0 4px;
   border-bottom: 1px solid rgba(212,168,67,.18);
   color: var(--gold-light);
   position: relative;
@@ -7379,8 +7379,8 @@ body.fx-off-captured [data-ctype="captured"] {
   content: '';
   position: absolute;
   left: 0;
-  top: 4px;
-  bottom: 9px;
+  top: 3px;
+  bottom: 7px;
   width: 2px;
   background: var(--gold);
   border-radius: 1px;
@@ -7417,7 +7417,7 @@ body.fx-off-captured [data-ctype="captured"] {
   grid-template-columns: 36px 1fr auto;
   align-items: center;
   gap: 12px;
-  padding: 8px 10px 8px 12px;
+  padding: 6px 10px 6px 12px;
   border-left: 2px solid var(--wg-c, var(--text-dim));
   border-radius: 0 var(--r) var(--r) 0;
   background: rgba(18,10,6,.42);
@@ -7445,7 +7445,7 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 .world-gen-name {
   font-family: var(--font-serif);
-  font-size: .94rem;
+  font-size: .9rem;
   font-weight: 900;
   color: var(--text-main);
   letter-spacing: .03em;
@@ -7492,7 +7492,7 @@ body.fx-off-captured [data-ctype="captured"] {
   grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px 8px 12px;
+  padding: 6px 10px 6px 12px;
   border-left: 2px solid var(--wm-c, var(--gold-dim));
   border-radius: 0 var(--r) var(--r) 0;
   background: rgba(18,10,6,.42);
@@ -7524,7 +7524,7 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 .world-mil-general {
   font-family: var(--font-serif);
-  font-size: .9rem;
+  font-size: .86rem;
   font-weight: 900;
   color: var(--text-main);
   flex-shrink: 0;
