@@ -8818,3 +8818,89 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ╚══ END v20260601a 密报采纳按钮 UI 修复 ═════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   ROUND-TITLE-A3-MEDIUM-v1
+   回合大标题(档位2·中收敛)
+   由 js/main.js 的 highlightRaw() 注入 .raw-round-title
+   ═══════════════════════════════════════════════════════════════ */
+.raw-round-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+  margin: 22px 0;
+  padding: 12px 0;
+  position: relative;
+  font-family: var(--font-serif, "Noto Serif SC", "Source Han Serif SC", "宋体", serif);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-align: center;
+  color: var(--gold-light, #d4a843);
+}
+.raw-round-title::before,
+.raw-round-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 168, 67, 0.35) 25%,
+    rgba(212, 168, 67, 0.55) 50%,
+    rgba(212, 168, 67, 0.35) 75%,
+    transparent 100%
+  );
+}
+.raw-round-title::before { top: 0; }
+.raw-round-title::after  { bottom: 0; }
+.raw-round-title .rrt-prefix,
+.raw-round-title .rrt-suffix {
+  font-size: 14px;
+  color: var(--gold-deep, #9a7c3e);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+.raw-round-title .rrt-num {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--gold-light, #d4a843);
+  font-variant-numeric: lining-nums;
+  text-shadow: 0 0 8px rgba(212, 168, 67, 0.25);
+  letter-spacing: 0;
+}
+.raw-round-title .rrt-sep {
+  font-size: 18px;
+  color: rgba(212, 168, 67, 0.35);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.raw-round-title .rrt-title {
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--gold-light, #d4a843);
+  letter-spacing: 0.18em;
+}
+
+/* 移动端收一档 */
+@media (max-width: 640px) {
+  .raw-round-title {
+    font-size: 17px;
+    gap: 8px;
+    margin: 18px 0;
+    padding: 10px 0;
+  }
+  .raw-round-title::before,
+  .raw-round-title::after {
+    width: 85%;
+  }
+  .raw-round-title .rrt-prefix,
+  .raw-round-title .rrt-suffix { font-size: 12px; }
+  .raw-round-title .rrt-num   { font-size: 19px; }
+  .raw-round-title .rrt-sep   { font-size: 15px; }
+  .raw-round-title .rrt-title { font-size: 17px; letter-spacing: 0.12em; }
+}

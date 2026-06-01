@@ -1176,6 +1176,31 @@
         continue;
       }
 
+      // ── 回合大标题:第 N 回合 · 四字标题 (ROUND-TITLE-A3-MEDIUM-v1) ──
+      // 匹配 GM 规则书 v3.40 格式:行首"第" + 空格 + 数字 + 空格 + "回合"
+      //                          + 空格 + 中间隔号·或半角· + 空格 + 标题文字
+      // 容差:数字两侧空格可省、间隔号支持中点·(U+00B7)/全角·/半角·,
+      //       标题文字长度 1-12 汉字。
+      const roundTitleM = t.trim().match(
+        /^第\s*(\d+)\s*回合\s*[·\u00B7\u30FB\u2027]\s*([\u4e00-\u9fa5]{1,12})\s*$/
+      );
+      if (roundTitleM) {
+        flushPara();
+        flushCard();
+        const _rtNum   = roundTitleM[1];
+        const _rtTitle = roundTitleM[2];
+        out.push(
+          '<h3 class="raw-round-title">' +
+            '<span class="rrt-prefix">第</span>' +
+            '<span class="rrt-num">' + esc(_rtNum) + '</span>' +
+            '<span class="rrt-suffix">回合</span>' +
+            '<span class="rrt-sep">·</span>' +
+            '<span class="rrt-title">' + esc(_rtTitle) + '</span>' +
+          '</h3>'
+        );
+        continue;
+      }
+
       // 占位符 → 直接输出对应 HTML（🎯 行动建议块）
       if (t.trim() in placeholders) {
         flushPara();
