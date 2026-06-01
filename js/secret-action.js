@@ -742,47 +742,47 @@
     }
   }
 
+  /* ─────────────────────────────────────────────
+     v20260921b · 一键复制文本构造(GM 上帝视角)
+     ─ 永远从 localState._remoteRows(云端原始数据)拼装
+     ─ 不依赖 localSlot.locked / localSlot.orders
+       (因 PR7 后 locked 字段对所有云端已锁定 slot 都为 true,
+        且 PR8 的队友 _blank 占位会让本地 orders 永远是空)
+     ─ 云端 content 已是 `① xxx\n④ xxx` 标准格式,直接 split 即可
+     ─ 云端 secret_text 已是 `【密①】xxx\n【密②】xxx` 标准格式,
+       保留位置标记给 GM 看(便于判断玩家把密令放在第几位)
+     ─ 兜底:某 slot 在 _remoteRows 中不存在 → (本回合无行动)
+  ───────────────────────────────────────────── */
   function buildCopyText() {
     const names = [0, 1, 2].map(slot => {
       const el = $(`sa-player-name-${slot}`);
       return el ? el.textContent.trim() : `城主${'甲乙丙'[slot]}`;
     });
 
-    // 把本地与远端合并:本地 locked 用本地数据;否则用远端
+    // 云端原始行索引(由 pollRemote 在每次轮询时刷新)
     const remoteMap = {};
     (localState._remoteRows || []).forEach(r => {
       remoteMap[Number(r.slot)] = r;
     });
 
     const parts = [0, 1, 2].map(slot => {
-      const localSlot = localState.slots[slot];
-      let pubLines = [];
-      let secLines = [];
-
-      if (localSlot.locked) {
-        // 用本地数据(本设备锁定的)
-        let pubIdx = 0;
-        localSlot.orders.forEach(o => {
-          if (!o.text || !o.text.trim()) return;
-          if (o.secret) {
-            secLines.push(`【密】${o.text.trim()}`);
-          } else {
-            pubLines.push(`${ORDER_NUMS[pubIdx]} ${o.text.trim()}`);
-            pubIdx++;
-          }
-        });
-      } else if (remoteMap[slot]) {
-        // 用远端数据(其他设备锁定的)
-        const c = (remoteMap[slot].content  || '').trim();
-        const s = (remoteMap[slot].secret_text || '').trim();
-        if (c) pubLines = c.split('\n').filter(Boolean);
-        if (s) secLines = s.split('\n').filter(Boolean);
-      }
-
       const head = `=== ${names[slot]} ===`;
+      const row  = remoteMap[slot];
+
+      // slot 在云端无记录 → 该玩家未锁定本回合行动
+      if (!row) return `${head}\n(本回合无行动)`;
+
+      const c = (row.content     || '').trim();
+      const s = (row.secret_text || '').trim();
+      const pubLines = c ? c.split('\n').map(x => x.trim()).filter(Boolean) : [];
+      const secLines = s ? s.split('\n').map(x => x.trim()).filter(Boolean) : [];
+
+      // 该玩家锁定时填的全空(明令密令都空)
       if (!pubLines.length && !secLines.length) {
         return `${head}\n(本回合无行动)`;
       }
+
+      // 拼装:明令在前,密令在后,中间空一行
       let body = pubLines.join('\n');
       if (secLines.length) {
         body += (pubLines.length ? '\n\n' : '') + secLines.join('\n');
