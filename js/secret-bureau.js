@@ -143,23 +143,23 @@
       }
       const isAccepted = acceptedOrderIdx >= 0;
 
-      // 按钮 HTML(复用军帐 .sa-advice-btn 样式)
+      // 按钮 HTML(使用独立类 .sb-cmd-adopt-btn,视觉规格照搬军帐采纳按钮)
       let btnHtml;
       if (isAccepted) {
-        btnHtml = `<button class="sa-advice-btn is-undo sb-cmd-adopt-btn"
+        btnHtml = `<button class="sb-cmd-adopt-btn is-undo"
           data-act="undo" data-advice-key="${esc(adviceKey)}"
           data-name="${esc(name)}" data-note="${esc(note)}"
           ${locked ? 'disabled' : ''}>撤销</button>`;
       } else {
-        btnHtml = `<button class="sa-advice-btn sb-cmd-adopt-btn"
+        btnHtml = `<button class="sb-cmd-adopt-btn"
           data-act="accept" data-advice-key="${esc(adviceKey)}"
           data-name="${esc(name)}" data-note="${esc(note)}"
           ${locked ? 'disabled' : ''}>采纳</button>`;
       }
 
-      // 已采纳标签(复用军帐 .sa-advice-accepted-tag)
+      // 已采纳标签(使用独立类 .sb-cmd-accepted-tag)
       const acceptedTag = isAccepted
-        ? `<span class="sa-advice-accepted-tag">✓ 已采纳到 ${ICONS[acceptedOrderIdx] || (acceptedOrderIdx + 1)} 军令框</span>`
+        ? `<span class="sb-cmd-accepted-tag">✓ 已采纳到 ${ICONS[acceptedOrderIdx] || (acceptedOrderIdx + 1)} 军令框</span>`
         : '';
 
       return `

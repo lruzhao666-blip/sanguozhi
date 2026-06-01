@@ -8734,3 +8734,86 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ╚══ END v20260921a 锁定态改造 ═══════════════════════════════ */
+
+/* ╔════════════════════════════════════════════════════════════
+   ║ v20260601a · 密报采纳按钮 UI 修复
+   ║ 工单:#secret-adopt-ui-fix
+   ║ 设计:像素级照搬军帐 .sa-block-v5 .sa-advice-btn 视觉规格
+   ║ 隔离:使用独立类名 .sb-cmd-adopt-btn,不依赖 .sa-block-v5 容器
+   ║ 范围:仅 .sb-cmd-row 内的采纳/撤销按钮 + 已采纳标签
+   ║ 回滚:整段删除即可
+   ╚════════════════════════════════════════════════════════════ */
+
+/* 采纳按钮:默认态(暗金线框金字) */
+.sb-cmd-row .sb-cmd-adopt-btn {
+  font-family: var(--font-serif);
+  font-size: .72rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  background: rgba(60,35,0,.55);
+  border: 1px solid rgba(212,168,67,.4);
+  color: var(--gold-light);
+  border-radius: var(--r);
+  cursor: pointer;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  transition: all .18s;
+  flex-shrink: 0;
+  /* 关键:不让 flex 容器把它压窄 */
+  min-width: auto;
+  width: auto;
+}
+.sb-cmd-row .sb-cmd-adopt-btn:hover:not(:disabled) {
+  background: rgba(90,52,5,.75);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+.sb-cmd-row .sb-cmd-adopt-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 撤销态:暗淡线框淡白字(对齐军帐 .is-undo) */
+.sb-cmd-row .sb-cmd-adopt-btn.is-undo {
+  background: transparent;
+  color: rgba(255,255,255,.55);
+  border-color: rgba(255,255,255,.18);
+}
+.sb-cmd-row .sb-cmd-adopt-btn.is-undo:hover:not(:disabled) {
+  color: rgba(255,255,255,.85);
+  border-color: rgba(255,255,255,.35);
+  background: rgba(255,255,255,.04);
+  transform: translateY(-1px);
+}
+
+/* 已采纳标签:绿色小圆角徽章 */
+.sb-cmd-row .sb-cmd-accepted-tag {
+  font-family: var(--font-sans);
+  font-size: .62rem;
+  color: #5dda8a;
+  background: rgba(80,200,110,.1);
+  border: 1px solid rgba(80,200,110,.28);
+  border-radius: 9px;
+  padding: 1px 8px;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 已采纳态的行:整行降饱和 + 左侧色条变绿,呼应军帐 is-accepted 视觉 */
+.sb-cmd-row.is-accepted {
+  background: rgba(0,0,0,.32);
+  border-left-color: #5dda8a;
+}
+
+/* 窄屏下按钮和标签换到第二行,跟随 .sb-cmd-note 走 */
+@media (max-width: 640px) {
+  .sb-cmd-row .sb-cmd-accepted-tag,
+  .sb-cmd-row .sb-cmd-adopt-btn {
+    margin-left: 1.7em;
+    margin-top: 4px;
+  }
+}
+
+/* ╚══ END v20260601a 密报采纳按钮 UI 修复 ═════════════════════ */
