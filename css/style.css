@@ -7615,3 +7615,54 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ══ v20260601e 工单#world-2B END ══ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260602a 工单#status-vocab-v1 · 调度状态白名单扩展
+   新增 5 个状态 class 配色,沿用现有 .siege / .guest
+   涉及三处渲染:
+     1. .jbt-* (军报板块 renderJunbao)
+     2. .pc-transit-item[data-status="..."] (玩家卡调度 renderPlayerTransit)
+     3. .world-mil-status.* (烽烟板块 _renderWorldStatus)
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 军报板块 .jbt-* 5 个新状态 ── */
+.junbao-body .jbt-row.jbt-battle .jbt-status {
+  color: #f47860;
+  background: rgba(231,76,60,.16);
+  border: 1px solid rgba(231,76,60,.42);
+}
+.junbao-body .jbt-row.jbt-standoff .jbt-status {
+  color: #b89868;
+  background: rgba(140,100,30,.14);
+  border: 1px solid rgba(180,140,60,.32);
+}
+.junbao-body .jbt-row.jbt-retreat .jbt-status {
+  color: #9a8878;
+  background: rgba(110,90,70,.16);
+  border: 1px solid rgba(140,120,100,.35);
+}
+.junbao-body .jbt-row.jbt-garrison .jbt-status {
+  color: #8ab2d8;
+  background: rgba(80,120,170,.16);
+  border: 1px solid rgba(106,141,184,.40);
+}
+
+/* 军报板块色条 v14 行流版本(:hover 边宽变化) */
+.junbao-body .jbt-row.jbt-battle::before    { background: #e74c3c !important; }
+.junbao-body .jbt-row.jbt-standoff::before  { background: #b89868 !important; }
+.junbao-body .jbt-row.jbt-retreat::before   { background: #9a8878 !important; }
+.junbao-body .jbt-row.jbt-garrison::before  { background: #6a8db8 !important; }
+
+/* ── 玩家卡调度 .pc-transit-item 5 个新状态 ── */
+.pcard-v4 .pc-transit-item[data-status="battle"]    { --tr-tone: #e74c3c; }
+.pcard-v4 .pc-transit-item[data-status="standoff"]  { --tr-tone: #b89868; }
+.pcard-v4 .pc-transit-item[data-status="retreat"]   { --tr-tone: #9a8878; }
+.pcard-v4 .pc-transit-item[data-status="garrison"]  { --tr-tone: #6a8db8; }
+
+/* ── 烽烟板块 .world-mil-status 5 个新状态 ── */
+.world-mil-status.battle    { color: #f47860; }
+.world-mil-status.standoff  { color: #b89868; }
+.world-mil-status.retreat   { color: #9a8878; }
+.world-mil-status.garrison  { color: #8ab2d8; }
+
+/* ══ v20260602a 工单#status-vocab-v1 END ══ */
