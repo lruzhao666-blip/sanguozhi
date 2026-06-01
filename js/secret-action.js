@@ -203,17 +203,19 @@
   }
 
   /* ─────────────────────────────────────────────
-     渲染玩家名(从 #pname-{i} / #ptitle-{i} 读)
+     渲染玩家名(v20260920b 修复)
+     ─ 仅使用 #pname-{slot}(城主真名)
+     ─ 不再读 #ptitle-{slot}:它是 display:none 的隐藏 span,
+       实际被 main.js 写入动态行动摘要,不是稳定称号
   ───────────────────────────────────────────── */
   function refreshPlayerNames() {
     [0, 1, 2].forEach(slot => {
-      const nameEl  = document.getElementById(`pname-${slot}`);
-      const name    = nameEl ? nameEl.textContent.trim() : `城主${'甲乙丙'[slot]}`;
-
-      const titleEl = document.getElementById(`ptitle-${slot}`);
-      const title   = (titleEl && titleEl.textContent.trim()) || '';
-
-      const displayName = title || name;
+      const nameEl = document.getElementById(`pname-${slot}`);
+      const fallback = `城主${'甲乙丙'[slot]}`;
+      const name = (nameEl && nameEl.textContent.trim()) || fallback;
+      // 防御:若读到的"名字"过长(>10字)或含明显的行动动词,fallback 到默认
+      const looksWrong = name.length > 10 || /[兵|城|攻|守|探|战]/.test(name) && name.length >= 4;
+      const displayName = looksWrong ? fallback : name;
 
       const headEl = $(`sa-player-name-${slot}`);
       if (headEl) headEl.textContent = displayName;
