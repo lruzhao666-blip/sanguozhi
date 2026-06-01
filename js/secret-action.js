@@ -416,15 +416,20 @@
     }
     const data = localState.slots[slot];
 
-    // 拼合明令与密令
-    const publicText = data.orders
-      .filter(o => !o.secret && o.text && o.text.trim())
-      .map((o, i, arr) => `${ORDER_NUMS[i]} ${o.text.trim()}`)
-      .join('\n');
-    const secretArr = data.orders
-      .filter(o => o.secret && o.text && o.text.trim())
-      .map(o => o.text.trim());
-    const secretText = secretArr.length ? secretArr.map(t => `【密】${t}`).join('\n') : null;
+    // 拼合明令与密令:v20260920c 修复 — 保留原 idx 位置,便于回填
+    const publicLines = [];
+    const secretLines = [];
+    data.orders.forEach((o, idx) => {
+      if (!o.text || !o.text.trim()) return;
+      const numChar = ORDER_NUMS[idx] || (idx + 1);
+      if (o.secret) {
+        secretLines.push(`【密${numChar}】${o.text.trim()}`);
+      } else {
+        publicLines.push(`${numChar} ${o.text.trim()}`);
+      }
+    });
+    const publicText = publicLines.join('\n');
+    const secretText = secretLines.length ? secretLines.join('\n') : null;
 
     // 全空仍允许锁定(代表"本回合无行动")— 与原版语义一致
 
@@ -545,14 +550,119 @@
       const rows = await res.json();
       localState.remoteSlots = rows.map(r => Number(r.slot));
 
+      // 缓存远端原始行(buildCopyText 用)
+      localState._remoteRows = rows;
+
+      // v20260920c · 回填本方 orders(君子协议:仅回填本人 slot,不回填队友)
+      const mySlot = getMySlot();
+      rows.forEach(r => {
+        const s = Number(r.slot);
+        const localSlot = localState.slots[s];
+        if (!localSlot) return;
+
+        // 把云端"已锁定"事实同步到本地(所有 slot 都同步,用于显示遮罩)
+        if (!localSlot.locked) localSlot.locked = true;
+
+        // 仅回填本方 slot 的 orders 内容;队友的不读原文,只显示锁定态
+        if (s === mySlot) {
+          // 若本地 orders 还是空的(刷新场景),则反解析回填
+          const isEmpty = localSlot.orders.every(o => !o.text);
+          if (isEmpty) {
+            localSlot.orders = parseRemoteToOrders(r.content, r.secret_text);
+          }
+        }
+      });
+
+      // 刷新所有卡片(让遮罩 / 状态点 / 进度条同步)
+      renderAllCards();
+
       // 远端三家齐 → 触发就绪态
       if (localState.remoteSlots.length >= 3) {
-        // 把远端内容缓存,方便复制时使用(避免远端是其他设备提交的)
-        localState._remoteRows = rows;
         onAllReady();
       }
       updateProgress();
     } catch (e) { /* 静默 */ }
+  }
+
+  /* ─────────────────────────────────────────────
+     v20260920c · 工具:取当前登录身份对应的 slot
+     - SGRole.get() 返回 '甲'/'乙'/'丙' 或 null
+     - 未登录返回 -1(任何 slot 都不会回填原文)
+  ───────────────────────────────────────────── */
+  function getMySlot() {
+    if (!window.SGRole || typeof window.SGRole.get !== 'function') return -1;
+    const role = window.SGRole.get();
+    const map = { '甲': 0, '乙': 1, '丙': 2 };
+    return (role && map[role] !== undefined) ? map[role] : -1;
+  }
+
+  /* ─────────────────────────────────────────────
+     v20260920c · 工具:反解析云端 content / secret_text → 4 个 orders
+     - content 格式:`① xxx\n④ xxx`(保留原位)
+     - secret_text 格式:`【密②】xxx\n【密③】xxx`(保留原位)
+     - 兜底:若格式完全不匹配,整段塞 orders[0]
+  ───────────────────────────────────────────── */
+  function parseRemoteToOrders(content, secretText) {
+    const orders = [
+      { text: '', secret: false },
+      { text: '', secret: false },
+      { text: '', secret: false },
+      { text: '', secret: false },
+    ];
+    const NUM_TO_IDX = { '①': 0, '②': 1, '③': 2, '④': 3 };
+
+    // 解析明令
+    const c = (content || '').trim();
+    if (c) {
+      const lines = c.split('\n').map(l => l.trim()).filter(Boolean);
+      let matched = 0;
+      lines.forEach(line => {
+        const m = line.match(/^([①②③④])\s+(.+)$/);
+        if (m && NUM_TO_IDX[m[1]] !== undefined) {
+          orders[NUM_TO_IDX[m[1]]] = { text: m[2].trim(), secret: false };
+          matched++;
+        }
+      });
+      // 兜底:若一行都没匹配上,把整段塞到 idx 0
+      if (matched === 0) {
+        orders[0] = { text: c, secret: false };
+      }
+    }
+
+    // 解析密令
+    const s = (secretText || '').trim();
+    if (s) {
+      const lines = s.split('\n').map(l => l.trim()).filter(Boolean);
+      let matched = 0;
+      lines.forEach(line => {
+        // 匹配 【密①】xxx / 【密②】xxx ...
+        const m = line.match(/^【密([①②③④])】\s*(.+)$/);
+        if (m && NUM_TO_IDX[m[1]] !== undefined) {
+          orders[NUM_TO_IDX[m[1]]] = { text: m[2].trim(), secret: true };
+          matched++;
+        } else {
+          // 旧格式兜底:【密】xxx(无位置)
+          const m2 = line.match(/^【密】\s*(.+)$/);
+          if (m2) {
+            // 找第一个空位塞入
+            const emptyIdx = orders.findIndex(o => !o.text);
+            if (emptyIdx >= 0) {
+              orders[emptyIdx] = { text: m2[1].trim(), secret: true };
+              matched++;
+            }
+          }
+        }
+      });
+      // 兜底:若一行都没匹配上,把整段塞到第一个空位
+      if (matched === 0) {
+        const emptyIdx = orders.findIndex(o => !o.text);
+        if (emptyIdx >= 0) {
+          orders[emptyIdx] = { text: s, secret: true };
+        }
+      }
+    }
+
+    return orders;
   }
 
   function onAllReady() {
@@ -792,6 +902,22 @@
   // 主模块完成数据加载后刷新(玩家名/称号可能在此时变更)
   window.addEventListener('sg-rounds-updated', () => {
     refreshPlayerNames();
+  });
+
+  // v20260920c · 身份切换时立即重新轮询(若切到本人 slot,把原文回填)
+  window.addEventListener('sg-role-changed', () => {
+    // 清空所有 orders,让 pollRemote 重新决定回填范围
+    [0, 1, 2].forEach(s => {
+      if (localState.slots[s].locked) {
+        localState.slots[s].orders = [
+          { text: '', secret: false },
+          { text: '', secret: false },
+          { text: '', secret: false },
+          { text: '', secret: false },
+        ];
+      }
+    });
+    pollRemote();
   });
 
   if (document.readyState === 'loading') {
