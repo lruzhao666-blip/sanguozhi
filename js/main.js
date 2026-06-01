@@ -63,7 +63,6 @@
   function init() {
     bindNav();
     bindGMPanel();
-    initCopyTail();
     initParticles();
     initTipsCard();
     loadFromCloud();
@@ -3086,71 +3085,6 @@
     window.addEventListener('sg-rounds-updated', render);
     window.addEventListener('sg-role-changed',  render);
   }
-
-  // ══════════════════════════════════════════
-  //  [gm-copy-tail-v1] 复制小尾巴模块
-  //  - localStorage 持久化
-  //  - 首次加载预填默认模板
-  //  - 暴露 window.SGCopyTail.get() 给 secret-action.js 调用
-  // ══════════════════════════════════════════
-  const LS_COPY_TAIL_KEY = 'sg-gm-copy-tail';
-  const DEFAULT_COPY_TAIL = [
-    '【GM 提醒·输出前请确认】',
-    '□ 三家公平轮转,本回合是否有家颗粒无收?',
-    '□ NPC 主动军事动作(二幕起每回合 ≥1)是否到位?',
-    '□ 武将状态轮转:每 5-8 回合 ≥1 位进非健康态?',
-    '□ 在册武将逐一对账,无失踪?新登场武将已落数据区?',
-    '□ [世界] 段剩余回合每条 -1,归零移除?',
-    '□ 战报槽位字归属正确?(我主动攻=甲,被攻=被攻方)',
-    '□ 行动建议挂风险标(稳/中/险)?至少 1 条武将口吻?',
-    '□ 密令选项挂心证档(胜算颇大/或可一试/凶险莫测',
-    '   /孤注一掷)?',
-    '□ 密报独家信息未在明面层/行动建议/钩子外溢?',
-    '□ 暗中行动只写后果不写主使?',
-    '□ 标题/行动名四字?事件正文首句不复述标题?',
-    '□ 收支明细合计 = 总变化行 = 资源新值?',
-    '',
-    '如本回合进入新幕(19/36/46/56),旁白须点幕名+',
-    '速递行 ≤45 字概括。',
-  ].join('\n');
-
-  function initCopyTail() {
-    const ta = document.getElementById('gm-copy-tail');
-    if (!ta) return;
-
-    // 读取 localStorage;首次加载(键不存在)时预填默认模板并写回 LS
-    let stored = null;
-    try { stored = localStorage.getItem(LS_COPY_TAIL_KEY); } catch (e) {}
-    if (stored === null) {
-      ta.value = DEFAULT_COPY_TAIL;
-      try { localStorage.setItem(LS_COPY_TAIL_KEY, DEFAULT_COPY_TAIL); } catch (e) {}
-    } else {
-      ta.value = stored;
-    }
-
-    // 输入时自动保存(节流 300ms)
-    let saveTimer = null;
-    ta.addEventListener('input', function () {
-      if (saveTimer) clearTimeout(saveTimer);
-      saveTimer = setTimeout(function () {
-        try { localStorage.setItem(LS_COPY_TAIL_KEY, ta.value); } catch (e) {}
-      }, 300);
-    });
-  }
-
-  // 对外接口:供 secret-action.js 在 buildCopyText 末尾拼接
-  // 返回当前小尾巴文本(去尾部空白);为空字符串时调用方应跳过拼接
-  window.SGCopyTail = {
-    get: function () {
-      // 优先读 textarea 当前值(最新),其次读 LS(防 textarea 未渲染)
-      const ta = document.getElementById('gm-copy-tail');
-      if (ta) return (ta.value || '').replace(/\s+$/, '');
-      try {
-        const v = localStorage.getItem(LS_COPY_TAIL_KEY);
-        return (v || '').replace(/\s+$/, '');
-      } catch (e) { return ''; }
-    },
-  };
 
   // 等待 DOM 就绪;稍微延迟确保 secret-action.js 的 SGArmyCouncil 已挂载
   if (document.readyState === 'loading') {
