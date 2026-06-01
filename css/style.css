@@ -5901,18 +5901,19 @@ body.fx-off-captured [data-ctype="captured"] {
 /* ════════════════════════════════════════════
    v20260704a 工单#pcard-v4-fix-D
    强制修复玩家卡左侧 3px 色条
-   策略:用三个独立的最高特异性选择器钉死 border-left
-        覆盖任何潜在的 border 简写或后置规则
+   v20260601d 工单#pcard-strip-dim-v1:
+   - 压低色条亮度,对齐军帐 .sa-card 的 0.75 透明度规格
+   - 颜色 hex → rgba 同色 .75 透明度
    ════════════════════════════════════════════ */
 
 .pcard.pcard-v4[data-slot="0"] {
-  border-left: 3px solid #e74c3c !important;
+  border-left: 3px solid rgba(231,76,60,.75) !important;
 }
 .pcard.pcard-v4[data-slot="1"] {
-  border-left: 3px solid #3dbe6c !important;
+  border-left: 3px solid rgba(61,190,108,.75) !important;
 }
 .pcard.pcard-v4[data-slot="2"] {
-  border-left: 3px solid #3498db !important;
+  border-left: 3px solid rgba(52,152,219,.75) !important;
 }
 
 /* v20260705a 工单#pcard-v4-polish-E – emoji 亮度统一 */
