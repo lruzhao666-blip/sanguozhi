@@ -89,6 +89,111 @@
   }
 
   /* ─────────────────────────────────────────────
+     #army-draft-autosave-v1 · 草稿自动存档
+     - 仅存自己 slot,localStorage,按身份隔离
+     - debounce 500ms
+     - 清空时机:复制成功 / 锁定 / 换回合 / 新一轮
+  ───────────────────────────────────────────── */
+  const DRAFT_LS_PREFIX  = 'sg_army_draft_v1_';   // + role(甲/乙/丙)
+  const DRAFT_DEBOUNCE_MS = 500;
+  let _draftSaveTimer = null;
+
+  function _draftRoleKey() {
+    if (!window.SGRole || typeof window.SGRole.get !== 'function') return null;
+    const role = window.SGRole.get();
+    if (role !== '甲' && role !== '乙' && role !== '丙') return null;
+    return DRAFT_LS_PREFIX + role;
+  }
+
+  function _draftCurrentRoundNum() {
+    try {
+      const st = window.SGState;
+      if (st && st.rounds && st.rounds.length) {
+        return st.rounds[st.rounds.length - 1].round;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function saveDraftNow() {
+    const key = _draftRoleKey();
+    if (!key) return;                       // 未登录/GM 不存
+    const mySlot = getMySlot();
+    if (mySlot < 0) return;
+    const data = localState.slots[mySlot];
+    if (!data) return;
+    if (data.locked) return;                // 已锁定 → 草稿无意义
+    // 仅持久化文本与密令位,运行时态(_blank/locked)不存
+    const payload = {
+      v: 1,
+      savedAt: Date.now(),
+      roundNum: _draftCurrentRoundNum(),
+      slot: mySlot,
+      orders: data.orders.map(o => ({
+        text:   o.text   || '',
+        secret: !!o.secret,
+      })),
+      fromAdvice: Object.assign({}, data.fromAdvice || {}),
+    };
+    try { localStorage.setItem(key, JSON.stringify(payload)); } catch (e) {}
+  }
+
+  function scheduleDraftSave() {
+    if (_draftSaveTimer) clearTimeout(_draftSaveTimer);
+    _draftSaveTimer = setTimeout(saveDraftNow, DRAFT_DEBOUNCE_MS);
+  }
+
+  function clearMyDraft() {
+    const key = _draftRoleKey();
+    if (!key) return;
+    try { localStorage.removeItem(key); } catch (e) {}
+  }
+
+  // 仅当本人 slot 未锁定 & 本地 orders 全空时,从 localStorage 恢复
+  // 回合号不一致 → 视为过期草稿,清掉
+  function restoreDraftIfAny() {
+    const key = _draftRoleKey();
+    if (!key) return;
+    const mySlot = getMySlot();
+    if (mySlot < 0) return;
+    const slotState = localState.slots[mySlot];
+    if (!slotState || slotState.locked) return;
+    const allEmpty = slotState.orders.every(o => !o.text);
+    if (!allEmpty) return;
+
+    let raw = null;
+    try { raw = localStorage.getItem(key); } catch (e) {}
+    if (!raw) return;
+
+    let payload = null;
+    try { payload = JSON.parse(raw); } catch (e) {}
+    if (!payload || payload.v !== 1) return;
+
+    // 回合号变化 → 视为过期
+    const curRound = _draftCurrentRoundNum();
+    if (curRound != null && payload.roundNum != null && curRound !== payload.roundNum) {
+      clearMyDraft();
+      return;
+    }
+
+    // 仅回填我自己的 slot,且 payload.slot 必须匹配当前身份
+    if (payload.slot !== mySlot) return;
+
+    if (Array.isArray(payload.orders) && payload.orders.length === 4) {
+      slotState.orders = payload.orders.map(o => ({
+        text:   String(o.text || ''),
+        secret: !!o.secret,
+        _blank: false,
+      }));
+    }
+    if (payload.fromAdvice && typeof payload.fromAdvice === 'object') {
+      slotState.fromAdvice = Object.assign({}, payload.fromAdvice);
+    }
+    renderCard(mySlot);
+    updateProgress();
+  }
+
+  /* ─────────────────────────────────────────────
      工具函数
   ───────────────────────────────────────────── */
   const $ = id => document.getElementById(id);
@@ -122,6 +227,7 @@
     renderAllCards();
     startPoll();
     checkTableExists();
+    restoreDraftIfAny();
   }
 
   /* ─────────────────────────────────────────────
@@ -312,6 +418,7 @@
     const idx  = parseInt(ta.dataset.idx, 10);
     if (isNaN(slot) || isNaN(idx)) return;
     localState.slots[slot].orders[idx].text = ta.value;
+    scheduleDraftSave();
 
     // 自适应高度
     ta.style.height = 'auto';
@@ -332,6 +439,7 @@
     const idx  = parseInt(cb.dataset.idx, 10);
     if (isNaN(slot) || isNaN(idx)) return;
     localState.slots[slot].orders[idx].secret = cb.checked;
+    scheduleDraftSave();
 
     const row = cb.closest('.sa-order-row');
     if (row) row.classList.toggle('is-secret', cb.checked);
@@ -471,6 +579,7 @@
       renderCard(slot);
       updateProgress();
       saShowToast('🔒 行动已锁定');
+      if (slot === getMySlot()) clearMyDraft();
     } catch (e) {
       saShowToast('❌ 锁定失败:' + e.message);
       if (btn) { btn.disabled = false; btn.textContent = '锁定行动 🔒'; }
@@ -808,6 +917,7 @@
      重置本地,开启新一轮
   ───────────────────────────────────────────── */
   function resetLocal() {
+    clearMyDraft();
     localState.slots = [makeEmptySlot(), makeEmptySlot(), makeEmptySlot()];
     localState.allDone     = false;
     localState.remoteSlots = [];
@@ -951,6 +1061,7 @@
   // 主模块完成数据加载后刷新(玩家名/称号可能在此时变更)
   window.addEventListener('sg-rounds-updated', () => {
     refreshPlayerNames();
+    restoreDraftIfAny(); // 内部会判断回合号,过期则清
   });
 
   // v20260921a · 身份切换时立即重新轮询
@@ -969,6 +1080,7 @@
       }
     });
     pollRemote();
+    restoreDraftIfAny();
   });
 
   if (document.readyState === 'loading') {
