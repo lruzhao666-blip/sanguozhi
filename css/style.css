@@ -8904,3 +8904,56 @@ body.fx-off-captured [data-ctype="captured"] {
   .raw-round-title .rrt-sep   { font-size: 15px; }
   .raw-round-title .rrt-title { font-size: 17px; letter-spacing: 0.12em; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20260601a 工单#map-tooltip-region-bonus-v1
+   城池悬浮卡新增「州」chip + 「地利」独立成行
+   方案 A · 子方案 A2(中性灰白州 chip) + B2(克制左色条·去背景)
+   ────────────────────────────────────────────────────────────
+   - .sgt-region-chip:中性灰白,身份注脚定位,不与势力色/城等色冲突
+   - .sgt-bonus-line:2px 左金色条 + 「地利」小标签,无背景填充
+     视觉语言对齐 .sgt-prod-chain,克制不夺 .sgt-info-block 视觉权重
+   ════════════════════════════════════════════════════════════ */
+
+.sgmap-tooltip .sgt-region-chip {
+  display: inline-block;
+  font-size: .58rem;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  border: 1px solid rgba(140,160,160,.25);
+  background: rgba(140,160,160,.06);
+  color: #8a9a9a;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.sgmap-tooltip .sgt-bonus-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 7px;
+  padding: 4px 0 4px 8px;
+  font-family: var(--font-serif);
+  border-left: 2px solid rgba(212,168,67,.4);
+}
+.sgmap-tooltip .sgt-bonus-line-lbl {
+  font-size: .60rem;
+  color: #7a6a5a;
+  letter-spacing: .08em;
+  flex-shrink: 0;
+}
+.sgmap-tooltip .sgt-bonus-line-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+.sgmap-tooltip .sgt-bonus-line-items span {
+  font-size: .72rem;
+  color: #d4a843;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+/* ══ v20260601a 工单#map-tooltip-region-bonus-v1 END ══ */
