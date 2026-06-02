@@ -14,6 +14,10 @@
  *                   消费已注入的 --strip-color / --badge-* 变量
  * v26 (2026-06-13): 军报板块对齐修复 — 边框/padding/头部 对齐兄弟板块, 小标签改"军情",空态占位加金线装饰
  * v27 (2026-06-17): 工单#pcard-v3-fix-1 玩家卡 v3 视觉精修 — renderPlayerBattles/renderPlayerTransit 空态整段隐藏,移除 pc-battle-empty/pc-transit-empty 占位
+ * v28 (2026-XX-XX): 工单#main-v3.40-align-B 对齐 GM 规则书 v3.40 —
+ *                   [调度] 段状态映射收窄至 4 种(攻城中/交战中/客驻/剩N→march),
+ *                   清理 standoff/retreat/garrison 三个死分支;
+ *                   _renderWorldStatus 同步收窄。
  * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
  * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
@@ -567,14 +571,12 @@
     countEl.textContent = `${mine.length} 支`;
 
     listEl.innerHTML = mine.map(({ t, isNpc }) => {
-      // v15: 7 状态映射,旧词「围攻中」与新词「攻城中」同义
-      const statusCls = (t.status === '攻城中' || t.status === '围攻中') ? 'siege'
+      // v28 (2026-XX): 对齐 GM 规则书 v3.40 M-29 红线九,
+      // 状态白名单收窄至 4 种;旧词由 parser 归一化处理,UI 不再兜底。
+      const statusCls = t.status === '攻城中' ? 'siege'
                       : t.status === '交战中' ? 'battle'
-                      : t.status === '对峙中' ? 'standoff'
-                      : t.status === '撤退中' ? 'retreat'
-                      : t.status === '驻屯中' ? 'garrison'
                       : t.status === '客驻'   ? 'resident'
-                      : 'march';
+                      : 'march';  // 剩N 走 march
       // NPC 行强制红色色条(覆盖默认 march 暗金)
       const npcCls = isNpc ? ' is-npc' : '';
 
@@ -1771,14 +1773,12 @@
       transit.forEach(t => {
         const sideColor = _junbaoGetSideColor(t.slot, t.faction);
         const badgeText = _junbaoGetBadgeText(t.slot, t.faction);
-        // v15: 7 状态映射,旧词「围攻中」与新词「攻城中」同义
-        const statusCls = (t.status === '攻城中' || t.status === '围攻中') ? 'jbt-siege'
+        // v28 (2026-XX): 对齐 GM 规则书 v3.40 M-29 红线九,
+        // 状态白名单收窄至 4 种;旧词由 parser 归一化处理,UI 不再兜底。
+        const statusCls = t.status === '攻城中' ? 'jbt-siege'
                         : t.status === '交战中' ? 'jbt-battle'
-                        : t.status === '对峙中' ? 'jbt-standoff'
-                        : t.status === '撤退中' ? 'jbt-retreat'
-                        : t.status === '驻屯中' ? 'jbt-garrison'
                         : t.status === '客驻'   ? 'jbt-resident'
-                        : 'jbt-march';
+                        : 'jbt-march';  // 剩N 走 jbt-march
         const styleStr = [
           `--strip-color:${sideColor.glow}`,
           `--badge-bg:${sideColor.film}`,
@@ -2022,13 +2022,12 @@
 
   // 烽烟状态渲染:围攻中橙、剩N≤1 红、客驻蓝、其他暗金
   // v15: 7 状态映射,旧词「围攻中」与新词「攻城中」同义
+  // v28 (2026-XX): 对齐 GM 规则书 v3.40 M-29 红线九,
+  // 状态白名单收窄至 4 种;旧词由 parser 归一化处理,UI 不再兜底。
   function _renderWorldStatus(s) {
     if (!s) return '<span class="world-mil-status">—</span>';
-    if (s === '攻城中' || s === '围攻中') return '<span class="world-mil-status siege">' + esc(s) + '</span>';
+    if (s === '攻城中') return '<span class="world-mil-status siege">攻城中</span>';
     if (s === '交战中') return '<span class="world-mil-status battle">交战中</span>';
-    if (s === '对峙中') return '<span class="world-mil-status standoff">对峙中</span>';
-    if (s === '撤退中') return '<span class="world-mil-status retreat">撤退中</span>';
-    if (s === '驻屯中') return '<span class="world-mil-status garrison">驻屯中</span>';
     if (s === '客驻')   return '<span class="world-mil-status guest">客驻</span>';
     const m = s.match(/^剩(\d+)$/);
     if (m) {
