@@ -1,5 +1,10 @@
 /**
  * parser.js — 三国志文字版 · AI内容解析器 v13
+ * v16 (2026-XX-XX): 对齐 GM 规则书 v3.40 — [调度] 段状态白名单收窄至 4 种
+ *                   (剩N/攻城中/交战中/客驻),旧词归一化兼容;
+ *                   [世界] 段状态收窄至 2 种(被俘/在野),「客途」归一化为「在野」;
+ *                   密令选项序号 ⑤⑥ → ④⑤;
+ *                   匹配失败的 [调度]/[世界] 行打 console.warn。
  * v13 (变更): [在途] 标签更名为 [调度],双名兼容;_parseTransit 输出新增 slot 字段(0/1/2|null)
  * v14 (变更): _parseBattles 输出新增 attackerSlot/defenderSlot/
  *             attackerFaction/defenderFaction,供军报方案二徽章渲染
@@ -233,7 +238,9 @@ window.SGParser = (function () {
     const items = [];
     if (!text) return items;
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    const numRe = /^([⑤⑥⑦⑧⑨⑩])\s*(.+)$/;
+    // v16 (2026-XX): 对齐 GM 规则书 v3.40,密令选项序号从 ⑤⑥ 改为 ④⑤,
+    // 旧存档兼容 ⑤⑥⑦⑧⑨⑩。
+    const numRe = /^([④⑤⑥⑦⑧⑨⑩])\s*(.+)$/;
     for (const line of lines) {
       const m = line.match(numRe);
       if (!m) continue;
@@ -583,31 +590,56 @@ window.SGParser = (function () {
   function _parseTransit(raw) {
     if (!raw || !raw.trim()) return [];
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length === 1 && /无在途/.test(lines[0])) return [];
+    if (lines.length === 1 && /无在途|无调度|本回合无调度部队/.test(lines[0])) return [];
     const result = [];
-    // [legacy v13] const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|围攻中|客驻)$/;
-    // v15 (2026-06-01): 状态白名单扩展至 7 种,旧词「围攻中」兼容
-    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|攻城中|交战中|对峙中|撤退中|驻屯中|客驻|围攻中)(?:\s+(.+))?\s*$/;
+    // v16 (2026-XX): 对齐 GM 规则书 v3.40 M-29 红线九,
+    // 状态白名单收窄至 4 种(剩N/攻城中/交战中/客驻),
+    // 旧词归一化保留兼容(围攻中/对峙中/撤退中/驻屯中)。
+    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|攻城中|交战中|客驻|对峙中|撤退中|驻屯中|围攻中)(?:\s+(.+))?\s*$/;
+
+    // 状态归一化映射:旧词 → 新白名单
+    const STATUS_NORMALIZE = {
+      '围攻中': '攻城中',
+      '对峙中': '交战中',
+      '驻屯中': '交战中',
+      // '撤退中' 单独处理(归一化为 剩N,见下方)
+    };
+
     for (const line of lines) {
       const m = line.match(re);
-      if (m) {
-        const factionRaw = m[1];
-        // slot: 玩家槽位 0/1/2(甲乙丙) 或 null(NPC 阵营)
-        const slot = factionRaw === '甲' ? 0 :
-                     factionRaw === '乙' ? 1 :
-                     factionRaw === '丙' ? 2 : null;
-        result.push({
-          faction: factionRaw,
-          slot,
-          general: m[2],
-          from: m[3],
-          to: m[4],
-          troopType: m[5],
-          troopCount: parseInt(m[6]),
-          status: m[7],
-          note: m[8] ? m[8].trim() : '',
-        });
+      if (!m) {
+        // 容错日志:让玩家在 F12 控制台能看到 GM 写错的行
+        console.warn('[SGParser] [调度] 段行格式不符 v3.40 契约,跳过:', line);
+        continue;
       }
+      const factionRaw = m[1];
+      const slot = factionRaw === '甲' ? 0 :
+                   factionRaw === '乙' ? 1 :
+                   factionRaw === '丙' ? 2 : null;
+
+      // 状态归一化
+      let status = m[7];
+      if (status === '撤退中') {
+        // 旧词「撤退中」归一化为「剩1」(GM 没给具体剩余回合,默认 1)
+        status = '剩1';
+        console.warn('[SGParser] [调度] 段旧词「撤退中」归一化为「剩1」:', line);
+      } else if (STATUS_NORMALIZE[status]) {
+        const newStatus = STATUS_NORMALIZE[status];
+        console.warn('[SGParser] [调度] 段旧词「' + status + '」归一化为「' + newStatus + '」:', line);
+        status = newStatus;
+      }
+
+      result.push({
+        faction: factionRaw,
+        slot,
+        general: m[2],
+        from: m[3],
+        to: m[4],
+        troopType: m[5],
+        troopCount: parseInt(m[6]),
+        status,
+        note: m[8] ? m[8].trim() : '',
+      });
     }
     return result;
   }
@@ -750,24 +782,33 @@ window.SGParser = (function () {
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
     if (lines.length === 1 && /本回合世界无事/.test(lines[0])) return [];
 
-    const VALID_STATUS_W = ['被俘', '在野', '客途'];
+    // v16 (2026-XX): 对齐 GM 规则书 v3.40 M-29 红线十一,
+    // [世界] 段状态白名单收窄至 2 种(被俘/在野),旧词「客途」归一化为「在野」。
+    const VALID_STATUS_W = ['被俘', '在野'];
+    // 正则保留「客途」识别,内部归一化为「在野」
     const re = /^(\S+?)\|(被俘|在野|客途)\|(\S+?)\|剩(\d+|∞)回合$/;
     const result = [];
 
     for (const line of lines) {
       const m = line.match(re);
       if (!m) {
-        console.warn('[SGParser] [世界] 段行格式不符,跳过:', line);
+        console.warn('[SGParser] [世界] 段行格式不符 v3.40 契约,跳过:', line);
         continue;
       }
       const name      = m[1].trim();
-      const status    = m[2];
+      let status      = m[2];
       const location  = m[3].trim();
       const remRaw    = m[4];
       const remaining = remRaw === '∞' ? Infinity : parseInt(remRaw, 10);
 
+      // 旧词「客途」归一化为「在野」
+      if (status === '客途') {
+        console.warn('[SGParser] [世界] 段旧词「客途」归一化为「在野」:', line);
+        status = '在野';
+      }
+
       if (!VALID_STATUS_W.includes(status)) {
-        console.warn(`[SGParser] [世界] 武将"${name}"状态"${status}"不在白名单,跳过`);
+        console.warn('[SGParser] [世界] 武将"' + name + '"状态"' + status + '"不在白名单,跳过');
         continue;
       }
 
