@@ -3130,3 +3130,42 @@
     parseAdviceStructured: parseAdviceStructured,
   };
 })();
+
+
+/* ============================================================
+   #copy-btn-role-gate-v1  ·  军帐复制按钮身份门禁
+   ------------------------------------------------------------
+   职责：
+   - 军帐底部 .sa-bottom-bar（含"复制全部行动给 GM"按钮、就绪 banner、
+     等待提示）整段，仅对身份「甲」可见。
+   - 非甲（乙/丙/未登录/GM）整段隐藏（复用现有 .hidden 工具类）。
+   触发时机：
+   - DOMContentLoaded 首次判定
+   - 全局事件 sg-role-changed 切换身份时重新判定
+   依赖：window.SGRole.get() 返回 '甲'|'乙'|'丙'|null
+   零侵入：
+   - 不改 secret-action.js / role-login.js / style.css
+   - 不动 .sa-bottom-bar 内部任何子元素
+   ============================================================ */
+(function () {
+  'use strict';
+
+  function applyRoleGate() {
+    const bar = document.querySelector('#block-secret-action .sa-bottom-bar');
+    if (!bar) return;
+    const role = (window.SGRole && typeof window.SGRole.get === 'function')
+      ? window.SGRole.get() : null;
+    if (role === '甲') {
+      bar.classList.remove('hidden');
+    } else {
+      bar.classList.add('hidden');
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRoleGate);
+  } else {
+    applyRoleGate();
+  }
+  window.addEventListener('sg-role-changed', applyRoleGate);
+})();
