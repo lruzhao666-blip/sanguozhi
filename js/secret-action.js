@@ -423,13 +423,15 @@
     const data = localState.slots[slot];
 
     // 拼合明令与密令:v20260920c 修复 — 保留原 idx 位置,便于回填
+    // v20260922b 密令格式统一为「【密】」,移除序号,避免 GM 识别出错
+    //            明令仍保留 ①②③④ 序号(GM 需要靠序号定位玩家行动)
     const publicLines = [];
     const secretLines = [];
     data.orders.forEach((o, idx) => {
       if (!o.text || !o.text.trim()) return;
       const numChar = ORDER_NUMS[idx] || (idx + 1);
       if (o.secret) {
-        secretLines.push(`【密${numChar}】${o.text.trim()}`);
+        secretLines.push(`【密】${o.text.trim()}`);
       } else {
         publicLines.push(`${numChar} ${o.text.trim()}`);
       }
