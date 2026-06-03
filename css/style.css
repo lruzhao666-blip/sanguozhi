@@ -9730,3 +9730,176 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ╚══ END v20261005a 稀有度重命名 + 配色重做 ══════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261006a 工单#achievement-polish-F1
+   - Tab 栏 emoji 全部移除(HTML 端已清理)
+   - 桌面端 tab 等分铺满 + 滚动溢出兜底
+   - 移动端模态高度修复:max-height calc(100vh - 80px)
+   - 移动端模态宽度收缩:max-width 440px
+   - 旧规则不删,靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+/* ═══ 1. Tab 栏 · 桌面端等分铺满 ═══ */
+.ach-modal-overlay .ach-tabs {
+  display: flex !important;
+  gap: 0 !important;
+  padding: 10px 14px 0 !important;
+  background: rgba(0,0,0,.22);
+  border-bottom: 1px solid rgba(212,168,67,.12);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  flex-shrink: 0;
+  position: relative;
+}
+.ach-modal-overlay .ach-tabs::-webkit-scrollbar { display: none; }
+
+/* 桌面端右侧金色渐变遮罩(暗示可滚动,即使不溢出也保留) */
+.ach-modal-overlay .ach-tabs::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 1px;
+  width: 24px;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(8,3,3,.5) 50%,
+    rgba(8,3,3,.85));
+  z-index: 2;
+}
+
+/* Tab 按钮 · 等分弹性铺满 */
+.ach-modal-overlay .ach-tab {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 9px 6px 10px !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  color: var(--text-dim) !important;
+  cursor: pointer;
+  font-family: var(--font-serif) !important;
+  font-size: .8rem !important;
+  font-weight: 600 !important;
+  letter-spacing: .12em !important;
+  position: relative;
+  white-space: nowrap;
+  transition: color .18s, border-bottom-color .18s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.ach-modal-overlay .ach-tab:hover {
+  color: var(--text-main) !important;
+}
+.ach-modal-overlay .ach-tab.active {
+  color: var(--gold-light) !important;
+  border-bottom-color: var(--gold) !important;
+  text-shadow: 0 0 8px rgba(212,168,67,.3) !important;
+}
+
+/* Tab 内文字与计数 */
+.ach-modal-overlay .ach-tab-label {
+  display: inline-block;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: .12em;
+}
+.ach-modal-overlay .ach-tab-count {
+  display: inline-block;
+  font-family: var(--font-sans) !important;
+  font-size: .66rem !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  margin-left: 2px;
+  color: var(--text-dim) !important;
+  font-variant-numeric: tabular-nums;
+  opacity: .85;
+  transition: color .18s;
+}
+.ach-modal-overlay .ach-tab.active .ach-tab-count {
+  color: var(--gold-dim) !important;
+  opacity: 1;
+}
+
+/* ═══ 2. 移动端 · 模态尺寸 + tab 紧凑化 ═══ */
+@media (max-width: 720px) {
+
+  /* Overlay 内边距与垂直居中 */
+  .ach-modal-overlay {
+    padding: 16px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Modal 主容器 · 高度修复 */
+  .ach-modal-overlay .ach-modal {
+    max-width: 440px !important;
+    max-height: calc(100vh - 80px) !important;
+    min-height: 0 !important;
+    margin: auto !important;
+    align-self: center !important;
+  }
+
+  /* Modal 头部 · 紧凑 */
+  .ach-modal-overlay .ach-modal-head {
+    padding: 11px 14px !important;
+  }
+
+  /* Tab 栏 · 移动端纯文字小字号 */
+  .ach-modal-overlay .ach-tabs {
+    padding: 8px 10px 0 !important;
+    gap: 0 !important;
+  }
+  .ach-modal-overlay .ach-tabs::after {
+    width: 20px !important;
+  }
+  .ach-modal-overlay .ach-tab {
+    padding: 7px 5px 8px !important;
+    font-size: .72rem !important;
+    letter-spacing: .06em !important;
+    gap: 3px !important;
+  }
+  .ach-modal-overlay .ach-tab-label {
+    letter-spacing: .06em !important;
+  }
+  .ach-modal-overlay .ach-tab-count {
+    font-size: .6rem !important;
+  }
+
+  /* 说明文字 · 不变 */
+  .ach-modal-overlay .ach-modal-note {
+    margin: 10px 14px 0 !important;
+    font-size: .66rem !important;
+  }
+
+  /* 列表 · 顶部留呼吸空间 */
+  .ach-modal-overlay .ach-list {
+    padding: 11px 14px 14px !important;
+  }
+}
+
+/* 极窄屏(<= 380px)兜底 */
+@media (max-width: 380px) {
+  .ach-modal-overlay {
+    padding: 10px !important;
+  }
+  .ach-modal-overlay .ach-modal {
+    max-height: calc(100vh - 60px) !important;
+  }
+  .ach-modal-overlay .ach-tab {
+    padding: 7px 4px 8px !important;
+    font-size: .68rem !important;
+    letter-spacing: .04em !important;
+  }
+  .ach-modal-overlay .ach-tab-count {
+    font-size: .58rem !important;
+    margin-left: 1px;
+  }
+}
+
+/* ╚══ END v20261006a tab 栏去 emoji 重构 + 排版修复 ════════════ */
