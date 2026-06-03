@@ -530,8 +530,12 @@ window.SGParser = (function () {
       const name   = m[1].trim();
       // 状态字段去除括号内多余空格，再查白名单
       let   status = m[2].trim();
-      if (!VALID_STATUS.includes(status)) {
-        // 白名单外状态：记录警告但不丢失武将，默认健康
+      // #sanguo-parser-empty-status-fix-v1
+      // 规则书 M-29 红线六:空括号 = 健康,不打警告
+      if (!status) {
+        status = '健康';
+      } else if (!VALID_STATUS.includes(status)) {
+        // 白名单外的非空状态：记录警告但不丢失武将，默认健康
         console.warn(`[SGParser] 武将"${name}"状态"${status}"不在白名单，视为健康`);
         status = '健康';
       }
