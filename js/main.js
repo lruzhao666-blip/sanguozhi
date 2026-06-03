@@ -31,6 +31,7 @@
  * v30 (2026-10-02): 工单#achievement-ui-B1 成就 UI 重做 — 玩家卡徽章接入最稀有成就 + 模态 6 分类 tab + 灰度未解锁态
  * v31 (2026-10-03): 工单#achievement-polish-C1 成就 UI 精修 — 配色重做(白蓝紫橙) + 移动端适配 + tab 进度计数
  * v32 (2026-10-05): 工单#achievement-rename-E1 稀有度重命名 — 铜银金钻 → 常规/稀有/史诗/传说 + 炉石标准配色
+ * v33 (2026-10-06): 工单#achievement-polish-F1 tab 栏去 emoji + 桌面/移动端排版修复
  */
 
 (function () {
@@ -2966,8 +2967,8 @@
 })();
 
 /* ════════════════════════════════════════════
-   v20261005a 工单#achievement-rename-E1
-   成就系统 · 稀有度重命名 + 配色重做(炉石标准:常规/稀有/史诗/传说)
+   v20261006a 工单#achievement-polish-F1
+   成就系统 · tab 栏去 emoji 重构 + 桌面/移动端排版修复
    - 触发时机：每次 renderAll() 结束自动 scan()
    - 解锁存储：localStorage[`sg-ach-unlocked-{slot}`]
    - Toast 提示：新解锁时弹 b 方案（淡 toast）
