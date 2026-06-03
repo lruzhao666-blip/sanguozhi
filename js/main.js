@@ -29,6 +29,7 @@
  *  - 兼容旧格式
  * v29 (2026-10-01): 工单#achievement-engine-A1 成就系统 v1 — 50 成就 + 触发引擎 + localStorage 持久化 + Toast 提示
  * v30 (2026-10-02): 工单#achievement-ui-B1 成就 UI 重做 — 玩家卡徽章接入最稀有成就 + 模态 6 分类 tab + 灰度未解锁态
+ * v31 (2026-10-03): 工单#achievement-polish-C1 成就 UI 精修 — 配色重做(白蓝紫橙) + 移动端适配 + tab 进度计数
  */
 
 (function () {
@@ -2525,8 +2526,8 @@
 })();
 
 /* ════════════════════════════════════════════
-   v20261002a 工单#achievement-ui-B1
-   成就系统 v2 · 数据层 + UI 渲染层（玩家卡徽章 + 模态分类 tab）
+   v20261003a 工单#achievement-polish-C1
+   成就系统 v3 · 配色重做(白蓝紫橙) + 移动端适配 + tab 进度计数
    - 触发时机：每次 renderAll() 结束自动 scan()
    - 解锁存储：localStorage[`sg-ach-unlocked-{slot}`]
    - Toast 提示：新解锁时弹 b 方案（淡 toast）
@@ -2993,12 +2994,26 @@
     if (unEl) unEl.textContent = unlocked.length;
     if (totalEl) totalEl.textContent = ACHIEVEMENTS.length;
 
-    // tab 计数
-    const cnts = { all: ACHIEVEMENTS.length };
-    ACHIEVEMENTS.forEach(a => { cnts[a.cat] = (cnts[a.cat] || 0) + 1; });
-    Object.keys(cnts).forEach(k => {
+    // tab 计数：显示「已解锁数 / 总数」
+    const totalCnts  = { all: ACHIEVEMENTS.length };
+    const unlockedCnts = { all: 0 };
+    ACHIEVEMENTS.forEach(a => {
+      totalCnts[a.cat] = (totalCnts[a.cat] || 0) + 1;
+      if (!(a.cat in unlockedCnts)) unlockedCnts[a.cat] = 0;
+      if (unlocked.indexOf(a.code) !== -1) {
+        unlockedCnts[a.cat]++;
+        unlockedCnts.all++;
+      }
+    });
+    Object.keys(totalCnts).forEach(k => {
       const el = document.querySelector('.ach-tab-count[data-cnt="' + k + '"]');
-      if (el) el.textContent = cnts[k];
+      if (!el) return;
+      const u = unlockedCnts[k] || 0;
+      const t = totalCnts[k];
+      el.textContent = u + ' / ' + t;
+      // 已解锁数 > 0 时给计数加 has-progress class，方便 CSS 高亮
+      el.classList.toggle('has-progress', u > 0);
+      el.classList.toggle('is-complete', u === t && t > 0);
     });
 
     // 默认回到"全部"tab
