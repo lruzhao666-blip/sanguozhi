@@ -27,6 +27,7 @@
  *  - [战报] 新格式：甲→宛城NPC | 胜 | 伤亡:攻40守180
  *  - cityOwnership 携带 holder 守将字段供地图渲染
  *  - 兼容旧格式
+ * v29 (2026-10-01): 工单#achievement-engine-A1 成就系统 v1 — 50 成就 + 触发引擎 + localStorage 持久化 + Toast 提示
  */
 
 (function () {
@@ -350,6 +351,7 @@
       const ids = await getAllApiIds();
       await Promise.all(ids.map(r => deleteRoundById(r.id)));
       state.rounds = []; state.players = defaultPlayers();
+      if (window.SGAch && typeof window.SGAch.clearAll === 'function') window.SGAch.clearAll();
       state.lastUpdatedAt = 0;
       renderAll();
       updateUndoBtn();
@@ -2489,35 +2491,424 @@
 })();
 
 /* ════════════════════════════════════════════
-   v20260702a 工单#pcard-v4-install-B
-   成就墙 v4 · 静态测试数据 · 预留 Supabase 接入位
+   v20261001a 工单#achievement-engine-A1
+   成就系统 · 50 个成就 + 触发引擎 + localStorage 持久化
+   - 触发时机：每次 renderAll() 结束自动 scan()
+   - 解锁存储：localStorage[`sg-ach-unlocked-{slot}`]
+   - Toast 提示：新解锁时弹 b 方案（淡 toast）
+   - 撤回回合不回退成就
+   - 清空全部时一并清空 localStorage
+   对外 API:
+     window.SGAch.open(slot)            打开成就墙
+     window.SGAch.close()                关闭成就墙
+     window.SGAch.scan()                 主动触发一次扫描
+     window.SGAch.getUnlocked(slot)      取该 slot 已解锁 code 数组
+     window.SGAch.getHighestRarity(slot) 取该 slot 最高稀有度成就对象
+     window.SGAch.clearAll()             清空全部成就（供 onClearAll 调用）
    ════════════════════════════════════════════ */
 (function () {
   'use strict';
 
-  // 5 个新手测试成就(硬编码,后续替换为 Supabase 读取)
+  /* ── 稀有度等级（用于排序）── */
+  const RAR_LEVEL = { bronze: 1, silver: 2, gold: 3, diamond: 4 };
+
+  /* ── 雄都列表（M10 用）── */
+  const XIONGDU = ['洛阳', '邺城', '许昌', '长安', '襄阳', '建业', '成都'];
+
+  /* ── 50 个成就定义 ── */
   const ACHIEVEMENTS = [
-    { code:'g_first_general', cat:'general',  rar:'bronze', name:'初见贤士', icon:'贤', cond:'首次招揽成功一名常规级武将' },
-    { code:'b_first_blood',   cat:'battle',   rar:'bronze', name:'初战告捷', icon:'胜', cond:'首次攻城战胜利' },
-    { code:'c_full_grain',    cat:'govern',   rar:'bronze', name:'仓廪初实', icon:'粮', cond:'粮草储备首次突破 5000' },
-    { code:'g_elite_recruit', cat:'general',  rar:'silver', name:'礼贤下士', icon:'礼', cond:'首次招揽成功一名精英级武将' },
-    { code:'s_three_cities',  cat:'strategy', rar:'silver', name:'立足一方', icon:'立', cond:'占据城池数首次达到 3 座' },
+    // ═══ ⚔️ 军事 12 ═══
+    { code:'M01', cat:'military', rar:'bronze',  name:'初战告捷', icon:'胜',
+      desc:'首次取得攻城战胜利',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.battles||[]).some(b=>b.attackerSlot===slot && b.result==='胜' && b.city)) },
+    { code:'M02', cat:'military', rar:'bronze',  name:'沙场试锋', icon:'锋',
+      desc:'累计参与战斗 5 场',
+      check:(slot,rounds)=>countBattles(slot,rounds)>=5 },
+    { code:'M03', cat:'military', rar:'bronze',  name:'攻城拔寨', icon:'拔',
+      desc:'累计攻下城池 3 座',
+      check:(slot,rounds)=>countCityGain(slot,rounds)>=3 },
+    { code:'M04', cat:'military', rar:'silver',  name:'百战之师', icon:'百',
+      desc:'累计参与战斗 15 场',
+      check:(slot,rounds)=>countBattles(slot,rounds)>=15 },
+    { code:'M05', cat:'military', rar:'silver',  name:'连战连捷', icon:'连',
+      desc:'连续 3 回合每回合都有胜战',
+      check:(slot,rounds)=>checkConsecutiveWins(slot,rounds,3) },
+    { code:'M06', cat:'military', rar:'silver',  name:'单回双胜', icon:'双',
+      desc:'单回合内攻克 2 座城池',
+      check:(slot,rounds)=>checkSingleRoundCityGain(slot,rounds,2) },
+    { code:'M07', cat:'military', rar:'silver',  name:'大破敌军', icon:'破',
+      desc:'单场战斗敌方伤亡 ≥3000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.battles||[]).some(b=>b.attackerSlot===slot && (b.defender_loss||0)>=3000)) },
+    { code:'M08', cat:'military', rar:'gold',    name:'万人之敌', icon:'万',
+      desc:'兵力首次达到 10000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.troop||0)>=10000) },
+    { code:'M09', cat:'military', rar:'gold',    name:'定鼎乾坤', icon:'定',
+      desc:'单场战斗敌方伤亡 ≥6000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.battles||[]).some(b=>b.attackerSlot===slot && (b.defender_loss||0)>=6000)) },
+    { code:'M10', cat:'military', rar:'gold',    name:'名城克星', icon:'克',
+      desc:'攻下雄都级城池（洛阳/邺城/许昌/长安/襄阳/建业/成都）',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.battles||[]).some(b=>b.attackerSlot===slot && b.result==='胜' && XIONGDU.includes(b.city))) },
+    { code:'M11', cat:'military', rar:'diamond', name:'横扫六合', icon:'横',
+      desc:'占据城池数达到 15 座',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.cities||0)>=15) },
+    { code:'M12', cat:'military', rar:'diamond', name:'不败之师', icon:'屹',
+      desc:'累计 10 场战斗无败绩',
+      check:(slot,rounds)=>{
+        const list = [];
+        rounds.forEach(rd=>(rd.parsed.battles||[]).forEach(b=>{ if(b.attackerSlot===slot) list.push(b); }));
+        return list.length>=10 && list.every(b=>b.result!=='负');
+      } },
+
+    // ═══ 🏛️ 内政 12 ═══
+    { code:'I01', cat:'govern', rar:'bronze',  name:'仓廪初实', icon:'廪',
+      desc:'粮草储备首次突破 5000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.food||0)>=5000) },
+    { code:'I02', cat:'govern', rar:'bronze',  name:'金玉满堂', icon:'玉',
+      desc:'金钱储备首次突破 3000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.gold||0)>=3000) },
+    { code:'I03', cat:'govern', rar:'bronze',  name:'民心所向', icon:'心',
+      desc:'民心首次达到 75',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.morale||0)>=75) },
+    { code:'I04', cat:'govern', rar:'bronze',  name:'三军用命', icon:'军',
+      desc:'兵力首次突破 5000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.troop||0)>=5000) },
+    { code:'I05', cat:'govern', rar:'silver',  name:'富甲一方', icon:'富',
+      desc:'金钱储备突破 8000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.gold||0)>=8000) },
+    { code:'I06', cat:'govern', rar:'silver',  name:'屯粮如山', icon:'屯',
+      desc:'粮草储备突破 15000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.food||0)>=15000) },
+    { code:'I07', cat:'govern', rar:'silver',  name:'万众归心', icon:'归',
+      desc:'民心达到 90',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.morale||0)>=90) },
+    { code:'I08', cat:'govern', rar:'silver',  name:'治世能臣', icon:'治',
+      desc:'单回合净金收入 ≥500',
+      check:(slot,rounds)=>{
+        const slotName = ['甲','乙','丙'][slot];
+        return rounds.some(rd=>{
+          const changes = rd.parsed.changes||[];
+          return changes.some(ch=>ch.slot===slotName && ch.resources && Number(ch.resources['金'])>=500);
+        });
+      } },
+    { code:'I09', cat:'govern', rar:'gold',    name:'富可敌国', icon:'国',
+      desc:'金钱储备突破 20000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.gold||0)>=20000) },
+    { code:'I10', cat:'govern', rar:'gold',    name:'粮秣无忧', icon:'秣',
+      desc:'粮草储备突破 30000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.food||0)>=30000) },
+    { code:'I11', cat:'govern', rar:'gold',    name:'王师之兵', icon:'王',
+      desc:'兵力突破 20000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.troop||0)>=20000) },
+    { code:'I12', cat:'govern', rar:'diamond', name:'国泰兵强', icon:'泰',
+      desc:'同一回合：金≥15000 / 粮≥20000 / 兵≥15000 / 民心≥80',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const p = rd.parsed.players?.[slot];
+        return p && (p.gold||0)>=15000 && (p.food||0)>=20000 && (p.troop||0)>=15000 && (p.morale||0)>=80;
+      }) },
+
+    // ═══ 👥 武将 10 ═══
+    { code:'G01', cat:'general', rar:'bronze',  name:'初见贤士', icon:'贤',
+      desc:'麾下武将数达到 3 名',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.generals||[]).length>=3) },
+    { code:'G02', cat:'general', rar:'bronze',  name:'礼贤下士', icon:'礼',
+      desc:'麾下武将数达到 5 名',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.generals||[]).length>=5) },
+    { code:'G03', cat:'general', rar:'silver',  name:'群英会聚', icon:'英',
+      desc:'麾下武将数达到 8 名',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.generals||[]).length>=8) },
+    { code:'G04', cat:'general', rar:'silver',  name:'卧虎藏龙', icon:'卧',
+      desc:'麾下武将数达到 12 名',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.generals||[]).length>=12) },
+    { code:'G05', cat:'general', rar:'silver',  name:'同甘共苦', icon:'甘',
+      desc:'麾下武将全部健康（≥5 名）',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const gens = rd.parsed.players?.[slot]?.generals||[];
+        return gens.length>=5 && gens.every(g=>!g.status || g.status==='健康');
+      }) },
+    { code:'G06', cat:'general', rar:'gold',    name:'文武鼎盛', icon:'鼎',
+      desc:'麾下武将数达到 18 名',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.generals||[]).length>=18) },
+    { code:'G07', cat:'general', rar:'gold',    name:'妙手回春', icon:'春',
+      desc:'武将从受伤/患病状态恢复健康',
+      check:(slot,rounds)=>checkRecovery(slot,rounds) },
+    { code:'G08', cat:'general', rar:'gold',    name:'痛失栋梁', icon:'殇',
+      desc:'麾下武将首次阵亡',
+      check:(slot,rounds)=>checkGeneralLost(slot,rounds) },
+    { code:'G09', cat:'general', rar:'diamond', name:'名将云集', icon:'集',
+      desc:'麾下武将数达到 25 名',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.generals||[]).length>=25) },
+    { code:'G10', cat:'general', rar:'diamond', name:'三国第一', icon:'冠',
+      desc:'麾下武将数达到 30 名',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.generals||[]).length>=30) },
+
+    // ═══ 🎭 谋略 8 ═══
+    { code:'S01', cat:'strategy', rar:'bronze',  name:'初施暗算', icon:'暗',
+      desc:'首次收到密报',
+      check:(slot,rounds)=>countSecrets(slot,rounds)>=1 },
+    { code:'S02', cat:'strategy', rar:'bronze',  name:'情报先行', icon:'情',
+      desc:'累计收到密报 5 条',
+      check:(slot,rounds)=>countSecrets(slot,rounds)>=5 },
+    { code:'S03', cat:'strategy', rar:'silver',  name:'谍影重重', icon:'谍',
+      desc:'累计收到密报 15 条',
+      check:(slot,rounds)=>countSecrets(slot,rounds)>=15 },
+    { code:'S04', cat:'strategy', rar:'silver',  name:'远交近攻', icon:'交',
+      desc:'在 NPC 城池客驻部队',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.transit||[]).some(t=>t.slot===slot && t.status==='客驻')) },
+    { code:'S05', cat:'strategy', rar:'silver',  name:'兵贵神速', icon:'速',
+      desc:'单回合调度部队 ≥3 支',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.transit||[]).filter(t=>t.slot===slot).length>=3) },
+    { code:'S06', cat:'strategy', rar:'gold',    name:'运筹帷幄', icon:'幄',
+      desc:'累计收到密报 30 条',
+      check:(slot,rounds)=>countSecrets(slot,rounds)>=30 },
+    { code:'S07', cat:'strategy', rar:'gold',    name:'鬼神莫测', icon:'鬼',
+      desc:'收到一条「难辨」密报',
+      check:(slot,rounds)=>checkUnknownSecret(slot,rounds) },
+    { code:'S08', cat:'strategy', rar:'diamond', name:'神机妙算', icon:'算',
+      desc:'累计收到密报 50 条',
+      check:(slot,rounds)=>countSecrets(slot,rounds)>=50 },
+
+    // ═══ 🏆 里程碑 8 ═══
+    { code:'L01', cat:'milestone', rar:'bronze',  name:'揭竿而起', icon:'起',
+      desc:'开启乱世征途',
+      check:(slot,rounds)=>rounds.length>=1 },
+    { code:'L02', cat:'milestone', rar:'bronze',  name:'一方诸侯', icon:'侯',
+      desc:'占据城池数达到 3 座',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.cities||0)>=3) },
+    { code:'L03', cat:'milestone', rar:'silver',  name:'据州称雄', icon:'雄',
+      desc:'占据城池数达到 5 座',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.cities||0)>=5) },
+    { code:'L04', cat:'milestone', rar:'silver',  name:'风云十载', icon:'载',
+      desc:'游戏进行到第 20 回合',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.round||0)>=20) },
+    { code:'L05', cat:'milestone', rar:'silver',  name:'半壁江山', icon:'壁',
+      desc:'占据城池数达到 10 座',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.cities||0)>=10) },
+    { code:'L06', cat:'milestone', rar:'gold',    name:'五幕传奇', icon:'幕',
+      desc:'游戏进行到第 50 回合（决战幕）',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.round||0)>=50) },
+    { code:'L07', cat:'milestone', rar:'gold',    name:'鼎足而立', icon:'足',
+      desc:'二幕（19-35 回合）期间存活且未失城',
+      check:(slot,rounds)=>checkSurvivalPhase2(slot,rounds) },
+    { code:'L08', cat:'milestone', rar:'diamond', name:'一统天下', icon:'统',
+      desc:'占据城池数达到 20 座',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.cities||0)>=20) },
   ];
 
-  // 静态解锁状态(测试用,后续替换为按 slot 查 Supabase)
-  // TODO[supabase]: 替换为 await loadPlayerUnlocked(slot)
-  const UNLOCKED = { 0: [], 1: [], 2: [] };
+  /* ── 工具函数：复用避免重复代码 ── */
+  function countBattles(slot, rounds) {
+    let n = 0;
+    rounds.forEach(rd => (rd.parsed.battles || []).forEach(b => {
+      if (b.attackerSlot === slot) n++;
+    }));
+    return n;
+  }
 
-  // 从玩家卡 #pname-N 读取当前主公名(主公标记策略:玩家名号 = 主公名)
+  function countCityGain(slot, rounds) {
+    let gain = 0;
+    for (let i = 1; i < rounds.length; i++) {
+      const prev = rounds[i-1].parsed.players?.[slot]?.cities || 0;
+      const curr = rounds[i].parsed.players?.[slot]?.cities || 0;
+      if (curr > prev) gain += (curr - prev);
+    }
+    return gain;
+  }
+
+  function checkConsecutiveWins(slot, rounds, n) {
+    if (rounds.length < n) return false;
+    for (let i = 0; i <= rounds.length - n; i++) {
+      let ok = true;
+      for (let j = 0; j < n; j++) {
+        const battles = rounds[i+j].parsed.battles || [];
+        const hasWin = battles.some(b => b.attackerSlot === slot && b.result === '胜');
+        if (!hasWin) { ok = false; break; }
+      }
+      if (ok) return true;
+    }
+    return false;
+  }
+
+  function checkSingleRoundCityGain(slot, rounds, n) {
+    for (let i = 1; i < rounds.length; i++) {
+      const prev = rounds[i-1].parsed.players?.[slot]?.cities || 0;
+      const curr = rounds[i].parsed.players?.[slot]?.cities || 0;
+      if (curr - prev >= n) return true;
+    }
+    return false;
+  }
+
+  function checkRecovery(slot, rounds) {
+    if (rounds.length < 2) return false;
+    for (let i = 1; i < rounds.length; i++) {
+      const prevGens = rounds[i-1].parsed.players?.[slot]?.generals || [];
+      const currGens = rounds[i].parsed.players?.[slot]?.generals || [];
+      for (const g of prevGens) {
+        if (g.status === '受伤' || g.status === '患病') {
+          const found = currGens.find(c => c.name === g.name);
+          if (found && (!found.status || found.status === '健康')) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function checkGeneralLost(slot, rounds) {
+    if (rounds.length < 2) return false;
+    // 在册武将名集合，跨回合消失即视为阵亡
+    for (let i = 1; i < rounds.length; i++) {
+      const prevNames = new Set((rounds[i-1].parsed.players?.[slot]?.generals || []).map(g => g.name));
+      const currNames = new Set((rounds[i].parsed.players?.[slot]?.generals || []).map(g => g.name));
+      // 上回合在册 + 这回合不在册 = 可能阵亡（也可能调走，但简化判定）
+      for (const name of prevNames) {
+        if (!currNames.has(name)) return true;
+      }
+    }
+    return false;
+  }
+
+  function countSecrets(slot, rounds) {
+    const slotName = ['甲','乙','丙'][slot];
+    let n = 0;
+    rounds.forEach(rd => {
+      (rd.parsed.secrets || []).forEach(s => {
+        if (Array.isArray(s.slots) && s.slots.includes(slotName)) n++;
+      });
+    });
+    return n;
+  }
+
+  function checkUnknownSecret(slot, rounds) {
+    const slotName = ['甲','乙','丙'][slot];
+    return rounds.some(rd =>
+      (rd.parsed.secrets || []).some(s =>
+        Array.isArray(s.slots) && s.slots.includes(slotName) &&
+        /难辨/.test(String(s.title || '') + String(s.body || ''))
+      )
+    );
+  }
+
+  function checkSurvivalPhase2(slot, rounds) {
+    // 二幕 19-35 回合期间，玩家城数始终 ≥ 起始（即 ≥1）
+    const inPhase = rounds.filter(rd => (rd.round||0) >= 19 && (rd.round||0) <= 35);
+    if (!inPhase.length) return false;
+    return inPhase.every(rd => (rd.parsed.players?.[slot]?.cities || 0) >= 1);
+  }
+
+  /* ── localStorage 读写 ── */
+  function storageKey(slot) { return 'sg-ach-unlocked-' + slot; }
+
+  function loadUnlocked(slot) {
+    try {
+      const raw = localStorage.getItem(storageKey(slot));
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+
+  function saveUnlocked(slot, arr) {
+    try { localStorage.setItem(storageKey(slot), JSON.stringify(arr)); }
+    catch (e) { /* localStorage 满或禁用 */ }
+  }
+
+  /* ── 取玩家名 ── */
   function getPlayerName(slot) {
     const el = document.getElementById('pname-' + slot);
     return el ? (el.textContent || '').trim() : ('城主' + ['甲','乙','丙'][slot]);
   }
 
+  /* ── Toast 提示（沿用全站 #toast 节点）── */
+  function fireToast(msg) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    el.classList.add('show');
+    setTimeout(() => {
+      el.classList.remove('show');
+      setTimeout(() => el.classList.add('hidden'), 320);
+    }, 2800);
+  }
+
+  /* ── 核心扫描函数 ── */
+  function scan() {
+    const state = window.SGState;
+    if (!state || !state.rounds) return;
+    const rounds = state.rounds;
+    if (!rounds.length) return;
+
+    let totalNewlyUnlocked = 0;
+
+    for (let slot = 0; slot < 3; slot++) {
+      const unlocked = loadUnlocked(slot);
+      const newlyAdded = [];
+
+      ACHIEVEMENTS.forEach(ach => {
+        if (unlocked.indexOf(ach.code) !== -1) return;
+        try {
+          if (ach.check(slot, rounds)) {
+            unlocked.push(ach.code);
+            newlyAdded.push(ach);
+          }
+        } catch (e) {
+          console.warn('[SGAch] check failed for', ach.code, e);
+        }
+      });
+
+      if (newlyAdded.length) {
+        saveUnlocked(slot, unlocked);
+        const playerName = getPlayerName(slot);
+        // 多个成就时按稀有度倒序，依次弹（每条间隔由 setTimeout 自然错开）
+        newlyAdded
+          .sort((a,b) => (RAR_LEVEL[b.rar]||0) - (RAR_LEVEL[a.rar]||0))
+          .forEach((ach, idx) => {
+            setTimeout(() => {
+              fireToast('🏆 ' + playerName + ' 解锁「' + ach.name + '」');
+            }, idx * 3200);
+          });
+        totalNewlyUnlocked += newlyAdded.length;
+      }
+    }
+
+    // 触发玩家卡徽章重渲染（由工单 B 接管，本工单先广播事件）
+    if (totalNewlyUnlocked > 0) {
+      try { window.dispatchEvent(new CustomEvent('sg-ach-unlocked')); }
+      catch (e) { /* 兜底 */ }
+    }
+  }
+
+  /* ── 取该 slot 最高稀有度成就（供玩家卡徽章用）── */
+  function getHighestRarity(slot) {
+    const unlocked = loadUnlocked(slot);
+    if (!unlocked.length) return null;
+    let best = null;
+    unlocked.forEach(code => {
+      const ach = ACHIEVEMENTS.find(a => a.code === code);
+      if (!ach) return;
+      if (!best || (RAR_LEVEL[ach.rar]||0) > (RAR_LEVEL[best.rar]||0)) {
+        best = ach;
+      }
+    });
+    return best;
+  }
+
+  /* ── 取已解锁 code 数组（供外部调试或 UI 用）── */
+  function getUnlocked(slot) {
+    return loadUnlocked(slot).slice();
+  }
+
+  /* ── 清空全部（供 onClearAll 调用）── */
+  function clearAll() {
+    for (let i = 0; i < 3; i++) {
+      try { localStorage.removeItem(storageKey(i)); } catch (e) {}
+    }
+    try { window.dispatchEvent(new CustomEvent('sg-ach-unlocked')); }
+    catch (e) {}
+  }
+
+  /* ── 打开/关闭模态（保留旧 API，本工单先用占位渲染，工单 B 接管真正 UI）── */
   function open(slot) {
     const modal = document.getElementById('ach-modal');
     if (!modal) return;
-    const unlocked = UNLOCKED[slot] || [];
+    const unlocked = loadUnlocked(slot);
     const playerEl = document.getElementById('ach-modal-player');
     const unEl = document.getElementById('ach-stat-unlocked');
     const totalEl = document.getElementById('ach-stat-total');
@@ -2526,16 +2917,15 @@
     if (unEl) unEl.textContent = unlocked.length;
     if (totalEl) totalEl.textContent = ACHIEVEMENTS.length;
     if (listEl) {
+      // 占位渲染：沿用旧版样式，工单 B 会完全替换
       listEl.innerHTML = ACHIEVEMENTS.map(a => {
         const isU = unlocked.indexOf(a.code) !== -1;
-        return `<div class="ach-card-i rar-${a.rar} ${isU ? 'unlocked' : 'locked'}">
-          <div class="ach-card-icon">${a.icon}</div>
-          <div>
-            <div class="ach-card-name">${a.name}</div>
-            <div class="ach-card-desc">${a.cond}</div>
-          </div>
-          <div class="ach-card-meta">${isU ? '已解锁' : '未达成'}</div>
-        </div>`;
+        return '<div class="ach-card-i rar-' + a.rar + ' ' + (isU ? 'unlocked' : 'locked') + '">' +
+          '<div class="ach-card-icon">' + a.icon + '</div>' +
+          '<div><div class="ach-card-name">' + a.name + '</div>' +
+          '<div class="ach-card-desc">' + a.desc + '</div></div>' +
+          '<div class="ach-card-meta">' + (isU ? '已解锁' : '未达成') + '</div>' +
+          '</div>';
       }).join('');
     }
     modal.classList.add('open');
@@ -2549,13 +2939,36 @@
     document.body.style.overflow = '';
   }
 
-  // 点击遮罩关闭
   document.addEventListener('click', function (e) {
     if (e.target && e.target.id === 'ach-modal') close();
   });
 
-  // 对外暴露
-  window.SGAch = { open: open, close: close };
+  /* ── 监听 renderAll 完成（通过 sg-rounds-updated 自定义事件接力扫描）──
+       main.js 的 renderAll() 末尾已经广播 sg-rounds-updated（用于 secret-bureau），
+       本模块复用同一事件，零侵入 ── */
+  window.addEventListener('sg-rounds-updated', function () {
+    setTimeout(scan, 20);  // 让 renderAll 内的 DOM 写入先稳定
+  });
+
+  /* ── 首次加载兜底：如果 SGState 已有数据，立即扫一次 ── */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(scan, 200);
+    });
+  } else {
+    setTimeout(scan, 200);
+  }
+
+  /* ── 对外 API ── */
+  window.SGAch = {
+    open: open,
+    close: close,
+    scan: scan,
+    getUnlocked: getUnlocked,
+    getHighestRarity: getHighestRarity,
+    clearAll: clearAll,
+    _list: ACHIEVEMENTS,  // 工单 B 会用到
+  };
 })();
 
 
