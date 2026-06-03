@@ -9681,3 +9681,52 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ╚══ END v20261003a 成就 UI 精修 ══════════════════════════════ */
+/* ════════════════════════════════════════════════════════════
+   v20261005a 工单#achievement-rename-E1 · 稀有度重命名 + 配色重做
+   - 命名:铜/银/金/钻 → 常规/稀有/史诗/传说(数据层 key 不变)
+   - 配色:炉石标准 灰白 / 冷蓝 / 紫 / 暖橙
+   - 质感:沿用回滚后的版本,不引入新动画
+   - 旧规则不删,靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+/* ═══ 玩家卡徽章 · 配色覆盖 ═══ */
+.pcard.pcard-v4 .ach-title.rar-bronze {
+  --rar-bd: rgba(200,196,184,.55) !important;
+  --rar-bg: rgba(200,196,184,.08) !important;
+  --rar-fg: #c8c4b8 !important;
+}
+.pcard.pcard-v4 .ach-title.rar-silver {
+  --rar-bd: rgba(95,168,224,.62) !important;
+  --rar-bg: rgba(95,168,224,.1) !important;
+  --rar-fg: #7fbce8 !important;
+}
+.pcard.pcard-v4 .ach-title.rar-gold {
+  --rar-bd: rgba(176,112,224,.65) !important;
+  --rar-bg: rgba(176,112,224,.13) !important;
+  --rar-fg: #c890ec !important;
+}
+.pcard.pcard-v4 .ach-title.rar-diamond {
+  --rar-bd: rgba(232,144,72,.68) !important;
+  --rar-bg: rgba(232,144,72,.13) !important;
+  --rar-fg: #f0b078 !important;
+}
+
+/* ═══ 模态成就卡 · 配色覆盖 ═══ */
+.ach-modal-overlay .ach-card-i.rar-bronze {
+  --rar-tone: #c8c4b8 !important;
+  --rar-glow: rgba(200,196,184,.18) !important;
+}
+.ach-modal-overlay .ach-card-i.rar-silver {
+  --rar-tone: #7fbce8 !important;
+  --rar-glow: rgba(95,168,224,.3) !important;
+}
+.ach-modal-overlay .ach-card-i.rar-gold {
+  --rar-tone: #c890ec !important;
+  --rar-glow: rgba(176,112,224,.32) !important;
+}
+.ach-modal-overlay .ach-card-i.rar-diamond {
+  --rar-tone: #f0b078 !important;
+  --rar-glow: rgba(232,144,72,.34) !important;
+}
+
+/* ╚══ END v20261005a 稀有度重命名 + 配色重做 ══════════════════ */
