@@ -1,5 +1,6 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v25.3
+ * v25.6 (2026-08-XX): 工单#map-tooltip-region-bonus-v1 · 城池悬浮卡新增「州」chip + 「地利」独立成行
  * v25.5.1 (2026-05-30): 工单#map-tooltip-empty-polish · 文案"空"回滚"空缺"
  * v25.5 (2026-05-30): 工单#map-tooltip-font-unify · 玩家城驻将兜底"空" + 文案"空缺"→"空"
  * v25.4 (2026-05-27): 工单#map-tooltip-1 · 城池悬浮卡守将区极简化 — 去势力色 + 去状态后缀 + 阵亡不渲染
@@ -1025,8 +1026,20 @@ const BONUS_MULT = {
     const tier = CITY_TIER_MAP[city.name] || '郡城';
     const tierClass = tier === '雄都' ? 'tier-4' : tier === '州治' ? 'tier-3' : '';
     const tierBadge = `<span class="sgt-badge ${tierClass}">${tier}</span>`;
-    const bonusBadges = (city.bonusKeys || [city.bonusKey] || [])
-      .map(k => `<span class="sgt-badge">${_esc(k)}</span>`).join('');
+
+    // v25.6 (工单 #map-tooltip-region-bonus-v1):
+    //   - 新增「州」chip(中性灰白·身份注脚定位)
+    //   - 「地利」从徽章组移出,独立成 .sgt-bonus-line 一行
+    const regionChip = city.region
+      ? `<span class="sgt-region-chip">${_esc(city.region)}</span>`
+      : '';
+    const bonusKeysArr = (city.bonusKeys || [city.bonusKey] || []).filter(Boolean);
+    const bonusLineHtml = bonusKeysArr.length
+      ? `<div class="sgt-bonus-line">
+           <span class="sgt-bonus-line-lbl">地利</span>
+           <div class="sgt-bonus-line-items">${bonusKeysArr.map(k => `<span>${_esc(k)}</span>`).join('')}</div>
+         </div>`
+      : '';
 
     // 驻将
     // [legacy v13] 当 holder 为空时无条件回退到 city.npcGuard,
@@ -1129,9 +1142,10 @@ const BONUS_MULT = {
       <div class="sgt-header">
         <div class="sgt-name">${_esc(city.name)}</div>
         ${factionChip}
-        <div class="sgt-badges">${tierBadge}${bonusBadges}</div>
+        <div class="sgt-badges">${regionChip}${tierBadge}</div>
       </div>
       <div class="sgt-desc">${_esc(city.terrainDesc)}</div>
+      ${bonusLineHtml}
       <div class="sgt-info-block">
         <div class="sgt-row sgt-holder"><span class="sgt-lbl">驻将</span>${holderHtml}</div>
         ${troopHtml}
