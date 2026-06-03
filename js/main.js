@@ -32,6 +32,7 @@
  * v31 (2026-10-03): 工单#achievement-polish-C1 成就 UI 精修 — 配色重做(白蓝紫橙) + 移动端适配 + tab 进度计数
  * v32 (2026-10-05): 工单#achievement-rename-E1 稀有度重命名 — 铜银金钻 → 常规/稀有/史诗/传说 + 炉石标准配色
  * v33 (2026-10-06): 工单#achievement-polish-F1 tab 栏去 emoji + 桌面/移动端排版修复
+ * v34 (2026-10-07): 工单#achievement-expand-G1 新增 50 个成就 — 总数 100(武将组合/名城/隐藏剧情向)
  */
 
 (function () {
@@ -2967,8 +2968,8 @@
 })();
 
 /* ════════════════════════════════════════════
-   v20261006a 工单#achievement-polish-F1
-   成就系统 · tab 栏去 emoji 重构 + 桌面/移动端排版修复
+   v20261007a 工单#achievement-expand-G1
+   成就系统 v4 · 100 个成就(新增 50:武将组合/名城/史诗里程碑)
    - 触发时机：每次 renderAll() 结束自动 scan()
    - 解锁存储：localStorage[`sg-ach-unlocked-{slot}`]
    - Toast 提示：新解锁时弹 b 方案（淡 toast）
@@ -2990,6 +2991,276 @@
 
   /* ── 雄都列表（M10 用）── */
   const XIONGDU = ['洛阳', '邺城', '许昌', '长安', '襄阳', '建业', '成都'];
+
+  /* ── 险关列表(M14/M19 用)── */
+  const XIANGUAN_LIST = [
+    '虎牢关','潼关','街亭','剑阁','葭萌关','阳平关',
+    '上党','弘农','上庸','梓潼','夷陵','永安'
+  ];
+
+  /* ── 州治列表(I15 用)── */
+  const ZHOUZHI_LIST = [
+    '陈留','蓟县','晋阳','汉中','江夏','寿春','吴郡','下邳'
+  ];
+
+  /* ── 水战强城池(M17 用)── */
+  const SHUIZHAN_LIST = [
+    '襄阳','江夏','江陵','广陵','夷陵','巴丘',
+    '寿春','合肥','庐江','建业','吴郡','会稽','柴桑',
+    '永安','江州'
+  ];
+
+  /* ── 南中城池(H04 用)── */
+  const SOUTH_4 = ['建宁','云南','永昌','交趾'];
+
+  /* ── 武将组合白名单(T01-T12 用)──
+     注:单名 + 全名都列出,渲染时由 hasGeneral 宽松匹配 ── */
+  const WUHU = [        // 五虎上将
+    ['关羽','羽'], ['张飞','飞'], ['赵云','云'],
+    ['马超','超'], ['黄忠','忠']
+  ];
+  const WUZI = [        // 五子良将
+    ['张辽','辽'], ['乐进','进'], ['于禁','禁'],
+    ['张郃','郃'], ['徐晃','晃']
+  ];
+  const JIANGDONG = [   // 江东武将
+    ['孙策','策'], ['周瑜','瑜'], ['鲁肃','肃'],
+    ['吕蒙','蒙'], ['陆逊','逊'], ['太史慈','慈'],
+    ['甘宁','宁'], ['周泰','泰'], ['凌统','统']
+  ];
+  const CAOWEI_ZONG = [ // 曹氏/夏侯宗亲
+    ['曹仁','仁'], ['曹洪','洪'], ['曹真','真'],
+    ['夏侯惇','惇'], ['夏侯渊','渊']
+  ];
+  const HEBEI_4 = [     // 河北四庭柱
+    ['颜良','良'], ['文丑','丑'], ['张郃','郃'], ['高览','览']
+  ];
+  const XILIANG_2 = [   // 西凉铁骑
+    ['马超','超'], ['庞德','德']
+  ];
+  const THREE_PRIME = [ // 三国名相
+    ['诸葛亮','亮'], ['司马懿','懿'], ['周瑜','瑜']
+  ];
+  const WUMIAO_10 = [   // 武庙十哲(知名度近似)
+    ['吕布','布'], ['关羽','羽'], ['张飞','飞'],
+    ['赵云','云'], ['马超','超'], ['典韦','韦'],
+    ['许褚','褚'], ['诸葛亮','亮'], ['司马懿','懿'],
+    ['周瑜','瑜'], ['陆逊','逊'], ['郭嘉','嘉'],
+    ['张辽','辽']
+  ];
+
+  /* ── 州区映射(H05 用,M-03 65 城) ── */
+  const STATE_MAP = {
+    '幽州': ['襄平','北平','蓟县'],
+    '冀州': ['南皮','平原','邺城'],
+    '并州': ['晋阳','上党','平阳'],
+    '青州': ['北海','济南'],
+    '司隶': ['洛阳','弘农','河内','虎牢关','潼关'],
+    '雍凉': ['长安','天水','安定','武威','西平','街亭'],
+    '兖豫': ['濮阳','陈留','许昌','汝南','谯郡','阳翟'],
+    '徐州': ['下邳','小沛','广陵','琅琊'],
+    '荆襄': ['宛城','新野','襄阳','江夏','江陵','巴丘',
+            '夷陵','武陵','长沙','桂阳','零陵'],
+    '扬州': ['寿春','合肥','庐江','建业','吴郡',
+            '会稽','柴桑','庐陵'],
+    '益州': ['汉中','上庸','梓潼','成都','永安','江州',
+            '武都','剑阁','葭萌关','阳平关'],
+    '南中': ['建宁','云南','永昌','交趾'],
+  };
+
+  /* ── 辅助:武将名宽松匹配 ──
+     names = [['关羽','羽'], ['张飞','飞']] 二维数组
+     每个武将允许 单名 / 全名 / 包含关系 都算命中
+     最终返回:全员命中数(用于 some/全集判定) ── */
+  function hasGeneralMulti(generals, namesPairs) {
+    if (!Array.isArray(generals)) return 0;
+    let hit = 0;
+    namesPairs.forEach(pair => {
+      const matched = generals.some(g => {
+        const gn = String(g.name || '');
+        return pair.some(n => gn === n || gn.includes(n));
+      });
+      if (matched) hit++;
+    });
+    return hit;
+  }
+
+  /* ── 辅助:玩家所有回合 generals 累加去重(用于"曾拥有过"判定) ── */
+  function getEverGenerals(slot, rounds) {
+    const set = new Set();
+    rounds.forEach(rd => {
+      const gens = rd.parsed.players?.[slot]?.generals || [];
+      gens.forEach(g => { if (g.name) set.add(g.name); });
+    });
+    return Array.from(set).map(name => ({ name }));
+  }
+
+  /* ── 辅助:累计在指定城池列表中胜战 ── */
+  function countCityWinInList(slot, rounds, cityList) {
+    const wonCities = new Set();
+    rounds.forEach(rd => {
+      (rd.parsed.battles || []).forEach(b => {
+        if (b.attackerSlot === slot && b.result === '胜' &&
+            b.city && cityList.includes(b.city)) {
+          wonCities.add(b.city);
+        }
+      });
+    });
+    return wonCities.size;
+  }
+
+  /* ── 辅助:玩家当前是否拥有某城(扫最新回合 players[slot].cities_list) ── */
+  function currentlyOwnCity(slot, rounds, cityName) {
+    if (!rounds.length) return false;
+    const latest = rounds[rounds.length - 1];
+    const list = latest.parsed.players?.[slot]?.cities_list || [];
+    return list.some(c => c && c.name === cityName);
+  }
+
+  /* ── 辅助:玩家最新回合的城名集合 ── */
+  function currentOwnedCitiesSet(slot, rounds) {
+    if (!rounds.length) return new Set();
+    const latest = rounds[rounds.length - 1];
+    const list = latest.parsed.players?.[slot]?.cities_list || [];
+    return new Set(list.map(c => c && c.name).filter(Boolean));
+  }
+
+  /* ── 辅助:被攻防御胜利计数(NPC/对手攻本人 + 本人胜)──
+     注:battles 中 attackerSlot ≠ 本人 且 city 属于本人 + result=负 ── */
+  function countDefenseWins(slot, rounds) {
+    let n = 0;
+    rounds.forEach((rd, idx) => {
+      // 取上一回合的城池列表判断"当时是否属于本人"
+      const prevIdx = idx > 0 ? idx - 1 : idx;
+      const ownedNames = new Set(
+        (rd.parsed.players?.[slot]?.cities_list || []).map(c => c.name)
+      );
+      (rd.parsed.battles || []).forEach(b => {
+        if (b.attackerSlot !== slot && b.city && ownedNames.has(b.city) &&
+            b.result === '负') {
+          n++;
+        }
+      });
+    });
+    return n;
+  }
+
+  /* ── 辅助:累计敌方伤亡 ── */
+  function totalDefenderLoss(slot, rounds) {
+    let n = 0;
+    rounds.forEach(rd => (rd.parsed.battles || []).forEach(b => {
+      if (b.attackerSlot === slot) n += Number(b.defender_loss) || 0;
+    }));
+    return n;
+  }
+
+  /* ── 辅助:连续回合同武将同目标 status=攻城中/交战中 ── */
+  function checkConsecutiveSiege(slot, rounds, n) {
+    if (rounds.length < n) return false;
+    // 收集每回合本人的 (general, to) 对
+    const perRound = rounds.map(rd =>
+      (rd.parsed.transit || [])
+        .filter(t => t.slot === slot &&
+                     (t.status === '攻城中' || t.status === '交战中'))
+        .map(t => (t.general || '') + '|' + (t.to || ''))
+    );
+    for (let i = 0; i <= perRound.length - n; i++) {
+      const first = perRound[i];
+      if (!first.length) continue;
+      for (const key of first) {
+        let ok = true;
+        for (let j = 1; j < n; j++) {
+          if (!perRound[i+j].includes(key)) { ok = false; break; }
+        }
+        if (ok) return true;
+      }
+    }
+    return false;
+  }
+
+  /* ── 辅助:secrets 含特定可信度 ── */
+  function countSecretsByTrust(slot, rounds, trust) {
+    const slotName = ['甲','乙','丙'][slot];
+    let n = 0;
+    rounds.forEach(rd => {
+      (rd.parsed.secrets || []).forEach(s => {
+        if (!Array.isArray(s.slots) || !s.slots.includes(slotName)) return;
+        const txt = String(s.title || '') + String(s.body || '');
+        if (txt.includes(trust)) n++;
+      });
+    });
+    return n;
+  }
+
+  /* ── 辅助:secrets 是密令 ── */
+  function countCommandSecrets(slot, rounds) {
+    const slotName = ['甲','乙','丙'][slot];
+    let n = 0;
+    rounds.forEach(rd => {
+      (rd.parsed.secrets || []).forEach(s => {
+        if (Array.isArray(s.slots) && s.slots.includes(slotName) && s.isCmd) n++;
+      });
+    });
+    return n;
+  }
+
+  /* ── 辅助:被俘转为己方(H02 用)── */
+  function checkCapturedRecruit(slot, rounds) {
+    if (rounds.length < 2) return false;
+    const slotName = ['甲','乙','丙'][slot];
+    for (let i = 1; i < rounds.length; i++) {
+      const prevWorld = rounds[i-1].parsed.world || [];
+      const currGens = rounds[i].parsed.players?.[slot]?.generals || [];
+      const prevCapturedByMe = prevWorld.filter(w =>
+        w.status === '被俘' &&
+        String(w.location || '').includes(slotName + '方')
+      );
+      for (const w of prevCapturedByMe) {
+        if (currGens.some(g =>
+          g.name === w.name || (w.name && g.name && (g.name.includes(w.name) || w.name.includes(g.name)))
+        )) return true;
+      }
+    }
+    return false;
+  }
+
+  /* ── 辅助:释放被俘(H03 用)──
+     检测:某武将在某回合 world 被俘+位置本人方,下回合 world 在野 ── */
+  function countReleasedCaptives(slot, rounds) {
+    if (rounds.length < 2) return 0;
+    const slotName = ['甲','乙','丙'][slot];
+    let n = 0;
+    const counted = new Set();
+    for (let i = 1; i < rounds.length; i++) {
+      const prev = rounds[i-1].parsed.world || [];
+      const curr = rounds[i].parsed.world || [];
+      prev.forEach(p => {
+        if (p.status !== '被俘') return;
+        if (!String(p.location || '').includes(slotName + '方')) return;
+        if (counted.has(p.name)) return;
+        const stillCaptive = curr.some(c => c.name === p.name && c.status === '被俘');
+        const nowWild = curr.some(c => c.name === p.name && c.status === '在野');
+        const recruited = (rounds[i].parsed.players?.[slot]?.generals || [])
+          .some(g => g.name === p.name);
+        // 释放 = 从被俘消失 + 出现在野(且不是被本人招揽)
+        if (!stillCaptive && nowWild && !recruited) {
+          n++;
+          counted.add(p.name);
+        }
+      });
+    }
+    return n;
+  }
+
+  /* ── 辅助:跨州数(H05 用) ── */
+  function countDistinctStates(slot, rounds) {
+    const owned = currentOwnedCitiesSet(slot, rounds);
+    const states = new Set();
+    Object.entries(STATE_MAP).forEach(([state, cities]) => {
+      if (cities.some(c => owned.has(c))) states.add(state);
+    });
+    return states.size;
+  }
 
   /* ── 50 个成就定义 ── */
   const ACHIEVEMENTS = [
@@ -3168,6 +3439,260 @@
     { code:'L08', cat:'milestone', rar:'diamond', name:'一统天下', icon:'统',
       desc:'占据城池数达到 20 座',
       check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.cities||0)>=20) },
+
+    // ═══ ⚔️ 军事进阶 10 ═══
+    { code:'M13', cat:'military', rar:'bronze', name:'首胜雄都', icon:'都',
+      desc:'首次攻下任意雄都(洛阳/邺城/许昌/长安/襄阳/建业/成都)',
+      check:(slot,rounds)=>countCityWinInList(slot,rounds,XIONGDU)>=1 },
+    { code:'M14', cat:'military', rar:'bronze', name:'险关之主', icon:'关',
+      desc:'攻下任意一座险关',
+      check:(slot,rounds)=>countCityWinInList(slot,rounds,XIANGUAN_LIST)>=1 },
+    { code:'M15', cat:'military', rar:'silver', name:'三战三捷', icon:'三',
+      desc:'单回合内 3 场战斗全胜',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const list = (rd.parsed.battles||[]).filter(b=>b.attackerSlot===slot);
+        return list.length>=3 && list.every(b=>b.result==='胜');
+      }) },
+    { code:'M16', cat:'military', rar:'silver', name:'围城猛将', icon:'围',
+      desc:'累计攻城战胜利 5 场',
+      check:(slot,rounds)=>{
+        let n=0;
+        rounds.forEach(rd=>(rd.parsed.battles||[]).forEach(b=>{
+          if(b.attackerSlot===slot && b.result==='胜' && b.city) n++;
+        }));
+        return n>=5;
+      } },
+    { code:'M17', cat:'military', rar:'silver', name:'水陆双修', icon:'渡',
+      desc:'攻下任一水战强城池',
+      check:(slot,rounds)=>countCityWinInList(slot,rounds,SHUIZHAN_LIST)>=1 },
+    { code:'M18', cat:'military', rar:'gold', name:'雄都连下', icon:'连',
+      desc:'累计攻下 3 座雄都',
+      check:(slot,rounds)=>countCityWinInList(slot,rounds,XIONGDU)>=3 },
+    { code:'M19', cat:'military', rar:'gold', name:'险关克星', icon:'破',
+      desc:'累计攻下 5 座险关',
+      check:(slot,rounds)=>countCityWinInList(slot,rounds,XIANGUAN_LIST)>=5 },
+    { code:'M20', cat:'military', rar:'gold', name:'一夫当关', icon:'守',
+      desc:'守住己方城池累计抵御 5 次进攻',
+      check:(slot,rounds)=>countDefenseWins(slot,rounds)>=5 },
+    { code:'M21', cat:'military', rar:'diamond', name:'千军辟易', icon:'辟',
+      desc:'累计敌方伤亡突破 30000',
+      check:(slot,rounds)=>totalDefenderLoss(slot,rounds)>=30000 },
+    { code:'M22', cat:'military', rar:'diamond', name:'战神不朽', icon:'朽',
+      desc:'累计 30 场战斗无败绩',
+      check:(slot,rounds)=>{
+        const list = [];
+        rounds.forEach(rd=>(rd.parsed.battles||[]).forEach(b=>{
+          if(b.attackerSlot===slot) list.push(b);
+        }));
+        return list.length>=30 && list.every(b=>b.result!=='负');
+      } },
+
+    // ═══ 🏛️ 内政进阶 8 ═══
+    { code:'I13', cat:'govern', rar:'bronze', name:'民为邦本', icon:'邦',
+      desc:'民心首次达到 100(满民心)',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.morale||0)>=100) },
+    { code:'I14', cat:'govern', rar:'silver', name:'兵精粮足', icon:'备',
+      desc:'同回合 兵≥10000 且 粮≥20000',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const p=rd.parsed.players?.[slot];
+        return p && (p.troop||0)>=10000 && (p.food||0)>=20000;
+      }) },
+    { code:'I15', cat:'govern', rar:'silver', name:'太守之政', icon:'政',
+      desc:'同时占据 3 座州治',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const list=rd.parsed.players?.[slot]?.cities_list||[];
+        return list.filter(c=>ZHOUZHI_LIST.includes(c.name)).length>=3;
+      }) },
+    { code:'I16', cat:'govern', rar:'gold', name:'雄都之主', icon:'雄',
+      desc:'同时占据 2 座雄都',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const list=rd.parsed.players?.[slot]?.cities_list||[];
+        return list.filter(c=>XIONGDU.includes(c.name)).length>=2;
+      }) },
+    { code:'I17', cat:'govern', rar:'gold', name:'富甲三国', icon:'豪',
+      desc:'金钱储备突破 50000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.gold||0)>=50000) },
+    { code:'I18', cat:'govern', rar:'gold', name:'屯粮百万', icon:'垠',
+      desc:'粮草储备突破 80000',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.parsed.players?.[slot]?.food||0)>=80000) },
+    { code:'I19', cat:'govern', rar:'diamond', name:'王业可成', icon:'业',
+      desc:'同回合达成 金≥30000 / 粮≥50000 / 兵≥30000 / 民心≥90',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const p=rd.parsed.players?.[slot];
+        return p && (p.gold||0)>=30000 && (p.food||0)>=50000 &&
+               (p.troop||0)>=30000 && (p.morale||0)>=90;
+      }) },
+    { code:'I20', cat:'govern', rar:'diamond', name:'不战屈人', icon:'屈',
+      desc:'占城 ≥10 且累计参战 ≤5 场',
+      check:(slot,rounds)=>{
+        if (!rounds.some(rd=>(rd.parsed.players?.[slot]?.cities||0)>=10)) return false;
+        return countBattles(slot,rounds)<=5;
+      } },
+
+    // ═══ 👥 武将组合·历史名将组 12 ═══
+    { code:'T01', cat:'general', rar:'gold', name:'桃园结义', icon:'桃',
+      desc:'同时拥有 关羽 + 张飞',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,[['关羽','羽'],['张飞','飞']])===2;
+      }) },
+    { code:'T02', cat:'general', rar:'gold', name:'五虎上将', icon:'虎',
+      desc:'集齐五虎上将(关羽/张飞/赵云/马超/黄忠)',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,WUHU)===5;
+      }) },
+    { code:'T03', cat:'general', rar:'gold', name:'五子良将', icon:'良',
+      desc:'集齐五子良将(张辽/乐进/于禁/张郃/徐晃)',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,WUZI)===5;
+      }) },
+    { code:'T04', cat:'general', rar:'gold', name:'江东双璧', icon:'璧',
+      desc:'同时拥有 周瑜 + 陆逊',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,[['周瑜','瑜'],['陆逊','逊']])===2;
+      }) },
+    { code:'T05', cat:'general', rar:'silver', name:'卧龙凤雏', icon:'卧',
+      desc:'拥有 诸葛亮 或 庞统',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,[['诸葛亮','亮'],['庞统','统']])>=1;
+      }) },
+    { code:'T06', cat:'general', rar:'diamond', name:'卧龙得雏', icon:'凤',
+      desc:'同时拥有 诸葛亮 + 庞统',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,[['诸葛亮','亮'],['庞统','统']])===2;
+      }) },
+    { code:'T07', cat:'general', rar:'silver', name:'江东虎臣', icon:'臣',
+      desc:'同时拥有 3 位江东武将',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,JIANGDONG)>=3;
+      }) },
+    { code:'T08', cat:'general', rar:'gold', name:'曹魏宗亲', icon:'宗',
+      desc:'同时拥有 3 位曹氏/夏侯',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,CAOWEI_ZONG)>=3;
+      }) },
+    { code:'T09', cat:'general', rar:'silver', name:'河北四柱', icon:'柱',
+      desc:'集齐河北四庭柱(颜良/文丑/张郃/高览)',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,HEBEI_4)===4;
+      }) },
+    { code:'T10', cat:'general', rar:'gold', name:'西凉铁骑', icon:'骑',
+      desc:'同时拥有 马超 + 庞德',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,XILIANG_2)===2;
+      }) },
+    { code:'T11', cat:'general', rar:'diamond', name:'三国名相', icon:'相',
+      desc:'同时拥有 诸葛亮 + 司马懿 + 周瑜',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,THREE_PRIME)===3;
+      }) },
+    { code:'T12', cat:'general', rar:'diamond', name:'武庙十哲', icon:'哲',
+      desc:'麾下 6 位名将齐聚(按知名度白名单)',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,WUMIAO_10)>=6;
+      }) },
+
+    // ═══ 🎭 谋略进阶 6 ═══
+    { code:'S09', cat:'strategy', rar:'bronze', name:'客驻他乡', icon:'客',
+      desc:'累计在 NPC 城客驻 3 次',
+      check:(slot,rounds)=>{
+        let n=0;
+        rounds.forEach(rd=>(rd.parsed.transit||[]).forEach(t=>{
+          if(t.slot===slot && t.status==='客驻') n++;
+        }));
+        return n>=3;
+      } },
+    { code:'S10', cat:'strategy', rar:'silver', name:'攻心为上', icon:'信',
+      desc:'累计收到 10 条「可信」密报',
+      check:(slot,rounds)=>countSecretsByTrust(slot,rounds,'可信')>=10 },
+    { code:'S11', cat:'strategy', rar:'silver', name:'围而不攻', icon:'困',
+      desc:'单支部队"攻城中/交战中"持续 ≥3 回合',
+      check:(slot,rounds)=>checkConsecutiveSiege(slot,rounds,3) },
+    { code:'S12', cat:'strategy', rar:'gold', name:'暗中布局', icon:'局',
+      desc:'累计获得密令选项 20 次',
+      check:(slot,rounds)=>countCommandSecrets(slot,rounds)>=20 },
+    { code:'S13', cat:'strategy', rar:'gold', name:'共享盟友', icon:'盟',
+      desc:'收到共享密报(多方共阅)',
+      check:(slot,rounds)=>{
+        const slotName = ['甲','乙','丙'][slot];
+        return rounds.some(rd=>(rd.parsed.secrets||[]).some(s=>
+          Array.isArray(s.slots) && s.slots.includes(slotName) && s.slots.length>=2
+        ));
+      } },
+    { code:'S14', cat:'strategy', rar:'diamond', name:'鬼谋深算', icon:'谋',
+      desc:'累计收到密报 80 条',
+      check:(slot,rounds)=>countSecrets(slot,rounds)>=80 },
+
+    // ═══ 🏆 里程碑·名场面 8 ═══
+    { code:'L09', cat:'milestone', rar:'bronze', name:'初出五幕', icon:'初',
+      desc:'二幕开启(第 19 回合)',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.round||0)>=19) },
+    { code:'L10', cat:'milestone', rar:'silver', name:'雷霆将至', icon:'雷',
+      desc:'三幕开启(第 36 回合)',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.round||0)>=36) },
+    { code:'L11', cat:'milestone', rar:'gold', name:'决战之时', icon:'决',
+      desc:'四幕开启(第 46 回合)',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.round||0)>=46) },
+    { code:'L12', cat:'milestone', rar:'gold', name:'余波回响', icon:'余',
+      desc:'五幕开启(第 56 回合)',
+      check:(slot,rounds)=>rounds.some(rd=>(rd.round||0)>=56) },
+    { code:'L13', cat:'milestone', rar:'silver', name:'攻占洛阳', icon:'洛',
+      desc:'攻下洛阳',
+      check:(slot,rounds)=>countCityWinInList(slot,rounds,['洛阳'])>=1 },
+    { code:'L14', cat:'milestone', rar:'silver', name:'入主许昌', icon:'许',
+      desc:'攻下许昌',
+      check:(slot,rounds)=>countCityWinInList(slot,rounds,['许昌'])>=1 },
+    { code:'L15', cat:'milestone', rar:'gold', name:'据有邺城', icon:'邺',
+      desc:'攻下邺城',
+      check:(slot,rounds)=>countCityWinInList(slot,rounds,['邺城'])>=1 },
+    { code:'L16', cat:'milestone', rar:'diamond', name:'三都归一', icon:'归',
+      desc:'同时拥有 洛阳 + 长安 + 许昌',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const list=rd.parsed.players?.[slot]?.cities_list||[];
+        const names=new Set(list.map(c=>c.name));
+        return names.has('洛阳') && names.has('长安') && names.has('许昌');
+      }) },
+
+    // ═══ 💎 隐藏·剧情向 6 ═══
+    { code:'H01', cat:'milestone', rar:'bronze', name:'寒微出身', icon:'寒',
+      desc:'开局首回合武将数 ≤2',
+      check:(slot,rounds)=>{
+        if (!rounds.length) return false;
+        const first = rounds[0];
+        return (first.parsed.players?.[slot]?.generals||[]).length<=2;
+      } },
+    { code:'H02', cat:'general', rar:'silver', name:'收降名将', icon:'收',
+      desc:'招降一名被俘武将至麾下',
+      check:(slot,rounds)=>checkCapturedRecruit(slot,rounds) },
+    { code:'H03', cat:'general', rar:'gold', name:'释义放归', icon:'释',
+      desc:'累计释放被俘武将 3 次',
+      check:(slot,rounds)=>countReleasedCaptives(slot,rounds)>=3 },
+    { code:'H04', cat:'milestone', rar:'gold', name:'南征蛮夷', icon:'蛮',
+      desc:'占据任一南中城池(建宁/云南/永昌/交趾)',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const list=rd.parsed.players?.[slot]?.cities_list||[];
+        return list.some(c=>SOUTH_4.includes(c.name));
+      }) },
+    { code:'H05', cat:'milestone', rar:'diamond', name:'横跨九州', icon:'跨',
+      desc:'同时占据涵盖 6 个州的城池',
+      check:(slot,rounds)=>countDistinctStates(slot,rounds)>=6 },
+    { code:'H06', cat:'general', rar:'diamond', name:'五虎五子', icon:'极',
+      desc:'同时集齐五虎上将与五子良将',
+      check:(slot,rounds)=>rounds.some(rd=>{
+        const g=rd.parsed.players?.[slot]?.generals||[];
+        return hasGeneralMulti(g,WUHU)===5 && hasGeneralMulti(g,WUZI)===5;
+      }) },
   ];
 
   /* ── 工具函数：复用避免重复代码 ── */
