@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260602a" />
+  <link rel="stylesheet" href="css/style.css?v=20261002a" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -760,22 +760,34 @@
   </div>
 </section>
 
-<!-- ══ 成就墙模态 v4 ══ -->
+<!-- ══ 成就墙模态 v5 ══ -->
 <div class="ach-modal-overlay" id="ach-modal">
   <div class="ach-modal">
     <div class="ach-modal-head">
       <div class="ach-modal-title">
         <span class="title-deco"></span>
         <span id="ach-modal-player">城主</span> · 战功册
-        <span class="title-deco" style="transform:rotate(180deg)"></span>
+        <span class="title-deco right"></span>
       </div>
       <div class="ach-modal-right">
-        <div class="ach-modal-stats">已解锁 <b id="ach-stat-unlocked">0</b> / <span id="ach-stat-total">5</span></div>
+        <div class="ach-modal-stats">
+          已解锁 <b id="ach-stat-unlocked">0</b>
+          <span class="ach-modal-stats-sep">/</span>
+          <span id="ach-stat-total">50</span>
+        </div>
         <button class="ach-modal-close" onclick="window.SGAch && SGAch.close()">✕</button>
       </div>
     </div>
-    <div class="ach-empty-note">
-      <b>开发预留</b> · 当前 5 个为新手测试成就。后续将通过 Supabase 接入更多成就,由 GM 在 AI 推演中触发解锁。
+    <div class="ach-tabs" id="ach-tabs">
+      <button class="ach-tab active" data-cat="all">全部 <span class="ach-tab-count" data-cnt="all">0</span></button>
+      <button class="ach-tab" data-cat="military">⚔️ 军事 <span class="ach-tab-count" data-cnt="military">0</span></button>
+      <button class="ach-tab" data-cat="govern">🏛️ 内政 <span class="ach-tab-count" data-cnt="govern">0</span></button>
+      <button class="ach-tab" data-cat="general">👥 武将 <span class="ach-tab-count" data-cnt="general">0</span></button>
+      <button class="ach-tab" data-cat="strategy">🎭 谋略 <span class="ach-tab-count" data-cnt="strategy">0</span></button>
+      <button class="ach-tab" data-cat="milestone">🏆 里程碑 <span class="ach-tab-count" data-cnt="milestone">0</span></button>
+    </div>
+    <div class="ach-modal-note">
+      <b>战功册</b> · 共 50 项功业，由乱世征伐自动触发，永久铭记于此。
     </div>
     <div class="ach-list" id="ach-list"></div>
   </div>
@@ -818,7 +830,7 @@
 <script src="js/map.js?v=25.5.1"></script>
 <script src="js/tips.js?v=v20260601a"></script>
 <script src="js/generals-tooltip.js?v=v20260601a"></script>
-<script src="js/main.js?v=v20261001a"></script>
+<script src="js/main.js?v=v20261002a"></script>
 <script src="js/role-login.js?v=v20260601a"></script>
 <script src="js/secret-action.js?v=v20260922b"></script>
 <script src="js/secret-bureau.js?v=v20260601b"></script>
