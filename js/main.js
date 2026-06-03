@@ -30,6 +30,7 @@
  * v29 (2026-10-01): 工单#achievement-engine-A1 成就系统 v1 — 50 成就 + 触发引擎 + localStorage 持久化 + Toast 提示
  * v30 (2026-10-02): 工单#achievement-ui-B1 成就 UI 重做 — 玩家卡徽章接入最稀有成就 + 模态 6 分类 tab + 灰度未解锁态
  * v31 (2026-10-03): 工单#achievement-polish-C1 成就 UI 精修 — 配色重做(白蓝紫橙) + 移动端适配 + tab 进度计数
+ * v32 (2026-10-05): 工单#achievement-rename-E1 稀有度重命名 — 铜银金钻 → 常规/稀有/史诗/传说 + 炉石标准配色
  */
 
 (function () {
@@ -2526,8 +2527,8 @@
 })();
 
 /* ════════════════════════════════════════════
-   v20261003a 工单#achievement-polish-C1
-   成就系统 v3 · 配色重做(白蓝紫橙) + 移动端适配 + tab 进度计数
+   v20261005a 工单#achievement-rename-E1
+   成就系统 · 稀有度重命名 + 配色重做(炉石标准:常规/稀有/史诗/传说)
    - 触发时机：每次 renderAll() 结束自动 scan()
    - 解锁存储：localStorage[`sg-ach-unlocked-{slot}`]
    - Toast 提示：新解锁时弹 b 方案（淡 toast）
@@ -2950,7 +2951,7 @@
   };
 
   /* ── 稀有度中文（用于 .ach-card-rar-tag）── */
-  const RAR_CN = { bronze:'铜', silver:'银', gold:'金', diamond:'钻' };
+  const RAR_CN = { bronze:'常规', silver:'稀有', gold:'史诗', diamond:'传说' };
 
   /* ── 打开成就墙模态 ── */
   function open(slot) {
