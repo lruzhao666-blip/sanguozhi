@@ -266,6 +266,7 @@
   function applyPlayerInheritance() {
     // 按 slot 缓存最近的完整快照
     const lastBySlot = { '甲': null, '乙': null, '丙': null };
+    const SLOT_TO_PIDX = { '甲': 0, '乙': 1, '丙': 2 };
 
     for (let i = 0; i < state.rounds.length; i++) {
       const rd = state.rounds[i];
@@ -281,6 +282,26 @@
           pp.cities_list = JSON.parse(JSON.stringify(prev.cities_list || []));
           pp.ownedCities = (pp.cities_list || []).map(c => c.name);
           if (pp.cities_list.length && !pp.city) pp.city = pp.cities_list[0].name;
+
+          // ── 同步 cityOwnership:玩家城必须落进地图归属表 ──
+          // 否则 renderMap() 走 cityOwnership 分支时,
+          // NPC 城显示正常但本玩家的城会从地图上消失
+          if (!rd.parsed.cityOwnership) rd.parsed.cityOwnership = {};
+          const pidx = SLOT_TO_PIDX[slot];
+          const playerName = pp.name || prev.name || slot;
+          pp.cities_list.forEach((c, ci) => {
+            // 不覆盖已存在的玩家段条目(防止本回合内 troopOps 已写入的覆写)
+            if (!rd.parsed.cityOwnership[c.name]) {
+              rd.parsed.cityOwnership[c.name] = {
+                owner:      'p' + pidx,
+                playerIdx:  pidx,
+                playerName: playerName,
+                holder:     c.holder || '无',
+                troops:     c.troops || {},
+                isMulti:    ci > 0,
+              };
+            }
+          });
         } else if (pp.citiesInherit && !prev) {
           console.warn('[SG] R' + rd.round + ' 玩家 ' + slot + ' 写了 城池:同上,但无上回合快照');
         }
@@ -296,6 +317,7 @@
         lastBySlot[slot] = {
           cities_list: pp.cities_list || [],
           generals:    pp.generals    || [],
+          name:        pp.name        || (prev && prev.name) || '',
         };
       });
     }
