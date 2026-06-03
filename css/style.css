@@ -8957,3 +8957,462 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ══ v20260601a 工单#map-tooltip-region-bonus-v1 END ══ */
+/* ════════════════════════════════════════════════════════════
+   v20261002a 工单#achievement-ui-B1 · 成就 UI 重做
+   - 玩家卡徽章：4 种稀有度态 + 钻石呼吸光晕 + 未解锁灰态
+   - 成就墙模态：三层背景 + 双层金线 + 嵌套阴影（对齐"世界"板块）
+   - 旧规则不删（保留 v20260702a 的成就墙样式），靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+/* ═══ 玩家卡徽章 4 态（覆盖 v20260702a 的简化版）═══ */
+.pcard.pcard-v4 .pc-ach-slot {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.pcard.pcard-v4 .pc-ach-slot:hover .ach-title {
+  filter: brightness(1.18);
+  transform: translateY(-1px);
+}
+.pcard.pcard-v4 .ach-title {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px 9px 3px 8px !important;
+  border-radius: 3px !important;
+  font-family: var(--font-serif) !important;
+  font-size: .7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: .06em !important;
+  transition: all .2s !important;
+  color: var(--rar-fg, var(--text-dim)) !important;
+  background: var(--rar-bg, rgba(120,108,90,.06)) !important;
+  border: 1px solid var(--rar-bd, rgba(120,108,90,.3)) !important;
+}
+.pcard.pcard-v4 .ach-title::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 4px currentColor;
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+.pcard.pcard-v4 .ach-title.rar-bronze {
+  --rar-bd: rgba(168,124,74,.5);
+  --rar-bg: rgba(168,124,74,.08);
+  --rar-fg: #c8a88a;
+}
+.pcard.pcard-v4 .ach-title.rar-silver {
+  --rar-bd: rgba(184,184,184,.55);
+  --rar-bg: rgba(184,184,184,.08);
+  --rar-fg: #d8d8d8;
+}
+.pcard.pcard-v4 .ach-title.rar-gold {
+  --rar-bd: rgba(212,168,67,.6);
+  --rar-bg: rgba(212,168,67,.13);
+  --rar-fg: #f0c870;
+  box-shadow: 0 0 8px rgba(212,168,67,.22), inset 0 1px 0 rgba(255,235,160,.14) !important;
+}
+.pcard.pcard-v4 .ach-title.rar-diamond {
+  --rar-bd: rgba(127,184,212,.62);
+  --rar-bg: rgba(127,184,212,.13);
+  --rar-fg: #a8d8ec;
+  box-shadow: 0 0 10px rgba(127,184,212,.25), inset 0 1px 0 rgba(200,232,250,.14) !important;
+  animation: achRarDiamondPulse 3s ease-in-out infinite;
+}
+.pcard.pcard-v4 .ach-title.rar-none {
+  --rar-bd: rgba(120,108,90,.3);
+  --rar-bg: rgba(120,108,90,.06);
+  --rar-fg: rgba(140,128,108,.55);
+  font-style: italic;
+}
+@keyframes achRarDiamondPulse {
+  0%,100% { box-shadow: 0 0 10px rgba(127,184,212,.22), inset 0 1px 0 rgba(200,232,250,.14); }
+  50%     { box-shadow: 0 0 16px rgba(127,184,212,.42), inset 0 1px 0 rgba(200,232,250,.18); }
+}
+.pcard.pcard-v4 .ach-count {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 4px !important;
+  min-width: 19px !important;
+  height: 18px !important;
+  padding: 0 5px !important;
+  border-radius: 9px !important;
+  font-family: var(--font-sans) !important;
+  font-size: .6rem !important;
+  font-weight: 700 !important;
+  background: rgba(212,168,67,.18) !important;
+  border: 1px solid rgba(212,168,67,.4) !important;
+  color: var(--gold-light) !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums;
+}
+.pcard.pcard-v4 .pc-ach-slot:has(.rar-none) .ach-count {
+  background: rgba(120,108,90,.1) !important;
+  border-color: rgba(120,108,90,.25) !important;
+  color: rgba(140,128,108,.55) !important;
+}
+
+/* ═══ 成就墙模态 v5 重做 ═══ */
+.ach-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.78);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.ach-modal-overlay.open { display: flex; }
+
+.ach-modal-overlay .ach-modal {
+  width: 100%;
+  max-width: 720px;
+  max-height: 88vh;
+  position: relative;
+  border: 1px solid rgba(212,168,67,.38) !important;
+  border-radius: var(--rl);
+  background:
+    radial-gradient(ellipse 700px 120px at 50% 0, rgba(212,168,67,.07), transparent 70%),
+    radial-gradient(ellipse 900px 220px at 50% 100%, rgba(40,0,0,.45), transparent 70%),
+    linear-gradient(180deg, rgba(14,8,8,.96), rgba(8,3,3,.98)) !important;
+  box-shadow:
+    0 0 0 1px rgba(212,168,67,.06),
+    inset 0 1px 0 rgba(255,220,150,.08),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 12px 56px rgba(0,0,0,.7) !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ach-modal-overlay .ach-modal-head {
+  padding: 11px 20px !important;
+  background:
+    linear-gradient(90deg, rgba(80,15,8,.45), rgba(45,8,4,.25) 60%, transparent),
+    radial-gradient(ellipse 400px 60px at 30% 50%, rgba(212,168,67,.05), transparent) !important;
+  border-bottom: 1px solid rgba(212,168,67,.18) !important;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ach-modal-overlay .ach-modal-head::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(180,120,40,.4),
+    rgba(212,168,67,.55),
+    rgba(180,120,40,.4),
+    transparent);
+  pointer-events: none;
+}
+.ach-modal-overlay .ach-modal-title {
+  font-family: var(--font-serif) !important;
+  font-size: .95rem !important;
+  font-weight: 900 !important;
+  color: var(--gold-light) !important;
+  letter-spacing: .14em !important;
+  text-shadow: 0 0 12px rgba(212,168,67,.25), 0 2px 4px rgba(0,0,0,.8) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex: 1;
+  min-width: 0;
+}
+.ach-modal-overlay .ach-modal-title .title-deco {
+  display: inline-block;
+  width: 22px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold));
+  flex-shrink: 0;
+}
+.ach-modal-overlay .ach-modal-title .title-deco.right {
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+.ach-modal-overlay .ach-modal-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.ach-modal-overlay .ach-modal-stats {
+  font-family: var(--font-serif) !important;
+  font-size: .72rem !important;
+  color: var(--text-sub) !important;
+  letter-spacing: .06em !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 11px;
+  background: rgba(0,0,0,.32);
+  border: 1px solid rgba(180,140,60,.28);
+  border-radius: 11px;
+}
+.ach-modal-overlay .ach-modal-stats b {
+  color: var(--gold-light) !important;
+  font-weight: 700 !important;
+  font-size: .82rem !important;
+  font-variant-numeric: tabular-nums;
+}
+.ach-modal-overlay .ach-modal-stats-sep {
+  color: var(--text-dim);
+}
+.ach-modal-overlay .ach-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  padding: 4px 10px;
+  transition: color .15s;
+  line-height: 1;
+}
+.ach-modal-overlay .ach-modal-close:hover {
+  color: var(--gold-light);
+}
+
+/* Tab 栏 */
+.ach-modal-overlay .ach-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 20px 0;
+  background: rgba(0,0,0,.22);
+  border-bottom: 1px solid rgba(212,168,67,.12);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.ach-modal-overlay .ach-tabs::-webkit-scrollbar { display: none; }
+.ach-modal-overlay .ach-tab {
+  padding: 8px 16px 9px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: var(--font-serif);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  position: relative;
+  white-space: nowrap;
+  transition: color .18s;
+  border-bottom: 2px solid transparent;
+}
+.ach-modal-overlay .ach-tab:hover { color: var(--text-main); }
+.ach-modal-overlay .ach-tab.active {
+  color: var(--gold-light);
+  border-bottom-color: var(--gold);
+  text-shadow: 0 0 8px rgba(212,168,67,.25);
+}
+.ach-modal-overlay .ach-tab-count {
+  font-family: var(--font-sans);
+  font-size: .62rem;
+  color: var(--text-dim);
+  margin-left: 5px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.ach-modal-overlay .ach-tab.active .ach-tab-count {
+  color: var(--gold-dim);
+}
+
+/* 顶部说明条 */
+.ach-modal-overlay .ach-modal-note {
+  margin: 14px 20px 0;
+  padding: 8px 12px;
+  background: rgba(0,0,0,.32);
+  border: 1px dashed rgba(212,168,67,.22);
+  border-radius: var(--r);
+  font-family: var(--font-serif);
+  font-size: .68rem;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+  line-height: 1.6;
+  flex-shrink: 0;
+}
+.ach-modal-overlay .ach-modal-note b {
+  color: var(--gold-dim);
+  font-weight: 600;
+}
+
+/* 列表区 */
+.ach-modal-overlay .ach-list {
+  padding: 14px 20px 20px !important;
+  overflow-y: auto;
+  flex: 1;
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 8px !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160,120,40,.35) rgba(0,0,0,.3);
+}
+.ach-modal-overlay .ach-list::-webkit-scrollbar { width: 4px; }
+.ach-modal-overlay .ach-list::-webkit-scrollbar-thumb {
+  background: rgba(160,120,40,.35); border-radius: 2px;
+}
+.ach-modal-overlay .ach-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(212,168,67,.65);
+}
+
+/* 单张成就卡 */
+.ach-modal-overlay .ach-card-i {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: 44px 1fr auto !important;
+  gap: 12px !important;
+  align-items: center !important;
+  padding: 10px 13px 10px 14px !important;
+  background: rgba(18,10,6,.62) !important;
+  border: 1px solid rgba(255,255,255,.04) !important;
+  border-left: 3px solid var(--rar-tone, var(--text-dim)) !important;
+  border-radius: 0 var(--r) var(--r) 0 !important;
+  transition: background .2s, border-color .2s, transform .18s !important;
+}
+.ach-modal-overlay .ach-card-i:hover {
+  background: rgba(35,18,10,.78) !important;
+  border-color: rgba(255,255,255,.08) !important;
+  transform: translateX(2px);
+}
+.ach-modal-overlay .ach-card-i.locked {
+  opacity: .42;
+  filter: grayscale(.4);
+}
+.ach-modal-overlay .ach-card-i.locked:hover {
+  opacity: .55;
+  transform: translateX(1px);
+}
+.ach-modal-overlay .ach-card-i.rar-bronze  { --rar-tone: #a87c4a; --rar-glow: rgba(168,124,74,.2); }
+.ach-modal-overlay .ach-card-i.rar-silver  { --rar-tone: #b8b8b8; --rar-glow: rgba(184,184,184,.16); }
+.ach-modal-overlay .ach-card-i.rar-gold    { --rar-tone: #d4a843; --rar-glow: rgba(212,168,67,.28); }
+.ach-modal-overlay .ach-card-i.rar-diamond { --rar-tone: #7fb8d4; --rar-glow: rgba(127,184,212,.28); }
+
+/* 图标 */
+.ach-modal-overlay .ach-card-icon {
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: linear-gradient(180deg, rgba(52,34,10,.65) 0%, rgba(28,18,5,.65) 100%) !important;
+  border: 1px solid var(--rar-tone) !important;
+  border-radius: var(--r) !important;
+  font-family: var(--font-serif) !important;
+  font-size: 1.3rem !important;
+  font-weight: 900 !important;
+  color: var(--rar-tone) !important;
+  flex-shrink: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,140,.08),
+    inset 0 -1px 0 rgba(0,0,0,.28),
+    0 0 8px var(--rar-glow);
+  text-shadow: 0 0 8px var(--rar-glow), 0 2px 4px rgba(0,0,0,.6);
+}
+.ach-modal-overlay .ach-card-i.unlocked.rar-gold .ach-card-icon,
+.ach-modal-overlay .ach-card-i.unlocked.rar-diamond .ach-card-icon {
+  animation: achIconPulse 3s ease-in-out infinite;
+}
+@keyframes achIconPulse {
+  0%,100% { box-shadow: inset 0 1px 0 rgba(255,220,140,.08), inset 0 -1px 0 rgba(0,0,0,.28), 0 0 8px var(--rar-glow); }
+  50%     { box-shadow: inset 0 1px 0 rgba(255,220,140,.12), inset 0 -1px 0 rgba(0,0,0,.28), 0 0 14px var(--rar-glow); }
+}
+
+/* 文字区 */
+.ach-modal-overlay .ach-card-text { min-width: 0; }
+.ach-modal-overlay .ach-card-name {
+  font-family: var(--font-serif) !important;
+  font-size: .94rem !important;
+  font-weight: 700 !important;
+  color: var(--text-main) !important;
+  letter-spacing: .05em !important;
+  margin-bottom: 3px !important;
+}
+.ach-modal-overlay .ach-card-i.locked .ach-card-name {
+  color: var(--text-sub) !important;
+}
+.ach-modal-overlay .ach-card-desc {
+  font-family: var(--font-serif) !important;
+  font-size: .72rem !important;
+  color: var(--text-sub) !important;
+  line-height: 1.55 !important;
+  letter-spacing: .02em !important;
+}
+
+/* 右侧元信息 */
+.ach-modal-overlay .ach-card-meta {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 5px !important;
+  flex-shrink: 0;
+  text-align: right;
+}
+.ach-modal-overlay .ach-card-rar-tag {
+  font-family: var(--font-serif);
+  font-size: .6rem;
+  font-weight: 700;
+  padding: 1px 8px;
+  background: linear-gradient(180deg, rgba(40,26,8,.55), rgba(20,12,2,.65));
+  color: var(--rar-tone);
+  border: 1px solid var(--rar-tone);
+  border-radius: 3px;
+  letter-spacing: .12em;
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,140,.08),
+    inset 0 -1px 0 rgba(0,0,0,.28);
+}
+.ach-modal-overlay .ach-card-status {
+  font-family: var(--font-serif);
+  font-size: .66rem;
+  color: var(--text-dim);
+  letter-spacing: .08em;
+}
+.ach-modal-overlay .ach-card-i.unlocked .ach-card-status {
+  color: var(--rar-tone);
+}
+
+/* 移动端适配 */
+@media (max-width: 720px) {
+  .ach-modal-overlay { padding: 10px; }
+  .ach-modal-overlay .ach-modal { max-height: 92vh; }
+  .ach-modal-overlay .ach-modal-head {
+    padding: 10px 14px !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ach-modal-overlay .ach-modal-title { font-size: .86rem !important; letter-spacing: .1em !important; }
+  .ach-modal-overlay .ach-modal-title .title-deco { width: 14px; }
+  .ach-modal-overlay .ach-modal-right { gap: 8px; }
+  .ach-modal-overlay .ach-modal-stats { font-size: .66rem !important; padding: 2px 9px; }
+  .ach-modal-overlay .ach-tabs { padding: 8px 12px 0; }
+  .ach-modal-overlay .ach-tab { padding: 7px 11px 8px; font-size: .72rem; letter-spacing: .06em; }
+  .ach-modal-overlay .ach-modal-note { margin: 10px 14px 0; font-size: .62rem; }
+  .ach-modal-overlay .ach-list {
+    grid-template-columns: 1fr !important;
+    padding: 12px 14px 16px !important;
+  }
+  .ach-modal-overlay .ach-card-i {
+    grid-template-columns: 36px 1fr auto !important;
+    padding: 9px 11px 9px 12px !important;
+    gap: 10px !important;
+  }
+  .ach-modal-overlay .ach-card-icon {
+    width: 34px !important; height: 34px !important;
+    font-size: 1.1rem !important;
+  }
+  .ach-modal-overlay .ach-card-name { font-size: .86rem !important; }
+  .ach-modal-overlay .ach-card-desc { font-size: .68rem !important; }
+}
+
+/* ╚══ END v20261002a 成就 UI 重做 ══════════════════════════════ */

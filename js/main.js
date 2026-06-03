@@ -28,6 +28,7 @@
  *  - cityOwnership 携带 holder 守将字段供地图渲染
  *  - 兼容旧格式
  * v29 (2026-10-01): 工单#achievement-engine-A1 成就系统 v1 — 50 成就 + 触发引擎 + localStorage 持久化 + Toast 提示
+ * v30 (2026-10-02): 工单#achievement-ui-B1 成就 UI 重做 — 玩家卡徽章接入最稀有成就 + 模态 6 分类 tab + 灰度未解锁态
  */
 
 (function () {
@@ -1518,7 +1519,40 @@
           noteEl.classList.add('hidden');
         }
       }
+
+      // 工单#achievement-ui-B1: 玩家卡徽章渲染（取最稀有成就）
+      _renderAchSlot(i);
     });
+  }
+
+  // 工单#achievement-ui-B1: 渲染单个玩家卡的成就徽章
+  function _renderAchSlot(slot) {
+    const slotEl = document.getElementById('pc-ach-slot-' + slot);
+    if (!slotEl) return;
+    const titleEl = slotEl.querySelector('.ach-title');
+    const countEl = slotEl.querySelector('.ach-count');
+    if (!titleEl || !countEl) return;
+
+    let best = null;
+    let unlockedCount = 0;
+    if (window.SGAch && typeof window.SGAch.getHighestRarity === 'function') {
+      best = window.SGAch.getHighestRarity(slot);
+      const arr = (typeof window.SGAch.getUnlocked === 'function')
+        ? window.SGAch.getUnlocked(slot) : [];
+      unlockedCount = arr.length;
+    }
+
+    // 清除旧稀有度 class
+    titleEl.classList.remove('rar-bronze','rar-silver','rar-gold','rar-diamond','rar-none');
+
+    if (best) {
+      titleEl.classList.add('rar-' + best.rar);
+      titleEl.textContent = best.name;
+    } else {
+      titleEl.classList.add('rar-none');
+      titleEl.textContent = '初出茅庐';
+    }
+    countEl.textContent = unlockedCount;
   }
 
   function renderGenList(idx, generals) {
@@ -2491,8 +2525,8 @@
 })();
 
 /* ════════════════════════════════════════════
-   v20261001a 工单#achievement-engine-A1
-   成就系统 · 50 个成就 + 触发引擎 + localStorage 持久化
+   v20261002a 工单#achievement-ui-B1
+   成就系统 v2 · 数据层 + UI 渲染层（玩家卡徽章 + 模态分类 tab）
    - 触发时机：每次 renderAll() 结束自动 scan()
    - 解锁存储：localStorage[`sg-ach-unlocked-{slot}`]
    - Toast 提示：新解锁时弹 b 方案（淡 toast）
@@ -2904,32 +2938,119 @@
     catch (e) {}
   }
 
-  /* ── 打开/关闭模态（保留旧 API，本工单先用占位渲染，工单 B 接管真正 UI）── */
+  /* ── 当前打开的 slot（用于 tab 切换时复用）── */
+  let _currentSlot = 0;
+  let _currentCat = 'all';
+
+  /* ── 分类中文名（供徽章右下角显示）── */
+  const CAT_LABEL = {
+    military:'军事', govern:'内政', general:'武将',
+    strategy:'谋略', milestone:'里程碑',
+  };
+
+  /* ── 稀有度中文（用于 .ach-card-rar-tag）── */
+  const RAR_CN = { bronze:'铜', silver:'银', gold:'金', diamond:'钻' };
+
+  /* ── 打开成就墙模态 ── */
   function open(slot) {
     const modal = document.getElementById('ach-modal');
     if (!modal) return;
-    const unlocked = loadUnlocked(slot);
+    _currentSlot = slot;
+    _currentCat = 'all';
+    _renderModal();
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    _bindTabsOnce();
+  }
+
+  /* ── tab 绑定（只绑一次）── */
+  let _tabsBound = false;
+  function _bindTabsOnce() {
+    if (_tabsBound) return;
+    const tabsEl = document.getElementById('ach-tabs');
+    if (!tabsEl) return;
+    _tabsBound = true;
+    tabsEl.addEventListener('click', function (ev) {
+      const btn = ev.target.closest('.ach-tab');
+      if (!btn) return;
+      const cat = btn.getAttribute('data-cat');
+      if (!cat || cat === _currentCat) return;
+      _currentCat = cat;
+      tabsEl.querySelectorAll('.ach-tab').forEach(t => {
+        t.classList.toggle('active', t.getAttribute('data-cat') === cat);
+      });
+      _renderList();
+    });
+  }
+
+  /* ── 渲染整个模态（标题 + 进度 + tab 计数 + 列表）── */
+  function _renderModal() {
+    const unlocked = loadUnlocked(_currentSlot);
     const playerEl = document.getElementById('ach-modal-player');
     const unEl = document.getElementById('ach-stat-unlocked');
     const totalEl = document.getElementById('ach-stat-total');
-    const listEl = document.getElementById('ach-list');
-    if (playerEl) playerEl.textContent = getPlayerName(slot);
+    if (playerEl) playerEl.textContent = getPlayerName(_currentSlot);
     if (unEl) unEl.textContent = unlocked.length;
     if (totalEl) totalEl.textContent = ACHIEVEMENTS.length;
-    if (listEl) {
-      // 占位渲染：沿用旧版样式，工单 B 会完全替换
-      listEl.innerHTML = ACHIEVEMENTS.map(a => {
-        const isU = unlocked.indexOf(a.code) !== -1;
-        return '<div class="ach-card-i rar-' + a.rar + ' ' + (isU ? 'unlocked' : 'locked') + '">' +
-          '<div class="ach-card-icon">' + a.icon + '</div>' +
-          '<div><div class="ach-card-name">' + a.name + '</div>' +
-          '<div class="ach-card-desc">' + a.desc + '</div></div>' +
-          '<div class="ach-card-meta">' + (isU ? '已解锁' : '未达成') + '</div>' +
-          '</div>';
-      }).join('');
+
+    // tab 计数
+    const cnts = { all: ACHIEVEMENTS.length };
+    ACHIEVEMENTS.forEach(a => { cnts[a.cat] = (cnts[a.cat] || 0) + 1; });
+    Object.keys(cnts).forEach(k => {
+      const el = document.querySelector('.ach-tab-count[data-cnt="' + k + '"]');
+      if (el) el.textContent = cnts[k];
+    });
+
+    // 默认回到"全部"tab
+    const tabsEl = document.getElementById('ach-tabs');
+    if (tabsEl) {
+      tabsEl.querySelectorAll('.ach-tab').forEach(t => {
+        t.classList.toggle('active', t.getAttribute('data-cat') === _currentCat);
+      });
     }
-    modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    _renderList();
+  }
+
+  /* ── 渲染成就列表（按当前 tab 过滤）── */
+  function _renderList() {
+    const listEl = document.getElementById('ach-list');
+    if (!listEl) return;
+    const unlocked = loadUnlocked(_currentSlot);
+    const list = (_currentCat === 'all')
+      ? ACHIEVEMENTS
+      : ACHIEVEMENTS.filter(a => a.cat === _currentCat);
+
+    // 排序：已解锁优先，同状态内按稀有度倒序，再按 code 升序（稳定）
+    const sorted = list.slice().sort((a, b) => {
+      const ua = unlocked.indexOf(a.code) !== -1 ? 1 : 0;
+      const ub = unlocked.indexOf(b.code) !== -1 ? 1 : 0;
+      if (ua !== ub) return ub - ua;
+      const ra = RAR_LEVEL[a.rar] || 0;
+      const rb = RAR_LEVEL[b.rar] || 0;
+      if (ra !== rb) return rb - ra;
+      return a.code.localeCompare(b.code);
+    });
+
+    listEl.innerHTML = sorted.map(a => {
+      const isU = unlocked.indexOf(a.code) !== -1;
+      return '<div class="ach-card-i rar-' + a.rar + ' ' + (isU ? 'unlocked' : 'locked') + '">' +
+        '<div class="ach-card-icon">' + _escHtml(a.icon) + '</div>' +
+        '<div class="ach-card-text">' +
+          '<div class="ach-card-name">' + _escHtml(a.name) + '</div>' +
+          '<div class="ach-card-desc">' + _escHtml(a.desc) + '</div>' +
+        '</div>' +
+        '<div class="ach-card-meta">' +
+          '<span class="ach-card-rar-tag">' + (RAR_CN[a.rar] || '') + '</span>' +
+          '<span class="ach-card-status">' + (isU ? '已达成' : '未达成') + '</span>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function _escHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function close() {
@@ -2958,6 +3079,28 @@
   } else {
     setTimeout(scan, 200);
   }
+
+  /* ── 监听自身解锁事件，触发玩家卡徽章重渲染 ── */
+  window.addEventListener('sg-ach-unlocked', function () {
+    for (let i = 0; i < 3; i++) {
+      const slotEl = document.getElementById('pc-ach-slot-' + i);
+      if (!slotEl) continue;
+      const titleEl = slotEl.querySelector('.ach-title');
+      const countEl = slotEl.querySelector('.ach-count');
+      if (!titleEl || !countEl) continue;
+      const best = getHighestRarity(i);
+      const cnt = loadUnlocked(i).length;
+      titleEl.classList.remove('rar-bronze','rar-silver','rar-gold','rar-diamond','rar-none');
+      if (best) {
+        titleEl.classList.add('rar-' + best.rar);
+        titleEl.textContent = best.name;
+      } else {
+        titleEl.classList.add('rar-none');
+        titleEl.textContent = '初出茅庐';
+      }
+      countEl.textContent = cnt;
+    }
+  });
 
   /* ── 对外 API ── */
   window.SGAch = {
