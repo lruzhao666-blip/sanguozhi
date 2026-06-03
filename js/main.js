@@ -546,6 +546,44 @@
     } catch (e) { showToast('❌ 清空失败，请重试'); }
   }
 
+  // ════ #sanguo-history-rollback-v1 ════
+  // 回滚到指定回合:云端删除该回合之后的所有回合,本地重拉。
+  // 仅 GM 模式下可触发(按钮本身在 GM 视角才会出现)。
+  async function onRollbackToRound(targetRound) {
+    if (!Number.isInteger(targetRound)) return;
+    const after = state.rounds.filter(r => r.round > targetRound);
+    if (!after.length) {
+      showToast('⚠️ 该回合已是最新,无需回滚');
+      return;
+    }
+    const cnt = after.length;
+    if (!confirm(`确认回滚到第 ${targetRound} 回合?\n之后的 ${cnt} 个回合(第 ${after[0].round}-${after[after.length-1].round} 回合)将从云端永久删除,不可撤销。`)) {
+      return;
+    }
+    showToast('⏳ 回滚中…');
+    try {
+      // 并发删除所有更晚的回合
+      const tasks = after.map(rd => {
+        const apiId = rd._apiId;
+        if (!apiId) return Promise.resolve();
+        return deleteRoundById(apiId).catch(e => {
+          console.warn('[SG] 回滚删除失败 R' + rd.round, e);
+        });
+      });
+      await Promise.all(tasks);
+      await fetchAllRounds();
+      renderAll();
+      updateUndoBtn();
+      showToast(`↩️ 已回滚至第 ${targetRound} 回合`);
+    } catch (e) {
+      console.error('[SG] 回滚失败:', e);
+      showToast('❌ 回滚失败,请刷新重试');
+    }
+  }
+
+  // 暴露给历史面板按钮 onclick 调用
+  window.__rollbackToRound = onRollbackToRound;
+
   // ════ #sanguo-npc-inherit-main-v1 主持人手动触发健康校验 ════
   async function onForceHealthCheck() {
     if (!state.rounds.length) {
@@ -2009,11 +2047,24 @@
       return;
     }
 
-    tabBar.innerHTML = state.rounds.map(rd =>
-      `<button class="hround-btn" onclick="window.__showHistoryRound(${rd.round})">
-        第${rd.round}回合
-      </button>`
-    ).join('');
+    // #sanguo-history-rollback-v1 — 仅 GM 模式渲染回滚按钮
+    const isGM = document.body.classList.contains('is-gm-mode');
+    tabBar.innerHTML = state.rounds.map(rd => {
+      const rollbackBtn = isGM
+        ? `<button class="hround-rollback-btn"
+            title="回滚到此回合,删除之后的回合"
+            onclick="event.stopPropagation();window.__rollbackToRound(${rd.round})"
+            style="margin-left:2px;padding:2px 6px;font-size:.65rem;
+                   background:rgba(80,30,30,.7);color:#f0a8a8;
+                   border:1px solid rgba(180,60,60,.5);border-radius:3px;
+                   cursor:pointer;vertical-align:middle">↩</button>`
+        : '';
+      return `<span class="hround-btn-group" style="display:inline-block;margin:2px">
+        <button class="hround-btn" onclick="window.__showHistoryRound(${rd.round})">
+          第${rd.round}回合
+        </button>${rollbackBtn}
+      </span>`;
+    }).join('');
 
     const latest = state.rounds[state.rounds.length - 1];
     content.innerHTML = buildHistoryRoundHTML(latest);
