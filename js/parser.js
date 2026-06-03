@@ -1,5 +1,6 @@
 /**
  * parser.js — 三国志文字版 · AI内容解析器 v13
+ * v17 (#sanguo-npc-inherit-parser-v1): 支持 [NPC] 同上 简写,输出 npcCitiesInherit 标记
  * v16 (2026-XX-XX): 对齐 GM 规则书 v3.40 — [调度] 段状态白名单收窄至 4 种
  *                   (剩N/攻城中/交战中/客驻),旧词归一化兼容;
  *                   [世界] 段状态收窄至 2 种(被俘/在野),「客途」归一化为「在野」;
@@ -122,6 +123,7 @@ window.SGParser = (function () {
       errors:        [],      // v3 格式错误
       secrets:       [],      // [{slots:['甲'], title:'细作回报', body:'...'}] 密报阁条目
       world:         [],      // [{name,status,location,remaining,raw}] 世界段武将
+      npcCitiesInherit: false,  // #sanguo-npc-inherit-parser-v1
     };
   }
 
@@ -285,10 +287,18 @@ window.SGParser = (function () {
       }
     });
 
-    // [NPC]
+    // [NPC] — #sanguo-npc-inherit-parser-v1
+    // 支持 "[NPC] 同上" 简写:置 npcCitiesInherit 标记,
+    // 由 main.js 在 rowToRound / rebuildPlayers 阶段从上回合继承
     const npcRaw = blocks['NPC'] || blocks['npc'] || '';
     if (npcRaw) {
-      result.npcCities = _parseNpcBlock(npcRaw);
+      const npcRawTrim = npcRaw.trim();
+      if (/^同上\s*$/.test(npcRawTrim)) {
+        result.npcCitiesInherit = true;
+        // npcCities 留空数组,等 main.js 继承
+      } else {
+        result.npcCities = _parseNpcBlock(npcRaw);
+      }
     }
 
     // [战报]
@@ -1560,11 +1570,14 @@ if (/^产出△/.test(line)) {
       );
     });
 
-    if (parsed.npcCities && parsed.npcCities.length) {
+    if (parsed.npcCitiesInherit) {
+      // #sanguo-npc-inherit-parser-v1
+      lines.push(`<strong>🏯 NPC城池:</strong><span class="pp-ok">继承上回合(同上)</span>`);
+    } else if (parsed.npcCities && parsed.npcCities.length) {
       const npcStr = parsed.npcCities.slice(0, 6).map(c =>
         c.name + (c.holder && c.holder !== '无' ? `[${c.holder}]` : '')
       ).join('、') + (parsed.npcCities.length > 6 ? `…等${parsed.npcCities.length}城` : '');
-      lines.push(`<strong>🏯 NPC城池：</strong><span class="pp-ok">${esc(npcStr)}</span>`);
+      lines.push(`<strong>🏯 NPC城池:</strong><span class="pp-ok">${esc(npcStr)}</span>`);
     }
 
     const bLen = (parsed.battles || []).length;
