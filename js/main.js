@@ -405,50 +405,72 @@
       return {
         round:      row.round,
         roundTitle: row.round_title || '',
-        parsed: {
-          round:         row.round,
-          rawDigest:     row.raw_digest      || row.raw_content || '',
-          digest:        row.digest          || '',
-          players:       safeJson(row.players_json,          []),
-          battles:       safeJson(row.battles_json,          []),
-          transit:       safeJson(row.livelihood_json,        []),
-          changes:       safeJson(row.changes_json,          []),
-          cityOwnership: safeJson(row.city_ownership_json,  {}),
-          npcCitiesInherit: false,  // #sanguo-npc-inherit-main-v1 旧记录默认不继承
-          worldInherit: false,  // #sanguo-inherit-batch2-v1 旧记录默认不继承
-          // livelihood 列已复用为 transit_json，旧路径置空
-          livelihood:    [],
-          situation:     row.situation  || '',
-          events:        safeJson(row.events_json, []),
-          narration:     row.narration  || '',
-          // [secret-bureau-fix-C] 临时止血:secrets 字段补解析
-          // 优先用 row.secrets_json(将来 Supabase 加列后启用),
-          // 否则用 SGParser 重新解析 raw_content 兜底。
-          // parser 抛错时退回空数组,避免 secret-bureau.js 渲染崩溃。
-          secrets: (function () {
-            if (row.secrets_json) {
-              return safeJson(row.secrets_json, []);
+        parsed: (function () {
+          // #sanguo-inherit-persist-v1
+          // 兜底:重新解析 raw_content,抽取 4 个 inherit 标记
+          // (npcCitiesInherit / worldInherit / 玩家级 citiesInherit / generalsInherit)
+          // 这些字段没有独立的 Supabase 列,从 raw_content 重新解析得来。
+          // parser 抛错时退回全 false,与原硬编码默认值等价。
+          let reparsed = null;
+          try {
+            reparsed = SGParser.parse(row.raw_content || '');
+          } catch (e) {
+            console.warn('[sanguo-inherit-persist-v1] 兜底解析失败:', e);
+          }
+
+          // 抽取顶层 inherit 标记
+          const _npcInherit  = !!(reparsed && reparsed.npcCitiesInherit);
+          const _worldInherit = !!(reparsed && reparsed.worldInherit);
+
+          // 抽取玩家级 inherit 标记,按 slot 建索引
+          const _playerInheritBySlot = {};
+          if (reparsed && Array.isArray(reparsed.players)) {
+            reparsed.players.forEach(pp => {
+              if (pp && pp.slot) {
+                _playerInheritBySlot[pp.slot] = {
+                  citiesInherit:   !!pp.citiesInherit,
+                  generalsInherit: !!pp.generalsInherit,
+                };
+              }
+            });
+          }
+
+          // 把玩家级标记合并回 players_json 反序列化出的对象
+          const _players = safeJson(row.players_json, []);
+          _players.forEach(pp => {
+            if (pp && pp.slot && _playerInheritBySlot[pp.slot]) {
+              pp.citiesInherit   = _playerInheritBySlot[pp.slot].citiesInherit;
+              pp.generalsInherit = _playerInheritBySlot[pp.slot].generalsInherit;
             }
-            try {
-              const reparsed = SGParser.parse(row.raw_content || '');
-              return Array.isArray(reparsed.secrets) ? reparsed.secrets : [];
-            } catch (e) {
-              console.warn('[secret-bureau-fix-C] secrets 兜底解析失败:', e);
-              return [];
-            }
-          })(),
-          // [world-3] world 字段兜底:parser 重新解析 raw_content
-          // 旧存档无 [世界] 段时返回空数组,不影响渲染
-          world: (function () {
-            try {
-              const reparsed = SGParser.parse(row.raw_content || '');
-              return Array.isArray(reparsed.world) ? reparsed.world : [];
-            } catch (e) {
-              console.warn('[world-3] world 兜底解析失败:', e);
-              return [];
-            }
-          })(),
-        },
+          });
+
+          return {
+            round:         row.round,
+            rawDigest:     row.raw_digest      || row.raw_content || '',
+            digest:        row.digest          || '',
+            players:       _players,
+            battles:       safeJson(row.battles_json,          []),
+            transit:       safeJson(row.livelihood_json,        []),
+            changes:       safeJson(row.changes_json,          []),
+            cityOwnership: safeJson(row.city_ownership_json,  {}),
+            npcCitiesInherit: _npcInherit,    // #sanguo-inherit-persist-v1
+            worldInherit:     _worldInherit,  // #sanguo-inherit-persist-v1
+            // livelihood 列已复用为 transit_json,旧路径置空
+            livelihood:    [],
+            situation:     row.situation  || '',
+            events:        safeJson(row.events_json, []),
+            narration:     row.narration  || '',
+            // [secret-bureau-fix-C] secrets 兜底
+            secrets: (function () {
+              if (row.secrets_json) {
+                return safeJson(row.secrets_json, []);
+              }
+              return (reparsed && Array.isArray(reparsed.secrets)) ? reparsed.secrets : [];
+            })(),
+            // [world-3] world 兜底
+            world: (reparsed && Array.isArray(reparsed.world)) ? reparsed.world : [],
+          };
+        })(),
         rawContent: row.raw_content || '',
         _apiId:     row.id,
       };
