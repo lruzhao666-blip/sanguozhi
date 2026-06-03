@@ -116,7 +116,9 @@
     const rows = await res.json();
     state.rounds = rows.map(rowToRound).filter(Boolean);
     state.rounds.sort((a, b) => a.round - b.round);
-    applyNpcInheritance();  // #sanguo-npc-inherit-main-v1
+    applyNpcInheritance();   // #sanguo-npc-inherit-main-v1
+    applyWorldInheritance(); // #sanguo-inherit-batch2-v1
+    applyPlayerInheritance();// #sanguo-inherit-batch2-v1
     rebuildPlayers();
     if (rows.length) {
       state.lastUpdatedAt = Math.max(...rows.map(r => new Date(r.updated_at || 0).getTime()));
@@ -212,6 +214,93 @@
     return diff;
   }
 
+  // ════ #sanguo-inherit-batch2-v1 ════
+  // [世界] 段继承:从上回合 world 拷贝,所有 remaining 自动 -1,
+  //             剩 0 的条目剔除并打 warn。
+  function applyWorldInheritance() {
+    let lastWorld = null;  // 最近一个完整 [世界] 的数组拷贝(已减 1 处理)
+
+    for (let i = 0; i < state.rounds.length; i++) {
+      const rd = state.rounds[i];
+      const p = rd.parsed;
+      const isInherit = p.worldInherit === true;
+      const roundNum = rd.round || 0;
+
+      if (!isInherit) {
+        // 完整回合:本回合 world 即为下一回合的继承基准
+        lastWorld = (p.world || []).map(w => Object.assign({}, w));
+      } else {
+        // 继承回合:拷贝上一份并自动减 1
+        if (!lastWorld) {
+          console.warn('[SG] R' + roundNum + ' 写了 [世界] 同上,但无上回合快照,跳过继承');
+          p.world = [];
+          continue;
+        }
+        const inherited = [];
+        lastWorld.forEach(w => {
+          const copy = Object.assign({}, w);
+          if (copy.remaining === Infinity || copy.remaining === '∞') {
+            // ∞ 不减
+            inherited.push(copy);
+          } else {
+            const newRem = Number(copy.remaining) - 1;
+            if (newRem <= 0) {
+              console.warn('[SG] R' + roundNum + ' 武将 ' + copy.name + ' 到期但 AI 未安排归宿,自动剔除');
+            } else {
+              copy.remaining = newRem;
+              inherited.push(copy);
+            }
+          }
+        });
+        p.world = inherited;
+        // 把本回合处理后的 world 作为下一回合的继承基准
+        lastWorld = inherited.map(w => Object.assign({}, w));
+      }
+    }
+  }
+
+  // ════ #sanguo-inherit-batch2-v1 ════
+  // 玩家段 城池/武将 继承:对 players 数组中的每个 player,
+  //   若 citiesInherit=true,从上回合同 slot 拷贝 cities_list/ownedCities
+  //   若 generalsInherit=true,从上回合同 slot 拷贝 generals
+  function applyPlayerInheritance() {
+    // 按 slot 缓存最近的完整快照
+    const lastBySlot = { '甲': null, '乙': null, '丙': null };
+
+    for (let i = 0; i < state.rounds.length; i++) {
+      const rd = state.rounds[i];
+      const players = rd.parsed.players || [];
+
+      players.forEach(pp => {
+        const slot = pp.slot;
+        if (!slot || !(slot in lastBySlot)) return;
+        const prev = lastBySlot[slot];
+
+        // 城池继承
+        if (pp.citiesInherit && prev) {
+          pp.cities_list = JSON.parse(JSON.stringify(prev.cities_list || []));
+          pp.ownedCities = (pp.cities_list || []).map(c => c.name);
+          if (pp.cities_list.length && !pp.city) pp.city = pp.cities_list[0].name;
+        } else if (pp.citiesInherit && !prev) {
+          console.warn('[SG] R' + rd.round + ' 玩家 ' + slot + ' 写了 城池:同上,但无上回合快照');
+        }
+
+        // 武将继承
+        if (pp.generalsInherit && prev) {
+          pp.generals = JSON.parse(JSON.stringify(prev.generals || []));
+        } else if (pp.generalsInherit && !prev) {
+          console.warn('[SG] R' + rd.round + ' 玩家 ' + slot + ' 写了 武将:同上,但无上回合快照');
+        }
+
+        // 更新缓存(用本回合处理后的状态作为下一回合的基准)
+        lastBySlot[slot] = {
+          cities_list: pp.cities_list || [],
+          generals:    pp.generals    || [],
+        };
+      });
+    }
+  }
+
   async function pollForUpdates() {
     try {
       const res  = await fetchWithTimeout(`${SUPA_URL}?select=updated_at&order=updated_at.desc&limit=1`, { headers: SUPA_HEADERS }, 6000);
@@ -304,6 +393,7 @@
           changes:       safeJson(row.changes_json,          []),
           cityOwnership: safeJson(row.city_ownership_json,  {}),
           npcCitiesInherit: false,  // #sanguo-npc-inherit-main-v1 旧记录默认不继承
+          worldInherit: false,  // #sanguo-inherit-batch2-v1 旧记录默认不继承
           // livelihood 列已复用为 transit_json，旧路径置空
           livelihood:    [],
           situation:     row.situation  || '',

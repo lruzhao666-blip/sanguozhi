@@ -123,7 +123,10 @@ window.SGParser = (function () {
       errors:        [],      // v3 格式错误
       secrets:       [],      // [{slots:['甲'], title:'细作回报', body:'...'}] 密报阁条目
       world:         [],      // [{name,status,location,remaining,raw}] 世界段武将
+      worldInherit:  false,   // #sanguo-inherit-batch2-v1 [世界] 同上
       npcCitiesInherit: false,  // #sanguo-npc-inherit-parser-v1
+      // #sanguo-inherit-batch2-v1 玩家段 城池/武将 继承标记,
+      // 由 _parsePlayerBlock 写入 player 对象内部,_empty 无需占位
     };
   }
 
@@ -319,8 +322,15 @@ window.SGParser = (function () {
     }
 
     // [世界](v3.39 M-31 新增):被俘/在野/客途三态武将
+    // #sanguo-inherit-batch2-v1 支持"同上"
     if (blocks['世界']) {
-      result.world = _parseWorld(blocks['世界']);
+      const worldRawTrim = blocks['世界'].trim();
+      if (/^同上\s*$/.test(worldRawTrim)) {
+        result.worldInherit = true;
+        // world 留空,等 main.js 继承并自动减 1
+      } else {
+        result.world = _parseWorld(blocks['世界']);
+      }
     }
 
     // [变动]
@@ -394,6 +404,9 @@ window.SGParser = (function () {
       ownedCities:    [],
       situation_note: '',
       suggestions:    [],
+      // #sanguo-inherit-batch2-v1
+      citiesInherit:    false,
+      generalsInherit:  false,
     };
 
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
@@ -413,17 +426,27 @@ window.SGParser = (function () {
         p.cities = parseInt(resM[5]);
         continue;
       }
-      // 城池行
+      // 城池行 — #sanguo-inherit-batch2-v1 支持"同上"
       if (/^城池[:：]/.test(line)) {
-        const cityRaw = line.replace(/^城池[:：]\s*/, '');
-        p.cities_list = _parseCityList(cityRaw);
-        p.ownedCities = p.cities_list.map(c => c.name);
-        if (p.cities_list.length) p.city = p.cities_list[0].name;
+        const cityRaw = line.replace(/^城池[:：]\s*/, '').trim();
+        if (/^同上\s*$/.test(cityRaw)) {
+          p.citiesInherit = true;
+          // cities_list / ownedCities 留空,等 main.js 继承
+        } else {
+          p.cities_list = _parseCityList(cityRaw);
+          p.ownedCities = p.cities_list.map(c => c.name);
+          if (p.cities_list.length) p.city = p.cities_list[0].name;
+        }
         continue;
       }
-      // 武将行
+      // 武将行 — #sanguo-inherit-batch2-v1 支持"同上"
       if (/^武将[:：]/.test(line)) {
-        p.generals = _parseGeneralList(line.replace(/^武将[:：]\s*/, ''));
+        const genRaw = line.replace(/^武将[:：]\s*/, '').trim();
+        if (/^同上\s*$/.test(genRaw)) {
+          p.generalsInherit = true;
+        } else {
+          p.generals = _parseGeneralList(genRaw);
+        }
         continue;
       }
     }
@@ -1555,17 +1578,22 @@ if (/^产出△/.test(line)) {
       if (p.troop  != null) res.push(`🛡️${p.troop}`);
       if (p.morale != null) res.push(`❤️${p.morale}`);
       if (p.cities != null) res.push(`🏯${p.cities}`);
-      const genStr = p.generals.map(g => {
-        const s = g.status !== '健康' ? `(${g.status[0]})` : '';
-        return g.name + s;
-      }).join('、') || '无';
-      const cityStr = (p.cities_list || []).map(c => {
-        let s = c.name;
-        if (c.holder && c.holder !== '无') s += `[${c.holder}]`;
-        const tf = formatTroops(c.troops);
-        if (tf) s += `{${tf}}`;
-        return s;
-      }).join('、') || '—';
+      // #sanguo-inherit-batch2-v1
+      const genStr = p.generalsInherit
+        ? '<span class="pp-ok">继承上回合</span>'
+        : (p.generals.map(g => {
+            const s = g.status !== '健康' ? `(${g.status[0]})` : '';
+            return g.name + s;
+          }).join('、') || '无');
+      const cityStr = p.citiesInherit
+        ? '<span class="pp-ok">继承上回合</span>'
+        : ((p.cities_list || []).map(c => {
+            let s = c.name;
+            if (c.holder && c.holder !== '无') s += `[${c.holder}]`;
+            const tf = formatTroops(c.troops);
+            if (tf) s += `{${tf}}`;
+            return s;
+          }).join('、') || '—');
       lines.push(
         `&nbsp;&nbsp;[${p.slot || '?'}] <strong>${esc(p.name)}</strong>` +
         ` &nbsp;${res.join(' ') || '<span class="pp-nil">未识别资源</span>'}` +
@@ -1582,6 +1610,13 @@ if (/^产出△/.test(line)) {
         c.name + (c.holder && c.holder !== '无' ? `[${c.holder}]` : '')
       ).join('、') + (parsed.npcCities.length > 6 ? `…等${parsed.npcCities.length}城` : '');
       lines.push(`<strong>🏯 NPC城池:</strong><span class="pp-ok">${esc(npcStr)}</span>`);
+    }
+
+    // #sanguo-inherit-batch2-v1 世界段摘要
+    if (parsed.worldInherit) {
+      lines.push(`<strong>🌐 [世界] 段:</strong><span class="pp-ok">继承上回合(同上,剩余回合自动 -1)</span>`);
+    } else if (parsed.world && parsed.world.length) {
+      lines.push(`<strong>🌐 [世界] 段:</strong><span class="pp-ok">${parsed.world.length} 名武将</span>`);
     }
 
     const bLen = (parsed.battles || []).length;
