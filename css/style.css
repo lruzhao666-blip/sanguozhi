@@ -9416,3 +9416,268 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ╚══ END v20261002a 成就 UI 重做 ══════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261003a 工单#achievement-polish-C1 · 成就 UI 精修
+   - 稀有度配色重做(A 套·古典颜料盘):铜→白 / 银→蓝 / 金→紫 / 钻→橙
+   - 图标盒质感:边框 1.5px,内阴影加强一档
+   - 紫色(金)新增呼吸光晕(原来只有钻有)
+   - Tab 进度计数样式:has-progress 金色高亮 / is-complete 钻石色高亮
+   - 移动端:模态头部重排(标题一行 + 进度按钮一行)
+   - 移动端:tab 栏去 emoji 缩字号 + 右侧金色渐变遮罩
+   - 成就卡右侧元信息:稀有度 tag 与状态横向排列
+   - 旧规则不删(v20261002a 保留),靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+/* ═══ 1. 玩家卡徽章 · A 套配色覆盖 ═══ */
+.pcard.pcard-v4 .ach-title.rar-bronze {
+  --rar-bd: rgba(216,212,200,.55) !important;
+  --rar-bg: rgba(216,212,200,.08) !important;
+  --rar-fg: #d8d4c8 !important;
+}
+.pcard.pcard-v4 .ach-title.rar-silver {
+  --rar-bd: rgba(107,168,216,.6) !important;
+  --rar-bg: rgba(107,168,216,.1) !important;
+  --rar-fg: #8ec0e8 !important;
+}
+.pcard.pcard-v4 .ach-title.rar-gold {
+  --rar-bd: rgba(168,120,216,.62) !important;
+  --rar-bg: rgba(168,120,216,.13) !important;
+  --rar-fg: #c098e8 !important;
+  box-shadow:
+    0 0 8px rgba(168,120,216,.28),
+    inset 0 1px 0 rgba(220,180,255,.16) !important;
+  animation: achRarPurplePulse 3s ease-in-out infinite !important;
+}
+.pcard.pcard-v4 .ach-title.rar-diamond {
+  --rar-bd: rgba(232,144,72,.65) !important;
+  --rar-bg: rgba(232,144,72,.13) !important;
+  --rar-fg: #f0b078 !important;
+  box-shadow:
+    0 0 10px rgba(232,144,72,.32),
+    inset 0 1px 0 rgba(255,210,160,.16) !important;
+  animation: achRarOrangePulse 3s ease-in-out infinite !important;
+}
+@keyframes achRarPurplePulse {
+  0%,100% { box-shadow: 0 0 8px rgba(168,120,216,.25), inset 0 1px 0 rgba(220,180,255,.14); }
+  50%     { box-shadow: 0 0 14px rgba(168,120,216,.45), inset 0 1px 0 rgba(220,180,255,.18); }
+}
+@keyframes achRarOrangePulse {
+  0%,100% { box-shadow: 0 0 10px rgba(232,144,72,.28), inset 0 1px 0 rgba(255,210,160,.14); }
+  50%     { box-shadow: 0 0 18px rgba(232,144,72,.5),  inset 0 1px 0 rgba(255,210,160,.2); }
+}
+
+/* ═══ 2. 成就墙模态 · A 套配色覆盖 ═══ */
+.ach-modal-overlay .ach-card-i.rar-bronze {
+  --rar-tone: #d8d4c8 !important;
+  --rar-glow: rgba(216,212,200,.22) !important;
+}
+.ach-modal-overlay .ach-card-i.rar-silver {
+  --rar-tone: #8ec0e8 !important;
+  --rar-glow: rgba(107,168,216,.28) !important;
+}
+.ach-modal-overlay .ach-card-i.rar-gold {
+  --rar-tone: #c098e8 !important;
+  --rar-glow: rgba(168,120,216,.32) !important;
+}
+.ach-modal-overlay .ach-card-i.rar-diamond {
+  --rar-tone: #f0b078 !important;
+  --rar-glow: rgba(232,144,72,.36) !important;
+}
+
+/* ═══ 3. 成就卡图标盒 · 质感升级 ═══ */
+.ach-modal-overlay .ach-card-icon {
+  border-width: 1.5px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,235,180,.14),
+    inset 0 -1px 0 rgba(0,0,0,.38),
+    0 0 10px var(--rar-glow) !important;
+  text-shadow: 0 0 10px var(--rar-glow), 0 2px 5px rgba(0,0,0,.7) !important;
+}
+/* 金(紫)和钻(橙)都加呼吸,银(蓝)/铜(白) 保持静态 */
+.ach-modal-overlay .ach-card-i.unlocked.rar-gold .ach-card-icon,
+.ach-modal-overlay .ach-card-i.unlocked.rar-diamond .ach-card-icon {
+  animation: achIconPulseV2 3s ease-in-out infinite !important;
+}
+@keyframes achIconPulseV2 {
+  0%,100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255,235,180,.14),
+      inset 0 -1px 0 rgba(0,0,0,.38),
+      0 0 10px var(--rar-glow);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgba(255,235,180,.2),
+      inset 0 -1px 0 rgba(0,0,0,.38),
+      0 0 18px var(--rar-glow);
+  }
+}
+
+/* ═══ 4. 稀有度 tag · 字号 + 阴影微调,字色用稀有度色 ═══ */
+.ach-modal-overlay .ach-card-rar-tag {
+  padding: 2px 9px !important;
+  font-size: .62rem !important;
+  border-width: 1.5px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,235,180,.1),
+    inset 0 -1px 0 rgba(0,0,0,.32) !important;
+}
+
+/* ═══ 5. 右侧元信息 · 改为水平排列 ═══ */
+.ach-modal-overlay .ach-card-meta {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* ═══ 6. Tab 栏 · 进度计数高亮 ═══ */
+.ach-modal-overlay .ach-tab-count {
+  font-variant-numeric: tabular-nums;
+  transition: color .18s;
+}
+.ach-modal-overlay .ach-tab-count.has-progress {
+  color: var(--gold-light) !important;
+  font-weight: 700;
+}
+.ach-modal-overlay .ach-tab-count.is-complete {
+  color: #f0b078 !important;
+  font-weight: 900;
+  text-shadow: 0 0 6px rgba(232,144,72,.4);
+}
+.ach-modal-overlay .ach-tab.active .ach-tab-count.has-progress {
+  color: var(--gold-light) !important;
+}
+
+/* ═══ 7. Tab 栏 emoji 默认显示,移动端隐藏 ═══ */
+.ach-modal-overlay .ach-tab-emoji {
+  display: inline-block;
+  margin-right: 4px;
+  font-size: .82rem;
+  line-height: 1;
+  vertical-align: -2px;
+}
+.ach-modal-overlay .ach-tab-label {
+  display: inline-block;
+}
+
+/* ═══ 8. 移动端适配重排 ═══ */
+@media (max-width: 720px) {
+  .ach-modal-overlay { padding: 10px; }
+  .ach-modal-overlay .ach-modal {
+    max-height: 92vh;
+  }
+
+  /* 头部重排:标题独占一行 + 进度按钮一行 */
+  .ach-modal-overlay .ach-modal-head {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 11px 14px !important;
+  }
+  .ach-modal-overlay .ach-modal-title {
+    font-size: .9rem !important;
+    letter-spacing: .12em !important;
+    justify-content: center !important;
+    width: 100%;
+  }
+  .ach-modal-overlay .ach-modal-title .title-deco {
+    width: 18px !important;
+  }
+  .ach-modal-overlay .ach-modal-right {
+    width: 100% !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+  .ach-modal-overlay .ach-modal-stats {
+    font-size: .68rem !important;
+    padding: 3px 11px !important;
+  }
+  .ach-modal-overlay .ach-modal-stats b {
+    font-size: .82rem !important;
+  }
+  .ach-modal-overlay .ach-modal-close {
+    font-size: 1.15rem !important;
+    padding: 4px 12px !important;
+  }
+
+  /* Tab 栏:去 emoji + 右侧金色渐变遮罩兜底滚动 */
+  .ach-modal-overlay .ach-tabs {
+    padding: 8px 12px 0 !important;
+    position: relative;
+  }
+  .ach-modal-overlay .ach-tabs::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 1px;
+    width: 26px;
+    pointer-events: none;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(8,3,3,.85) 60%,
+      rgba(8,3,3,.95));
+    z-index: 2;
+  }
+  .ach-modal-overlay .ach-tab-emoji {
+    display: none !important;
+  }
+  .ach-modal-overlay .ach-tab {
+    padding: 7px 10px 8px !important;
+    font-size: .72rem !important;
+    letter-spacing: .04em !important;
+  }
+  .ach-modal-overlay .ach-tab-count {
+    margin-left: 4px !important;
+    font-size: .6rem !important;
+  }
+
+  /* 说明文字字号上调 */
+  .ach-modal-overlay .ach-modal-note {
+    margin: 10px 14px 0 !important;
+    font-size: .66rem !important;
+    padding: 8px 11px !important;
+    line-height: 1.7 !important;
+  }
+
+  /* 成就卡布局微调 */
+  .ach-modal-overlay .ach-list {
+    grid-template-columns: 1fr !important;
+    padding: 11px 14px 16px !important;
+    gap: 7px !important;
+  }
+  .ach-modal-overlay .ach-card-i {
+    grid-template-columns: 38px 1fr auto !important;
+    padding: 9px 11px 9px 12px !important;
+    gap: 10px !important;
+  }
+  .ach-modal-overlay .ach-card-icon {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1.15rem !important;
+  }
+  .ach-modal-overlay .ach-card-name {
+    font-size: .86rem !important;
+    margin-bottom: 2px !important;
+  }
+  .ach-modal-overlay .ach-card-desc {
+    font-size: .66rem !important;
+    line-height: 1.5 !important;
+  }
+  /* 移动端右侧元信息回到竖排,但保留紧凑间距(横排太挤) */
+  .ach-modal-overlay .ach-card-meta {
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 4px !important;
+  }
+  .ach-modal-overlay .ach-card-rar-tag {
+    padding: 1px 7px !important;
+    font-size: .58rem !important;
+  }
+  .ach-modal-overlay .ach-card-status {
+    font-size: .6rem !important;
+  }
+}
+
+/* ╚══ END v20261003a 成就 UI 精修 ══════════════════════════════ */
