@@ -47,6 +47,15 @@
   const POLL_MS  = 30000;
   const MAX_ROWS = 100;
 
+  // ════ #sanguo-gm-gate-realtime-v1 ════
+  const GM_PASSWORD = '0727';
+  const SUPA_PROJECT_URL = 'https://smiifcbmmtolimtaxpip.supabase.co';
+  const SUPA_TABLE_NAME  = 'sanguo_rounds';
+  let _supaClient = null;
+  let _realtimeChannel = null;
+  let _realtimeOk = false;
+  let _realtimeReloadTimer = null;
+
   let state = {
     rounds:        [],
     players:       defaultPlayers(),
@@ -69,6 +78,7 @@
   //  初始化
   // ══════════════════════════════════════════
   function init() {
+    applyGMGate();
     bindNav();
     bindGMPanel();
     initParticles();
@@ -247,8 +257,89 @@
   }
 
   function startPolling() {
+    const realtimeStarted = trySetupRealtime();
     if (state.pollTimer) clearInterval(state.pollTimer);
-    state.pollTimer = setInterval(pollForUpdates, POLL_MS);
+    const interval = realtimeStarted ? 60000 : POLL_MS;
+    state.pollTimer = setInterval(pollForUpdates, interval);
+  }
+
+  // ════ #sanguo-gm-gate-realtime-v1 ════
+  function applyGMGate() {
+    let pwd = '';
+    try {
+      const params = new URLSearchParams(window.location.search);
+      pwd = (params.get('gm') || '').trim();
+    } catch (e) { pwd = ''; }
+    const isGM = (pwd === GM_PASSWORD);
+    document.body.classList.toggle('is-gm-mode', isGM);
+    document.body.classList.toggle('is-viewer-mode', !isGM);
+    if (!isGM) {
+      document.querySelectorAll('.gm-nav-btn').forEach(b => { b.style.display = 'none'; });
+      const tabGm = document.getElementById('tab-gm');
+      if (tabGm) {
+        tabGm.style.display = 'none';
+        tabGm.classList.remove('active');
+      }
+      try {
+        document.querySelectorAll('.nav-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.tab === 'arena');
+        });
+        document.querySelectorAll('.tab-panel').forEach(p => {
+          p.classList.toggle('active', p.id === 'tab-arena');
+        });
+      } catch (e) {}
+    }
+  }
+
+  function trySetupRealtime() {
+    if (typeof window.supabase === 'undefined' ||
+        typeof window.supabase.createClient !== 'function') {
+      console.warn('[SG] Supabase 客户端库未加载,继续轮询');
+      return false;
+    }
+    try {
+      _supaClient = window.supabase.createClient(SUPA_PROJECT_URL, SUPA_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        realtime: { params: { eventsPerSecond: 5 } },
+      });
+      _realtimeChannel = _supaClient
+        .channel('sanguo-rounds-changes')
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: SUPA_TABLE_NAME },
+          function () { _realtimeReloadDebounced(); })
+        .subscribe(function (status) {
+          if (status === 'SUBSCRIBED') {
+            _realtimeOk = true;
+            console.log('[SG] Realtime 就绪');
+            updateSyncStatus('online');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            _realtimeOk = false;
+            console.warn('[SG] Realtime 异常降级:', status);
+          }
+        });
+      return true;
+    } catch (e) {
+      console.error('[SG] Realtime 初始化失败:', e);
+      _realtimeOk = false;
+      return false;
+    }
+  }
+
+  function _realtimeReloadDebounced() {
+    if (_realtimeReloadTimer) clearTimeout(_realtimeReloadTimer);
+    _realtimeReloadTimer = setTimeout(async function () {
+      _realtimeReloadTimer = null;
+      try {
+        updateSyncStatus('updating');
+        await fetchAllRounds();
+        renderAll();
+        showToast('🔄 战局已更新!');
+        updateSyncStatus('online');
+      } catch (e) {
+        console.error('[SG] Realtime 重载失败:', e);
+        updateSyncStatus('error');
+      }
+    }, 800);
   }
 
   // ══════════════════════════════════════════
