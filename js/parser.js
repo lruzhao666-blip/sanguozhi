@@ -624,15 +624,20 @@ window.SGParser = (function () {
     return battles;
   }
 
+  // v18 (#parser-transit-multitroop-v1):
+  //   对齐 GM 规则书 v3.41 M-29 红线九 — [调度] 段支持多兵种同行,
+  //   兵种段语法 兵种:数量(,兵种:数量)*;输出新增 troops 对象,
+  //   保留旧 troopType/troopCount 字段做向后兼容(取第一个兵种回填)。
   function _parseTransit(raw) {
     if (!raw || !raw.trim()) return [];
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
     if (lines.length === 1 && /无在途|无调度|本回合无调度部队/.test(lines[0])) return [];
     const result = [];
-    // v16 (2026-XX): 对齐 GM 规则书 v3.40 M-29 红线九,
-    // 状态白名单收窄至 4 种(剩N/攻城中/交战中/客驻),
-    // 旧词归一化保留兼容(围攻中/对峙中/撤退中/驻屯中)。
-    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]):(\d+)\s+(剩\d+|攻城中|交战中|客驻|对峙中|撤退中|驻屯中|围攻中)(?:\s+(.+))?\s*$/;
+    // v18 (#parser-transit-multitroop-v1):
+    //   兵种段从单兵种放宽到多兵种同行,语法 兵种:数量(,兵种:数量)*
+    //   状态白名单维持 4 种(剩N/攻城中/交战中/客驻),
+    //   旧词归一化保留兼容(围攻中/对峙中/撤退中/驻屯中)。
+    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]:\d+(?:,[步弓骑水蛮]:\d+)*)\s+(剩\d+|攻城中|交战中|客驻|对峙中|撤退中|驻屯中|围攻中)(?:\s+(.+))?\s*$/;
 
     // 状态归一化映射:旧词 → 新白名单
     const STATUS_NORMALIZE = {
@@ -653,11 +658,31 @@ window.SGParser = (function () {
       const slot = factionRaw === '甲' ? 0 :
                    factionRaw === '乙' ? 1 :
                    factionRaw === '丙' ? 2 : null;
+      // 注:status 归一化与 troops 解析已合并到下方 result.push 块前,
+      //    捕获组编号因兵种段合并已前移(m[6]=status, m[7]=note)。
 
-      // 状态归一化
-      let status = m[7];
+      // 兵种段解析:m[5] 形如 "步:3550,骑:50"
+      const troopsStr = m[5];
+      const troops = {};
+      const troopEntries = [];
+      troopsStr.split(',').forEach(seg => {
+        const tm = seg.match(/^([步弓骑水蛮]):(\d+)$/);
+        if (tm) {
+          const t = tm[1];
+          const n = parseInt(tm[2], 10);
+          troops[t] = n;
+          troopEntries.push({ type: t, count: n });
+        }
+      });
+      // 向后兼容:troopType/troopCount 取第一个兵种回填,
+      // 让 main.js renderPlayerTransit / renderJunbao / _renderWorldMil
+      // 等旧渲染路径零修改即可继续工作。
+      const firstEntry = troopEntries[0] || { type: '', count: 0 };
+
+      // m[7] 现在是状态(原来是 m[7]),m[8] 现在是 note(原来也是 m[8]),
+      // 因为兵种段从两个捕获组合并为一个,后续捕获组编号相应前移。
+      let status = m[6];
       if (status === '撤退中') {
-        // 旧词「撤退中」归一化为「剩1」(GM 没给具体剩余回合,默认 1)
         status = '剩1';
         console.warn('[SGParser] [调度] 段旧词「撤退中」归一化为「剩1」:', line);
       } else if (STATUS_NORMALIZE[status]) {
@@ -672,10 +697,12 @@ window.SGParser = (function () {
         general: m[2],
         from: m[3],
         to: m[4],
-        troopType: m[5],
-        troopCount: parseInt(m[6]),
+        troops,                          // #parser-transit-multitroop-v1 新增
+        troopEntries,                    // #parser-transit-multitroop-v1 新增,保序数组形式
+        troopType: firstEntry.type,      // 向后兼容:取第一个兵种
+        troopCount: firstEntry.count,    // 向后兼容:取第一个兵种数量
         status,
-        note: m[8] ? m[8].trim() : '',
+        note: m[7] ? m[7].trim() : '',
       });
     }
     return result;
