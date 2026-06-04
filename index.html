@@ -740,6 +740,10 @@
       <div class="gm-form">
         <div class="gm-field">
           <label class="gm-lbl">📋 粘贴 AI 输出内容（整段粘贴即可）</label>
+          <!-- #gm-data-only-mode-v1 录入提示 -->
+          <div class="gm-input-hint" style="font-size:.72rem;color:var(--text-dim);margin:4px 0 6px;line-height:1.6">
+            💡 完整回合粘贴"剧情 + 36等号 + 数据";仅修复数据时只粘贴 [回合] 起头的数据区,剧情区会自动沿用。
+          </div>
           <textarea id="gm-content" class="gm-ta" rows="20"
             placeholder="将 AI 主持人的整段输出粘贴到这里…"></textarea>
         </div>
@@ -860,7 +864,7 @@
 <script src="js/tips.js?v=v20260601a"></script>
 <script src="js/generals-tooltip.js?v=v20260601a"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/main.js?v=20261104a"></script>
+<script src="js/main.js?v=20260604a"></script>
 <script src="js/achievement-sync.js?v=20261105a"></script>
 <script src="js/role-login.js?v=v20260601a"></script>
 <script src="js/secret-action.js?v=v20260922b"></script>
