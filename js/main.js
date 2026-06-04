@@ -3826,6 +3826,23 @@
   /* ── 自选展示成就 storageKey ── */
   function pinKey(slot) { return 'sg-ach-pinned-' + slot; }
 
+  /* ── 最新解锁批次 storageKey (v20261110a 工单#ui-batch-D) ── */
+  function latestBatchKey(slot) { return 'sg-ach-latest-batch-' + slot; }
+
+  function loadLatestBatch(slot) {
+    try {
+      const code = localStorage.getItem(latestBatchKey(slot));
+      return code || null;
+    } catch (e) { return null; }
+  }
+
+  function saveLatestBatch(slot, code) {
+    try {
+      if (code) localStorage.setItem(latestBatchKey(slot), code);
+      else localStorage.removeItem(latestBatchKey(slot));
+    } catch (e) {}
+  }
+
   function loadPinned(slot) {
     try {
       const code = localStorage.getItem(pinKey(slot));
@@ -3899,6 +3916,14 @@
 
       if (newlyAdded.length) {
         saveUnlocked(slot, unlocked);
+        // v20261110a 工单#ui-batch-D: 记录本次解锁批次中稀有度最高的成就 code
+        // 用于 getHighestRarity 在无 pinned 时优先展示
+        try {
+          const best = newlyAdded.slice().sort(
+            (a,b) => (RAR_LEVEL[b.rar]||0) - (RAR_LEVEL[a.rar]||0)
+          )[0];
+          if (best) saveLatestBatch(slot, best.code);
+        } catch (e) {}
         const playerName = getPlayerName(slot);
         // 多个成就时按稀有度倒序，依次弹（每条间隔由 setTimeout 自然错开）
         newlyAdded
@@ -3919,16 +3944,28 @@
     }
   }
 
-  /* ── 取该 slot 展示成就(优先 pinned,否则最高稀有度)── */
+  /* ── 取该 slot 展示成就 (v20261110a 工单#ui-batch-D)
+     优先级:
+       1. 玩家自选 pinned(且已解锁)
+       2. 最新解锁批次中稀有度最高的(saveLatestBatch 写入)
+       3. 兜底:全部已解锁中稀有度最高的
+  ── */
   function getHighestRarity(slot) {
     const unlocked = loadUnlocked(slot);
     if (!unlocked.length) return null;
 
-    // 优先返回玩家自选展示的成就(且必须已解锁)
+    // 优先 1:玩家自选展示
     const pinnedCode = loadPinned(slot);
     if (pinnedCode && unlocked.indexOf(pinnedCode) !== -1) {
       const pinned = ACHIEVEMENTS.find(a => a.code === pinnedCode);
       if (pinned) return pinned;
+    }
+
+    // 优先 2:最新解锁批次记录
+    const latestCode = loadLatestBatch(slot);
+    if (latestCode && unlocked.indexOf(latestCode) !== -1) {
+      const latest = ACHIEVEMENTS.find(a => a.code === latestCode);
+      if (latest) return latest;
     }
 
     // 兜底:返回最稀有
@@ -3953,6 +3990,7 @@
     for (let i = 0; i < 3; i++) {
       try { localStorage.removeItem(storageKey(i)); } catch (e) {}
       try { localStorage.removeItem(pinKey(i)); } catch (e) {}
+      try { localStorage.removeItem(latestBatchKey(i)); } catch (e) {}
     }
     try { window.dispatchEvent(new CustomEvent('sg-ach-unlocked')); }
     catch (e) {}
