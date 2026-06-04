@@ -10223,3 +10223,129 @@ body.fx-off-captured [data-ctype="captured"] {
 body.is-viewer-mode .health-badge-yellow {
   display: none !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20261110a 工单#ui-batch · 战功册移动端 UI 修复
+   - max-height: 100dvh 替代 100vh,避免被浏览器工具栏遮挡
+   - 顶部安全距离 max(20px, env(safe-area-inset-top))
+   - 底部安全距离 env(safe-area-inset-bottom)
+   - 列表区开启惯性滚动
+   - 旧规则不删,靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  /* Overlay 用 100dvh + safe-area 安全区 */
+  .ach-modal-overlay {
+    height: 100dvh !important;
+    padding-top: max(20px, env(safe-area-inset-top)) !important;
+    padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Modal 主容器 · 跟随 overlay 安全区计算最大高度 */
+  .ach-modal-overlay .ach-modal {
+    max-width: 440px !important;
+    max-height: calc(100dvh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom))) !important;
+    margin: auto !important;
+  }
+
+  /* 列表区开启惯性滚动 */
+  .ach-modal-overlay .ach-list {
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+/* 极窄屏(<= 380px)兜底 */
+@media (max-width: 380px) {
+  .ach-modal-overlay {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+/* ╚══ END v20261110a 战功册手机端 UI 修复 ═════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261110a 工单#ui-batch · 传说扫光重做
+   - 取消 ::after 滑动方案(inline-flex 元素 height:100% 失效)
+   - 改用 .ach-title 本体 background-image + background-position 动画
+   - 配合 .ach-card-icon(已是 flex 块级元素)新增 inline-block 显式锚点
+   - 周期 4.5s / 亮度提升到 .55 / 起止点放宽
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 玩家卡传说徽章:背景流光替代 ::after ── */
+.pcard.pcard-v4 .ach-title.rar-diamond {
+  position: relative !important;
+  overflow: hidden !important;
+  display: inline-flex !important;
+  background-image:
+    linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(255,235,200,.55) 50%,
+      transparent 70%
+    ),
+    none !important;
+  background-color: var(--rar-bg, rgba(232,144,72,.13)) !important;
+  background-size: 250% 100%, 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: 200% 0, 0 0 !important;
+  animation: achScanPillV2 4.5s ease-in-out infinite !important;
+}
+
+/* 旧版 ::after 扫光禁用(避免双层叠加) */
+.pcard.pcard-v4 .ach-title.rar-diamond::after {
+  display: none !important;
+  content: none !important;
+  animation: none !important;
+}
+
+@keyframes achScanPillV2 {
+  0%   { background-position: 200% 0, 0 0; }
+  60%  { background-position: -100% 0, 0 0; }
+  100% { background-position: -100% 0, 0 0; }
+}
+
+/* ── 战功册图标盒传说扫光重做(同方案,周期更长一档) ── */
+.ach-modal-overlay .ach-card-i.rar-diamond .ach-card-icon {
+  position: relative !important;
+  overflow: hidden !important;
+  background-image:
+    linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(255,235,200,.55) 50%,
+      transparent 70%
+    ),
+    linear-gradient(180deg, rgba(52,34,10,.65) 0%, rgba(28,18,5,.65) 100%) !important;
+  background-size: 250% 100%, 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: 200% 0, 0 0 !important;
+  animation: achScanIconV2 5s ease-in-out infinite !important;
+}
+
+/* 旧版 ::after 扫光禁用 */
+.ach-modal-overlay .ach-card-i.rar-diamond .ach-card-icon::after {
+  display: none !important;
+  content: none !important;
+  animation: none !important;
+}
+
+@keyframes achScanIconV2 {
+  0%   { background-position: 200% 0, 0 0; }
+  60%  { background-position: -100% 0, 0 0; }
+  100% { background-position: -100% 0, 0 0; }
+}
+
+/* 未解锁的传说卡片图标禁用扫光 */
+.ach-modal-overlay .ach-card-i.rar-diamond.locked .ach-card-icon {
+  animation: none !important;
+  background-image:
+    linear-gradient(180deg, rgba(52,34,10,.65) 0%, rgba(28,18,5,.65) 100%) !important;
+}
+
+/* ╚══ END v20261110a 传说扫光重做 ═════════════════════════════ */
