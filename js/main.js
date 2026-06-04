@@ -502,7 +502,6 @@
     document.getElementById('btn-publish').addEventListener('click', onPublish);
     document.getElementById('btn-clear-all').addEventListener('click', onClearAll);
     document.getElementById('btn-undo').addEventListener('click', onUndo);
-    // [health-check-disable-A] 强制 NPC 校验按钮已停用
   }
 
   function onPreview() {
@@ -726,7 +725,6 @@
     }
     updateFooter();
     updateUndoBtn();
-    // [health-check-disable-A] 健康检测已停用,保留注释占位便于将来回滚
     // M39-5: 广播回合更新事件,触发密报阁重渲染
     try {
       window.dispatchEvent(new CustomEvent('sg-rounds-updated'));
