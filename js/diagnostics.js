@@ -19,6 +19,7 @@
  *                                    R5 不动（无此 bug）。
  * #diag-r1-r2-r11-fix-v1 (2026-06-04): R1 武将列表不参与跨源查重(改为列表内部自查),
  *                                       R2 includes 单字不抵消 + 加防御日志,R11 整条下线。
+ * #diag-r2-currset-fix-v1 (2026-06-04): 修复 R2 collectFrom 闭包硬绑 prevSet 导致 currSet 永远为空。
  */
 
 (function () {
@@ -169,7 +170,8 @@
         const prev = rounds[rounds.length - 2];
         if (!prev || !prev.parsed) return [];
 
-        /* 上回合在册武将集合（含玩家武将、守将、调度、世界、NPC 守将）*/
+        /* [legacy v1] 原版 collectFrom 闭包硬绑 prevSet.add(),第二次调用时 currSet 永远为空,
+           导致 prevSet 全部武将被误判失踪。
         const prevSet = new Set();
         const collectFrom = parsed => {
           (parsed.players || []).forEach(p => {
@@ -186,9 +188,29 @@
         };
         collectFrom(prev.parsed);
 
-        /* 本回合在册集合 */
         const currSet = new Set();
         collectFrom(latest.parsed);
+        */
+        /* #diag-r2-currset-fix-v1: collectFrom 改为接收目标 set 作为参数,避免闭包硬绑 */
+        const collectFrom = (parsed, set) => {
+          (parsed.players || []).forEach(p => {
+            (p.generals || []).forEach(g => set.add(g.name));
+            (p.cities_list || []).forEach(c => {
+              (c.holders || []).forEach(h => set.add(h));
+            });
+          });
+          (parsed.npcCities || []).forEach(c => {
+            (c.holders || []).forEach(h => set.add(h));
+          });
+          (parsed.transit || []).forEach(t => { if (t.general) set.add(t.general); });
+          (parsed.world || []).forEach(w => { if (w.name) set.add(w.name); });
+        };
+        /* 上回合在册武将集合(含玩家武将、守将、调度、世界、NPC 守将)*/
+        const prevSet = new Set();
+        collectFrom(prev.parsed, prevSet);
+        /* 本回合在册集合 */
+        const currSet = new Set();
+        collectFrom(latest.parsed, currSet);
 
         /* 失踪 = 上回合在 & 本回合不在 & 剧情区也没提到 */
         const rawDigest = latest.parsed.rawDigest || latest.rawContent || '';
