@@ -132,13 +132,7 @@
   // NPC 段继承:遍历 state.rounds,对标记 npcCitiesInherit 的回合,
   // 从上一个有完整 [NPC] 的回合拷贝 cityOwnership 中的 NPC 部分。
   // 同时把 npcCities 数组也补全(虽然 main.js 内部已经直接用 cityOwnership)。
-  // 健康检查:对强制全量回合(1/10/20/30/40/50/60),与继承推导对比,
-  //          差异时设置 state.healthAlert 触发顶部告警条。
-  const FORCE_FULL_ROUNDS = new Set([1, 10, 20, 30, 40, 50, 60]);
-
   function applyNpcInheritance() {
-    // 清空旧告警
-    state.healthAlert = null;
     let lastNpcSnapshot = null;  // 最近一个完整 [NPC] 的 cityOwnership 中 NPC 部分
 
     for (let i = 0; i < state.rounds.length; i++) {
@@ -156,18 +150,6 @@
             npcOnly[k] = JSON.parse(JSON.stringify(ownership[k]));
           }
         });
-
-        // 健康检查:强制全量回合且已有上一份快照时,对比
-        if (FORCE_FULL_ROUNDS.has(roundNum) && lastNpcSnapshot) {
-          const diff = _diffNpcSnapshot(lastNpcSnapshot, npcOnly);
-          if (diff.length) {
-            state.healthAlert = {
-              round: roundNum,
-              diff: diff,
-            };
-            console.warn('[SG] NPC 健康检查发现差异 R' + roundNum, diff);
-          }
-        }
 
         lastNpcSnapshot = npcOnly;
       } else {
@@ -195,26 +177,6 @@
         }
       }
     }
-  }
-
-  function _diffNpcSnapshot(oldSnap, newSnap) {
-    const diff = [];
-    const allKeys = new Set([...Object.keys(oldSnap), ...Object.keys(newSnap)]);
-    allKeys.forEach(k => {
-      const a = oldSnap[k];
-      const b = newSnap[k];
-      if (!a && b) { diff.push({ city: k, type: 'added', detail: b.faction || '无主' }); return; }
-      if (a && !b) { diff.push({ city: k, type: 'removed', detail: a.faction || '无主' }); return; }
-      if (a && b) {
-        if ((a.faction || '') !== (b.faction || '')) {
-          diff.push({ city: k, type: 'faction', detail: (a.faction || '无主') + ' → ' + (b.faction || '无主') });
-        }
-        if ((a.holder || '') !== (b.holder || '')) {
-          diff.push({ city: k, type: 'holder', detail: (a.holder || '无') + ' → ' + (b.holder || '无') });
-        }
-      }
-    });
-    return diff;
   }
 
   // ════ #sanguo-inherit-batch2-v1 ════
@@ -727,54 +689,18 @@
       showToast('⚠️ 尚无回合数据');
       return;
     }
-    // 重置告警,重新跑一遍继承逻辑(对全部回合做差异比对)
-    state.healthAlert = null;
-    // 临时把所有强制回合阈值放宽:本次手动校验对所有完整回合都做对比
-    const _origForceSet = FORCE_FULL_ROUNDS;
-    // 不修改常量,改为对所有完整回合两两对比
-    let prevSnap = null, found = null;
-    for (const rd of state.rounds) {
-      const p = rd.parsed;
-      if (p.npcCitiesInherit) continue;
-      const ownership = p.cityOwnership || {};
-      const npcOnly = {};
-      Object.keys(ownership).forEach(k => {
-        if (ownership[k] && ownership[k].owner === 'npc') {
-          npcOnly[k] = ownership[k];
-        }
-      });
-      if (prevSnap) {
-        const diff = _diffNpcSnapshot(prevSnap, npcOnly);
-        if (diff.length) {
-          found = { round: rd.round, diff };
-          // 第一处差异即报,不继续找(避免叠加噪音)
-          break;
-        }
-      }
-      prevSnap = npcOnly;
-    }
-    // #health-check-A1A2B4-v1 同步跑全量健康检测
-    let _hcFullReport = { red: [], yellow: [] };
+    // #health-check-trim-v1 全量跑 A1 + B4
+    let _hcReport = { red: [], yellow: [] };
     try {
       if (window.SGHealthCheck && typeof window.SGHealthCheck.run === 'function') {
-        _hcFullReport = window.SGHealthCheck.run(state.rounds, { fullAudit: true });
-        window.SGHealthCheck.renderAlerts(_hcFullReport);
+        _hcReport = window.SGHealthCheck.run(state.rounds, { fullAudit: true });
+        window.SGHealthCheck.renderAlerts(_hcReport);
       }
-    } catch (e) { console.warn('[SG] 全量健康检测失败:', e); }
+    } catch (e) { console.warn('[SG] 健康检测失败:', e); }
 
-    const _hcRedCount = (_hcFullReport.red || []).length;
-    const _hcYellowCount = (_hcFullReport.yellow || []).length;
-
-    if (found || _hcRedCount > 0) {
-      if (found) state.healthAlert = found;
-      renderHealthAlert();
-      const msgs = [];
-      if (found) msgs.push('NPC 数据差异');
-      if (_hcRedCount > 0) msgs.push('武将/城池硬伤 ' + _hcRedCount + ' 处');
-      if (_hcYellowCount > 0) msgs.push('武将疑似失踪 ' + _hcYellowCount + ' 处');
-      showToast('⚠️ 发现 ' + msgs.join(' · ') + ',见顶部红条与玩家卡角标');
-    } else if (_hcYellowCount > 0) {
-      showToast('⚠️ 武将疑似失踪 ' + _hcYellowCount + ' 处,见玩家卡角标');
+    const _redCount = (_hcReport.red || []).length;
+    if (_redCount > 0) {
+      showToast('⚠️ 发现 ' + _redCount + ' 处硬伤,见顶部红条与 F12 控制台');
     } else {
       showToast('✅ 全量健康校验通过');
     }
@@ -878,7 +804,6 @@
     }
     updateFooter();
     updateUndoBtn();
-    renderHealthAlert();  // #sanguo-npc-inherit-main-v1 (保留旧 NPC 差异告警)
     // #health-check-A1A2B4-v1 自动跑武将唯一性/武将失踪/城池归属冲突检测
     try {
       if (window.SGHealthCheck && typeof window.SGHealthCheck.run === 'function') {
@@ -890,34 +815,6 @@
     try {
       window.dispatchEvent(new CustomEvent('sg-rounds-updated'));
     } catch (e) { /* 兜底,不影响主流程 */ }
-  }
-
-  // ════ #sanguo-npc-inherit-main-v1 健康检查告警条 ════
-  function renderHealthAlert() {
-    let bar = document.getElementById('sg-health-alert');
-    if (state.healthAlert && state.healthAlert.diff && state.healthAlert.diff.length) {
-      if (!bar) {
-        bar = document.createElement('div');
-        bar.id = 'sg-health-alert';
-        bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;'
-          + 'background:rgba(160,30,30,.95);color:#fff;'
-          + 'padding:10px 18px;font-size:13px;font-family:"Noto Sans SC",sans-serif;'
-          + 'text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;';
-        bar.title = '点击关闭';
-        bar.addEventListener('click', () => {
-          state.healthAlert = null;
-          bar.remove();
-        });
-        document.body.appendChild(bar);
-      }
-      const a = state.healthAlert;
-      const summary = a.diff.slice(0, 3).map(d => d.city + ' ' + d.detail).join(' / ');
-      const more = a.diff.length > 3 ? ` 等 ${a.diff.length} 处差异` : '';
-      bar.innerHTML = '⚠️ NPC 健康检查告警:第 ' + a.round + ' 回合与继承推导不一致 — '
-        + summary + more + ' (点击关闭 · 详情见 F12 控制台)';
-    } else if (bar) {
-      bar.remove();
-    }
   }
 
 // ─────────────────────────────────────────

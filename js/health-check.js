@@ -4,13 +4,10 @@
  * 检测项:
  *  A1 武将唯一性:同一武将不得同时出现在多个落点
  *     合法重复:[战报] + [调度·攻城中/交战中] / 多将共率行 / 短期出使
- *  A2 武将失踪:上回合在册武将本回合一个落点都找不到
- *     豁免:多将共率副将 / 短期出使(≤2回合,由 GM 在剧情区交代)
  *  B4 城池归属冲突:同一城同时出现在 [NPC] 行和某玩家段
  *
  * 告警分级:
  *  red    武将分身 / 城池归属冲突 — 顶部红条强提示
- *  yellow 武将疑似失踪              — 玩家卡角标 + console.warn
  *
  * 对外 API:
  *   window.SGHealthCheck.run(rounds, opts)
@@ -43,17 +40,6 @@
       // B4 城池归属冲突
       _checkCityOwnershipConflict(roundNum, p, report);
     });
-
-    // A2 武将失踪 — 需要相邻两回合对比,只在 fullAudit 时对所有相邻对跑
-    // 默认模式下只对比 倒数第二回合 → 最新回合
-    if (rounds.length >= 2) {
-      const pairs = fullAudit
-        ? rounds.slice(0, -1).map(function (r, i) { return [r, rounds[i + 1]]; })
-        : [[rounds[rounds.length - 2], rounds[rounds.length - 1]]];
-      pairs.forEach(function (pair) {
-        _checkGeneralMissing(pair[0], pair[1], report);
-      });
-    }
 
     return report;
   }
@@ -181,84 +167,10 @@
   }
 
   // ─────────────────────────────────────
-  //  A2 武将失踪检测
-  // ─────────────────────────────────────
-  function _checkGeneralMissing(prevRd, currRd, report) {
-    const prevP = prevRd.parsed || {};
-    const currP = currRd.parsed || {};
-    const currRound = currRd.round;
-
-    // 收集上回合所有在册武将(玩家+NPC,不含[世界]段在野/被俘)
-    const prevGenerals = new Set();
-    (prevP.players || []).forEach(function (pp) {
-      (pp.cities_list || []).forEach(function (c) {
-        (c.holders || []).forEach(function (h) { if (h) prevGenerals.add(h); });
-      });
-    });
-    (prevP.npcCities || []).forEach(function (c) {
-      (c.holders || []).forEach(function (h) { if (h) prevGenerals.add(h); });
-    });
-    (prevP.transit || []).forEach(function (t) {
-      (t.general || '').split('/').forEach(function (g) {
-        const n = g.trim();
-        if (n) prevGenerals.add(n);
-      });
-    });
-
-    // 收集本回合所有落点(含[世界]段,因为武将可能从城移到[世界]段)
-    const currLocations = new Set();
-    (currP.players || []).forEach(function (pp) {
-      (currP.cities_list || []).forEach(function (c) {
-        (c.holders || []).forEach(function (h) { if (h) currLocations.add(h); });
-      });
-    });
-    (currP.npcCities || []).forEach(function (c) {
-      (c.holders || []).forEach(function (h) { if (h) currLocations.add(h); });
-    });
-    (currP.transit || []).forEach(function (t) {
-      (t.general || '').split('/').forEach(function (g) {
-        const n = g.trim();
-        if (n) currLocations.add(n);
-      });
-    });
-    (currP.world || []).forEach(function (w) {
-      if (w.name) currLocations.add(w.name);
-    });
-
-    // 差集:上回合在册 - 本回合任意落点 = 失踪
-    prevGenerals.forEach(function (name) {
-      if (!currLocations.has(name)) {
-        // 不知道这位武将属于哪个玩家段,扫一遍 prev 找
-        let belongSlot = null;
-        (prevP.players || []).some(function (pp) {
-          const found = (pp.cities_list || []).some(function (c) {
-            return (c.holders || []).indexOf(name) !== -1;
-          });
-          if (found) { belongSlot = pp.slot || ''; return true; }
-          return false;
-        });
-        report.yellow.push({
-          round: currRound,
-          type: 'general_missing',
-          name: name,
-          belongSlot: belongSlot,
-          msg: '武将「' + name + '」第 ' + currRound + ' 回合疑似失踪(上回合在册,本回合无落点)',
-        });
-      }
-    });
-  }
-
-  // ─────────────────────────────────────
   //  渲染告警
   // ─────────────────────────────────────
   function renderAlerts(report) {
     _renderRedBar(report.red);
-    _renderYellowBadges(report.yellow);
-
-    // F12 控制台输出黄色告警(便于 GM 排查)
-    (report.yellow || []).forEach(function (y) {
-      console.warn('[SGHealthCheck]', y.msg);
-    });
   }
 
   function _renderRedBar(redList) {
@@ -288,46 +200,6 @@
       ' (点击关闭 · 详情见 F12 控制台)';
     // F12 详细输出
     redList.forEach(function (r) { console.error('[SGHealthCheck]', r.msg); });
-  }
-
-  function _renderYellowBadges(yellowList) {
-    // 仅 GM 模式渲染黄角标(玩家模式由 CSS 隐藏 .health-badge-yellow)
-    // 先清空所有玩家卡的旧黄角标
-    document.querySelectorAll('.health-badge-yellow').forEach(function (el) {
-      el.remove();
-    });
-    if (!yellowList || !yellowList.length) return;
-
-    // 按玩家槽聚合
-    const bySlot = { '甲': [], '乙': [], '丙': [] };
-    yellowList.forEach(function (y) {
-      if (y.belongSlot && bySlot[y.belongSlot]) {
-        bySlot[y.belongSlot].push(y);
-      }
-    });
-
-    VALID_SLOTS.forEach(function (slotName, slotIdx) {
-      const arr = bySlot[slotName];
-      if (!arr.length) return;
-      // 玩家卡容器:#pname-${slotIdx} 的祖先卡
-      const nameEl = document.getElementById('pname-' + slotIdx);
-      if (!nameEl) return;
-      const card = nameEl.closest('.player-card') || nameEl.parentElement;
-      if (!card) return;
-      // card 需要 relative 定位以承载绝对定位的角标
-      const cs = window.getComputedStyle(card);
-      if (cs.position === 'static') card.style.position = 'relative';
-
-      const badge = document.createElement('div');
-      badge.className = 'health-badge-yellow';
-      badge.textContent = '⚠ ' + arr.length;
-      badge.title = arr.map(function (y) { return y.msg; }).join('\n');
-      badge.addEventListener('click', function (ev) {
-        ev.stopPropagation();
-        alert(arr.map(function (y) { return y.msg; }).join('\n\n'));
-      });
-      card.appendChild(badge);
-    });
   }
 
   window.SGHealthCheck = { run: run, renderAlerts: renderAlerts };
