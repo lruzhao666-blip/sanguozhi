@@ -9903,3 +9903,186 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ╚══ END v20261006a tab 栏去 emoji 重构 + 排版修复 ════════════ */
+/* ════════════════════════════════════════════════════════════
+   v20261008a 工单#achievement-polish-H1
+   - Tab 栏移动端两行布局(3 列 × 2 行 grid)
+   - 自选展示成就·星形按钮 .ach-pin-btn
+   - 移动端头部加内边距,modal 顶部多留 16px
+   - 旧规则不删,靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+/* ═══ 1. Tab 栏 · 桌面端单行等分(沿用工单 F,微调间距) ═══ */
+.ach-modal-overlay .ach-tabs {
+  padding: 10px 16px 0 !important;
+  gap: 0 !important;
+}
+.ach-modal-overlay .ach-tab {
+  padding: 9px 8px 11px !important;
+  font-size: .78rem !important;
+  letter-spacing: .1em !important;
+}
+.ach-modal-overlay .ach-tab-label {
+  letter-spacing: .1em !important;
+}
+.ach-modal-overlay .ach-tab-count {
+  font-size: .62rem !important;
+  margin-left: 3px !important;
+  opacity: .8;
+}
+
+/* ═══ 2. Tab 栏 · 移动端两行 3 列网格 ═══ */
+@media (max-width: 720px) {
+  .ach-modal-overlay .ach-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0 !important;
+    padding: 8px 10px 0 !important;
+    overflow: visible !important;
+    /* 取消桌面端右侧渐变遮罩 */
+  }
+  .ach-modal-overlay .ach-tabs::after {
+    display: none !important;
+  }
+  .ach-modal-overlay .ach-tab {
+    flex: none !important;
+    width: 100%;
+    padding: 8px 4px 9px !important;
+    font-size: .74rem !important;
+    letter-spacing: .06em !important;
+    border-bottom: 2px solid transparent !important;
+    /* 行间分隔细线 */
+    position: relative;
+  }
+  /* 第一行 3 个 tab 底部加细线(用 :nth-child(1/2/3)) */
+  .ach-modal-overlay .ach-tab:nth-child(1)::before,
+  .ach-modal-overlay .ach-tab:nth-child(2)::before,
+  .ach-modal-overlay .ach-tab:nth-child(3)::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: -1px;
+    height: 1px;
+    background: rgba(212,168,67,.08);
+    pointer-events: none;
+  }
+  .ach-modal-overlay .ach-tab-label {
+    letter-spacing: .06em !important;
+  }
+  .ach-modal-overlay .ach-tab-count {
+    font-size: .58rem !important;
+    margin-left: 3px !important;
+  }
+}
+
+/* ═══ 3. 移动端 modal 头部呼吸感(顶部多留空间) ═══ */
+@media (max-width: 720px) {
+  .ach-modal-overlay {
+    padding: 24px 16px 20px !important;
+    align-items: flex-start !important;
+  }
+  .ach-modal-overlay .ach-modal {
+    max-width: 440px !important;
+    max-height: calc(100vh - 60px) !important;
+    margin-top: 8px;
+  }
+  .ach-modal-overlay .ach-modal-head {
+    padding: 12px 16px !important;
+  }
+  .ach-modal-overlay .ach-modal-stats {
+    padding: 4px 12px !important;
+  }
+  .ach-modal-overlay .ach-modal-close {
+    padding: 6px 10px !important;
+  }
+}
+
+/* 极窄屏(<= 380px)兜底:tab 字号再小 */
+@media (max-width: 380px) {
+  .ach-modal-overlay {
+    padding: 20px 10px 16px !important;
+  }
+  .ach-modal-overlay .ach-tab {
+    padding: 7px 3px 8px !important;
+    font-size: .68rem !important;
+  }
+  .ach-modal-overlay .ach-tab-count {
+    font-size: .55rem !important;
+  }
+}
+
+/* ═══ 4. 自选展示按钮 · 星形 ═══ */
+.ach-modal-overlay .ach-card-meta {
+  position: relative;
+}
+.ach-modal-overlay .ach-pin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(212,168,67,.22);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: .82rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all .18s;
+  margin-right: 2px;
+  user-select: none;
+}
+.ach-modal-overlay .ach-pin-btn:hover {
+  color: var(--gold-light);
+  border-color: var(--gold);
+  background: rgba(212,168,67,.08);
+  transform: translateY(-1px);
+}
+.ach-modal-overlay .ach-pin-btn.is-pinned {
+  color: var(--gold-light);
+  border-color: var(--gold);
+  background: rgba(212,168,67,.14);
+  text-shadow: 0 0 6px rgba(212,168,67,.5);
+  box-shadow: inset 0 1px 0 rgba(255,220,140,.16);
+}
+
+/* 已展示中的成就卡:左边色条变粗、加金光晕标记 */
+.ach-modal-overlay .ach-card-i.is-pinned {
+  border-left-width: 4px !important;
+  background: rgba(35,22,4,.7) !important;
+  box-shadow: inset 0 0 0 1px rgba(212,168,67,.15);
+}
+.ach-modal-overlay .ach-card-i.is-pinned::after {
+  content: '展示中';
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-family: var(--font-serif);
+  font-size: .54rem;
+  letter-spacing: .12em;
+  color: var(--gold-dim);
+  background: rgba(212,168,67,.1);
+  border: 1px solid rgba(212,168,67,.25);
+  border-radius: 3px;
+  padding: 0 5px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+/* 移动端按钮缩小 */
+@media (max-width: 720px) {
+  .ach-modal-overlay .ach-pin-btn {
+    width: 24px;
+    height: 20px;
+    font-size: .78rem;
+  }
+  .ach-modal-overlay .ach-card-i.is-pinned::after {
+    font-size: .5rem;
+    padding: 0 4px;
+    top: 3px;
+    right: 5px;
+  }
+}
+
+/* ╚══ END v20261008a tab 移动端两行 + 自选展示 + 文案修复 ════ */
