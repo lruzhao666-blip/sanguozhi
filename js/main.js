@@ -753,12 +753,30 @@
       }
       prevSnap = npcOnly;
     }
-    if (found) {
-      state.healthAlert = found;
+    // #health-check-A1A2B4-v1 同步跑全量健康检测
+    let _hcFullReport = { red: [], yellow: [] };
+    try {
+      if (window.SGHealthCheck && typeof window.SGHealthCheck.run === 'function') {
+        _hcFullReport = window.SGHealthCheck.run(state.rounds, { fullAudit: true });
+        window.SGHealthCheck.renderAlerts(_hcFullReport);
+      }
+    } catch (e) { console.warn('[SG] 全量健康检测失败:', e); }
+
+    const _hcRedCount = (_hcFullReport.red || []).length;
+    const _hcYellowCount = (_hcFullReport.yellow || []).length;
+
+    if (found || _hcRedCount > 0) {
+      if (found) state.healthAlert = found;
       renderHealthAlert();
-      showToast('⚠️ 发现 NPC 数据差异,见顶部红条');
+      const msgs = [];
+      if (found) msgs.push('NPC 数据差异');
+      if (_hcRedCount > 0) msgs.push('武将/城池硬伤 ' + _hcRedCount + ' 处');
+      if (_hcYellowCount > 0) msgs.push('武将疑似失踪 ' + _hcYellowCount + ' 处');
+      showToast('⚠️ 发现 ' + msgs.join(' · ') + ',见顶部红条与玩家卡角标');
+    } else if (_hcYellowCount > 0) {
+      showToast('⚠️ 武将疑似失踪 ' + _hcYellowCount + ' 处,见玩家卡角标');
     } else {
-      showToast('✅ NPC 数据校验通过');
+      showToast('✅ 全量健康校验通过');
     }
   }
 
@@ -860,7 +878,14 @@
     }
     updateFooter();
     updateUndoBtn();
-    renderHealthAlert();  // #sanguo-npc-inherit-main-v1
+    renderHealthAlert();  // #sanguo-npc-inherit-main-v1 (保留旧 NPC 差异告警)
+    // #health-check-A1A2B4-v1 自动跑武将唯一性/武将失踪/城池归属冲突检测
+    try {
+      if (window.SGHealthCheck && typeof window.SGHealthCheck.run === 'function') {
+        const _hcReport = window.SGHealthCheck.run(state.rounds, { fullAudit: false });
+        window.SGHealthCheck.renderAlerts(_hcReport);
+      }
+    } catch (e) { console.warn('[SG] 健康检测失败:', e); }
     // M39-5: 广播回合更新事件,触发密报阁重渲染
     try {
       window.dispatchEvent(new CustomEvent('sg-rounds-updated'));

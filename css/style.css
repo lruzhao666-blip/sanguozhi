@@ -10194,3 +10194,32 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ╚══ END v20261009a 角标移除 + Modal 紧凑 + 传说扫光 ════════ */
+
+/* #health-check-A1A2B4-v1 玩家卡黄色健康检测角标 */
+.health-badge-yellow {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 50;
+  background: rgba(180, 140, 40, .92);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: "Noto Sans SC", sans-serif;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1px solid rgba(220, 180, 80, .65);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+  cursor: pointer;
+  letter-spacing: .04em;
+  user-select: none;
+  transition: transform .15s ease;
+}
+.health-badge-yellow:hover {
+  transform: scale(1.08);
+  background: rgba(200, 160, 50, .98);
+}
+/* 玩家模式隐藏黄角标(GM 模式才显示) */
+body.is-viewer-mode .health-badge-yellow {
+  display: none !important;
+}
