@@ -3670,6 +3670,12 @@
   function pinKey(slot) { return 'sg-ach-pinned-' + slot; }
 
   function loadPinned(slot) {
+    // 优先远端（SGAchSync 已加载且有数据）
+    if (window.SGAchSync && typeof window.SGAchSync.getPinned === 'function') {
+      const remoteCode = window.SGAchSync.getPinned(slot);
+      if (remoteCode) return remoteCode;
+    }
+    // 降级：localStorage（离线/未加载时仍可用）
     try {
       const code = localStorage.getItem(pinKey(slot));
       return code || null;
@@ -3677,6 +3683,11 @@
   }
 
   function savePinned(slot, code) {
+    // 远端写入（仅本人 slot 才会成功）
+    if (window.SGAchSync && typeof window.SGAchSync.setPinned === 'function') {
+      window.SGAchSync.setPinned(slot, code);
+    }
+    // 同步 localStorage 作为降级缓存
     try {
       if (code) localStorage.setItem(pinKey(slot), code);
       else localStorage.removeItem(pinKey(slot));
@@ -3917,8 +3928,13 @@
     listEl.innerHTML = sorted.map(a => {
       const isU = unlocked.indexOf(a.code) !== -1;
       const isPinned = isU && (a.code === pinnedCode);
-      // 已解锁卡片才有"设为展示"按钮
-      const pinBtn = isU
+      // 已解锁 + 是本人 slot 才有"设为展示"按钮（同步模式下只能改自己）
+      const canPin = isU && (
+        !window.SGAchSync ||
+        typeof window.SGAchSync.isMineSlot !== 'function' ||
+        window.SGAchSync.isMineSlot(_currentSlot)
+      );
+      const pinBtn = canPin
         ? '<button class="ach-pin-btn ' + (isPinned ? 'is-pinned' : '') + '" ' +
           'data-code="' + _escHtml(a.code) + '" ' +
           'title="' + (isPinned ? '取消展示' : '设为展示') + '">' +
@@ -3998,6 +4014,9 @@
     setTimeout(scan, 200);
   }
 
+  /* ── 远端 pin 变更时也要重渲染玩家卡（来自 SGAchSync 推送） ── */
+  // sg-ach-unlocked 事件已被 SGAchSync 复用，无需新增监听
+  // 此注释占位，便于将来排查
   /* ── 监听自身解锁事件，触发玩家卡徽章重渲染 ── */
   window.addEventListener('sg-ach-unlocked', function () {
     for (let i = 0; i < 3; i++) {
