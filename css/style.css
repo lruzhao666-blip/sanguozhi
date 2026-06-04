@@ -10802,3 +10802,16 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ╚══ END #diagnostics-engine-A1 ══════════════════════════════ */
+
+/* ════════ #diag-badge-gm-only-v1 诊断徽章仅 GM 可见 ════════ */
+/* 依据:js/main.js 的 applyGMGate() 在非 GM 模式下给 body
+   添加 .is-viewer-mode class。本规则强制隐藏诊断器所有相关
+   DOM(徽章、抽屉、遮罩、toast),仅 GM(?gm=0727)可见。
+   用 !important 防止被组件自身样式覆盖。 */
+body.is-viewer-mode #diag-badge,
+body.is-viewer-mode #diag-drawer,
+body.is-viewer-mode #diag-drawer-overlay,
+body.is-viewer-mode #diag-toast {
+  display: none !important;
+}
+/* ════════ END #diag-badge-gm-only-v1 ════════ */
