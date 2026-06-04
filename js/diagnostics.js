@@ -15,6 +15,8 @@
  * - window.SGDiag.open()        打开抽屉
  * - window.SGDiag.close()       关闭抽屉
  * - window.SGDiag.clearIgnored() 清空忽略列表
+ * #diag-r3r4r5-fix-v1 (2026-06-04): 修复 R3/R4 .find() 误用 breakdown 过滤导致永远漏掉总账块,
+ *                                    R5 不动（无此 bug）。
  */
 
 (function () {
@@ -198,10 +200,16 @@
           const pCurr = (latest.parsed.players || []).find(p => p.slot === slot);
           if (!pPrev || !pCurr) return;
 
-          /* 找本回合该 slot 的"总账块"（resources 非空 + breakdown 为空）*/
+          /* [legacy v1] 原逻辑要求 breakdown 为空,但 v3.41 后明细与总账同块,find 永远返回 undefined
           const totalCh = (latest.parsed.changes || []).find(
             ch => ch.slot === slot && ch.resources && Object.keys(ch.resources).length > 0
                   && (!ch.breakdown || Object.keys(ch.breakdown).length === 0)
+          );
+          const delta = totalCh ? totalCh.resources : {};
+          */
+          /* #diag-r3r4r5-fix-v1: 该 slot 的任意 change 块都可能含 resources */
+          const totalCh = (latest.parsed.changes || []).find(
+            ch => ch.slot === slot && ch.resources && Object.keys(ch.resources).length > 0
           );
           const delta = totalCh ? totalCh.resources : {};
 
@@ -239,10 +247,15 @@
           const detail = (latest.parsed.changes || []).find(
             ch => ch.slot === slot && ch.breakdown && Object.keys(ch.breakdown).length > 0
           );
-          /* 总账块：resources 非空 + breakdown 空 */
+          /* [legacy v1] 同 R3,要求 breakdown 空导致永远 find 不到
           const total = (latest.parsed.changes || []).find(
             ch => ch.slot === slot && ch.resources && Object.keys(ch.resources).length > 0
                   && (!ch.breakdown || Object.keys(ch.breakdown).length === 0)
+          );
+          */
+          /* #diag-r3r4r5-fix-v1: 取该 slot 含 resources 的 change 块,detail 和 total 可能是同一对象 */
+          const total = (latest.parsed.changes || []).find(
+            ch => ch.slot === slot && ch.resources && Object.keys(ch.resources).length > 0
           );
           if (!detail || !total) return;
 
