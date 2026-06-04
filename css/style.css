@@ -10223,3 +10223,45 @@ body.fx-off-captured [data-ctype="captured"] {
 body.is-viewer-mode .health-badge-yellow {
   display: none !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20261105b 工单#ach-modal-mobile-safearea-A1
+   战功册模态移动端顶部遮挡修复
+   - 用 dvh 动态视口高度替代 vh，自动避开地址栏
+   - overlay 顶部加 safe-area-inset-top 兜底刘海/状态栏
+   - 保留居中布局，桌面端零影响
+   - 旧规则不删，靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .ach-modal-overlay {
+    padding-top: max(20px, calc(env(safe-area-inset-top) + 16px)) !important;
+    padding-right: 16px !important;
+    padding-bottom: max(20px, calc(env(safe-area-inset-bottom) + 16px)) !important;
+    padding-left: 16px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .ach-modal-overlay .ach-modal {
+    max-width: 440px !important;
+    /* 优先 dvh（动态视口高度，自动避开浏览器 UI），降级到 vh */
+    max-height: 78vh !important;
+    max-height: 78dvh !important;
+    margin: auto !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .ach-modal-overlay {
+    padding-top: max(14px, calc(env(safe-area-inset-top) + 10px)) !important;
+    padding-right: 10px !important;
+    padding-bottom: max(14px, calc(env(safe-area-inset-bottom) + 10px)) !important;
+    padding-left: 10px !important;
+  }
+  .ach-modal-overlay .ach-modal {
+    max-height: 82vh !important;
+    max-height: 82dvh !important;
+  }
+}
+
+/* ╚══ END v20261105b 战功册移动端 safe-area 修复 ════════════ */
