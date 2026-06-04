@@ -605,7 +605,40 @@
       $icon.textContent = '✓';
       $text.textContent = '数据自检通过';
     }
+    updateCopyAllBtn();
   }
+
+  /* ════════ #diag-copy-all-errors-v1 ════════ */
+  /* 同步「复制全部错误」按钮的启用状态、计数徽章、tooltip。
+     每次 renderBadge / renderDrawer 调用后顺带调用一次。 */
+  function updateCopyAllBtn() {
+    const $btn = document.getElementById('diag-copyall');
+    if (!$btn) return;
+    const $cnt = document.getElementById('diag-copyall-count');
+
+    const ignored = loadIgnored();
+    const errors = lastScanResult.issues.filter(
+      it => it.level === 'error' && !ignored.has(it.id)
+    );
+    const n = errors.length;
+
+    if (n > 0) {
+      $btn.disabled = false;
+      $btn.setAttribute('title', `一键复制本回合 ${n} 条错误的核对话术`);
+      if ($cnt) {
+        $cnt.textContent = String(n);
+        $cnt.hidden = false;
+      }
+    } else {
+      $btn.disabled = true;
+      $btn.setAttribute('title', '无异常项可复制');
+      if ($cnt) {
+        $cnt.textContent = '';
+        $cnt.hidden = true;
+      }
+    }
+  }
+  /* ════════ END ════════ */
 
   /* ═══════════════════════════════════════════
      抽屉渲染
@@ -656,6 +689,7 @@
     if (warns.length)  html += renderGroup('警告', warns, true, 'is-warn');
     if (ignoredItems.length) html += renderGroup('已忽略', ignoredItems, false);
     $body.innerHTML = html;
+    updateCopyAllBtn();
   }
 
   function renderGroup(label, items, withActions, extraCls) {
@@ -723,6 +757,47 @@
       scan();
       showToast('已重新检测');
     });
+
+    /* ════════ #diag-copy-all-errors-v1 ════════ */
+    const $copyAll = document.getElementById('diag-copyall');
+    if ($copyAll) $copyAll.addEventListener('click', () => {
+      if ($copyAll.disabled) return;
+      const ignored = loadIgnored();
+      const errors = lastScanResult.issues.filter(
+        it => it.level === 'error' && !ignored.has(it.id)
+      );
+      if (!errors.length) return;
+
+      const round = lastScanResult.round;
+      const head = `【第${round || '未发布'}回合数据核对·共${errors.length}项】`;
+      const body = errors.map(e => e.copy).join('\n\n');
+      const fullText = head + '\n\n' + body;
+
+      const onOk = () => showToast(`已复制 ${errors.length} 条错误`);
+      const onFail = () => showToast('复制失败,请手动复制');
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullText).then(onOk).catch(() => {
+          /* 降级 */
+          fallbackCopyAll(fullText, onOk, onFail);
+        });
+      } else {
+        fallbackCopyAll(fullText, onOk, onFail);
+      }
+    });
+
+    function fallbackCopyAll(text, onOk, onFail) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.top = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); onOk(); }
+      catch (e) { onFail(); }
+      document.body.removeChild(ta);
+    }
+    /* ════════ END ════════ */
 
     if ($body) $body.addEventListener('click', e => {
       const btn = e.target.closest('.diag-action-btn');
