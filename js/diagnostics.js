@@ -20,6 +20,7 @@
  * #diag-r1-r2-r11-fix-v1 (2026-06-04): R1 武将列表不参与跨源查重(改为列表内部自查),
  *                                       R2 includes 单字不抵消 + 加防御日志,R11 整条下线。
  * #diag-r2-currset-fix-v1 (2026-06-04): 修复 R2 collectFrom 闭包硬绑 prevSet 导致 currSet 永远为空。
+ * #diag-r9-r10-remove-v1 (2026-06-04): R9 维护栏偏离 + R10 行动栏消耗偏低 整条下线。
  */
 
 (function () {
@@ -464,112 +465,13 @@
       },
     },
 
-    /* ─────── R9 维护栏偏离持城规模 ─────── */
-    {
-      id: 'R9', name: '维护栏偏离持城规模', level: 'warn', enabled: true,
-      check(rounds, latest) {
-        if (!latest || !latest.parsed) return [];
-        const round = latest.round || 0;
-        const issues = [];
+    /* [legacy v1] R9 维护栏偏离持城规模 — 2026-06-04 下线
+       经验值估算偏差大,警告参考价值低,长期产生噪音。规则定义保留在 git 历史中。
+    */
 
-        ['甲', '乙', '丙'].forEach(slot => {
-          const player = (latest.parsed.players || []).find(p => p.slot === slot);
-          if (!player || !player.cities_list || player.cities_list.length === 0) return;
-
-          /* 经验值估算 */
-          let expGold = 0, expFood = 0;
-          player.cities_list.forEach(c => {
-            const tier = CITY_TIER[getCityLevel(c.name)] || CITY_TIER['郡城'];
-            expGold += tier.gold;
-            expFood += tier.food;
-          });
-          /* 持城膨胀附加 */
-          const n = player.cities_list.length;
-          if (n >= 6)  { expGold += -25 * (Math.min(n,10) - 5);  expFood += -60  * (Math.min(n,10) - 5); }
-          if (n >= 11) { expGold += -50 * (Math.min(n,15) - 10); expFood += -120 * (Math.min(n,15) - 10); }
-          if (n >= 16) { expGold += -100 * (n - 15);             expFood += -250 * (n - 15); }
-
-          /* 实际维护：从详细块的 breakdown 取"维护"分项 */
-          const detail = (latest.parsed.changes || []).find(
-            ch => ch.slot === slot && ch.breakdown
-          );
-          if (!detail) return;
-          const getWeihu = (res) => {
-            const items = (detail.breakdown[res] && detail.breakdown[res].items) || [];
-            const wh = items.find(it => /维护/.test(it.label || ''));
-            return wh ? wh.val : null;
-          };
-          const actGold = getWeihu('金');
-          const actFood = getWeihu('粮');
-          if (actGold == null && actFood == null) return;
-
-          /* 偏离 50% 以上报警，且持城 >= 3 才检查（避免开局误报）*/
-          if (n < 3) return;
-          const deviateGold = actGold != null && Math.abs(actGold - expGold) > Math.abs(expGold) * 0.5;
-          const deviateFood = actFood != null && Math.abs(actFood - expFood) > Math.abs(expFood) * 0.5;
-          if (!deviateGold && !deviateFood) return;
-
-          const parts = [];
-          if (deviateGold) parts.push(`金维护应约 <span class="diag-mark">${expGold}</span>，实际 <span class="diag-mark">${actGold}</span>`);
-          if (deviateFood) parts.push(`粮维护应约 <span class="diag-mark">${expFood}</span>，实际 <span class="diag-mark">${actFood}</span>`);
-
-          issues.push({
-            id: `R9-r${round}-${slot}`,
-            ruleId: 'R9', ruleName: '维护栏偏离持城规模', level: 'warn',
-            body: `${slot}方持城 <span class="diag-mark">${n}</span>，按 M-32 经验值估算${parts.join('；')}。偏离超 50%，建议核对。`,
-            copy: `【第${round}回合数据核对】[R9·维护偏离] ${slot}方持城${n}，按 M-32 经验值估算金维护应约${expGold}/粮约${expFood}，实际写${actGold == null ? '未列' : actGold}/${actFood == null ? '未列' : actFood}。偏离超 50%，请核对。`,
-          });
-        });
-        return issues;
-      },
-    },
-
-    /* ─────── R10 行动栏消耗与持城规模不匹配 ─────── */
-    {
-      id: 'R10', name: '行动栏消耗偏低', level: 'warn', enabled: true,
-      check(rounds, latest) {
-        if (!latest || !latest.parsed) return [];
-        const round = latest.round || 0;
-        const issues = [];
-
-        ['甲', '乙', '丙'].forEach(slot => {
-          const player = (latest.parsed.players || []).find(p => p.slot === slot);
-          if (!player || !player.cities_list) return;
-          const n = player.cities_list.length;
-          if (n < 6) return; /* 持城 < 6 不检查（规则书 M-22 阶梯起点）*/
-
-          const detail = (latest.parsed.changes || []).find(
-            ch => ch.slot === slot && ch.breakdown
-          );
-          if (!detail) return;
-          /* 行动消耗：从金粮 breakdown 中取"行动"分项绝对值 */
-          const getXingdong = (res) => {
-            const items = (detail.breakdown[res] && detail.breakdown[res].items) || [];
-            const xd = items.find(it => /行动|招募|急征|攻城/.test(it.label || ''));
-            return xd ? Math.abs(xd.val) : 0;
-          };
-          const xdGold = getXingdong('金');
-          const xdFood = getXingdong('粮');
-          const goldStock = player.gold || 0;
-          const foodStock = player.food || 0;
-          if (goldStock < 1000 && foodStock < 1000) return; /* 库存太少不检查 */
-
-          const threshold = (goldStock + foodStock) >= 10000 ? 0.05 : 0.02;
-          const total = xdGold + xdFood;
-          const stock = goldStock + foodStock;
-          if (total === 0) return; /* 完全无行动也不检查（可能是休整回合）*/
-          if (total / stock >= threshold) return;
-
-          issues.push({
-            id: `R10-r${round}-${slot}`,
-            ruleId: 'R10', ruleName: '行动栏消耗偏低', level: 'warn',
-            body: `${slot}方持城 <span class="diag-mark">${n}</span>，库存金+粮约 <span class="diag-mark">${stock}</span>，本回合行动消耗仅 <span class="diag-mark">${total}</span>（${(total/stock*100).toFixed(1)}%）。按 M-22 持城膨胀表偏小，可能行动建议规模过低。`,
-            copy: `【第${round}回合数据核对】[R10·行动偏小] ${slot}方持城${n}、库存金粮${stock}，本回合行动消耗${total}（占${(total/stock*100).toFixed(1)}%）。按 M-22 持城阶梯，6+ 城应按 5%起步。请核对建议是否过保守。`,
-          });
-        });
-        return issues;
-      },
-    },
+    /* [legacy v1] R10 行动栏消耗偏低 — 2026-06-04 下线
+       基于持城阶梯的消耗阈值过于机械,与玩家实际节奏脱节。规则定义保留在 git 历史中。
+    */
 
     /* [legacy v1] R11 新登场武将未入数据区 — 启发式判定误报率过高,2026-06-04 下线
        (剧情中武将的字、人名后续句子残片、被截断的人名+动词都会被误判为新武将名)。
