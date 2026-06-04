@@ -540,6 +540,45 @@
        (剧情中武将的字、人名后续句子残片、被截断的人名+动词都会被误判为新武将名)。
        规则定义保留在 git 历史中,需要时可恢复。
     */
+
+    /* ─────── R12 民心越界(>100 或 <0) ─────── */
+    /* #diag-r12-morale-cap-v1 (2026-06-04):
+       依据 M-21【民心阶梯】"民心上限 100,下限 0",
+       GM 漏截断时本规则报黄色警告。
+       仅检测玩家三家(甲/乙/丙),NPC 无民心字段。 */
+    {
+      id: 'R12', name: '民心越界', level: 'warn', enabled: true,
+      check(rounds, latest) {
+        if (!latest || !latest.parsed) return [];
+        const round = latest.round || 0;
+        const issues = [];
+
+        ['甲', '乙', '丙'].forEach(slot => {
+          const p = (latest.parsed.players || []).find(pp => pp.slot === slot);
+          if (!p || p.morale == null) return;  /* 缺数据则跳过该 slot */
+          const morale = Number(p.morale);
+          if (!Number.isFinite(morale)) return;
+
+          if (morale > 100) {
+            const over = morale - 100;
+            issues.push({
+              id: `R12-r${round}-${slot}-over`,
+              ruleId: 'R12', ruleName: '民心越界', level: 'warn',
+              body: `${slot}方<b>民心越界</b>:当前 <span class="diag-mark">${morale}</span>,超出上限 <span class="diag-mark">100</span>(超 ${over})。M-21 规定民心上限 100、下限 0,请截断处理。`,
+              copy: `【第${round}回合数据核对】[R12·民心越界] ${slot}方民心 ${morale},超出上限 100。M-21 规定民心上限 100、下限 0,请截断为 100。`,
+            });
+          } else if (morale < 0) {
+            issues.push({
+              id: `R12-r${round}-${slot}-under`,
+              ruleId: 'R12', ruleName: '民心越界', level: 'warn',
+              body: `${slot}方<b>民心越界</b>:当前 <span class="diag-mark">${morale}</span>,低于下限 <span class="diag-mark">0</span>。M-21 规定民心上限 100、下限 0,请截断处理(并注意 ≤20 可触发叛乱)。`,
+              copy: `【第${round}回合数据核对】[R12·民心越界] ${slot}方民心 ${morale},低于下限 0。M-21 规定民心上限 100、下限 0,请截断为 0(并注意叛乱判定)。`,
+            });
+          }
+        });
+        return issues;
+      },
+    },
   ];
 
   /* ═══════════════════════════════════════════
