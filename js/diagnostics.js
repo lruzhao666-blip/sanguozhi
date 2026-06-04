@@ -17,6 +17,8 @@
  * - window.SGDiag.clearIgnored() 清空忽略列表
  * #diag-r3r4r5-fix-v1 (2026-06-04): 修复 R3/R4 .find() 误用 breakdown 过滤导致永远漏掉总账块,
  *                                    R5 不动（无此 bug）。
+ * #diag-r1-r2-r11-fix-v1 (2026-06-04): R1 武将列表不参与跨源查重(改为列表内部自查),
+ *                                       R2 includes 单字不抵消 + 加防御日志,R11 整条下线。
  */
 
 (function () {
@@ -97,9 +99,30 @@
           if (!name) return;
           (map[name] = map[name] || []).push(loc);
         };
+        /* [legacy v1] 原版把武将列表与守将括号一起塞进 map,导致镜像列表必然误报
         (latest.parsed.players || []).forEach(p => {
           const slot = p.slot || '?';
           (p.generals || []).forEach(g => push(g.name, `${slot}方武将列表`));
+          (p.cities_list || []).forEach(c => {
+            (c.holders || []).forEach(h => push(h, `${slot}方${c.name}守将`));
+          });
+        });
+        */
+        /* #diag-r1-fix-v1: 武将列表是本方在册武将的镜像,按 M-31 必然与守将重复,
+           不参与跨源查重;但列表内部仍需自查重以抓 GM 笔误。 */
+        const _listDupExtras = [];  /* 收集列表内部自查重的多余条目 */
+        (latest.parsed.players || []).forEach(p => {
+          const slot = p.slot || '?';
+          /* 列表内部自查重:同一武将列表出现两次同名即异常 */
+          const seenInList = new Set();
+          (p.generals || []).forEach(g => {
+            if (!g.name) return;
+            if (seenInList.has(g.name)) {
+              _listDupExtras.push({ name: g.name, slot, loc: `${slot}方武将列表(出现2次以上)` });
+            }
+            seenInList.add(g.name);
+          });
+          /* 守将括号正常进 map 参与跨源查重 */
           (p.cities_list || []).forEach(c => {
             (c.holders || []).forEach(h => push(h, `${slot}方${c.name}守将`));
           });
@@ -123,6 +146,15 @@
               copy: `【第${round}回合数据核对】[R1·武将重名] 数据区出现 ${locs.length} 个"${name}"——${locs.join('、')}。请核对该武将真实归属，重发数据区。`,
             });
           }
+        });
+        /* #diag-r1-fix-v1: 武将列表内部自查重的笔误也要报 */
+        _listDupExtras.forEach(d => {
+          issues.push({
+            id: `R1-r${round}-listdup-${d.slot}-${d.name}`,
+            ruleId: 'R1', ruleName: '武将重名', level: 'error',
+            body: `${d.slot}方武将列表中 <b>${escHtml(d.name)}</b> 出现两次以上(同列表内部重复)。`,
+            copy: `【第${round}回合数据核对】[R1·武将重名] ${d.slot}方武将列表中"${d.name}"重复出现,请核对是否为笔误。`,
+          });
         });
         return issues;
       },
@@ -161,10 +193,19 @@
         /* 失踪 = 上回合在 & 本回合不在 & 剧情区也没提到 */
         const rawDigest = latest.parsed.rawDigest || latest.rawContent || '';
         const issues = [];
+        /* #diag-r2-fix-v1: 防御性日志,便于复现时定位 currSet 收集情况 */
+        try {
+          console.debug('[SGDiag R2] currSet size=' + currSet.size,
+            'prevSet size=' + prevSet.size,
+            'round=' + round);
+        } catch (e) {}
         prevSet.forEach(name => {
           if (!name || currSet.has(name)) return;
-          /* 宽松：剧情区提到也算"有交代" */
+          /* [legacy v1] 原版 includes 单字也能抵消,误抵消率高
           if (rawDigest.includes(name)) return;
+          */
+          /* #diag-r2-fix-v1: 仅长度 ≥2 的名字才允许用 includes 抵消,避免"忠""统"这类单字误抵消 */
+          if (name.length >= 2 && rawDigest.includes(name)) return;
           issues.push({
             id: `R2-r${round}-${name}`,
             ruleId: 'R2', ruleName: '武将失踪', level: 'error',
@@ -508,70 +549,10 @@
       },
     },
 
-    /* ─────── R11 新登场武将未入数据区 ─────── */
-    {
-      id: 'R11', name: '新登场武将未入数据区', level: 'warn', enabled: true,
-      check(rounds, latest) {
-        if (!latest || !latest.parsed) return [];
-        const round = latest.round || 0;
-        const rawDigest = latest.parsed.rawDigest || latest.rawContent || '';
-        if (!rawDigest) return [];
-
-        /* 收集本回合"已落点"的所有武将名 */
-        const settled = new Set();
-        (latest.parsed.players || []).forEach(p => {
-          (p.generals || []).forEach(g => settled.add(g.name));
-          (p.cities_list || []).forEach(c => (c.holders || []).forEach(h => settled.add(h)));
-        });
-        (latest.parsed.npcCities || []).forEach(c => (c.holders || []).forEach(h => settled.add(h)));
-        (latest.parsed.transit || []).forEach(t => { if (t.general) settled.add(t.general); });
-        (latest.parsed.world || []).forEach(w => { if (w.name) settled.add(w.name); });
-
-        /* 收集前几回合已出现过的武将（已投放池）*/
-        const known = new Set();
-        rounds.slice(0, -1).forEach(rd => {
-          if (!rd.parsed) return;
-          (rd.parsed.players || []).forEach(p => {
-            (p.generals || []).forEach(g => known.add(g.name));
-            (p.cities_list || []).forEach(c => (c.holders || []).forEach(h => known.add(h)));
-          });
-          (rd.parsed.npcCities || []).forEach(c => (c.holders || []).forEach(h => known.add(h)));
-          (rd.parsed.transit || []).forEach(t => { if (t.general) known.add(t.general); });
-          (rd.parsed.world || []).forEach(w => { if (w.name) known.add(w.name); });
-        });
-
-        /* 从剧情区扫描候选武将名（2-4 字汉字 + 紧邻"」/「/对白/动作动词"）
-           简化策略：扫描所有 2-4 字汉字串，过滤出"看起来像武将名"的——
-           条件：前后不含数字/单位，且至少在 rawDigest 中出现 >=2 次。
-           注：这是粗糙启发式，可能误报，所以归 warn 档。*/
-        const candidateMap = {};
-        const re = /([\u4e00-\u9fa5]{2,4})/g;
-        let m;
-        while ((m = re.exec(rawDigest)) !== null) {
-          const name = m[1];
-          /* 过滤常见非人名词 */
-          if (/[城关山河水军兵将相国王侯帝师法令道路队营寨阵]/.test(name)) continue;
-          candidateMap[name] = (candidateMap[name] || 0) + 1;
-        }
-        const issues = [];
-        Object.entries(candidateMap).forEach(([name, count]) => {
-          if (count < 2) return;
-          if (settled.has(name)) return;
-          if (!known.has(name)) {
-            /* 全新名字 + 剧情多次出现 + 未落数据区 → 候选警告 */
-            /* 进一步过滤：长度 = 2 的太多误报，要求与已知武将姓氏匹配或长度 >= 3 */
-            if (name.length === 2) return;
-            issues.push({
-              id: `R11-r${round}-${name}`,
-              ruleId: 'R11', ruleName: '新登场武将未入数据区', level: 'warn',
-              body: `剧情区出现新名字 <b>${escHtml(name)}</b>（${count} 次），但数据区无落点。若为新登场武将，需补入。`,
-              copy: `【第${round}回合数据核对】[R11·新武将未落点] 剧情区出现"${name}"（${count}次）但数据区无落点。若为新登场武将，请补入对应阵营守将/调度/世界段。`,
-            });
-          }
-        });
-        return issues.slice(0, 5); /* 避免炸太多，限制 5 条 */
-      },
-    },
+    /* [legacy v1] R11 新登场武将未入数据区 — 启发式判定误报率过高,2026-06-04 下线
+       (剧情中武将的字、人名后续句子残片、被截断的人名+动词都会被误判为新武将名)。
+       规则定义保留在 git 历史中,需要时可恢复。
+    */
   ];
 
   /* ═══════════════════════════════════════════
