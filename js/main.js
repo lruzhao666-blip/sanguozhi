@@ -502,8 +502,7 @@
     document.getElementById('btn-publish').addEventListener('click', onPublish);
     document.getElementById('btn-clear-all').addEventListener('click', onClearAll);
     document.getElementById('btn-undo').addEventListener('click', onUndo);
-    const fhc = document.getElementById('btn-force-health-check');
-    if (fhc) fhc.addEventListener('click', onForceHealthCheck);
+    // [health-check-disable-A] 强制 NPC 校验按钮已停用
   }
 
   function onPreview() {
@@ -629,29 +628,6 @@
   // 暴露给历史面板按钮 onclick 调用
   window.__rollbackToRound = onRollbackToRound;
 
-  // ════ #sanguo-npc-inherit-main-v1 主持人手动触发健康校验 ════
-  async function onForceHealthCheck() {
-    if (!state.rounds.length) {
-      showToast('⚠️ 尚无回合数据');
-      return;
-    }
-    // #health-check-trim-v1 全量跑 A1 + B4
-    let _hcReport = { red: [], yellow: [] };
-    try {
-      if (window.SGHealthCheck && typeof window.SGHealthCheck.run === 'function') {
-        _hcReport = window.SGHealthCheck.run(state.rounds, { fullAudit: true });
-        window.SGHealthCheck.renderAlerts(_hcReport);
-      }
-    } catch (e) { console.warn('[SG] 健康检测失败:', e); }
-
-    const _redCount = (_hcReport.red || []).length;
-    if (_redCount > 0) {
-      showToast('⚠️ 发现 ' + _redCount + ' 处硬伤,见顶部红条与 F12 控制台');
-    } else {
-      showToast('✅ 全量健康校验通过');
-    }
-  }
-
   function updateUndoBtn() {
     const btn = document.getElementById('btn-undo');
     if (!btn) return;
@@ -750,13 +726,7 @@
     }
     updateFooter();
     updateUndoBtn();
-    // #health-check-A1A2B4-v1 自动跑武将唯一性/武将失踪/城池归属冲突检测
-    try {
-      if (window.SGHealthCheck && typeof window.SGHealthCheck.run === 'function') {
-        const _hcReport = window.SGHealthCheck.run(state.rounds, { fullAudit: false });
-        window.SGHealthCheck.renderAlerts(_hcReport);
-      }
-    } catch (e) { console.warn('[SG] 健康检测失败:', e); }
+    // [health-check-disable-A] 健康检测已停用,保留注释占位便于将来回滚
     // M39-5: 广播回合更新事件,触发密报阁重渲染
     try {
       window.dispatchEvent(new CustomEvent('sg-rounds-updated'));
