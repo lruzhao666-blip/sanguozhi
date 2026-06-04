@@ -380,6 +380,69 @@
       },
     },
 
+    /* ─────── R6 兵力不平(城池+调度 ≠ 玩家段总兵) ─────── */
+    /* #diag-r6-troop-balance-v1 (2026-06-04):
+       依据 M-21【兵种△ 强制原则】+【参战兵力默认满编】+【调兵·硬】,
+       玩家段总兵必须 = Σ城池兵种 + Σ调度兵种(slot 归属本玩家)。
+       容差 ±50 兵,吸收 GM 心算零头。
+       仅检测玩家三家(甲/乙/丙),NPC 阵营无总兵概念,跳过。 */
+    {
+      id: 'R6', name: '兵力不平', level: 'error', enabled: true,
+      check(rounds, latest) {
+        if (!latest || !latest.parsed) return [];
+        const round = latest.round || 0;
+        const TOLERANCE = 50; /* 兵力容差(单位:兵) */
+        const SLOT_IDX = { '甲': 0, '乙': 1, '丙': 2 };
+        const issues = [];
+
+        ['甲', '乙', '丙'].forEach(slot => {
+          const slotIdx = SLOT_IDX[slot];
+          const p = (latest.parsed.players || []).find(pp => pp.slot === slot);
+          if (!p || p.troop == null) return;  /* 缺数据则跳过该 slot */
+
+          /* 城池兵种和:遍历 cities_list[i].troops {步:N,弓:N,...} */
+          let cityTroops = 0;
+          (p.cities_list || []).forEach(c => {
+            const troops = c.troops || {};
+            Object.values(troops).forEach(n => {
+              cityTroops += Number(n) || 0;
+            });
+          });
+
+          /* 调度兵种和:transit[].slot===slotIdx 的所有兵种合计 */
+          let transitTroops = 0;
+          (latest.parsed.transit || []).forEach(t => {
+            if (t.slot !== slotIdx) return;
+            const troops = t.troops || {};
+            if (Object.keys(troops).length) {
+              /* v18 多兵种格式 */
+              Object.values(troops).forEach(n => {
+                transitTroops += Number(n) || 0;
+              });
+            } else if (t.troopCount != null) {
+              /* 兜底:旧单兵种字段 */
+              transitTroops += Number(t.troopCount) || 0;
+            }
+          });
+
+          const expected = cityTroops + transitTroops;
+          const actual = Number(p.troop) || 0;
+          const diff = actual - expected;
+
+          if (Math.abs(diff) <= TOLERANCE) return;  /* 容差内通过 */
+
+          const diffSign = diff > 0 ? '+' : '';
+          issues.push({
+            id: `R6-r${round}-${slot}`,
+            ruleId: 'R6', ruleName: '兵力不平', level: 'error',
+            body: `${slot}方<b>兵力不平</b>:玩家段总兵 <span class="diag-mark">${actual}</span>,城池兵和 <span class="diag-mark">${cityTroops}</span> + 调度兵和 <span class="diag-mark">${transitTroops}</span> = <span class="diag-mark">${expected}</span>,差 <span class="diag-mark">${diffSign}${diff}</span>(容差 ±${TOLERANCE})。请核对城池括号或 [调度] 段是否有兵种漏写。`,
+            copy: `【第${round}回合数据核对】[R6·兵力不平] ${slot}方总兵 ${actual},但城池兵和 ${cityTroops} + 调度兵和 ${transitTroops} = ${expected},差 ${diffSign}${diff}。请核对城池括号或 [调度] 段是否有兵种漏写。`,
+          });
+        });
+        return issues;
+      },
+    },
+
     /* ─────── R7 攻城成功未落战利品 ─────── */
     {
       id: 'R7', name: '攻城成功未落战利品', level: 'warn', enabled: true,
