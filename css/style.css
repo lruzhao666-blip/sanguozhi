@@ -10086,3 +10086,111 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ╚══ END v20261008a tab 移动端两行 + 自选展示 + 文案修复 ════ */
+/* ════════════════════════════════════════════════════════════
+   v20261009a 工单#achievement-polish-I1
+   - 移除"展示中"角标(.is-pinned::after 隐藏)
+   - Modal 78vh 紧凑型 + 垂直居中
+   - 传说稀有度扫光特效(120° / 35% / .32 / 8s)
+   - 旧规则不删,靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+/* ═══ 1. 移除"展示中"角标 ═══ */
+.ach-modal-overlay .ach-card-i.is-pinned::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* ═══ 2. Modal 78vh 紧凑型 + 垂直居中 ═══ */
+@media (max-width: 720px) {
+  .ach-modal-overlay {
+    padding: 16px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .ach-modal-overlay .ach-modal {
+    max-width: 440px !important;
+    max-height: 78vh !important;
+    margin: auto !important;
+    margin-top: auto !important;
+  }
+}
+
+/* 极窄屏(<= 380px)兜底 */
+@media (max-width: 380px) {
+  .ach-modal-overlay {
+    padding: 12px !important;
+  }
+  .ach-modal-overlay .ach-modal {
+    max-height: 80vh !important;
+  }
+}
+
+/* ═══ 3. 传说稀有度扫光 · 玩家卡徽章 ═══ */
+.pcard.pcard-v4 .ach-title.rar-diamond {
+  position: relative !important;
+  overflow: hidden !important;
+}
+.pcard.pcard-v4 .ach-title.rar-diamond::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -60% !important;
+  width: 35% !important;
+  height: 100% !important;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255,235,200,.32) 50%,
+    transparent 65%,
+    transparent 100%
+  ) !important;
+  animation: achScanPill 8s ease-in-out infinite !important;
+  pointer-events: none !important;
+  z-index: 1;
+}
+
+@keyframes achScanPill {
+  0%   { left: -60%; }
+  40%  { left: 140%; }
+  100% { left: 140%; }
+}
+
+/* ═══ 4. 传说稀有度扫光 · 战功册图标盒 ═══ */
+.ach-modal-overlay .ach-card-i.rar-diamond .ach-card-icon {
+  position: relative !important;
+  overflow: hidden !important;
+}
+.ach-modal-overlay .ach-card-i.rar-diamond .ach-card-icon::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -60% !important;
+  width: 35% !important;
+  height: 100% !important;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255,235,200,.32) 50%,
+    transparent 65%,
+    transparent 100%
+  ) !important;
+  animation: achScanIcon 8s ease-in-out infinite !important;
+  pointer-events: none !important;
+  z-index: 1;
+}
+
+@keyframes achScanIcon {
+  0%   { left: -60%; }
+  40%  { left: 140%; }
+  100% { left: 140%; }
+}
+
+/* 仅已解锁的传说卡片才扫光(未解锁灰态不动) */
+.ach-modal-overlay .ach-card-i.rar-diamond.locked .ach-card-icon::after {
+  animation: none !important;
+  display: none !important;
+}
+
+/* ╚══ END v20261009a 角标移除 + Modal 紧凑 + 传说扫光 ════════ */
