@@ -33,6 +33,7 @@
  * v32 (2026-10-05): 工单#achievement-rename-E1 稀有度重命名 — 铜银金钻 → 常规/稀有/史诗/传说 + 炉石标准配色
  * v33 (2026-10-06): 工单#achievement-polish-F1 tab 栏去 emoji + 桌面/移动端排版修复
  * v34 (2026-10-07): 工单#achievement-expand-G1 新增 50 个成就 — 总数 100(武将组合/名城/隐藏剧情向)
+ * v35 (2026-10-08): 工单#achievement-polish-H1 tab 移动端两行 + 自选展示成就 + 文案修复
  */
 
 (function () {
@@ -2968,8 +2969,8 @@
 })();
 
 /* ════════════════════════════════════════════
-   v20261007a 工单#achievement-expand-G1
-   成就系统 v4 · 100 个成就(新增 50:武将组合/名城/史诗里程碑)
+   v20261008a 工单#achievement-polish-H1
+   成就系统 v5 · tab 移动端两行布局 + 自选展示成就 + 文案修复
    - 触发时机：每次 renderAll() 结束自动 scan()
    - 解锁存储：localStorage[`sg-ach-unlocked-{slot}`]
    - Toast 提示：新解锁时弹 b 方案（淡 toast）
@@ -3797,6 +3798,23 @@
   /* ── localStorage 读写 ── */
   function storageKey(slot) { return 'sg-ach-unlocked-' + slot; }
 
+  /* ── 自选展示成就 storageKey ── */
+  function pinKey(slot) { return 'sg-ach-pinned-' + slot; }
+
+  function loadPinned(slot) {
+    try {
+      const code = localStorage.getItem(pinKey(slot));
+      return code || null;
+    } catch (e) { return null; }
+  }
+
+  function savePinned(slot, code) {
+    try {
+      if (code) localStorage.setItem(pinKey(slot), code);
+      else localStorage.removeItem(pinKey(slot));
+    } catch (e) {}
+  }
+
   function loadUnlocked(slot) {
     try {
       const raw = localStorage.getItem(storageKey(slot));
@@ -3876,10 +3894,19 @@
     }
   }
 
-  /* ── 取该 slot 最高稀有度成就（供玩家卡徽章用）── */
+  /* ── 取该 slot 展示成就(优先 pinned,否则最高稀有度)── */
   function getHighestRarity(slot) {
     const unlocked = loadUnlocked(slot);
     if (!unlocked.length) return null;
+
+    // 优先返回玩家自选展示的成就(且必须已解锁)
+    const pinnedCode = loadPinned(slot);
+    if (pinnedCode && unlocked.indexOf(pinnedCode) !== -1) {
+      const pinned = ACHIEVEMENTS.find(a => a.code === pinnedCode);
+      if (pinned) return pinned;
+    }
+
+    // 兜底:返回最稀有
     let best = null;
     unlocked.forEach(code => {
       const ach = ACHIEVEMENTS.find(a => a.code === code);
@@ -3900,6 +3927,7 @@
   function clearAll() {
     for (let i = 0; i < 3; i++) {
       try { localStorage.removeItem(storageKey(i)); } catch (e) {}
+      try { localStorage.removeItem(pinKey(i)); } catch (e) {}
     }
     try { window.dispatchEvent(new CustomEvent('sg-ach-unlocked')); }
     catch (e) {}
@@ -3960,6 +3988,10 @@
     if (unEl) unEl.textContent = unlocked.length;
     if (totalEl) totalEl.textContent = ACHIEVEMENTS.length;
 
+    // 同步更新模态说明条总数
+    const noteTotalEl = document.getElementById('ach-note-total');
+    if (noteTotalEl) noteTotalEl.textContent = ACHIEVEMENTS.length;
+
     // tab 计数：显示「已解锁数 / 总数」
     const totalCnts  = { all: ACHIEVEMENTS.length };
     const unlockedCnts = { all: 0 };
@@ -4012,20 +4044,57 @@
       return a.code.localeCompare(b.code);
     });
 
+    const pinnedCode = loadPinned(_currentSlot);
+
     listEl.innerHTML = sorted.map(a => {
       const isU = unlocked.indexOf(a.code) !== -1;
-      return '<div class="ach-card-i rar-' + a.rar + ' ' + (isU ? 'unlocked' : 'locked') + '">' +
+      const isPinned = isU && (a.code === pinnedCode);
+      // 已解锁卡片才有"设为展示"按钮
+      const pinBtn = isU
+        ? '<button class="ach-pin-btn ' + (isPinned ? 'is-pinned' : '') + '" ' +
+          'data-code="' + _escHtml(a.code) + '" ' +
+          'title="' + (isPinned ? '取消展示' : '设为展示') + '">' +
+            (isPinned ? '★' : '☆') +
+          '</button>'
+        : '';
+      return '<div class="ach-card-i rar-' + a.rar + ' ' + (isU ? 'unlocked' : 'locked') + ' ' +
+              (isPinned ? 'is-pinned' : '') + '">' +
         '<div class="ach-card-icon">' + _escHtml(a.icon) + '</div>' +
         '<div class="ach-card-text">' +
           '<div class="ach-card-name">' + _escHtml(a.name) + '</div>' +
           '<div class="ach-card-desc">' + _escHtml(a.desc) + '</div>' +
         '</div>' +
         '<div class="ach-card-meta">' +
+          pinBtn +
           '<span class="ach-card-rar-tag">' + (RAR_CN[a.rar] || '') + '</span>' +
           '<span class="ach-card-status">' + (isU ? '已达成' : '未达成') + '</span>' +
         '</div>' +
         '</div>';
     }).join('');
+
+    // 绑定"设为展示"按钮事件(委托到 listEl,只绑一次)
+    if (!listEl._sgPinBound) {
+      listEl._sgPinBound = true;
+      listEl.addEventListener('click', function (ev) {
+        const btn = ev.target.closest('.ach-pin-btn');
+        if (!btn) return;
+        ev.stopPropagation();
+        const code = btn.getAttribute('data-code');
+        if (!code) return;
+        const currPinned = loadPinned(_currentSlot);
+        if (currPinned === code) {
+          // 取消展示
+          savePinned(_currentSlot, null);
+        } else {
+          // 切换为展示
+          savePinned(_currentSlot, code);
+        }
+        // 重渲染列表 + 玩家卡徽章
+        _renderList();
+        try { window.dispatchEvent(new CustomEvent('sg-ach-unlocked')); }
+        catch (e) {}
+      });
+    }
   }
 
   function _escHtml(s) {
