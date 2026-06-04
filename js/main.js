@@ -119,63 +119,11 @@
     const rows = await res.json();
     state.rounds = rows.map(rowToRound).filter(Boolean);
     state.rounds.sort((a, b) => a.round - b.round);
-    applyNpcInheritance();   // #sanguo-npc-inherit-main-v1
     applyWorldInheritance(); // #sanguo-inherit-batch2-v1
     applyPlayerInheritance();// #sanguo-inherit-batch2-v1
     rebuildPlayers();
     if (rows.length) {
       state.lastUpdatedAt = Math.max(...rows.map(r => new Date(r.updated_at || 0).getTime()));
-    }
-  }
-
-  // ════ #sanguo-npc-inherit-main-v1 ════
-  // NPC 段继承:遍历 state.rounds,对标记 npcCitiesInherit 的回合,
-  // 从上一个有完整 [NPC] 的回合拷贝 cityOwnership 中的 NPC 部分。
-  // 同时把 npcCities 数组也补全(虽然 main.js 内部已经直接用 cityOwnership)。
-  function applyNpcInheritance() {
-    let lastNpcSnapshot = null;  // 最近一个完整 [NPC] 的 cityOwnership 中 NPC 部分
-
-    for (let i = 0; i < state.rounds.length; i++) {
-      const rd = state.rounds[i];
-      const p = rd.parsed;
-      const isInherit = p.npcCitiesInherit === true;
-      const roundNum = rd.round || 0;
-
-      if (!isInherit) {
-        // 完整回合:抽取 NPC 部分作为新快照
-        const ownership = p.cityOwnership || {};
-        const npcOnly = {};
-        Object.keys(ownership).forEach(k => {
-          if (ownership[k] && ownership[k].owner === 'npc') {
-            npcOnly[k] = JSON.parse(JSON.stringify(ownership[k]));
-          }
-        });
-
-        lastNpcSnapshot = npcOnly;
-      } else {
-        // 继承回合:把上一份快照合并进当前 cityOwnership
-        if (!lastNpcSnapshot) {
-          console.warn('[SG] R' + roundNum + ' 写了 [NPC] 同上,但无上回合快照,跳过继承');
-          continue;
-        }
-        if (!p.cityOwnership) p.cityOwnership = {};
-        Object.keys(lastNpcSnapshot).forEach(k => {
-          // 玩家段已写入的城不要覆盖
-          if (!p.cityOwnership[k] || p.cityOwnership[k].owner === 'npc') {
-            p.cityOwnership[k] = JSON.parse(JSON.stringify(lastNpcSnapshot[k]));
-          }
-        });
-        // 同步补 npcCities 数组(渲染地图时不直接用,但保持数据完整)
-        if (!p.npcCities || !p.npcCities.length) {
-          p.npcCities = Object.keys(lastNpcSnapshot).map(k => ({
-            name: k,
-            faction: lastNpcSnapshot[k].faction || null,
-            holder: lastNpcSnapshot[k].holder || '无',
-            holders: (lastNpcSnapshot[k].holder || '').split('/').filter(Boolean),
-            troops: lastNpcSnapshot[k].troops || {},
-          }));
-        }
-      }
     }
   }
 
@@ -384,7 +332,6 @@
           }
 
           // 抽取顶层 inherit 标记
-          const _npcInherit  = !!(reparsed && reparsed.npcCitiesInherit);
           const _worldInherit = !!(reparsed && reparsed.worldInherit);
 
           // 抽取玩家级 inherit 标记,按 slot 建索引
@@ -418,7 +365,6 @@
             transit:       safeJson(row.livelihood_json,        []),
             changes:       safeJson(row.changes_json,          []),
             cityOwnership: safeJson(row.city_ownership_json,  {}),
-            npcCitiesInherit: _npcInherit,    // #sanguo-inherit-persist-v1
             worldInherit:     _worldInherit,  // #sanguo-inherit-persist-v1
             // livelihood 列已复用为 transit_json,旧路径置空
             livelihood:    [],
