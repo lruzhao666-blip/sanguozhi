@@ -461,7 +461,7 @@ window.SGParser = (function () {
   function _parseCityList(raw) {
     if (!raw || !raw.trim()) return [];
     if (/[（）]/.test(raw)) {
-      console.warn('[SGParser] 城池行含全角括号: ' + raw.slice(0, 60));
+      /* #parser-silence-warns-v1 silenced */
     }
     const result = [];
     // 匹配 城名(内容)，内容可含嵌套括号（不含顶层括号）
@@ -559,7 +559,7 @@ window.SGParser = (function () {
         status = '健康';
       } else if (!VALID_STATUS.includes(status)) {
         // 白名单外的非空状态：记录警告但不丢失武将，默认健康
-        console.warn(`[SGParser] 武将"${name}"状态"${status}"不在白名单，视为健康`);
+        /* #parser-silence-warns-v1 silenced */
         status = '健康';
       }
       // 武将名：2-8 汉字（过滤拼音、英文、残余标点）
@@ -651,7 +651,7 @@ window.SGParser = (function () {
       const m = line.match(re);
       if (!m) {
         // 容错日志:让玩家在 F12 控制台能看到 GM 写错的行
-        console.warn('[SGParser] [调度] 段行格式不符 v3.40 契约,跳过:', line);
+        /* #parser-silence-warns-v1 silenced */
         continue;
       }
       const factionRaw = m[1];
@@ -684,10 +684,10 @@ window.SGParser = (function () {
       let status = m[6];
       if (status === '撤退中') {
         status = '剩1';
-        console.warn('[SGParser] [调度] 段旧词「撤退中」归一化为「剩1」:', line);
+        /* #parser-silence-warns-v1 silenced */
       } else if (STATUS_NORMALIZE[status]) {
         const newStatus = STATUS_NORMALIZE[status];
-        console.warn('[SGParser] [调度] 段旧词「' + status + '」归一化为「' + newStatus + '」:', line);
+        /* #parser-silence-warns-v1 silenced */
         status = newStatus;
       }
 
@@ -856,7 +856,7 @@ window.SGParser = (function () {
     for (const line of lines) {
       const m = line.match(re);
       if (!m) {
-        console.warn('[SGParser] [世界] 段行格式不符 v3.40 契约,跳过:', line);
+        /* #parser-silence-warns-v1 silenced */
         continue;
       }
       const name      = m[1].trim();
@@ -867,12 +867,12 @@ window.SGParser = (function () {
 
       // 旧词「客途」归一化为「在野」
       if (status === '客途') {
-        console.warn('[SGParser] [世界] 段旧词「客途」归一化为「在野」:', line);
+        /* #parser-silence-warns-v1 silenced */
         status = '在野';
       }
 
       if (!VALID_STATUS_W.includes(status)) {
-        console.warn('[SGParser] [世界] 武将"' + name + '"状态"' + status + '"不在白名单,跳过');
+        /* #parser-silence-warns-v1 silenced */
         continue;
       }
 
@@ -1044,7 +1044,7 @@ if (/^产出△/.test(line)) {
       buffs: [{ type, emoji, general: m[3], action: m[4].trim() }]
     });
   } else {
-    console.warn('[SGParser] 产出△ 行不符 v3.18.1 格式:' + line);
+    /* #parser-silence-warns-v1 silenced */
   }
   continue;
 }
