@@ -34,6 +34,9 @@
  * v33 (2026-10-06): 工单#achievement-polish-F1 tab 栏去 emoji + 桌面/移动端排版修复
  * v34 (2026-10-07): 工单#achievement-expand-G1 新增 50 个成就 — 总数 100(武将组合/名城/隐藏剧情向)
  * v35 (2026-10-08): 工单#achievement-polish-H1 tab 移动端两行 + 自选展示成就 + 文案修复
+ * v36 (2026-06-04): 工单#gm-data-only-mode-v1 — GM 录入支持纯数据区修复模式,
+ *                    第一行匹配 [回合] 则视为纯数据;查找该回合号对应剧情区,
+ *                    拼接后 PATCH 替换 raw_content,不改剧情区。
  */
 
 (function () {
@@ -504,11 +507,64 @@
     document.getElementById('btn-undo').addEventListener('click', onUndo);
   }
 
+  // ════ #gm-data-only-mode-v1 ════
+  // 判断 GM 输入是否为"纯数据区模式":去掉首尾空白后,
+  // 第一个非空行匹配 ^\[回合\] 即为纯数据区
+  function _isDataOnlyMode(raw) {
+    if (!raw) return false;
+    const t = String(raw).trim();
+    if (!t) return false;
+    // 找第一行非空内容
+    const firstLine = t.split('\n').find(l => l.trim().length > 0);
+    if (!firstLine) return false;
+    return /^\[回合\]/.test(firstLine.trim());
+  }
+
+  // 从一段完整 raw_content 中切出剧情区(36 等号分隔线之前的部分)
+  // 若无分隔线则返回整段
+  function _extractStoryZone(rawContent) {
+    if (!rawContent) return '';
+    const SEP36 = '='.repeat(36);
+    const idx = rawContent.indexOf(SEP36);
+    if (idx === -1) {
+      // 兜底:整段视为剧情区
+      return rawContent;
+    }
+    // 保留分隔线之前的部分(含末尾换行)
+    return rawContent.slice(0, idx);
+  }
+
   function onPreview() {
+    /* [legacy v1]
     const raw = document.getElementById('gm-content').value.trim();
     if (!raw) { showToast('⚠️ 请先粘贴内容'); return; }
     const parsed = SGParser.parse(raw);
     showParsePreview(parsed);
+    */
+    /* #gm-data-only-mode-v1: 预览也分两路 */
+    const raw = document.getElementById('gm-content').value.trim();
+    if (!raw) { showToast('⚠️ 请先粘贴内容'); return; }
+
+    if (_isDataOnlyMode(raw)) {
+      const headM = raw.match(/\[回合\]\s*\n?\s*第\s*(\d+)\s*回合/);
+      if (!headM) { showToast('⚠️ 纯数据区模式需含「[回合] 第 N 回合」头'); return; }
+      const roundNum = parseInt(headM[1], 10);
+      const existing = state.rounds.find(r => r.round === roundNum);
+      if (!existing) {
+        showToast(`⚠️ 第 ${roundNum} 回合尚未发布,纯数据区模式仅用于修复已有回合`);
+        return;
+      }
+      const storyZone = _extractStoryZone(existing.rawContent || '');
+      const SEP36 = '='.repeat(36);
+      const finalRaw = (storyZone.replace(/\n+$/, '')) + '\n' + SEP36 + '\n' + raw.trim();
+      const parsed = SGParser.parse(finalRaw);
+      parsed.round = roundNum;
+      parsed._dataOnlyMode = true;  // 给 showParsePreview 一个标记
+      showParsePreview(parsed);
+    } else {
+      const parsed = SGParser.parse(raw);
+      showParsePreview(parsed);
+    }
   }
 
   async function onPublish() {
@@ -521,6 +577,7 @@
       ? state.rounds[state.rounds.length - 1].round + 1
       : 1;
 
+    /* [legacy v1] 原版只接受完整剧情+数据;现在分两路:完整模式 vs 纯数据修复模式
     const parsed = SGParser.parse(raw);
     const detectedRound = Number.isInteger(parsed.round) ? parsed.round : parseInt(parsed.round, 10);
     const roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
@@ -533,6 +590,49 @@
     try {
       const rd = { round: roundNum, roundTitle: '', parsed, rawContent: raw };
       await publishRound(rd);
+    */
+    /* #gm-data-only-mode-v1 */
+    const isDataOnly = _isDataOnlyMode(raw);
+    let finalRaw = raw;        // 最终送进 publishRound 的 raw_content
+    let parsed = null;
+    let roundNum = nextRound;
+
+    if (isDataOnly) {
+      // 纯数据区模式:先从数据区里嗅探回合号
+      const headM = raw.match(/\[回合\]\s*\n?\s*第\s*(\d+)\s*回合/);
+      if (!headM) {
+        showToast('⚠️ 纯数据区模式需含「[回合] 第 N 回合」头');
+        return;
+      }
+      roundNum = parseInt(headM[1], 10);
+      // 查找该回合是否已存在
+      const existing = state.rounds.find(r => r.round === roundNum);
+      if (!existing) {
+        showToast(`⚠️ 第 ${roundNum} 回合尚未发布,纯数据区模式仅用于修复已有回合`);
+        return;
+      }
+      // 用旧剧情区 + 新数据区拼接
+      const storyZone = _extractStoryZone(existing.rawContent || '');
+      const SEP36 = '='.repeat(36);
+      // 拼接格式:剧情 + 换行 + 36等号 + 换行 + 数据
+      finalRaw = (storyZone.replace(/\n+$/, '')) + '\n' + SEP36 + '\n' + raw.trim();
+      parsed = SGParser.parse(finalRaw);
+      parsed.round = roundNum;
+    } else {
+      // 完整模式:走原流程
+      parsed = SGParser.parse(raw);
+      const detectedRound = Number.isInteger(parsed.round) ? parsed.round : parseInt(parsed.round, 10);
+      roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
+      parsed.round = roundNum;
+    }
+
+    state.publishing = true;
+    const btn = document.getElementById('btn-publish');
+    btn.disabled = true; btn.textContent = isDataOnly ? '⏳ 修复数据中…' : '⏳ 发布中…';
+
+    try {
+      const rd = { round: roundNum, roundTitle: '', parsed, rawContent: finalRaw };
+      await publishRound(rd);
       await fetchAllRounds();
       renderAll();
       switchTab('arena');
@@ -541,12 +641,19 @@
       document.getElementById('parse-preview').classList.add('hidden');
 
       updateUndoBtn();
-      showToast(`✅ 第 ${roundNum} 回合已发布！`);
+      /* [legacy v1] showToast(`✅ 第 ${roundNum} 回合已发布！`); */
+      /* #gm-data-only-mode-v1: 区分两种模式的成功提示 */
+      showToast(isDataOnly
+        ? `🔧 第 ${roundNum} 回合数据已修复(剧情区保留)`
+        : `✅ 第 ${roundNum} 回合已发布！`);
     } catch (e) {
       console.error('[SG] 发布失败:', e);
-      showToast('❌ 发布失败，请检查网络');
+      /* [legacy v1] showToast('❌ 发布失败，请检查网络'); */
+      /* #gm-data-only-mode-v1 */
+      showToast(isDataOnly ? '❌ 修复失败,请重试' : '❌ 发布失败,请检查网络');
     } finally {
       state.publishing = false;
+      /* [legacy v1] btn.textContent = '🚀 发布回合'; */
       btn.disabled = false; btn.textContent = '🚀 发布回合';
     }
   }
@@ -2562,7 +2669,15 @@
       : 1;
     const detectedRound = Number.isInteger(parsed?.round) ? parsed.round : parseInt(parsed?.round, 10);
     const roundNum = Number.isInteger(detectedRound) && detectedRound > 0 ? detectedRound : nextRound;
+    /* [legacy v1]
     const header = `<div class="pp-item"><strong>🎴 发布后将成为：</strong><span class="pp-ok">第 ${roundNum} 回合</span></div>`;
+    */
+    /* #gm-data-only-mode-v1: 标识当前是完整发布还是数据修复 */
+    const modeBadge = (parsed && parsed._dataOnlyMode)
+      ? `<div class="pp-item"><strong>🔧 模式:</strong><span class="pp-ok" style="color:#f0c060">仅数据区修复(剧情区保留)</span></div>`
+      : `<div class="pp-item"><strong>🎴 模式:</strong><span class="pp-ok">完整回合发布</span></div>`;
+    const header = modeBadge
+      + `<div class="pp-item"><strong>🎴 目标回合:</strong><span class="pp-ok">第 ${roundNum} 回合</span></div>`;
 
     // M39-5: 密报清单 + slots 校验(GM 校验用,不过滤身份)
     const secretsHtml = _buildParsePreviewSecrets(parsed);
