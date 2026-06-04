@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20261105e" />
+  <link rel="stylesheet" href="css/style.css?v=20261110a" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -809,6 +809,35 @@
 
 <div id="toast" class="toast hidden"></div>
 
+<!-- ══ 数据诊断器 v1 #diagnostics-engine-A1 ══ -->
+<div class="diag-badge state-ok is-dot" id="diag-badge" role="button" tabindex="0" aria-label="数据诊断">
+  <span class="diag-badge-icon">✓</span>
+  <span class="diag-badge-text">数据自检通过</span>
+</div>
+
+<div class="diag-drawer-overlay" id="diag-drawer-overlay"></div>
+
+<aside class="diag-drawer" id="diag-drawer" aria-hidden="true">
+  <div class="diag-drawer-head">
+    <div class="diag-drawer-title">
+      <span class="diag-drawer-title-deco"></span>
+      数据诊断
+    </div>
+    <div class="diag-drawer-actions">
+      <button class="diag-rescan-btn" id="diag-rescan">↻ 重新检测</button>
+      <button class="diag-close-btn" id="diag-close" aria-label="关闭">✕</button>
+    </div>
+  </div>
+  <div class="diag-summary" id="diag-summary"></div>
+  <div class="diag-drawer-body" id="diag-drawer-body"></div>
+  <div class="diag-drawer-foot">
+    点击「复制给 GM」可一键拷贝核对话术 · 误报可点「忽略本条」
+  </div>
+</aside>
+
+<div class="diag-toast" id="diag-toast"></div>
+<!-- ══ END #diagnostics-engine-A1 ══ -->
+
 <!-- 行动提醒卡按钮已移除 -->
 
 <div id="tips-overlay" class="tips-overlay hidden" role="dialog" aria-modal="true" aria-label="行动提醒卡">
@@ -836,5 +865,6 @@
 <script src="js/role-login.js?v=v20260601a"></script>
 <script src="js/secret-action.js?v=v20260922b"></script>
 <script src="js/secret-bureau.js?v=v20260601b"></script>
+<script src="js/diagnostics.js?v=20261110a"></script>
 </body>
 </html>
