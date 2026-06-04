@@ -10455,6 +10455,77 @@ body.fx-off-captured [data-ctype="captured"] {
   letter-spacing: .04em;
 }
 .diag-rescan-btn:hover { color: var(--gold-light); border-color: var(--gold); }
+
+/* ════════ #diag-copy-all-errors-v1 一键复制全部错误按钮 ════════ */
+.diag-copyall-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  font-family: var(--font-serif, "Noto Serif SC", serif);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: #d4a843;
+  background: rgba(212, 168, 67, 0.10);
+  border: 1px solid rgba(212, 168, 67, 0.45);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease,
+              color .18s ease, box-shadow .18s ease, opacity .18s ease;
+  user-select: none;
+}
+.diag-copyall-btn:hover:not(:disabled) {
+  background: rgba(212, 168, 67, 0.22);
+  border-color: rgba(212, 168, 67, 0.75);
+  color: #e8c468;
+  box-shadow: 0 0 6px rgba(212, 168, 67, 0.22);
+}
+.diag-copyall-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.diag-copyall-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.diag-copyall-btn .dca-icon {
+  font-size: .82rem;
+  line-height: 1;
+}
+.diag-copyall-btn .dca-label {
+  white-space: nowrap;
+}
+.diag-copyall-btn .dca-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  margin-left: 2px;
+  font-size: .65rem;
+  font-weight: 700;
+  color: #1a0f04;
+  background: #d4a843;
+  border-radius: 8px;
+  line-height: 1;
+}
+.diag-copyall-btn .dca-count[hidden] { display: none; }
+
+/* 移动端紧凑布局(沿用现有断点逻辑)*/
+@media (max-width: 640px) {
+  .diag-copyall-btn {
+    padding: 4px 8px;
+    font-size: .68rem;
+    gap: 4px;
+  }
+  .diag-copyall-btn .dca-label {
+    /* 移动端仅保留图标+计数,标签隐藏以节省抽屉头部空间 */
+    display: none;
+  }
+}
+/* ════════ END #diag-copy-all-errors-v1 ════════ */
 .diag-close-btn {
   background: none;
   border: none;

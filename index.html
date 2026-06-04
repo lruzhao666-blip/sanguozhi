@@ -828,6 +828,12 @@
       数据诊断
     </div>
     <div class="diag-drawer-actions">
+      <button class="diag-copyall-btn" id="diag-copyall" disabled
+              title="无异常项可复制">
+        <span class="dca-icon">📋</span>
+        <span class="dca-label">复制全部错误</span>
+        <span class="dca-count" id="diag-copyall-count" hidden></span>
+      </button>
       <button class="diag-rescan-btn" id="diag-rescan">↻ 重新检测</button>
       <button class="diag-close-btn" id="diag-close" aria-label="关闭">✕</button>
     </div>
@@ -869,6 +875,6 @@
 <script src="js/role-login.js?v=v20260601a"></script>
 <script src="js/secret-action.js?v=v20260922b"></script>
 <script src="js/secret-bureau.js?v=v20260601b"></script>
-<script src="js/diagnostics.js?v=20260604d"></script>
+<script src="js/diagnostics.js?v=20260604e"></script>
 </body>
 </html>
