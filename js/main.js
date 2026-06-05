@@ -205,6 +205,7 @@
           if (!rd.parsed.cityOwnership) rd.parsed.cityOwnership = {};
           const pidx = SLOT_TO_PIDX[slot];
           const playerName = pp.name || prev.name || slot;
+          /* [legacy v1]
           pp.cities_list.forEach((c, ci) => {
             // 不覆盖已存在的玩家段条目(防止本回合内 troopOps 已写入的覆写)
             if (!rd.parsed.cityOwnership[c.name]) {
@@ -216,6 +217,35 @@
                 troops:     c.troops || {},
                 isMulti:    ci > 0,
               };
+            }
+          });
+          */
+          // #player-inherit-override-B2:
+          // 玩家段「同上」对 NPC 段错误占位享有覆盖权,
+          // 仅保护"已被其他玩家占用"的城,防止两家同时声明同一城。
+          // 同步清理 npcCities 里对应的脏数据,避免军报/图例计数错乱。
+          pp.cities_list.forEach((c, ci) => {
+            const existing = rd.parsed.cityOwnership[c.name];
+            const protectedByOtherPlayer = existing
+              && typeof existing.owner === 'string'
+              && existing.owner.startsWith('p')
+              && existing.playerIdx !== pidx;
+
+            if (!protectedByOtherPlayer) {
+              rd.parsed.cityOwnership[c.name] = {
+                owner:      'p' + pidx,
+                playerIdx:  pidx,
+                playerName: playerName,
+                holder:     c.holder || '无',
+                troops:     c.troops || {},
+                isMulti:    ci > 0,
+              };
+              // 同步从 npcCities 中剔除被错误占用的同名条目
+              if (Array.isArray(rd.parsed.npcCities) && rd.parsed.npcCities.length) {
+                rd.parsed.npcCities = rd.parsed.npcCities.filter(
+                  npc => npc && npc.name !== c.name
+                );
+              }
             }
           });
         } else if (pp.citiesInherit && !prev) {
