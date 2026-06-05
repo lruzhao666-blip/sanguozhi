@@ -741,6 +741,66 @@
       },
     },
 
+    /* ─────── R14 在野武将池停滞 ─────── */
+    /* #diag-r14-wild-stagnation-v1 (2026-XX-XX):
+       依据 M-14【随缘投奔·硬频率】"声望低每 6-8 回合必投 1 名"兜底,
+       与 M-25【野外角色】"每局 ≥4-6 位有名野外角色,前两幕必登场 ≥2 位"。
+       
+       检测策略(简化版):
+       - 连续 N=8 回合 [世界] 段中 status='在野' 的武将集合完全无变化
+         (无新增、无离开)
+       - 即按 M-14 最宽松声望低档兜底,8 回合内必有 1 名新人投奔
+       - 触发即 warn,提醒主持人推进访贤事件或补充新在野武将
+       
+       N=8 来自 M-14 兜底,既不过严也不过松。
+       声望是 GM 内部值前端不可见,故按最宽松档兜底,保证零误报。 */
+    {
+      id: 'R14', name: '在野武将池停滞', level: 'warn', enabled: true,
+      check(rounds, latest) {
+        if (!latest) return [];
+        const round = latest.round || 0;
+        const THRESHOLD = 8;  /* M-14 声望低档兜底:6-8 回合,取上界 */
+
+        if (rounds.length < THRESHOLD) return [];  /* 回合不足不报 */
+
+        /* 取最近 THRESHOLD 个回合的"在野"武将集合 */
+        const recent = rounds.slice(-THRESHOLD);
+        const wildSets = recent.map(rd => {
+          const world = (rd.parsed && rd.parsed.world) || [];
+          const wild = world.filter(w => w && w.status === '在野');
+          return new Set(wild.map(w => w.name).filter(Boolean));
+        });
+
+        /* 比较 THRESHOLD 个集合是否完全一致 */
+        const first = wildSets[0];
+        for (let i = 1; i < wildSets.length; i++) {
+          if (wildSets[i].size !== first.size) return [];
+          for (const n of first) {
+            if (!wildSets[i].has(n)) return [];
+          }
+        }
+
+        /* 全部一致:触发警告 */
+        const wildList = Array.from(first);
+        if (!wildList.length) {
+          /* 连续 8 回合都没有任何在野武将,这本身也是停滞 */
+          return [{
+            id: `R14-r${round}-empty`,
+            ruleId: 'R14', ruleName: '在野武将池停滞', level: 'warn',
+            body: `[世界] 段已连续 <span class="diag-mark">${THRESHOLD}</span> 回合无任何"在野"武将。按 M-14 访贤三轨规则,即便声望低档也应每 6-8 回合必有 1 名来投,建议主持人推进访贤事件或安排野外角色登场。`,
+            copy: `【第${round}回合数据核对】[R14·在野池停滞] [世界] 段已连续 ${THRESHOLD} 回合无任何在野武将。按 M-14【随缘投奔·硬频率】规则,声望低档兜底也应每 6-8 回合必投 1 名,请问本回合是否需要推进访贤事件或安排野外角色登场?`,
+          }];
+        }
+
+        return [{
+          id: `R14-r${round}-stagnant`,
+          ruleId: 'R14', ruleName: '在野武将池停滞', level: 'warn',
+          body: `[世界] 段"在野"武将池已连续 <span class="diag-mark">${THRESHOLD}</span> 回合无任何变化(<span class="diag-mark">${wildList.map(n => n).join('、')}</span>)。按 M-14 访贤三轨规则,即便声望低档也应每 6-8 回合必有 1 名来投,建议主持人推进访贤或安排归宿。`,
+          copy: `【第${round}回合数据核对】[R14·在野池停滞] [世界] 段在野武将池(${wildList.join('、')})已连续 ${THRESHOLD} 回合无变化。按 M-14【随缘投奔·硬频率】规则,声望低档兜底也应每 6-8 回合必投 1 名,请问本回合是否需要推进访贤事件或安排在野武将归宿/新人登场?`,
+        }];
+      },
+    },
+
     /* ─────── R15 空城未补人(连续 ≥3 回合 warn / ≥5 回合 error) ─────── */
     /* #diag-r15-empty-city-watch-v1 (2026-XX-XX):
        依据 M-21【无主之城】"无将时守将写「空」,产出 ×0.5,民心 -3。
