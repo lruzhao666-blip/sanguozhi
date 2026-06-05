@@ -881,6 +881,46 @@
   //  - 空态:整个 <details> 加 .hidden,连标题都不显示
   //  - 有内容:显示但不主动 open(默认 closed,由 HTML 已删 open 属性保证)
   //  - 不再渲染 .pc-battle-empty 占位
+  // ─────────────────────────────────────────
+  // 调度行兵种显示辅助 v1 #transit-multitroop-display-fix-v1
+  // 优先读 t.troopEntries(parser v18+,保序数组),
+  // 降级兜底 t.troopType / t.troopCount(单兵种向后兼容)。
+  // 返回示例:
+  //   多兵种 → "步 2300 · 水 1005"
+  //   单兵种 → "步 2300"
+  //   零数据 → ""
+  // ─────────────────────────────────────────
+  function _formatTransitTroops(t) {
+    if (!t) return '';
+    // v18 多兵种保序数组
+    if (Array.isArray(t.troopEntries) && t.troopEntries.length) {
+      const parts = [];
+      t.troopEntries.forEach(e => {
+        if (!e || !e.type) return;
+        const n = Number(e.count) || 0;
+        if (n <= 0) return;
+        parts.push(esc(e.type) + ' ' + n);
+      });
+      if (parts.length) return parts.join(' · ');
+    }
+    // 兜底:t.troops 对象形式(parser v18+ 同时输出)
+    if (t.troops && typeof t.troops === 'object') {
+      const parts = [];
+      Object.keys(t.troops).forEach(k => {
+        const n = Number(t.troops[k]) || 0;
+        if (n <= 0) return;
+        parts.push(esc(k) + ' ' + n);
+      });
+      if (parts.length) return parts.join(' · ');
+    }
+    // 最终兜底:旧单兵种字段
+    if (t.troopType && t.troopCount != null) {
+      const n = Number(t.troopCount) || 0;
+      if (n > 0) return esc(t.troopType) + ' ' + n;
+    }
+    return '';
+  }
+
   function renderPlayerBattles(slot, battles) {
     const wrapEl  = document.getElementById(`pc-battles-${slot}`);
     const listEl  = document.getElementById(`pc-battles-list-${slot}`);
@@ -987,10 +1027,8 @@
       // NPC 行强制红色色条(覆盖默认 march 暗金)
       const npcCls = isNpc ? ' is-npc' : '';
 
-      // 兵种 + 数量(显式 != null,允许 0)
-      const troopStr = (t.troopType && t.troopCount != null)
-        ? `${esc(t.troopType)} ${t.troopCount}`
-        : '';
+      // 兵种 + 数量(多兵种支持,#transit-multitroop-display-fix-v1)
+      const troopStr = _formatTransitTroops(t);
 
       // 主体:武将名 → 路线 (NPC 行武将名前加阵营字角标)
       const factionTag = isNpc && t.faction
@@ -2270,7 +2308,7 @@
               <!-- \${t.note ? \`<span class="jbt-note">\${esc(t.note)}</span>\` : ''} -->
               <!-- v15 (2026-05-26): note 紧贴路径,使用 ↪ 引导符,语义自洽 -->
               ${t.note ? `<span class="jbt-note">↪ ${esc(t.note)}</span>` : ''}
-              <span class="jbt-troop">${esc(t.troopType || '')} ${t.troopCount || 0}</span>
+              <span class="jbt-troop">${_formatTransitTroops(t)}</span>
               <span class="jbt-status">${esc(t.status || '')}</span>
             </div>
           </div>
@@ -2443,8 +2481,8 @@
       const general = String(t.general || '');
       const from    = String(t.from || '');
       const to      = String(t.to || '');
-      const troopT  = String(t.troopType || '');
-      const troopN  = (t.troopCount != null) ? t.troopCount : '';
+      // 兵种字符串(多兵种支持,#transit-multitroop-display-fix-v1)
+      const troopStr = _formatTransitTroops(t);
       const status  = String(t.status || '');
 
       // 阵营色:优先 SGMap.getFactionColor,兜底暗金
@@ -2460,8 +2498,8 @@
           '<span class="world-mil-general">' + esc(general) + '</span>' +
           '<span class="world-mil-route">' + esc(from) + '<span class="arrow">›</span>' + esc(to) + '</span>' +
         '</div>' +
-        (troopT || troopN !== ''
-          ? '<span class="world-mil-troop">' + esc(troopT) + ' <b>' + esc(String(troopN)) + '</b></span>'
+        (troopStr
+          ? '<span class="world-mil-troop">' + troopStr + '</span>'
           : '') +
         _renderWorldStatus(status) +
       '</div>';
