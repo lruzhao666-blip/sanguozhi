@@ -580,6 +580,167 @@
       },
     },
 
+    /* ─────── R13 「同上」简写提醒 ─────── */
+    /* #diag-r13-tongshang-hint-v1 (2026-XX-XX):
+       依据 M-31【[世界] / 玩家段「同上」简写·硬】,三处独立判定:
+       一·[世界] 段:本回合 world 与"上回合 world 经 remaining-1 后"完全一致
+                   + 非第 1/10/20/30/40/50/60 回合
+                   + 上回合无"剩 1 回合"条目
+                   + 本回合 worldInherit=false
+                   → 建议改写「同上」
+       二·玩家段 城池:同上:本回合 cities_list 与上回合完全一致(含 holder/troops)
+                          + 无城△变化(changes 中该 slot 无 cities 项)
+                          + 无兵种△变化(changes 中该 slot 无 troopOps)
+                          + 该玩家 citiesInherit=false
+                          → 建议改写「同上」
+       三·玩家段 武将:同上:本回合 generals 与上回合完全一致(含 status)
+                          + 该玩家 generalsInherit=false
+                          → 建议改写「同上」
+       仅在数据完全无变化时建议简写,不影响 GM 必要时写完整段。 */
+    {
+      id: 'R13', name: '同上简写提醒', level: 'warn', enabled: true,
+      check(rounds, latest) {
+        if (!latest || rounds.length < 2) return [];
+        const round = latest.round || 0;
+        const prev = rounds[rounds.length - 2];
+        if (!prev || !prev.parsed) return [];
+        const issues = [];
+
+        /* ── 工具:深比较两个对象/数组(用于 cities_list / generals / world) ── */
+        function deepEqual(a, b) {
+          if (a === b) return true;
+          if (a == null || b == null) return a === b;
+          if (typeof a !== typeof b) return false;
+          if (Array.isArray(a)) {
+            if (!Array.isArray(b) || a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) {
+              if (!deepEqual(a[i], b[i])) return false;
+            }
+            return true;
+          }
+          if (typeof a === 'object') {
+            const ka = Object.keys(a).sort();
+            const kb = Object.keys(b).sort();
+            if (ka.length !== kb.length) return false;
+            for (let i = 0; i < ka.length; i++) {
+              if (ka[i] !== kb[i]) return false;
+              if (!deepEqual(a[ka[i]], b[ka[i]])) return false;
+            }
+            return true;
+          }
+          return false;
+        }
+
+        /* ── 一·[世界] 段同上检测 ── */
+        (function checkWorldHint() {
+          if (latest.parsed.worldInherit) return;  /* 已经写了同上,不提醒 */
+
+          /* 强制完整触发条件检查 */
+          /* 条件 1:首回合或每 10/20/30/40/50/60 回合 */
+          if (round === 1) return;
+          if (round % 10 === 0 && round <= 60) return;
+
+          /* 条件 2:上回合有"剩 1"条目(本回合必须安排归宿) */
+          const prevWorld = prev.parsed.world || [];
+          const hasRem1 = prevWorld.some(w => {
+            const rem = w.remaining;
+            return rem !== Infinity && rem !== '∞' && Number(rem) === 1;
+          });
+          if (hasRem1) return;
+
+          /* 条件 3:本回合武将进出对账(简化:对比两回合 name 集合) */
+          const currWorld = latest.parsed.world || [];
+          const prevNames = new Set(prevWorld.map(w => w.name).filter(Boolean));
+          const currNames = new Set(currWorld.map(w => w.name).filter(Boolean));
+          if (prevNames.size !== currNames.size) return;
+          for (const n of prevNames) {
+            if (!currNames.has(n)) return;
+          }
+
+          /* 模拟上回合 world 经过 remaining-1 处理后的结果 */
+          const expectedWorld = [];
+          prevWorld.forEach(w => {
+            const copy = Object.assign({}, w);
+            if (copy.remaining === Infinity || copy.remaining === '∞') {
+              expectedWorld.push(copy);
+            } else {
+              const newRem = Number(copy.remaining) - 1;
+              if (newRem > 0) {
+                copy.remaining = newRem;
+                expectedWorld.push(copy);
+              }
+            }
+          });
+
+          /* 比较本回合 world 与 expectedWorld(忽略顺序,按 name 排序后比较) */
+          const sortByName = arr => arr.slice().sort((a, b) =>
+            String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN'));
+          const sortedCurr = sortByName(currWorld);
+          const sortedExp  = sortByName(expectedWorld);
+          if (!deepEqual(sortedCurr, sortedExp)) return;
+
+          /* 全部条件满足:建议改写同上 */
+          issues.push({
+            id: `R13-r${round}-world`,
+            ruleId: 'R13', ruleName: '同上简写提醒', level: 'warn',
+            body: `<b>[世界] 段</b>本回合内容与上回合一致(自动推算 remaining-1 后),且未触发强制完整条件。建议下次写「同上」简写以节省 token。`,
+            copy: `【第${round}回合数据核对】[R13·同上简写] [世界] 段本回合内容与上回合一致(自动推算 remaining-1 后),建议下次可写「[世界] 同上」简写以节省 token(M-31 允许)。`,
+          });
+        })();
+
+        /* ── 二·玩家段 城池:同上 检测 ── */
+        ['甲', '乙', '丙'].forEach(slot => {
+          const pPrev = (prev.parsed.players || []).find(p => p.slot === slot);
+          const pCurr = (latest.parsed.players || []).find(p => p.slot === slot);
+          if (!pPrev || !pCurr) return;
+          if (pCurr.citiesInherit) return;  /* 已写同上 */
+
+          /* 检查本回合 changes 是否含该 slot 的 cities/troopOps */
+          const slotChange = (latest.parsed.changes || []).find(ch => ch.slot === slot);
+          if (slotChange) {
+            if (Array.isArray(slotChange.cities) && slotChange.cities.length) return;
+            if (Array.isArray(slotChange.troopOps) && slotChange.troopOps.length) return;
+          }
+
+          /* 比较 cities_list 完全一致(含 holder / troops) */
+          const prevList = pPrev.cities_list || [];
+          const currList = pCurr.cities_list || [];
+          if (!deepEqual(prevList, currList)) return;
+          if (!prevList.length) return;  /* 空列表不提示 */
+
+          issues.push({
+            id: `R13-r${round}-${slot}-cities`,
+            ruleId: 'R13', ruleName: '同上简写提醒', level: 'warn',
+            body: `${slot}方<b>城池行</b>本回合与上回合完全一致(守将/兵种均未变),且本回合无城△、无兵种△变化。建议下次写「城池:同上」简写。`,
+            copy: `【第${round}回合数据核对】[R13·同上简写] ${slot}方城池行本回合与上回合完全一致,建议下次可写「城池:同上」简写以节省 token(M-31 允许)。`,
+          });
+        });
+
+        /* ── 三·玩家段 武将:同上 检测 ── */
+        ['甲', '乙', '丙'].forEach(slot => {
+          const pPrev = (prev.parsed.players || []).find(p => p.slot === slot);
+          const pCurr = (latest.parsed.players || []).find(p => p.slot === slot);
+          if (!pPrev || !pCurr) return;
+          if (pCurr.generalsInherit) return;  /* 已写同上 */
+
+          /* 比较 generals 完全一致(含 status) */
+          const prevGens = pPrev.generals || [];
+          const currGens = pCurr.generals || [];
+          if (!deepEqual(prevGens, currGens)) return;
+          if (!prevGens.length) return;  /* 空列表不提示 */
+
+          issues.push({
+            id: `R13-r${round}-${slot}-generals`,
+            ruleId: 'R13', ruleName: '同上简写提醒', level: 'warn',
+            body: `${slot}方<b>武将行</b>本回合与上回合完全一致(姓名/状态均未变)。建议下次写「武将:同上」简写。`,
+            copy: `【第${round}回合数据核对】[R13·同上简写] ${slot}方武将行本回合与上回合完全一致,建议下次可写「武将:同上」简写以节省 token(M-31 允许)。`,
+          });
+        });
+
+        return issues;
+      },
+    },
+
     /* ─────── R15 空城未补人(连续 ≥3 回合 warn / ≥5 回合 error) ─────── */
     /* #diag-r15-empty-city-watch-v1 (2026-XX-XX):
        依据 M-21【无主之城】"无将时守将写「空」,产出 ×0.5,民心 -3。
