@@ -2511,32 +2511,36 @@
       ? '<span class="world-bat-city">' + esc(b.city) + '</span>'
       : '';
 
-    const lossHtml = (b.attacker_loss != null || b.defender_loss != null)
-      ? '<div class="world-bat-loss">伤亡:' +
-          '<span class="wbl-num">攻 ' + (b.attacker_loss != null ? b.attacker_loss : '?') + '</span>' +
-          '<span class="wbl-sep">·</span>' +
-          '<span class="wbl-num">守 ' + (b.defender_loss != null ? b.defender_loss : '?') + '</span>' +
-        '</div>'
-      : '';
-
     const atkStyle = '--wb-atk-c:' + atkColor.glow + ';--wb-atk-bg:' + atkColor.film + ';--wb-atk-bd:' + atkColor.stroke;
     const defStyle = '--wb-def-c:' + defColor.glow + ';--wb-def-bg:' + defColor.film + ';--wb-def-bd:' + defColor.stroke;
 
+    const atkLoss = b.attacker_loss != null
+      ? '<div class="world-bat-loss-cell"><span class="wbl-role">攻</span><span class="wbl-val">-' + b.attacker_loss + '</span></div>'
+      : '';
+    const defLoss = b.defender_loss != null
+      ? '<div class="world-bat-loss-cell"><span class="wbl-role">守</span><span class="wbl-val">-' + b.defender_loss + '</span></div>'
+      : '';
+
     return '<div class="world-bat-row" data-result="' + resultCls + '">' +
       '<div class="world-bat-main">' +
-        '<span class="world-bat-side world-bat-atk" style="' + atkStyle + '">' +
-          '<span class="world-bat-badge" data-side="atk">' + esc(atkBadge) + '</span>' +
-          '<span class="world-bat-name">' + esc(atkName) + '</span>' +
-        '</span>' +
+        '<div class="world-bat-col world-bat-col--atk">' +
+          '<span class="world-bat-side world-bat-atk" style="' + atkStyle + '">' +
+            '<span class="world-bat-badge" data-side="atk">' + esc(atkBadge) + '</span>' +
+            '<span class="world-bat-name">' + esc(atkName) + '</span>' +
+          '</span>' +
+          atkLoss +
+        '</div>' +
         '<span class="world-bat-arrow">›</span>' +
-        '<span class="world-bat-side world-bat-def" style="' + defStyle + '">' +
-          '<span class="world-bat-badge" data-side="def">' + esc(defBadge) + '</span>' +
-          '<span class="world-bat-name">' + esc(defName) + '</span>' +
-        '</span>' +
+        '<div class="world-bat-col world-bat-col--def">' +
+          '<span class="world-bat-side world-bat-def" style="' + defStyle + '">' +
+            '<span class="world-bat-badge" data-side="def">' + esc(defBadge) + '</span>' +
+            '<span class="world-bat-name">' + esc(defName) + '</span>' +
+          '</span>' +
+          defLoss +
+        '</div>' +
         cityHtml +
         '<span class="world-bat-result">' + esc(result) + '</span>' +
       '</div>' +
-      lossHtml +
     '</div>';
   }
 
