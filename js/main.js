@@ -2425,13 +2425,13 @@
     const parsed = (latest && latest.parsed) ? latest.parsed : {};
     const world   = Array.isArray(parsed.world)   ? parsed.world   : [];
     const transit = Array.isArray(parsed.transit) ? parsed.transit : [];
+    const battles = Array.isArray(parsed.battles) ? parsed.battles : [];
 
     // ── 武将动态:整段 world 数组 ──
     _renderWorldGen(genList, genCnt, world);
 
-    // ── 烽烟:全部调度都并入(NPC 与玩家)#world-mil-include-players-v1 ──
-    // 玩家调度同时显示在玩家卡里,烽烟段作为"天下兵马"全局总览,允许重复。
-    _renderWorldMil(milList, milCnt, transit);
+    // ── 烽烟:全部调度都并入(NPC 与玩家)+ 战况结算 ──
+    _renderWorldMil(milList, milCnt, transit, battles);
   }
 
   // 武将动态排序:剩余升序,∞ 排尾,同剩余按状态权重
@@ -2478,6 +2478,9 @@
     return { factionLabel: fac, factionColor: color };
   }
 
+  // 武将动态折叠阈值
+  const WORLD_GEN_FOLD_LIMIT = 6;
+
   function _renderWorldGen(listEl, cntEl, data) {
     cntEl.textContent = data.length;
     if (!data.length) {
@@ -2485,7 +2488,7 @@
       return;
     }
     const sorted = _sortWorldGen(data);
-    listEl.innerHTML = sorted.map(g => {
+    const rowsHtml = sorted.map(g => {
       const status = String(g.status || '');
       const name   = String(g.name || '');
       const loc    = String(g.location || '');
@@ -2499,40 +2502,175 @@
         _renderWorldRem(rem) +
       '</div>';
     }).join('');
+
+    // 折叠机制
+    if (sorted.length <= WORLD_GEN_FOLD_LIMIT) {
+      listEl.innerHTML = rowsHtml;
+      return;
+    }
+    const overflow = sorted.length - WORLD_GEN_FOLD_LIMIT;
+    listEl.innerHTML =
+      '<div class="world-fold-wrap" data-fold-collapsed="1">' +
+        rowsHtml +
+        '<button class="world-fold-btn" type="button" data-fold-action="toggle">' +
+          '<span class="wfb-text-collapsed">▼ 展开剩余 ' + overflow + ' 位</span>' +
+          '<span class="wfb-text-expanded">▲ 收起</span>' +
+        '</button>' +
+      '</div>';
+    _bindWorldFoldBtn(listEl);
   }
 
-  function _renderWorldMil(listEl, cntEl, data) {
-    cntEl.textContent = data.length;
-    if (!data.length) {
+  // 烽烟折叠阈值
+  const WORLD_MIL_FOLD_LIMIT = 4;
+  const WORLD_BAT_FOLD_LIMIT = 3;
+
+  function _renderWorldMil(listEl, cntEl, transitData, battlesData) {
+    const transit = Array.isArray(transitData) ? transitData : [];
+    const battles = Array.isArray(battlesData) ? battlesData : [];
+
+    // 顶部计数:N 队 · M 战(战况为 0 时省略)
+    let cntText = transit.length + ' 队';
+    if (battles.length > 0) cntText += ' · ' + battles.length + ' 战';
+    cntEl.textContent = cntText;
+
+    // 双空 → 整段空态
+    if (!transit.length && !battles.length) {
       listEl.innerHTML = '<div class="world-empty">四境无兵动</div>';
       return;
     }
-    listEl.innerHTML = data.map(t => {
-      // 势力展示信息(玩家走 P_COLOR,NPC 走 getFactionColor)
-      // #world-mil-include-players-v1
-      const side = _getWorldMilSide(t);
-      const faction = side.factionLabel;
-      const mc      = side.factionColor;
 
-      const general = String(t.general || '');
-      const from    = String(t.from || '');
-      const to      = String(t.to || '');
-      // 兵种字符串(多兵种支持,#transit-multitroop-display-fix-v1)
-      const troopStr = _formatTransitTroops(t);
-      const status  = String(t.status || '');
+    const out = [];
 
-      return '<div class="world-mil-row" style="--wm-c:' + mc + '">' +
-        '<span class="world-mil-faction">' + esc(faction) + '</span>' +
-        '<div class="world-mil-main">' +
-          '<span class="world-mil-general">' + esc(general) + '</span>' +
-          '<span class="world-mil-route">' + esc(from) + '<span class="arrow">›</span>' + esc(to) + '</span>' +
-        '</div>' +
-        (troopStr
-          ? '<span class="world-mil-troop">' + troopStr + '</span>'
-          : '') +
-        _renderWorldStatus(status) +
-      '</div>';
-    }).join('');
+    // ── 兵马调度段 ──
+    out.push('<div class="world-subsec">');
+    out.push('<h5 class="world-subsec-title">兵马调度</h5>');
+    if (transit.length === 0) {
+      out.push('<div class="world-empty world-empty--inline">本回合无调度</div>');
+    } else {
+      const milRows = transit.map(t => _buildWorldMilRow(t)).join('');
+      if (transit.length <= WORLD_MIL_FOLD_LIMIT) {
+        out.push(milRows);
+      } else {
+        const overflow = transit.length - WORLD_MIL_FOLD_LIMIT;
+        out.push('<div class="world-fold-wrap" data-fold-collapsed="1">');
+        out.push(milRows);
+        out.push('<button class="world-fold-btn" type="button" data-fold-action="toggle">');
+        out.push('<span class="wfb-text-collapsed">▼ 展开剩余 ' + overflow + ' 队</span>');
+        out.push('<span class="wfb-text-expanded">▲ 收起</span>');
+        out.push('</button>');
+        out.push('</div>');
+      }
+    }
+    out.push('</div>');
+
+    // ── 战况结算段(只在有战况时渲染)──
+    if (battles.length > 0) {
+      out.push('<div class="world-subsec world-subsec--bat">');
+      out.push('<h5 class="world-subsec-title">战况结算</h5>');
+      const batRows = battles.map(b => _buildWorldBatRow(b)).join('');
+      if (battles.length <= WORLD_BAT_FOLD_LIMIT) {
+        out.push(batRows);
+      } else {
+        const overflow = battles.length - WORLD_BAT_FOLD_LIMIT;
+        out.push('<div class="world-fold-wrap" data-fold-collapsed="1">');
+        out.push(batRows);
+        out.push('<button class="world-fold-btn" type="button" data-fold-action="toggle">');
+        out.push('<span class="wfb-text-collapsed">▼ 展开剩余 ' + overflow + ' 战</span>');
+        out.push('<span class="wfb-text-expanded">▲ 收起</span>');
+        out.push('</button>');
+        out.push('</div>');
+      }
+      out.push('</div>');
+    }
+
+    listEl.innerHTML = out.join('');
+    _bindWorldFoldBtn(listEl);
+  }
+
+  // 单行调度(从原 _renderWorldMil 拆出,保持渲染逻辑完全一致)
+  function _buildWorldMilRow(t) {
+    const side = _getWorldMilSide(t);
+    const faction = side.factionLabel;
+    const mc      = side.factionColor;
+    const general = String(t.general || '');
+    const from    = String(t.from || '');
+    const to      = String(t.to || '');
+    const troopStr = _formatTransitTroops(t);
+    const status  = String(t.status || '');
+
+    return '<div class="world-mil-row" style="--wm-c:' + mc + '">' +
+      '<span class="world-mil-faction">' + esc(faction) + '</span>' +
+      '<div class="world-mil-main">' +
+        '<span class="world-mil-general">' + esc(general) + '</span>' +
+        '<span class="world-mil-route">' + esc(from) + '<span class="arrow">›</span>' + esc(to) + '</span>' +
+      '</div>' +
+      (troopStr
+        ? '<span class="world-mil-troop">' + troopStr + '</span>'
+        : '') +
+      _renderWorldStatus(status) +
+    '</div>';
+  }
+
+  // 单行战况:攻方→守方 + 城名 + 结果徽章 + 伤亡
+  // 攻守双方徽章色复用 _junbaoGetSideColor / _junbaoGetBadgeText
+  function _buildWorldBatRow(b) {
+    const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
+    const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
+    const atkBadge = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+    const defBadge = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+    const atkName  = _junbaoStripPrefix(b.attacker, atkBadge);
+    const defName  = _junbaoStripPrefix(b.defender, defBadge);
+
+    const result = String(b.result || '');
+    const resultCls = result === '胜' ? 'win'
+                    : result === '负' ? 'lose'
+                    : 'draw';
+
+    const cityHtml = b.city
+      ? '<span class="world-bat-city">' + esc(b.city) + '</span>'
+      : '';
+
+    const lossHtml = (b.attacker_loss != null || b.defender_loss != null)
+      ? '<div class="world-bat-loss">伤亡:' +
+          '<span class="wbl-num">攻 ' + (b.attacker_loss != null ? b.attacker_loss : '?') + '</span>' +
+          '<span class="wbl-sep">·</span>' +
+          '<span class="wbl-num">守 ' + (b.defender_loss != null ? b.defender_loss : '?') + '</span>' +
+        '</div>'
+      : '';
+
+    const atkStyle = '--wb-atk-c:' + atkColor.glow + ';--wb-atk-bg:' + atkColor.film + ';--wb-atk-bd:' + atkColor.stroke;
+    const defStyle = '--wb-def-c:' + defColor.glow + ';--wb-def-bg:' + defColor.film + ';--wb-def-bd:' + defColor.stroke;
+
+    return '<div class="world-bat-row" data-result="' + resultCls + '">' +
+      '<div class="world-bat-main">' +
+        '<span class="world-bat-side world-bat-atk" style="' + atkStyle + '">' +
+          '<span class="world-bat-badge" data-side="atk">' + esc(atkBadge) + '</span>' +
+          '<span class="world-bat-name">' + esc(atkName) + '</span>' +
+        '</span>' +
+        '<span class="world-bat-arrow">›</span>' +
+        '<span class="world-bat-side world-bat-def" style="' + defStyle + '">' +
+          '<span class="world-bat-badge" data-side="def">' + esc(defBadge) + '</span>' +
+          '<span class="world-bat-name">' + esc(defName) + '</span>' +
+        '</span>' +
+        cityHtml +
+        '<span class="world-bat-result">' + esc(result) + '</span>' +
+      '</div>' +
+      lossHtml +
+    '</div>';
+  }
+
+  // 折叠按钮事件绑定(委托到 listEl,幂等)
+  function _bindWorldFoldBtn(listEl) {
+    if (listEl._sgWorldFoldBound) return;
+    listEl._sgWorldFoldBound = true;
+    listEl.addEventListener('click', function (ev) {
+      const btn = ev.target.closest('.world-fold-btn');
+      if (!btn) return;
+      const wrap = btn.closest('.world-fold-wrap');
+      if (!wrap) return;
+      const collapsed = wrap.getAttribute('data-fold-collapsed') === '1';
+      wrap.setAttribute('data-fold-collapsed', collapsed ? '0' : '1');
+    });
   }
 
   // 位置渲染:含 → 时按箭头切分,其他原样输出
