@@ -1037,7 +1037,7 @@ const BONUS_MULT = {
     const bonusLineHtml = bonusKeysArr.length
       ? `<div class="sgt-bonus-line">
            <span class="sgt-bonus-line-lbl">地利</span>
-           <div class="sgt-bonus-line-items">${bonusKeysArr.map(k => `<span>${_esc(k)}</span>`).join('')}</div>
+           <div class="sgt-bonus-line-items">${bonusKeysArr.map(k => `<span>${BONUS_ICON[k] || ''}${_esc(k)}</span>`).join('')}</div>
          </div>`
       : '';
 
