@@ -2268,7 +2268,7 @@
   function _junbaoGetBadgeText(slot, faction) {
     if (slot === 0 || slot === 1 || slot === 2) {
       const pname = (state.players[slot] && state.players[slot].name) || '甲乙丙'[slot];
-      return pname.charAt(0);
+      return pname;
     }
     return faction || '?';
   }
