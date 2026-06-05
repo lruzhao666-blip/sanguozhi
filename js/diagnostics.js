@@ -801,6 +801,167 @@
       },
     },
 
+    /* ─────── R16 治政工程未到期入账 ─────── */
+    /* #diag-r16-project-closure-v1 (2026-XX-XX):
+       依据 M-23【治政工程一次性入账】"投入回合即时扣资源,产出在到期回合一次性入账":
+       - 小工程(投 ≤100 金 / ≤200 粮):3 回合后到期
+       - 中工程(投 100-300 金 / 200-600 粮):5 回合后到期
+       - 大工程(投 >300 金 / >600 粮):8 回合后到期
+
+       检测策略(纯结构化闭环检测,不掺关键词扫描):
+       - 扫所有历史回合 changes[].breakdown['金'/'粮'].items
+       - 投入识别:label 含"兴"字 + "-城名"后缀(如"水利兴-成都")
+       - 到期识别:label 含"成"字 + "-城名"后缀(如"水利成-成都")
+       - 工程档位按投入金额套档(金>200>600 按粮档,二者择重)
+       - 计算预计到期回合 = 投入回合 + 档位
+       - 当前回合 = 预计到期回合 时,扫该回合是否有"工程名-城名"对应的"成"入账
+       - 未找到 → warn(提醒主持人核对是否延期/中断)
+
+       零误报原则:
+       - 仅在"已到期"的回合触发(预计到期回合 = 当前回合时)
+       - 若 GM 注解写法不规范(未带"兴"/"成"字或未带"-城名"后缀)
+         本规则自动跳过,不误报。
+       - 同一工程提示仅触发一次(按工程名+城名+投入回合做指纹) */
+    {
+      id: 'R16', name: '治政工程未到期入账', level: 'warn', enabled: true,
+      check(rounds, latest) {
+        if (!latest || rounds.length < 2) return [];
+        const round = latest.round || 0;
+        const issues = [];
+
+        /* 投入正则:匹配"行动"栏 items 中的"XX兴-城名"模式
+           兼容:"水利兴-成都" / "屯田兴-江夏" / "招贤馆兴-许昌" 等
+           label 形如:"水利兴-成都" 或 "水利兴" */
+        const INVEST_RE = /^(.+?)兴(?:-(.+))?$/;
+        /* 到期正则:"XX成-城名" */
+        const COMPLETE_RE = /^(.+?)成(?:-(.+))?$/;
+
+        /* 工程档位判定(按 M-23 阈值,金粮择重) */
+        function getProjectTier(goldVal, foodVal) {
+          const g = Math.abs(Number(goldVal) || 0);
+          const f = Math.abs(Number(foodVal) || 0);
+          /* 大工程:金>300 或 粮>600 */
+          if (g > 300 || f > 600) return { tier: '大', wait: 8 };
+          /* 中工程:金 100-300 或 粮 200-600 */
+          if (g > 100 || f > 200) return { tier: '中', wait: 5 };
+          /* 小工程:金 ≤100 且 粮 ≤200 */
+          return { tier: '小', wait: 3 };
+        }
+
+        /* 扫描所有历史回合,提取所有"兴"投入记录 */
+        /* invests[] = { roundNum, slot, projectName, cityName, goldVal, foodVal } */
+        const invests = [];
+        rounds.forEach(rd => {
+          const rdRound = rd.round || 0;
+          (rd.parsed.changes || []).forEach(ch => {
+            if (!ch.slot || !ch.breakdown) return;
+            /* 一个工程可能金粮分别落账,要按"工程名-城名"聚合 */
+            const projMap = {};  /* key: projectName||cityName, val: { goldVal, foodVal } */
+
+            ['金', '粮'].forEach(res => {
+              const bd = ch.breakdown[res];
+              if (!bd || !Array.isArray(bd.items)) return;
+              bd.items.forEach(it => {
+                if (!it.label) return;
+                /* note 字段也可能含"兴-城名",优先 label */
+                const lbl = String(it.label || '').trim();
+                const m = lbl.match(INVEST_RE);
+                if (!m) return;
+                const projectName = m[1].trim();
+                const cityName = (m[2] || '').trim();
+                /* 排除明显不是工程的词(如"复兴""中兴")的兜底:
+                   要求 projectName 长度 2-6 字且不含"复/中/振" */
+                if (!projectName || projectName.length < 1 || projectName.length > 8) return;
+                if (/^(复|中|振|重)$/.test(projectName)) return;
+
+                const key = projectName + '|' + cityName;
+                if (!projMap[key]) {
+                  projMap[key] = { projectName, cityName, goldVal: 0, foodVal: 0 };
+                }
+                if (res === '金') projMap[key].goldVal = it.val;
+                if (res === '粮') projMap[key].foodVal = it.val;
+              });
+            });
+
+            Object.values(projMap).forEach(proj => {
+              invests.push({
+                roundNum: rdRound,
+                slot: ch.slot,
+                projectName: proj.projectName,
+                cityName: proj.cityName,
+                goldVal: proj.goldVal,
+                foodVal: proj.foodVal,
+              });
+            });
+          });
+        });
+
+        if (!invests.length) return [];
+
+        /* 扫描所有历史回合,提取所有"成"到期记录 */
+        /* completes 用 Set 存"roundNum|slot|projectName|cityName"指纹 */
+        const completes = new Set();
+        rounds.forEach(rd => {
+          const rdRound = rd.round || 0;
+          (rd.parsed.changes || []).forEach(ch => {
+            if (!ch.slot || !ch.breakdown) return;
+            ['金', '粮'].forEach(res => {
+              const bd = ch.breakdown[res];
+              if (!bd || !Array.isArray(bd.items)) return;
+              bd.items.forEach(it => {
+                if (!it.label) return;
+                const lbl = String(it.label || '').trim();
+                const m = lbl.match(COMPLETE_RE);
+                if (!m) return;
+                const projectName = m[1].trim();
+                const cityName = (m[2] || '').trim();
+                if (!projectName || projectName.length < 1 || projectName.length > 8) return;
+                if (/^(达|功|完|建)$/.test(projectName)) return;  /* 排除"达成/功成"等 */
+                completes.add(rdRound + '|' + ch.slot + '|' + projectName + '|' + cityName);
+              });
+            });
+          });
+        });
+
+        /* 对每条投入,计算预计到期回合,检查是否已入账 */
+        invests.forEach(inv => {
+          const tierInfo = getProjectTier(inv.goldVal, inv.foodVal);
+          const expectedRound = inv.roundNum + tierInfo.wait;
+
+          /* 只在"已到期"的回合提示 */
+          if (expectedRound !== round) return;
+
+          /* 检查到期回合是否有对应"成"入账(允许 ±0,严格匹配) */
+          const fingerprint = round + '|' + inv.slot + '|' + inv.projectName + '|' + inv.cityName;
+          if (completes.has(fingerprint)) return;  /* 已入账,跳过 */
+
+          /* 兜底:不带城名的投入,允许只按"工程名"匹配(忽略城名) */
+          let alsoFound = false;
+          if (!inv.cityName) {
+            for (const fp of completes) {
+              const parts = fp.split('|');
+              if (parts[0] === String(round) && parts[1] === inv.slot && parts[2] === inv.projectName) {
+                alsoFound = true;
+                break;
+              }
+            }
+          }
+          if (alsoFound) return;
+
+          const cityLabel = inv.cityName ? `<b>${inv.cityName}</b>` : '<i>(未注明城名)</i>';
+          const cityLabelCopy = inv.cityName ? inv.cityName : '(未注明城名)';
+          issues.push({
+            id: `R16-r${round}-${inv.slot}-${inv.projectName}-${inv.cityName}-r${inv.roundNum}`,
+            ruleId: 'R16', ruleName: '治政工程未到期入账', level: 'warn',
+            body: `${inv.slot}方第 <span class="diag-mark">${inv.roundNum}</span> 回合在 ${cityLabel} 投入「<b>${inv.projectName}</b>」工程(${tierInfo.tier}工程 / ${tierInfo.wait} 回合到期),按 M-23 本回合应有「${inv.projectName}成-${inv.cityName || '城名'}」入账,但 收支△ 产出栏未找到对应记录。可能延期、被中断或主持人漏写。`,
+            copy: `【第${round}回合数据核对】[R16·工程未入账] ${inv.slot}方第 ${inv.roundNum} 回合在 ${cityLabelCopy} 投入"${inv.projectName}"工程(${tierInfo.tier}工程/${tierInfo.wait}回合到期),按 M-23 本回合应有"${inv.projectName}成-${inv.cityName || '城名'}"入账,但产出栏未找到。请核对:是否延期/被中断,或是漏写?`,
+          });
+        });
+
+        return issues;
+      },
+    },
+
     /* ─────── R15 空城未补人(连续 ≥3 回合 warn / ≥5 回合 error) ─────── */
     /* #diag-r15-empty-city-watch-v1 (2026-XX-XX):
        依据 M-21【无主之城】"无将时守将写「空」,产出 ×0.5,民心 -3。
