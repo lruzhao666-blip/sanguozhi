@@ -921,49 +921,6 @@
     return '';
   }
 
-  function renderPlayerBattles(slot, battles) {
-    const wrapEl  = document.getElementById(`pc-battles-${slot}`);
-    const listEl  = document.getElementById(`pc-battles-list-${slot}`);
-    const countEl = document.getElementById(`pc-battles-count-${slot}`);
-    if (!wrapEl || !listEl || !countEl) return;
-
-    // 过滤：本玩家作为攻方的战斗
-    const mine = (battles || []).filter(b => b.attackerSlot === slot);
-
-    wrapEl.classList.remove('hidden');
-
-    // 空态
-    if (!mine.length) {
-      wrapEl.removeAttribute('open');
-      listEl.innerHTML = '<div class="no-battle">— 本回合无战事 —</div>';
-      countEl.textContent = '0 场';
-      return;
-    }
-
-    // 有内容:显示 details
-    wrapEl.setAttribute('open', '');
-    countEl.textContent = `${mine.length} 场`;
-
-    listEl.innerHTML = mine.map(b => {
-      const resultCls = b.result === '胜' ? 'win'
-                      : b.result === '负' ? 'lose'
-                      : 'draw';
-      // 移除攻守方名字前缀的槽位字"甲/乙/丙"(parser 残留, UI 层不展示)
-      const stripSlot = s => String(s || '').replace(/^[甲乙丙]\s*/, '');
-      const atk = esc(stripSlot(b.attacker));
-      const def = esc(stripSlot(b.defender));
-      const city = b.city ? `<span class="pc-battle-city">${esc(b.city)}</span>` : '';
-      const casuText = (b.attacker_loss != null && b.defender_loss != null) ? `伤亡：攻 ${b.attacker_loss} · 守 ${b.defender_loss}` : '';
-      return `<div class="pc-battle-item" data-result="${resultCls}">
-        <div class="pc-battle-main">
-          <span class="pc-battle-flow">${atk}<span class="pc-battle-arrow">→</span>${def}</span>
-          ${city}
-          <span class="pc-battle-result">${esc(b.result || '')}</span>
-        </div>
-        ${casuText ? `<div class="pc-battle-casu">${casuText}</div>` : ''}
-      </div>`;
-    }).join('');
-  }
 
   // 在途部队嫁接渲染（按 slot 归到对应玩家卡）
   // v20260617a 工单#pcard-v3-fix-1:
@@ -981,76 +938,7 @@
   //   '客驻'   → guest  (蓝色色条)
   //   '剩N' 或其他 → march (暗金色条)
   // NPC 行额外加 .is-npc class,色条强制为红色(NPC 来攻)
-  function renderPlayerTransit(slot, transit) {
-    const wrapEl  = document.getElementById(`pc-transit-${slot}`);
-    const listEl  = document.getElementById(`pc-transit-list-${slot}`);
-    const countEl = document.getElementById(`pc-transit-count-${slot}`);
-    if (!wrapEl || !listEl || !countEl) return;
-
-    // 当前玩家城池名集合(用于 NPC 调度归属判断)
-    const myCities = new Set();
-    const sp = state.players[slot];
-    if (sp && sp.cities_list && sp.cities_list.length) {
-      sp.cities_list.forEach(c => { if (c && c.name) myCities.add(c.name); });
-    } else if (sp && sp.city) {
-      myCities.add(sp.city);
-    }
-
-    // 过滤 + 标记 NPC
-    const mine = (transit || []).map(t => {
-      if (t.slot === slot) return { t, isNpc: false };
-      if (t.slot === null && t.to && myCities.has(t.to)) return { t, isNpc: true };
-      return null;
-    }).filter(Boolean);
-
-    wrapEl.classList.remove('hidden');
-
-    // 空态
-    if (!mine.length) {
-      wrapEl.removeAttribute('open');
-      listEl.innerHTML = '<div class="no-battle">— 本回合无调度 —</div>';
-      countEl.textContent = '0 支';
-      return;
-    }
-
-    // 有内容
-    wrapEl.setAttribute('open', '');
-    countEl.textContent = `${mine.length} 支`;
-
-    listEl.innerHTML = mine.map(({ t, isNpc }) => {
-      // v28 (2026-XX): 对齐 GM 规则书 v3.40 M-29 红线九,
-      // 状态白名单收窄至 4 种;旧词由 parser 归一化处理,UI 不再兜底。
-      const statusCls = t.status === '攻城中' ? 'siege'
-                      : t.status === '交战中' ? 'battle'
-                      : t.status === '客驻'   ? 'resident'
-                      : 'march';  // 剩N 走 march
-      // NPC 行强制红色色条(覆盖默认 march 暗金)
-      const npcCls = isNpc ? ' is-npc' : '';
-
-      // 兵种 + 数量(多兵种支持,#transit-multitroop-display-fix-v1)
-      const troopStr = _formatTransitTroops(t);
-
-      // 主体:武将名 → 路线 (NPC 行武将名前加阵营字角标)
-      const factionTag = isNpc && t.faction
-        ? `<span class="pc-transit-faction">${esc(t.faction)}</span>`
-        : '';
-
-      // 状态文字
-      const statusText = esc(t.status || '');
-
-      // note(尾部备注,小灰字)
-      const noteHtml = t.note ? `<span class="pc-transit-note">${esc(t.note)}</span>` : '';
-
-      return `<div class="pc-transit-item${npcCls}" data-status="${statusCls}">
-        ${factionTag}<span class="pc-transit-general">${esc(t.general || '')}</span>
-        <span class="pc-transit-route">${esc(t.from || '')}<span class="pc-transit-arrow">→</span>${esc(t.to || '')}</span>
-        ${troopStr ? `<span class="pc-transit-troop">${troopStr}</span>` : ''}
-        <span class="pc-transit-status">${statusText}</span>
-        ${noteHtml}
-      </div>`;
-    }).join('');
-  }
-  function renderMap() {
+    function renderMap() {
     const latest       = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
     const latestParsed = latest ? latest.parsed : null;
 
@@ -1903,8 +1791,6 @@
       ? (state.rounds[state.rounds.length - 1].parsed.players || [])
       : [];
     const latest = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
-    const battles = latest && latest.parsed.battles ? latest.parsed.battles : [];
-    const transit = latest && latest.parsed.transit ? latest.parsed.transit : [];
     const changes = latest && latest.parsed.changes ? latest.parsed.changes : [];
 
     // 从最新回合原始文本提取各玩家称号（格式：【玩家名】称号 或 玩家名·称号）
@@ -1946,11 +1832,6 @@
       setTxt(`pcities-${i}`, p.cities != null ? p.cities : '—');
 
       renderGenList(i, p.generals);
-
-      // 战况嫁接到本卡底部
-      renderPlayerBattles(i, battles);
-      // 在途部队嫁接到本卡底部
-      renderPlayerTransit(i, transit);
 
       const noteEl = document.getElementById(`pc-note-${i}`);
       if (noteEl) {

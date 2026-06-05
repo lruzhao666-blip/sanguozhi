@@ -11081,3 +11081,15 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20261110d 工单#world-fonyan-battles-fold ══════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261111a 工单#pcard-remove-battles-transit
+   - 玩家卡「本回合战况」「本回合调度」两段已从 HTML 中移除
+   - 此处仅作兜底:若任何地方仍残留同名 class 节点,统一隐藏
+   - 不删旧的 .pc-battles* / .pc-transit* 装饰样式,保留可回滚性
+   ──────────────────────────────────────────────────────────── */
+.pcard.pcard-v4 .pc-section.pc-battles,
+.pcard.pcard-v4 .pc-section.pc-transit {
+  display: none !important;
+}
+/* ╚══ END v20261111a ══════════════════════════════════════════ */
