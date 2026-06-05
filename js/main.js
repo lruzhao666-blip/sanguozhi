@@ -2057,6 +2057,7 @@
           sum = 0;
         }
 
+        /* [legacy v1] 不含 note,仅渲染 label + val 胶囊
         const itemsHtml = items.length
           ? items.map(it => {
               const cls = it.val > 0 ? 'pos' : (it.val < 0 ? 'neg' : 'zero');
@@ -2064,6 +2065,24 @@
               const valTxt = it.val === 0 ? '±0' : (sign + it.val);
               return '<span class="pcc-item"><span class="pcc-label">' + esc(it.label) +
                      '</span><span class="pcc-val ' + cls + '">' + valTxt + '</span></span>';
+            }).join('')
+          : '<span class="pcc-item"><span class="pcc-label">无变动</span><span class="pcc-val zero">±0</span></span>';
+        */
+
+        /* #changes-note-expose-v1: item.note 存在时,在胶囊后追加副标题元素。
+           note 为空(或字段不存在)时,胶囊渲染与旧版完全一致。
+           CSS 类 .pcc-note 由改动 3 定义。 */
+        const itemsHtml = items.length
+          ? items.map(it => {
+              const cls = it.val > 0 ? 'pos' : (it.val < 0 ? 'neg' : 'zero');
+              const sign = it.val > 0 ? '+' : '';
+              const valTxt = it.val === 0 ? '±0' : (sign + it.val);
+              const noteHtml = it.note
+                ? '<span class="pcc-note">' + esc(it.note) + '</span>'
+                : '';
+              return '<span class="pcc-item"><span class="pcc-label">' + esc(it.label) +
+                     '</span><span class="pcc-val ' + cls + '">' + valTxt + '</span>' +
+                     noteHtml + '</span>';
             }).join('')
           : '<span class="pcc-item"><span class="pcc-label">无变动</span><span class="pcc-val zero">±0</span></span>';
 

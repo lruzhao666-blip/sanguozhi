@@ -1074,29 +1074,61 @@ if (/^产出△/.test(line)) {
           // 格式：金:产出+30,维护-24,明账-10,府库-120,合计-124
           //       民心:赤字-5,合计-5
           //       兵 战损-80,合计-80   （空格分隔也支持）
-          const catM = line.match(/^(金|粮|兵|民心)[：:,，\s]+(.*)/);
-          if (catM) {
-            const cat  = catM[1];
-            const rest = catM[2];
-            const items = [];
-            // 先摘除"合计±N"避免被误拆为 label="计" val=N
-            const restNoTotal = rest.replace(/合计[+-]?\d+,?/g, '');
-            // 匹配分项：中文标签 + 数值。排除纯数字、符号开头的残余
-            const itemRe = /([^\s,，+\-\d·|][^,，·+\-\d]*?)([+-]\d+)/g;
-            let im;
-            while ((im = itemRe.exec(restNoTotal)) !== null) {
-              let lbl = im[1].replace(/[→:：]/g, '').trim();
-              if (lbl === '暗账') lbl = '府库';  // 字段别名统一
-              // 过滤：空标签、完整"合计"词、单字残余"合"/"计"
-              if (lbl && lbl !== '合计' && lbl !== '合' && lbl !== '计' && lbl.length >= 2) {
-                items.push({ label: lbl, val: parseInt(im[2]) });
+            /* [legacy v1] 原版只抓 label+val,丢弃数字后的括号注解
+            const catM = line.match(/^(金|粮|兵|民心)[：:,，\s]+(.*)/);
+            if (catM) {
+              const cat  = catM[1];
+              const rest = catM[2];
+              const items = [];
+              const restNoTotal = rest.replace(/合计[+-]?\d+,?/g, '');
+              const itemRe = /([^\s,，+\-\d·|][^,，·+\-\d]*?)([+-]\d+)/g;
+              let im;
+              while ((im = itemRe.exec(restNoTotal)) !== null) {
+                let lbl = im[1].replace(/[→:：]/g, '').trim();
+                if (lbl === '暗账') lbl = '府库';
+                if (lbl && lbl !== '合计' && lbl !== '合' && lbl !== '计' && lbl.length >= 2) {
+                  items.push({ label: lbl, val: parseInt(im[2]) });
+                }
               }
+              const totalM = rest.match(/合计([+-]?\d+)/);
+              const total  = totalM ? parseInt(totalM[1]) : null;
+              change.breakdown[cat] = { items, total };
+              continue;
             }
-            const totalM = rest.match(/合计([+-]?\d+)/);
-            const total  = totalM ? parseInt(totalM[1]) : null;
-            change.breakdown[cat] = { items, total };
-            continue;
-          }
+            */
+
+            /* #changes-note-expose-v1: 抓"数字后紧跟的括号注解"写入 item.note。
+               宽松规则:紧跟在 [+-]数字 之后(中间允许 0 个空格)的第一个括号
+                       (半角 () 或全角 ()),整段当 note。括号内允许任意字符。
+               GM 写错(漏右括号/写错符号)时,note 取空字符串,不影响 label/val 解析。 */
+            const catM = line.match(/^(金|粮|兵|民心)[：:,，\s]+(.*)/);
+            if (catM) {
+              const cat  = catM[1];
+              const rest = catM[2];
+              const items = [];
+              /* 先摘除"合计±N"(也含其后可能跟的括号),避免干扰主匹配 */
+              const restNoTotal = rest
+                .replace(/合计[+-]?\d+(?:[\(（][^\)）]*[\)）])?,?/g, '');
+              /* 主匹配:label + [+-]数字 + 可选括号注解
+                 第 1 组:label(中文标签,不含分隔符与数字)
+                 第 2 组:[+-]数字
+                 第 3 组(可选):括号注解原文(不含两端括号) */
+              const itemRe =
+                /([^\s,，+\-\d·|][^,，·+\-\d]*?)([+-]\d+)(?:[\(（]([^\)）]*)[\)）])?/g;
+              let im;
+              while ((im = itemRe.exec(restNoTotal)) !== null) {
+                let lbl = im[1].replace(/[→:：]/g, '').trim();
+                if (lbl === '暗账') lbl = '府库';  /* 字段别名统一 */
+                if (lbl && lbl !== '合计' && lbl !== '合' && lbl !== '计' && lbl.length >= 2) {
+                  const note = im[3] ? im[3].trim() : '';
+                  items.push({ label: lbl, val: parseInt(im[2]), note });
+                }
+              }
+              const totalM = rest.match(/合计([+-]?\d+)/);
+              const total  = totalM ? parseInt(totalM[1]) : null;
+              change.breakdown[cat] = { items, total };
+              continue;
+            }
           // 非资源格式行且非新锚点：可能是收支块内的说明文字，直接跳过
           continue;
         }
