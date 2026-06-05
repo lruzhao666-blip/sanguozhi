@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20261110d" />
+  <link rel="stylesheet" href="css/style.css?v=20261110c" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -43,12 +43,6 @@
 ══════════════════════════════════════════ -->
 <section id="tab-arena" class="tab-panel active">
   <div class="arena-wrap">
-
-    <!-- #fog-of-war-v1 战争迷雾状态提示条 -->
-    <div id="fog-banner" class="fog-banner hidden" style="display:none">
-      <span class="fog-banner-icon">🌫</span>
-      <span class="fog-banner-text">战争迷雾已开启 · 仅可查看本方详情</span>
-    </div>
 
     <!-- 空状态 -->
     <div id="arena-empty" class="arena-empty">
@@ -757,11 +751,6 @@
         <div class="gm-actions">
           <button id="btn-preview" class="btn-preview">👁️ 预览解析</button>
           <button id="btn-publish" class="btn-publish">🚀 发布回合</button>
-          <!-- #fog-of-war-v1 战争迷雾 GM 关闭开关 -->
-          <label class="gm-only-control fog-gm-toggle" style="display:inline-flex;align-items:center;gap:6px;margin-left:8px;font-size:.78rem;color:var(--text-sub);cursor:pointer;user-select:none">
-            <input type="checkbox" id="fog-disable-checkbox" style="cursor:pointer">
-            <span>关闭战争迷雾(看全貌)</span>
-          </label>
           <button id="btn-clear-all" class="btn-danger">🗑️ 清空全部记录</button>
         </div>
       </div>
@@ -881,7 +870,7 @@
 <script src="js/tips.js?v=v20260601a"></script>
 <script src="js/generals-tooltip.js?v=v20260601a"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/main.js?v=20261111c"></script>
+<script src="js/main.js?v=20261111b"></script>
 <script src="js/achievement-sync.js?v=20261105a"></script>
 <script src="js/role-login.js?v=v20260601a"></script>
 <script src="js/secret-action.js?v=v20260922b"></script>
