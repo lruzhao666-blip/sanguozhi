@@ -1109,19 +1109,25 @@ if (/^产出△/.test(line)) {
               /* 先摘除"合计±N"(也含其后可能跟的括号),避免干扰主匹配 */
               const restNoTotal = rest
                 .replace(/合计[+-]?\d+(?:[\(（][^\)）]*[\)）])?,?/g, '');
-              /* 主匹配:label + [+-]数字 + 可选括号注解
-                 第 1 组:label(中文标签,不含分隔符与数字)
-                 第 2 组:[+-]数字
-                 第 3 组(可选):括号注解原文(不含两端括号) */
+              /* #changes-note-fix-B1:
+                 alternation 两分支正则,主分支强制吞括号注解,
+                 副分支兜底无注解明细。label 字符类排除括号字符,
+                 防止"行动 (注解) -2500"这类空格变体污染 label。
+                 捕获组:
+                   主分支 m[1]=label, m[2]=val, m[3]=note
+                   副分支 m[4]=label, m[5]=val
+                 取值时用 m[1]||m[4] / m[2]||m[5] 兼容两条路径。 */
               const itemRe =
-                /([^\s,，+\-\d·|][^,，·+\-\d]*?)([+-]\d+)(?:[\(（]([^\)）]*)[\)）])?/g;
+                /([^\s,，+\-\d·|\(\)（）][^,，·+\-\d\(\)（）]*?)([+-]\d+)[\(（]([^\)）]*)[\)）]|([^\s,，+\-\d·|\(\)（）][^,，·+\-\d\(\)（）]*?)([+-]\d+)/g;
               let im;
               while ((im = itemRe.exec(restNoTotal)) !== null) {
-                let lbl = im[1].replace(/[→:：]/g, '').trim();
-                if (lbl === '暗账') lbl = '府库';  /* 字段别名统一 */
+                const rawLbl = im[1] || im[4] || '';
+                const rawVal = im[2] || im[5] || '';
+                let lbl = rawLbl.replace(/[→:：]/g, '').trim();
+                if (lbl === '暗账') lbl = '府库';
                 if (lbl && lbl !== '合计' && lbl !== '合' && lbl !== '计' && lbl.length >= 2) {
                   const note = im[3] ? im[3].trim() : '';
-                  items.push({ label: lbl, val: parseInt(im[2]), note });
+                  items.push({ label: lbl, val: parseInt(rawVal), note });
                 }
               }
               const totalM = rest.match(/合计([+-]?\d+)/);
