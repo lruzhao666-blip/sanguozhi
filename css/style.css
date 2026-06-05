@@ -10815,3 +10815,34 @@ body.is-viewer-mode #diag-toast {
   display: none !important;
 }
 /* ════════ END #diag-badge-gm-only-v1 ════════ */
+
+/* ════════ #changes-note-expose-v1 ════════ */
+/* 收支△ 明细的括号注解副标题。
+   .pcc-note 紧跟在 .pcc-val 之后,作为同一 .pcc-item 内的换行副标题。
+   未带 note 的 item 渲染时不输出 .pcc-note 元素,样式零影响。 */
+.pcc-item {
+  /* 旧 .pcc-item 已存在,本规则只追加 flex 属性使 note 能换行铺底 */
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.pcc-note {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  padding-left: 4px;
+  font-size: 0.7rem;
+  color: var(--text-dim, #888);
+  line-height: 1.4;
+  word-break: break-all;
+  font-family: var(--font-serif, inherit);
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+}
+/* 移动端:进一步压缩字号 */
+@media (max-width: 640px) {
+  .pcc-note {
+    font-size: 0.66rem;
+    padding-left: 2px;
+  }
+}
+/* ════════ END #changes-note-expose-v1 ════════ */
