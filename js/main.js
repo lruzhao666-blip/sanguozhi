@@ -2429,9 +2429,9 @@
     // ── 武将动态:整段 world 数组 ──
     _renderWorldGen(genList, genCnt, world);
 
-    // ── 烽烟:只取 slot===null 的 NPC 调度 ──
-    const npcTransit = transit.filter(t => t && t.slot === null);
-    _renderWorldMil(milList, milCnt, npcTransit);
+    // ── 烽烟:全部调度都并入(NPC 与玩家)#world-mil-include-players-v1 ──
+    // 玩家调度同时显示在玩家卡里,烽烟段作为"天下兵马"全局总览,允许重复。
+    _renderWorldMil(milList, milCnt, transit);
   }
 
   // 武将动态排序:剩余升序,∞ 排尾,同剩余按状态权重
@@ -2445,6 +2445,37 @@
       if (so !== 0) return so;
       return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN');
     });
+  }
+
+  // ─────────────────────────────────────────
+  // 烽烟行势力展示信息 v1 #world-mil-include-players-v1
+  // 玩家(slot=0/1/2)取 state.players[slot].name 与 SGMap.P_COLOR[slot],
+  // NPC(slot=null)取 t.faction 与 SGMap.getFactionColor(faction)。
+  // 返回 { factionLabel, factionColor }。
+  // ─────────────────────────────────────────
+  function _getWorldMilSide(t) {
+    const FALLBACK_COLOR = '#a07830';
+    if (!t) return { factionLabel: '?', factionColor: FALLBACK_COLOR };
+
+    // 玩家调度:slot 为 0/1/2
+    if (t.slot === 0 || t.slot === 1 || t.slot === 2) {
+      const p = state.players[t.slot];
+      const label = (p && p.name) ? p.name : ['甲','乙','丙'][t.slot];
+      let color = FALLBACK_COLOR;
+      if (window.SGMap && SGMap.P_COLOR && SGMap.P_COLOR[t.slot]) {
+        color = SGMap.P_COLOR[t.slot].glow || FALLBACK_COLOR;
+      }
+      return { factionLabel: label, factionColor: color };
+    }
+
+    // NPC 调度:slot === null
+    const fac = String(t.faction || '?');
+    let color = FALLBACK_COLOR;
+    if (fac && window.SGMap && typeof SGMap.getFactionColor === 'function') {
+      const fc = SGMap.getFactionColor(fac);
+      if (fc && fc.glow) color = fc.glow;
+    }
+    return { factionLabel: fac, factionColor: color };
   }
 
   function _renderWorldGen(listEl, cntEl, data) {
@@ -2477,20 +2508,18 @@
       return;
     }
     listEl.innerHTML = data.map(t => {
-      const faction = String(t.faction || '?');
+      // 势力展示信息(玩家走 P_COLOR,NPC 走 getFactionColor)
+      // #world-mil-include-players-v1
+      const side = _getWorldMilSide(t);
+      const faction = side.factionLabel;
+      const mc      = side.factionColor;
+
       const general = String(t.general || '');
       const from    = String(t.from || '');
       const to      = String(t.to || '');
       // 兵种字符串(多兵种支持,#transit-multitroop-display-fix-v1)
       const troopStr = _formatTransitTroops(t);
       const status  = String(t.status || '');
-
-      // 阵营色:优先 SGMap.getFactionColor,兜底暗金
-      let mc = '#a07830';
-      if (window.SGMap && typeof SGMap.getFactionColor === 'function') {
-        const fc = SGMap.getFactionColor(faction);
-        if (fc && fc.glow) mc = fc.glow;
-      }
 
       return '<div class="world-mil-row" style="--wm-c:' + mc + '">' +
         '<span class="world-mil-faction">' + esc(faction) + '</span>' +
