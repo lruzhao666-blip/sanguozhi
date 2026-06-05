@@ -2492,18 +2492,15 @@
     '</div>';
   }
 
-  // 单行战况:攻方徽 + 攻方名 / 箭头 / 守方徽 + 守方名 / 城名 / 伤亡 / 结果徽
-  // 徽章文字/颜色 像素级复用调度行的 _getWorldMilSide:
-  //   - 玩家(slot=0/1/2):取 state.players[slot].name 全名,色走 SGMap.P_COLOR
-  //   - NPC(slot=null):取 faction 原文,色走 SGMap.getFactionColor
-  // 徽章 DOM/class 改用 .world-mil-faction(与调度行同款),确保 CSS 100% 复用
+  // 单行战况:攻方→守方 + 城名 + 结果徽章 + 伤亡
+  // 攻守双方徽章色复用 _junbaoGetSideColor / _junbaoGetBadgeText
   function _buildWorldBatRow(b) {
-    // 攻守双方各组装一个伪 transit 对象,直接调 _getWorldMilSide 拿到统一的 label + color
-    const atkSide = _getWorldMilSide({ slot: b.attackerSlot, faction: b.attackerFaction });
-    const defSide = _getWorldMilSide({ slot: b.defenderSlot, faction: b.defenderFaction });
-
-    const atkName = _junbaoStripPrefix(b.attacker, atkSide.factionLabel);
-    const defName = _junbaoStripPrefix(b.defender, defSide.factionLabel);
+    const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
+    const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
+    const atkBadge = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+    const defBadge = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+    const atkName  = _junbaoStripPrefix(b.attacker, atkBadge);
+    const defName  = _junbaoStripPrefix(b.defender, defBadge);
 
     const result = String(b.result || '');
     const resultCls = result === '胜' ? 'win'
@@ -2515,22 +2512,31 @@
       : '';
 
     const lossHtml = (b.attacker_loss != null || b.defender_loss != null)
-      ? '<span class="world-bat-loss">伤亡 ' +
+      ? '<div class="world-bat-loss">伤亡:' +
           '<span class="wbl-num">攻 ' + (b.attacker_loss != null ? b.attacker_loss : '?') + '</span>' +
           '<span class="wbl-sep">·</span>' +
           '<span class="wbl-num">守 ' + (b.defender_loss != null ? b.defender_loss : '?') + '</span>' +
-        '</span>'
+        '</div>'
       : '';
 
+    const atkStyle = '--wb-atk-c:' + atkColor.glow + ';--wb-atk-bg:' + atkColor.film + ';--wb-atk-bd:' + atkColor.stroke;
+    const defStyle = '--wb-def-c:' + defColor.glow + ';--wb-def-bg:' + defColor.film + ';--wb-def-bd:' + defColor.stroke;
+
     return '<div class="world-bat-row" data-result="' + resultCls + '">' +
-      '<span class="world-mil-faction" style="--wm-c:' + atkSide.factionColor + '">' + esc(atkSide.factionLabel) + '</span>' +
-      '<span class="world-bat-name">' + esc(atkName) + '</span>' +
-      '<span class="world-bat-arrow">›</span>' +
-      '<span class="world-mil-faction" style="--wm-c:' + defSide.factionColor + '">' + esc(defSide.factionLabel) + '</span>' +
-      '<span class="world-bat-name">' + esc(defName) + '</span>' +
-      cityHtml +
+      '<div class="world-bat-main">' +
+        '<span class="world-bat-side world-bat-atk" style="' + atkStyle + '">' +
+          '<span class="world-bat-badge" data-side="atk">' + esc(atkBadge) + '</span>' +
+          '<span class="world-bat-name">' + esc(atkName) + '</span>' +
+        '</span>' +
+        '<span class="world-bat-arrow">›</span>' +
+        '<span class="world-bat-side world-bat-def" style="' + defStyle + '">' +
+          '<span class="world-bat-badge" data-side="def">' + esc(defBadge) + '</span>' +
+          '<span class="world-bat-name">' + esc(defName) + '</span>' +
+        '</span>' +
+        cityHtml +
+        '<span class="world-bat-result">' + esc(result) + '</span>' +
+      '</div>' +
       lossHtml +
-      '<span class="world-bat-result">' + esc(result) + '</span>' +
     '</div>';
   }
 
