@@ -1160,25 +1160,51 @@
     updateCopyAllBtn();
   }
 
-  /* ════════ #diag-copy-all-errors-v1 ════════ */
-  /* 同步「复制全部错误」按钮的启用状态、计数徽章、tooltip。
+  /* ════════ #diag-copyall-warn-include-v1 ════════ */
+  /* 同步「一键复制全部异常」按钮的启用状态、计数徽章、tooltip。
+     升级:错误 + 警告 一并计入,徽章格式 "错误数+警告数"。
      每次 renderBadge / renderDrawer 调用后顺带调用一次。 */
   function updateCopyAllBtn() {
     const $btn = document.getElementById('diag-copyall');
     if (!$btn) return;
     const $cnt = document.getElementById('diag-copyall-count');
 
+    /* [legacy v1] 仅复制错误,警告不参与
     const ignored = loadIgnored();
     const errors = lastScanResult.issues.filter(
       it => it.level === 'error' && !ignored.has(it.id)
     );
     const n = errors.length;
-
     if (n > 0) {
       $btn.disabled = false;
       $btn.setAttribute('title', `一键复制本回合 ${n} 条错误的核对话术`);
+      if ($cnt) { $cnt.textContent = String(n); $cnt.hidden = false; }
+    } else {
+      $btn.disabled = true;
+      $btn.setAttribute('title', '无异常项可复制');
+      if ($cnt) { $cnt.textContent = ''; $cnt.hidden = true; }
+    }
+    */
+
+    /* #diag-copyall-warn-include-v1: 错误 + 警告 一并参与 */
+    const ignored = loadIgnored();
+    const active  = lastScanResult.issues.filter(it => !ignored.has(it.id));
+    const errors  = active.filter(it => it.level === 'error');
+    const warns   = active.filter(it => it.level === 'warn');
+    const eN = errors.length;
+    const wN = warns.length;
+    const total = eN + wN;
+
+    if (total > 0) {
+      $btn.disabled = false;
+      $btn.setAttribute(
+        'title',
+        `一键复制本回合 ${eN} 条错误 + ${wN} 条警告的核对话术`
+      );
       if ($cnt) {
-        $cnt.textContent = String(n);
+        /* 计数徽章格式:错误数+警告数(任一为 0 时退化为单数字) */
+        if (eN > 0 && wN > 0) $cnt.textContent = `${eN}+${wN}`;
+        else                  $cnt.textContent = String(total);
         $cnt.hidden = false;
       }
     } else {
@@ -1190,7 +1216,7 @@
       }
     }
   }
-  /* ════════ END ════════ */
+  /* ════════ END #diag-copyall-warn-include-v1 ════════ */
 
   /* ═══════════════════════════════════════════
      抽屉渲染
@@ -1310,27 +1336,72 @@
       showToast('已重新检测');
     });
 
-    /* ════════ #diag-copy-all-errors-v1 ════════ */
+    /* ════════ #diag-copyall-warn-include-v1 ════════ */
+    /* 升级:错误 + 警告 一并复制,分两段排列(错误在前,警告在后)。
+       徽章标题包含错误数与警告数,toast 同步显示明细。 */
     const $copyAll = document.getElementById('diag-copyall');
     if ($copyAll) $copyAll.addEventListener('click', () => {
       if ($copyAll.disabled) return;
+
+      /* [legacy v1] 仅复制错误
       const ignored = loadIgnored();
       const errors = lastScanResult.issues.filter(
         it => it.level === 'error' && !ignored.has(it.id)
       );
       if (!errors.length) return;
-
       const round = lastScanResult.round;
       const head = `【第${round || '未发布'}回合数据核对·共${errors.length}项】`;
       const body = errors.map(e => e.copy).join('\n\n');
       const fullText = head + '\n\n' + body;
-
       const onOk = () => showToast(`已复制 ${errors.length} 条错误`);
+      */
+
+      /* #diag-copyall-warn-include-v1: 错误 + 警告 一并复制 */
+      const ignored = loadIgnored();
+      const active  = lastScanResult.issues.filter(it => !ignored.has(it.id));
+      const errors  = active.filter(it => it.level === 'error');
+      const warns   = active.filter(it => it.level === 'warn');
+      const eN = errors.length;
+      const wN = warns.length;
+      const total = eN + wN;
+      if (!total) return;
+
+      const round = lastScanResult.round;
+      const roundLabel = round || '未发布';
+
+      /* 标题:含错误数与警告数明细 */
+      let head;
+      if (eN > 0 && wN > 0) {
+        head = `【第${roundLabel}回合数据核对·共${total}项(错误${eN}·警告${wN})】`;
+      } else if (eN > 0) {
+        head = `【第${roundLabel}回合数据核对·共${eN}项(全部错误)】`;
+      } else {
+        head = `【第${roundLabel}回合数据核对·共${wN}项(全部警告)】`;
+      }
+
+      /* 正文:错误段在前,警告段在后,各加一行分隔标题 */
+      const parts = [];
+      if (eN > 0) {
+        parts.push('━━ 错误(必须修正) ━━');
+        parts.push(errors.map(e => e.copy).join('\n\n'));
+      }
+      if (wN > 0) {
+        parts.push('━━ 警告(请核对) ━━');
+        parts.push(warns.map(w => w.copy).join('\n\n'));
+      }
+      const fullText = head + '\n\n' + parts.join('\n\n');
+
+      /* toast 文案 */
+      let okMsg;
+      if (eN > 0 && wN > 0) okMsg = `已复制 ${eN} 错误 + ${wN} 警告`;
+      else if (eN > 0)       okMsg = `已复制 ${eN} 条错误`;
+      else                   okMsg = `已复制 ${wN} 条警告`;
+
+      const onOk = () => showToast(okMsg);
       const onFail = () => showToast('复制失败,请手动复制');
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(fullText).then(onOk).catch(() => {
-          /* 降级 */
           fallbackCopyAll(fullText, onOk, onFail);
         });
       } else {
@@ -1349,7 +1420,7 @@
       catch (e) { onFail(); }
       document.body.removeChild(ta);
     }
-    /* ════════ END ════════ */
+    /* ════════ END #diag-copyall-warn-include-v1 ════════ */
 
     if ($body) $body.addEventListener('click', e => {
       const btn = e.target.closest('.diag-action-btn');
