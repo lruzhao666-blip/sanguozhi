@@ -2411,7 +2411,7 @@
     const battles = Array.isArray(battlesData) ? battlesData : [];
 
     // 顶部计数:N 队 · M 战(战况为 0 时省略)
-    let cntText = transit.length + ' 队';
+    let cntText = '共 ' + transit.length + ' 队';
     if (battles.length > 0) cntText += ' · ' + battles.length + ' 战';
     cntEl.textContent = cntText;
 
