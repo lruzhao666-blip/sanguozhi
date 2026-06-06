@@ -11215,3 +11215,216 @@ body.is-viewer-mode #diag-toast {
   align-items: unset !important;
   gap: unset !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20261114a 工单#gongcheng-pcard-v1 治政工程嵌入玩家卡
+   - 数据源:state.rounds 反推 收支△ 注解
+   - 位置:玩家卡内,本回合收支折叠区下方
+   - 二级折叠:已建成设施(默认收起)
+   ──────────────────────────────────────────────────────────── */
+
+:root {
+  --gc-tier-small: #b8b8b8;
+  --gc-tier-mid:   #d4a843;
+  --gc-tier-big:   #c0392b;
+}
+
+.pcard.pcard-v4 .pc-gongcheng-list {
+  padding: 4px 12px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pcard.pcard-v4 .gc-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 9px 6px 11px;
+  border-left: 2px solid var(--gc-tier-color, var(--gold-dim));
+  border-radius: 0 var(--r) var(--r) 0;
+  background: rgba(0,0,0,.32);
+  transition: background .15s;
+}
+.pcard.pcard-v4 .gc-row:hover { background: rgba(20,12,4,.5); }
+.pcard.pcard-v4 .gc-row[data-tier="small"] { --gc-tier-color: var(--gc-tier-small); }
+.pcard.pcard-v4 .gc-row[data-tier="mid"]   { --gc-tier-color: var(--gc-tier-mid); }
+.pcard.pcard-v4 .gc-row[data-tier="big"]   { --gc-tier-color: var(--gc-tier-big); }
+
+.pcard.pcard-v4 .gc-main {
+  min-width: 0;
+  overflow: hidden;
+}
+.pcard.pcard-v4 .gc-city-project {
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.pcard.pcard-v4 .gc-city { color: var(--gold-light); }
+.pcard.pcard-v4 .gc-sep { color: var(--text-dim); margin: 0 2px; opacity: .6; }
+.pcard.pcard-v4 .gc-project { color: var(--text-main); }
+
+.pcard.pcard-v4 .gc-tier-badge {
+  display: inline-flex;
+  padding: 1px 7px;
+  font-family: var(--font-serif);
+  font-size: .56rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  border-radius: 3px;
+  border: 1px solid var(--gc-tier-color);
+  color: var(--gc-tier-color);
+  background: rgba(0,0,0,.22);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.pcard.pcard-v4 .gc-cost {
+  font-family: var(--font-sans);
+  font-size: .62rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.pcard.pcard-v4 .gc-cost-gold { color: rgba(212,168,67,.7); }
+.pcard.pcard-v4 .gc-cost-food { color: rgba(180,200,140,.7); }
+.pcard.pcard-v4 .gc-cost-sep { color: var(--text-dim); margin: 0 3px; opacity: .5; }
+
+.pcard.pcard-v4 .gc-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 80px;
+}
+.pcard.pcard-v4 .gc-progress-text {
+  font-family: var(--font-serif);
+  font-size: .66rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  letter-spacing: .04em;
+  font-variant-numeric: tabular-nums;
+}
+.pcard.pcard-v4 .gc-progress-text.urgent { color: #d4734a; }
+.pcard.pcard-v4 .gc-progress-bar { display: inline-flex; gap: 1px; }
+.pcard.pcard-v4 .gc-progress-cell {
+  width: 7px;
+  height: 3px;
+  background: rgba(255,255,255,.06);
+  border-radius: 1px;
+  border: 1px solid rgba(212,168,67,.1);
+}
+.pcard.pcard-v4 .gc-progress-cell.done {
+  background: var(--gc-tier-color, var(--gold));
+  border-color: var(--gc-tier-color, var(--gold));
+  box-shadow: 0 0 3px rgba(212,168,67,.3);
+}
+
+/* 已建成设施嵌套折叠 */
+.pcard.pcard-v4 .gc-completed-nest {
+  margin-top: 6px;
+  padding: 5px 0 0;
+  border-top: 1px dashed rgba(212,168,67,.14);
+}
+.pcard.pcard-v4 .gc-completed-nest > summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 4px 3px;
+  font-family: var(--font-serif);
+  font-size: .64rem;
+  color: var(--text-dim);
+  letter-spacing: .12em;
+  transition: color .15s;
+}
+.pcard.pcard-v4 .gc-completed-nest > summary:hover { color: var(--gold-dim); }
+.pcard.pcard-v4 .gc-completed-nest > summary::-webkit-details-marker { display: none; }
+.pcard.pcard-v4 .gc-completed-nest > summary::before {
+  content: '▸';
+  font-size: .58rem;
+  transition: transform .2s;
+  color: var(--text-dim);
+  opacity: .7;
+}
+.pcard.pcard-v4 .gc-completed-nest[open] > summary::before { transform: rotate(90deg); }
+.pcard.pcard-v4 .gc-completed-badge-mini {
+  margin-left: 4px;
+  padding: 0 7px;
+  font-size: .58rem;
+  background: rgba(180,140,60,.1);
+  border-radius: 7px;
+  color: var(--gold-dim);
+  border: 1px solid rgba(180,140,60,.18);
+  letter-spacing: .04em;
+}
+.pcard.pcard-v4 .gc-completed-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 5px 2px 2px;
+}
+.pcard.pcard-v4 .gc-completed-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  font-family: var(--font-serif);
+  font-size: .68rem;
+  background: rgba(212,168,67,.05);
+  border: 1px solid rgba(212,168,67,.15);
+  border-radius: 3px;
+  color: var(--text-sub);
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.pcard.pcard-v4 .gc-completed-item .gc-completed-city {
+  color: var(--gold-dim);
+  font-weight: 700;
+}
+.pcard.pcard-v4 .gc-completed-item .gc-completed-sep {
+  color: var(--text-dim);
+  opacity: .5;
+}
+
+.pcard.pcard-v4 .gc-empty {
+  padding: 12px 6px;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: .7rem;
+  color: var(--text-dim);
+  letter-spacing: .12em;
+  opacity: .55;
+}
+
+/* 移动端:工程行改为两行布局 */
+@media (max-width: 720px) {
+  .pcard.pcard-v4 .gc-row {
+    grid-template-columns: 1fr auto;
+    gap: 3px 8px;
+    padding: 7px 9px 7px 11px;
+  }
+  .pcard.pcard-v4 .gc-main { grid-column: 1; }
+  .pcard.pcard-v4 .gc-tier-badge { grid-column: 2; }
+  .pcard.pcard-v4 .gc-cost,
+  .pcard.pcard-v4 .gc-progress {
+    grid-column: 1 / -1;
+    justify-self: start;
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+    gap: 6px;
+  }
+  .pcard.pcard-v4 .gc-progress {
+    justify-content: space-between;
+    width: 100%;
+  }
+}
+
+/* ╚══ END v20261114a 治政工程嵌入玩家卡 ══════════════════════ */
