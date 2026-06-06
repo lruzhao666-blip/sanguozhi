@@ -11147,11 +11147,16 @@ body.is-viewer-mode #diag-toast {
 
 /* ════════ #changes-note-inline-v1 ════════ */
 /* 工单:收支明细 note 改为 inline 括号灰字,紧贴 val 后面
+   长 note 时 item 整行换行,绝不与合计数字重叠
    覆盖 #changes-note-expose-v1 的 block 样式 */
 
 .pcard-v4 .pcc-item {
+  display: inline-flex !important;
   flex-wrap: nowrap !important;
+  align-items: baseline;
   white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .pcard-v4 .pcc-note {
@@ -11166,7 +11171,8 @@ body.is-viewer-mode #diag-toast {
   letter-spacing: 0.02em !important;
   opacity: 0.85;
   font-weight: 400;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-all;
 }
 
 .pcard-v4 .pcc-note::before {
@@ -11178,11 +11184,14 @@ body.is-viewer-mode #diag-toast {
   margin-left: 1px;
 }
 
-/* .pcc-detail 容器:允许 item 整体换行 */
+/* .pcc-detail 容器:允许 item 整体换行,长 item 独占一行 */
 .pcard-v4 .pcc-detail {
+  display: flex !important;
   flex-wrap: wrap !important;
   align-items: baseline;
-  row-gap: 2px;
+  gap: 2px 8px !important;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* 移动端:字号再压一档 */
