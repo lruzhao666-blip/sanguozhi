@@ -11144,3 +11144,53 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20261112a ══════════════════════════════════════════ */
+
+/* ════════ #changes-note-inline-v1 ════════ */
+/* 工单:收支明细 note 改为 inline 括号灰字,紧贴 val 后面
+   覆盖 #changes-note-expose-v1 的 block 样式 */
+
+.pcard-v4 .pcc-item {
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+}
+
+.pcard-v4 .pcc-note {
+  display: inline !important;
+  width: auto !important;
+  margin-top: 0 !important;
+  margin-left: 3px !important;
+  padding-left: 0 !important;
+  font-size: 0.62rem !important;
+  color: var(--text-dim) !important;
+  font-family: var(--font-serif) !important;
+  letter-spacing: 0.02em !important;
+  opacity: 0.85;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.pcard-v4 .pcc-note::before {
+  content: '(';
+  margin-right: 1px;
+}
+.pcard-v4 .pcc-note::after {
+  content: ')';
+  margin-left: 1px;
+}
+
+/* .pcc-detail 容器:允许 item 整体换行 */
+.pcard-v4 .pcc-detail {
+  flex-wrap: wrap !important;
+  align-items: baseline;
+  row-gap: 2px;
+}
+
+/* 移动端:字号再压一档 */
+@media (max-width: 640px) {
+  .pcard-v4 .pcc-note {
+    font-size: 0.58rem !important;
+    margin-left: 2px !important;
+  }
+}
+
+/* ════════ END #changes-note-inline-v1 ════════ */
