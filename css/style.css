@@ -11093,3 +11093,54 @@ body.is-viewer-mode #diag-toast {
   display: none !important;
 }
 /* ╚══ END v20261111a ══════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261112a 工单#world-bat-loss-inline
+   - 战况结算伤亡数字嵌入到攻守武将名下方
+   - 攻/守标签弱化为副信息,数字加强为主信息
+   - 旧 .world-bat-loss 不删,保留可回滚性(JS 端已不输出该节点)
+   ──────────────────────────────────────────────────────────── */
+
+.world-bat-main {
+  align-items: flex-start;
+}
+.world-bat-col {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.world-bat-arrow {
+  align-self: center;
+  margin-top: 2px;
+}
+.world-bat-result {
+  align-self: center;
+}
+.world-bat-loss-cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding-left: 2px;
+  font-family: var(--font-sans);
+  letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+}
+.world-bat-loss-cell .wbl-role {
+  font-size: .62rem;
+  color: var(--text-dim);
+  font-weight: 400;
+  letter-spacing: .08em;
+}
+.world-bat-loss-cell .wbl-val {
+  font-size: .7rem;
+  color: rgba(192,57,43,.72);
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .world-bat-loss-cell .wbl-role { font-size: .58rem; }
+  .world-bat-loss-cell .wbl-val  { font-size: .66rem; }
+}
+
+/* ╚══ END v20261112a ══════════════════════════════════════════ */
