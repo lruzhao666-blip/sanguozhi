@@ -1994,6 +1994,7 @@
           items = bd.items.map(it => ({
             label: it.label || '',
             val:   Number(it.val) || 0,
+            note:  it.note || '',
           }));
           sum = (typeof bd.total === 'number')
             ? bd.total
