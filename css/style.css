@@ -11203,3 +11203,15 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ════════ END #changes-note-inline-v1 ════════ */
+
+/* ════════════════════════════════════════════════════════════
+   工单#raw-effect-mobile-fix-v1
+   修复 .raw-effect flex 导致移动端文本碎片化
+   改为 block 布局，▸ 符号已在文本流内无需 flex 对齐
+   ════════════════════════════════════════════════════════════ */
+
+.digest-raw .raw-effect {
+  display: block !important;
+  align-items: unset !important;
+  gap: unset !important;
+}
