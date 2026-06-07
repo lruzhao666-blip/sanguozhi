@@ -209,9 +209,25 @@
         /* 上回合在册武将集合(含玩家武将、守将、调度、世界、NPC 守将)*/
         const prevSet = new Set();
         collectFrom(prev.parsed, prevSet);
-        /* 本回合在册集合 */
+        /* [legacy v1]
+        // 本回合在册集合
         const currSet = new Set();
         collectFrom(latest.parsed, currSet);
+        */
+        /* #diag-r2-reparse-fix-v1: 从 rawContent 重新解析，
+           避免 players_json 缓存/继承时序导致 currSet 漏人 */
+        const currSet = new Set();
+        let _currParsed = latest.parsed;
+        try {
+          const _freshParsed = window.SGParser.parse(latest.rawContent || '');
+          if (_freshParsed && ((_freshParsed.players && _freshParsed.players.length) ||
+              (_freshParsed.npcCities && _freshParsed.npcCities.length))) {
+            _currParsed = _freshParsed;
+          }
+        } catch (e) {
+          /* 解析失败则降级用 latest.parsed */
+        }
+        collectFrom(_currParsed, currSet);
 
         /* 失踪 = 上回合在 & 本回合不在 & 剧情区也没提到 */
         const rawDigest = latest.parsed.rawDigest || latest.rawContent || '';
