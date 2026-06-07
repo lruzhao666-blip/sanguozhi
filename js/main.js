@@ -2545,8 +2545,14 @@
                     : result === '负' ? 'lose'
                     : 'draw';
 
+    /* [legacy v1]
     const cityHtml = b.city
       ? '<span class="world-bat-city">' + esc(b.city) + '</span>'
+      : '';
+    */
+    /* #battle-city-style-B-v1: 括号包裹，对齐兵马调度纯文本风格 */
+    const cityHtml = b.city
+      ? '<span class="world-bat-city">(' + esc(b.city) + ')</span>'
       : '';
 
     const atkStyle = '--wb-atk-c:' + atkColor.glow + ';--wb-atk-bg:' + atkColor.film + ';--wb-atk-bd:' + atkColor.stroke;
