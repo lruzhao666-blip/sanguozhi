@@ -236,6 +236,21 @@
             copy: `【第${round}回合数据核对】[R2·武将失踪] ${name}上回合在册，本回合所有数据区无此人，剧情区也未提及。请确认其当前位置或补充落点。`,
           });
         });
+
+        /* #diag-r2-strict-v2: 本回合在册武将名含非法字符(符号/数字/标点)视为格式写错,等同失踪 */
+        const ILLEGAL_NAME_RE = /[0-9\(\)（）\[\]【】\|｜:：,，\/\\;；\.\+\-\*=<>!！\?？@#$%^&_~`'"{}]/;
+        currSet.forEach(name => {
+          if (!name || name.length < 1) return;
+          if (ILLEGAL_NAME_RE.test(name)) {
+            issues.push({
+              id: `R2-r${round}-fmt-${name}`,
+              ruleId: 'R2', ruleName: '武将失踪', level: 'error',
+              body: `本回合数据区出现疑似格式错误的武将名 <b>「${escHtml(name)}」</b>(含数字或符号),大概率是主持人数据区格式写错,请核对该行。`,
+              copy: `【第${round}回合数据核对】[R2·武将格式异常] 数据区出现武将名"${name}"(含数字或符号),疑似格式写错。请核对该行的括号/斜杠/冒号是否正确。`,
+            });
+          }
+        });
+
         return issues;
       },
     },
@@ -283,6 +298,9 @@
             if (before == null || after == null) return;
             const d = Number(delta[f.name] || 0);
             const expected = before + d;
+            /* #diag-r3r4-morale-cap-v2: 民心到顶(100)或触底(0)时不报,GM 截断正常 */
+            if (f.key === 'morale' && after === 100 && expected > 100) return;
+            if (f.key === 'morale' && after === 0 && expected < 0) return;
             if (expected !== after) {
               const diff = after - expected;
               issues.push({
@@ -327,6 +345,12 @@
             const bd = detail.breakdown[res];
             const totalVal = Number(total.resources[res] || 0);
             if (!bd || typeof bd.total !== 'number') return;
+            /* #diag-r3r4-morale-cap-v2: 民心差异由截断(0/100)引起时不报 */
+            if (res === '民心') {
+              const pCurr = (latest.parsed.players || []).find(p => p.slot === slot);
+              const curMorale = pCurr ? Number(pCurr.morale) : null;
+              if (curMorale === 100 || curMorale === 0) return;
+            }
             if (bd.total !== totalVal) {
               const diff = totalVal - bd.total;
               issues.push({
@@ -391,7 +415,7 @@
       check(rounds, latest) {
         if (!latest || !latest.parsed) return [];
         const round = latest.round || 0;
-        const TOLERANCE = 50; /* 兵力容差(单位:兵) */
+        const TOLERANCE = 500; /* 兵力容差(单位:兵) — v2: 50→500,GM 兵种明细经常漏同步 */
         const SLOT_IDX = { '甲': 0, '乙': 1, '丙': 2 };
         const issues = [];
 
@@ -583,61 +607,80 @@
     /* [legacy] R13 同上简写提醒 — 2026-06-06 下线,噪音过大。规则定义保留在 git 历史中。 */
 
     /* ─────── R14 在野武将池停滞 ─────── */
-    /* #diag-r14-wild-stagnation-v1 (2026-XX-XX):
-       依据 M-14【随缘投奔·硬频率】"声望低每 6-8 回合必投 1 名"兜底,
-       与 M-25【野外角色】"每局 ≥4-6 位有名野外角色,前两幕必登场 ≥2 位"。
-       
-       检测策略(简化版):
-       - 连续 N=8 回合 [世界] 段中 status='在野' 的武将集合完全无变化
-         (无新增、无离开)
-       - 即按 M-14 最宽松声望低档兜底,8 回合内必有 1 名新人投奔
-       - 触发即 warn,提醒主持人推进访贤事件或补充新在野武将
-       
-       N=8 来自 M-14 兜底,既不过严也不过松。
-       声望是 GM 内部值前端不可见,故按最宽松档兜底,保证零误报。 */
+    /* #diag-r14-wild-v2 (2026-06-06): 对齐新规则 M-25 —
+       "二幕起每 6-10 回合 ≥1 位新野外角色登场,直至总数达上限(6 位)"
+       "野外角色登场后落 [世界] 段标「在野」(默认剩 5 回合)"
+       检测策略:
+       - 连续 10 回合(取上界)无任何新"在野"武将出现在 [世界] 段
+       - 仅在 round ≥ 19(二幕起)时触发
+       - "新"的定义:本回合 [世界] 在野集合中出现了之前所有回合从未出现过的人名
+       - 已达上限(累计曾有 ≥6 位独立在野武将出现过)则不再报
+    */
     {
       id: 'R14', name: '在野武将池停滞', level: 'warn', enabled: true,
       check(rounds, latest) {
         if (!latest) return [];
         const round = latest.round || 0;
-        const THRESHOLD = 8;  /* M-14 声望低档兜底:6-8 回合,取上界 */
+        if (round < 19) return [];  /* 一幕不检测 */
 
-        if (rounds.length < THRESHOLD) return [];  /* 回合不足不报 */
+        const WINDOW = 10;  /* 新规则:6-10 回合,取上界 */
+        const CAP = 6;      /* 每局上限 6 位野外角色 */
 
-        /* 取最近 THRESHOLD 个回合的"在野"武将集合 */
-        const recent = rounds.slice(-THRESHOLD);
-        const wildSets = recent.map(rd => {
-          const world = (rd.parsed && rd.parsed.world) || [];
-          const wild = world.filter(w => w && w.status === '在野');
-          return new Set(wild.map(w => w.name).filter(Boolean));
+        if (rounds.length < WINDOW) return [];
+
+        /* 统计历史上所有曾出现在 [世界] 段标"在野"的独立人名 */
+        const everWild = new Set();
+        rounds.forEach(rd => {
+          ((rd.parsed && rd.parsed.world) || []).forEach(w => {
+            if (w && w.status === '在野' && w.name) everWild.add(w.name);
+          });
         });
 
-        /* 比较 THRESHOLD 个集合是否完全一致 */
-        const first = wildSets[0];
-        for (let i = 1; i < wildSets.length; i++) {
-          if (wildSets[i].size !== first.size) return [];
-          for (const n of first) {
-            if (!wildSets[i].has(n)) return [];
-          }
+        /* 已达上限则不报 */
+        if (everWild.size >= CAP) return [];
+
+        /* 检查最近 WINDOW 个回合是否有"新面孔"出现 */
+        const recent = rounds.slice(-WINDOW);
+        /* 之前所有回合(不含最近 WINDOW 个)曾出现过的在野人名 */
+        const beforeRecent = new Set();
+        const beforeIdx = rounds.length - WINDOW;
+        for (let i = 0; i < beforeIdx; i++) {
+          ((rounds[i].parsed && rounds[i].parsed.world) || []).forEach(w => {
+            if (w && w.status === '在野' && w.name) beforeRecent.add(w.name);
+          });
         }
 
-        /* 全部一致:触发警告 */
-        const wildList = Array.from(first);
-        if (!wildList.length) {
-          /* 连续 8 回合都没有任何在野武将,这本身也是停滞 */
-          return [{
-            id: `R14-r${round}-empty`,
-            ruleId: 'R14', ruleName: '在野武将池停滞', level: 'warn',
-            body: `[世界] 段已连续 <span class="diag-mark">${THRESHOLD}</span> 回合无任何"在野"武将。按 M-14 访贤三轨规则,即便声望低档也应每 6-8 回合必有 1 名来投,建议主持人推进访贤事件或安排野外角色登场。`,
-            copy: `【第${round}回合数据核对】[R14·在野池停滞] [世界] 段已连续 ${THRESHOLD} 回合无任何在野武将。按 M-14【随缘投奔·硬频率】规则,声望低档兜底也应每 6-8 回合必投 1 名,请问本回合是否需要推进访贤事件或安排野外角色登场?`,
-          }];
+        /* 最近 WINDOW 个回合中是否有新面孔(之前从未以"在野"出现过的) */
+        let hasNewFace = false;
+        for (const rd of recent) {
+          const world = (rd.parsed && rd.parsed.world) || [];
+          for (const w of world) {
+            if (w && w.status === '在野' && w.name && !beforeRecent.has(w.name)) {
+              hasNewFace = true;
+              break;
+            }
+          }
+          if (hasNewFace) break;
         }
+
+        if (hasNewFace) return [];  /* 有新人,通过 */
+
+        /* 无新人:触发警告 */
+        const currentWild = [];
+        const latestWorld = (latest.parsed && latest.parsed.world) || [];
+        latestWorld.forEach(w => {
+          if (w && w.status === '在野') currentWild.push(w.name || '?');
+        });
+
+        const bodyExtra = currentWild.length
+          ? `当前在野:${currentWild.join('、')}。`
+          : '当前 [世界] 段无任何在野武将。';
 
         return [{
           id: `R14-r${round}-stagnant`,
           ruleId: 'R14', ruleName: '在野武将池停滞', level: 'warn',
-          body: `[世界] 段"在野"武将池已连续 <span class="diag-mark">${THRESHOLD}</span> 回合无任何变化(<span class="diag-mark">${wildList.map(n => n).join('、')}</span>)。按 M-14 访贤三轨规则,即便声望低档也应每 6-8 回合必有 1 名来投,建议主持人推进访贤或安排归宿。`,
-          copy: `【第${round}回合数据核对】[R14·在野池停滞] [世界] 段在野武将池(${wildList.join('、')})已连续 ${THRESHOLD} 回合无变化。按 M-14【随缘投奔·硬频率】规则,声望低档兜底也应每 6-8 回合必投 1 名,请问本回合是否需要推进访贤事件或安排在野武将归宿/新人登场?`,
+          body: `已连续 <span class="diag-mark">${WINDOW}</span> 回合无新野外角色登场(落 [世界] 段标「在野」)。${bodyExtra}按新规则 M-25,二幕起每 6-10 回合应有 ≥1 位新野外角色登场,累计上限 ${CAP} 位(当前已登场 ${everWild.size} 位)。建议主持人推进访贤事件或安排新野外角色。`,
+          copy: `【第${round}回合数据核对】[R14·在野池停滞] 已连续 ${WINDOW} 回合无新野外角色登场。${bodyExtra}按 M-25 新规则,二幕起每 6-10 回合应有 ≥1 位新野外角色登场(累计上限 ${CAP} 位,当前已 ${everWild.size} 位)。请问本回合是否需要安排新野外角色登场?`,
         }];
       },
     },
@@ -827,6 +870,24 @@
              - NPC 城有阵营标签:阵营主公名(如'袁绍')
              - NPC 散城:'__npc_unowned__'(统一归一,无阵营即视为同阵营)
            本回合该城不在数据里 → 不进 map(自动断链清零) */
+        /* #diag-r15-align-frontend-v2: 对齐前端"空缺"显示逻辑 —
+           守将文本为空/'空'/'空缺'/'无' 或 holders 数组为空/全空串 均视为空城 */
+        function _isHolderBlank(c) {
+          if (!c) return true;
+          /* cities_list 格式(玩家城):有 holders 数组 */
+          if (Array.isArray(c.holders)) {
+            const valid = c.holders.filter(h => h && h.trim() && h.trim() !== '空' && h.trim() !== '空缺' && h.trim() !== '无');
+            return valid.length === 0;
+          }
+          /* npcCities 格式:可能有 holder 字符串 */
+          if (typeof c.holder === 'string') {
+            const h = c.holder.trim();
+            return !h || h === '空' || h === '空缺' || h === '无';
+          }
+          /* 兜底:无 holders 也无 holder 字段 */
+          return true;
+        }
+
         function snapshot(parsed) {
           const map = {};  /* key = `${faction}::${cityName}` → { faction, city, empty } */
           if (!parsed) return map;
@@ -840,7 +901,7 @@
               map[key] = {
                 faction: slot,
                 city: c.name,
-                empty: !!c.holderEmpty,
+                empty: !!(c.holderEmpty || _isHolderBlank(c)),
               };
             });
           });
@@ -852,7 +913,7 @@
             map[key] = {
               faction: fac,
               city: c.name,
-              empty: !!c.holderEmpty,
+              empty: !!(c.holderEmpty || _isHolderBlank(c)),
             };
           });
 
