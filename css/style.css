@@ -11020,6 +11020,7 @@ body.is-viewer-mode #diag-toast {
   margin: 0 2px;
 }
 
+/* [legacy v1]
 .world-bat-city {
   font-size: .66rem;
   color: var(--text-dim);
@@ -11027,6 +11028,13 @@ body.is-viewer-mode #diag-toast {
   border: 1px solid rgba(255,255,255,.08);
   border-radius: 8px;
   white-space: nowrap;
+}
+*/
+.world-bat-city {
+  font-size: .74rem;
+  color: var(--text-sub);
+  white-space: nowrap;
+  /* #battle-city-style-B-v1: 去胶囊，对齐兵马调度纯文本风格 */
 }
 
 /* 结果徽章:暗金风(方案乙),胜=金/负=灰/平=暗金 */
