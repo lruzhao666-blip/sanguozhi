@@ -2182,7 +2182,7 @@
             <div class="jbt-strip"></div>
             <div class="jbt-inner">
               <span class="jbt-faction-badge">${esc(badgeText)}</span>
-              <span class="jbt-general">${esc((t.general || '').replace(/\//g, ' '))}</span>
+              <span class="jbt-general">${esc(t.general || '')}</span>
               <span class="jbt-route">${esc(t.from || '')}<span class="jbt-arrow">›</span>${esc(t.to || '')}</span>
               <!-- [legacy v14] note 追加在徽章群之后,语义错位 -->
               <!-- <span class="jbt-troop">\${esc(t.troopType || '')} \${t.troopCount || 0}</span> -->
@@ -2483,7 +2483,7 @@
     return '<div class="world-mil-row" style="--wm-c:' + mc + '">' +
       '<span class="world-mil-faction">' + esc(faction) + '</span>' +
       '<div class="world-mil-main">' +
-        '<span class="world-mil-general">' + esc(general.replace(/\//g, ' ')) + '</span>' +
+        '<span class="world-mil-general">' + esc(general) + '</span>' +
         '<span class="world-mil-route">' + esc(from) + '<span class="arrow">›</span>' + esc(to) + '</span>' +
       '</div>' +
       (troopStr
