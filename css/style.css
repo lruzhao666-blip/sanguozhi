@@ -11450,3 +11450,17 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260607b 战况结算 UI v3 左右对战 ══════════════════ */
+
+/* #battle-row-compact-v1: 战况结算行高度对齐兵马调度行 */
+.world-bat-row {
+  padding: 6px 8px;
+  gap: 2px;
+  font-size: .76rem;
+}
+.world-bat-atk,
+.world-bat-def {
+  gap: 4px;
+}
+.world-bat-center {
+  min-width: 42px;
+}

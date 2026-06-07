@@ -2546,8 +2546,18 @@
     const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
     const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
 
+    /* [legacy v1]
     const atkLabel = b.attackerFactionRaw || _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
     const defLabel = b.defenderFactionRaw || _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+    */
+    // #battle-row-compact-v1: 甲/乙/丙 走 _junbaoGetBadgeText 取玩家真名
+    const _SLOT_NAMES = new Set(['甲', '乙', '丙']);
+    const atkLabel = (b.attackerFactionRaw && !_SLOT_NAMES.has(b.attackerFactionRaw))
+      ? b.attackerFactionRaw
+      : _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+    const defLabel = (b.defenderFactionRaw && !_SLOT_NAMES.has(b.defenderFactionRaw))
+      ? b.defenderFactionRaw
+      : _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
 
     const atkName = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkLabel);
     const defName = b.defenderGeneral || _junbaoStripPrefix(b.defender, defLabel);
