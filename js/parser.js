@@ -377,6 +377,7 @@ window.SGParser = (function () {
     }
     */
 
+    /* [legacy v1]
     // #battle-splitblock-fix-v1: 当前在 [战报] 或 [调度] 块内时，
     // 行首的 [甲]/[乙]/[丙] 是数据内容而非新块标签，不切换。
     const CONTENT_KEYS_IN_BATTLE = new Set(['甲', '乙', '丙']);
@@ -388,6 +389,31 @@ window.SGParser = (function () {
         const key = m[1].trim();
         if (KNOWN.has(key)) {
           // 守卫：在战报/调度块内，[甲][乙][丙] 是内容行，不切块
+          if (NO_SWITCH_BLOCKS.has(curKey) && CONTENT_KEYS_IN_BATTLE.has(key)) {
+            if (curKey !== null) curBuf.push(line);
+            continue;
+          }
+          if (curKey !== null) blocks[curKey] = curBuf.join('\n');
+          curKey = key;
+          const rest = line.replace(/^[\[【][^\]】\n]{1,10}[\]】]\s* /, '').trim();
+          curBuf = rest ? [rest] : [];
+          continue;
+        }
+      }
+      if (curKey !== null) curBuf.push(line);
+    }
+    */
+
+    // #battle-splitblock-fix-v3: 战报/调度块内 [甲][乙][丙] 是内容不是标签
+    const CONTENT_KEYS_IN_BATTLE = new Set(['甲', '乙', '丙']);
+    const NO_SWITCH_BLOCKS       = new Set(['战报', '调度', '在途']);
+
+    for (const line of lines) {
+      const m = line.match(/^[\[【]([^\]】\n]{1,10})[\]】]/);
+      if (m) {
+        const key = m[1].trim();
+        if (KNOWN.has(key)) {
+          // #battle-splitblock-fix-v3: 守卫——在战报/调度块内，[甲][乙][丙] 是内容行，不切块
           if (NO_SWITCH_BLOCKS.has(curKey) && CONTENT_KEYS_IN_BATTLE.has(key)) {
             if (curKey !== null) curBuf.push(line);
             continue;

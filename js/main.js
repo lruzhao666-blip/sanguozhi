@@ -2564,7 +2564,10 @@
     const atkLossZero = (b.attacker_loss === 0 || b.attacker_loss === '0');
     const defLossZero = (b.defender_loss === 0 || b.defender_loss === '0');
 
+    /* [legacy v1]
     return '<div class="world-bat-row" data-result="' + resultCls + '">' +
+    */
+    return '<div class="world-bat-row" data-result="' + resultCls + '" style="--wm-c:' + atkColor.glow + '">' +
       '<div class="world-bat-atk">' +
         '<span class="world-bat-badge" style="color:' + atkColor.glow + ';border-color:' + atkColor.stroke + '">' + esc(atkLabel) + '</span>' +
         '<span class="world-bat-name">' + esc(atkName) + '</span>' +
