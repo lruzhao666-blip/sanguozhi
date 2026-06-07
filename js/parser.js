@@ -581,6 +581,7 @@ window.SGParser = (function () {
     // 从一段名字字面值推断 slot / faction
     // 规则:开头是"甲/乙/丙" → slot=0/1/2;否则视为 NPC 阵营名(faction)
     // 兼容写法:"甲→宛城NPC"、"甲 关羽 → 曹操 夏侯惇" 等
+    /* [legacy v1]
     const _inferSide = (txt) => {
       const t = (txt || '').trim();
       if (!t) return { slot: null, faction: null };
@@ -590,6 +591,21 @@ window.SGParser = (function () {
       if (first === '丙') return { slot: 2, faction: null };
       // NPC:取首段非空白非分隔为阵营名,长度 1-6 字
       const m = t.match(/^([^\s\/|,，、(()）]{1,6})/);
+      return { slot: null, faction: m ? m[1] : null };
+    };
+    */
+    const _inferSide = (txt) => {
+      const t = (txt || '').trim();
+      if (!t) return { slot: null, faction: null };
+      const first = t.charAt(0);
+      if (first === '甲') return { slot: 0, faction: null };
+      if (first === '乙') return { slot: 1, faction: null };
+      if (first === '丙') return { slot: 2, faction: null };
+      /* #diag-battle-faction-bracket-v1: 优先识别 [阵营] 方括号标签 */
+      const bracketM = t.match(/^\[([^\]]{1,6})\]/);
+      if (bracketM) return { slot: null, faction: bracketM[1] };
+      // NPC:取首段非空白非分隔为阵营名,长度 1-6 字
+      const m = t.match(/^([^\s\/|,，、(()）\[\]]{1,6})/);
       return { slot: null, faction: m ? m[1] : null };
     };
     for (const line of raw.split('\n').map(l => l.trim()).filter(Boolean)) {
