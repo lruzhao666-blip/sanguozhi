@@ -581,6 +581,7 @@ window.SGParser = (function () {
     // 从一段名字字面值推断 slot / faction
     // 规则:开头是"甲/乙/丙" → slot=0/1/2;否则视为 NPC 阵营名(faction)
     // 兼容写法:"甲→宛城NPC"、"甲 关羽 → 曹操 夏侯惇" 等
+    /* [legacy v1]
     const _inferSide = (txt) => {
       const t = (txt || '').trim();
       if (!t) return { slot: null, faction: null };
@@ -592,12 +593,28 @@ window.SGParser = (function () {
       const m = t.match(/^([^\s\/|,，、(()）]{1,6})/);
       return { slot: null, faction: m ? m[1] : null };
     };
+    */
+    const _inferSide = (txt) => {
+      const t = (txt || '').trim();
+      if (!t) return { slot: null, faction: null };
+      const first = t.charAt(0);
+      if (first === '甲') return { slot: 0, faction: null };
+      if (first === '乙') return { slot: 1, faction: null };
+      if (first === '丙') return { slot: 2, faction: null };
+      /* #battle-faction-city-fix-v1: 优先识别 [阵营] 方括号标签 */
+      const bracketM = t.match(/^\[([^\]]{1,6})\]/);
+      if (bracketM) return { slot: null, faction: bracketM[1] };
+      // NPC:取首段非空白非分隔为阵营名,长度 1-6 字
+      const m = t.match(/^([^\s\/|,，、(()）\[\]]{1,6})/);
+      return { slot: null, faction: m ? m[1] : null };
+    };
     for (const line of raw.split('\n').map(l => l.trim()).filter(Boolean)) {
       if (/^本回合无战事/.test(line)) continue;
       const m = line.match(re);
       if (m) {
         const atkSide = _inferSide(m[1]);
         const defSide = _inferSide(m[2]);
+        /* [legacy v1]
         battles.push({
           attacker:      m[1].trim(),
           defender:      m[2].trim(),
@@ -605,6 +622,26 @@ window.SGParser = (function () {
           attacker_loss: parseInt(m[4]),
           defender_loss: parseInt(m[5]),
           success:       m[3] === '胜',
+          attackerSlot:    atkSide.slot,
+          attackerFaction: atkSide.faction,
+          defenderSlot:    defSide.slot,
+          defenderFaction: defSide.faction,
+        });
+        */
+        /* #battle-faction-city-fix-v1: 从攻守方文本提取尾部 (城名) */
+        const _extractCity = (raw) => {
+          const cm = (raw || '').match(/[（(]([\u4e00-\u9fa5]{1,6})[）)]$/);
+          return cm ? cm[1] : null;
+        };
+        const city = _extractCity(m[2]) || _extractCity(m[1]) || null;
+        battles.push({
+          attacker:      m[1].trim(),
+          defender:      m[2].trim(),
+          result:        m[3],
+          attacker_loss: parseInt(m[4]),
+          defender_loss: parseInt(m[5]),
+          success:       m[3] === '胜',
+          city:            city,
           attackerSlot:    atkSide.slot,
           attackerFaction: atkSide.faction,
           defenderSlot:    defSide.slot,
