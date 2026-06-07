@@ -2206,9 +2206,11 @@
       html.push('<div class="battle-list">');
       html.push('<div class="battle-list-title">战报</div>');
       battles.forEach(b => {
-        const cardCls = b.result === '胜' ? 'success'
-                      : b.result === '平' ? 'draw'
-                      : 'fail';
+        const WIN_SET = ['惨胜','小胜','大胜','胜'];
+        const LOSE_SET = ['小负','大败','负'];
+        const cardCls = WIN_SET.includes(b.result) ? 'success'
+                      : LOSE_SET.includes(b.result) ? 'fail'
+                      : 'draw';
         const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
         const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
         const atkBadge = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
@@ -2535,55 +2537,39 @@
   function _buildWorldBatRow(b) {
     const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
     const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
-    const atkBadge = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
-    const defBadge = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
-    const atkName  = _junbaoStripPrefix(b.attacker, atkBadge);
-    const defName  = _junbaoStripPrefix(b.defender, defBadge);
+
+    const atkLabel = b.attackerFactionRaw || _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+    const defLabel = b.defenderFactionRaw || _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+
+    const atkName = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkLabel);
+    const defName = b.defenderGeneral || _junbaoStripPrefix(b.defender, defLabel);
+
+    const city = b.defenderCity || b.city || '';
 
     const result = String(b.result || '');
-    const resultCls = result === '胜' ? 'win'
-                    : result === '负' ? 'lose'
+    const WIN_SET = ['惨胜','小胜','大胜','胜'];
+    const LOSE_SET = ['小负','大败','负'];
+    const resultCls = WIN_SET.includes(result) ? 'win'
+                    : LOSE_SET.includes(result) ? 'lose'
                     : 'draw';
 
-    /* [legacy v1]
-    const cityHtml = b.city
-      ? '<span class="world-bat-city">(' + esc(b.city) + ')</span>'
-      : '';
-    */
-    /* #battle-city-baseline-v1: 去括号，纯文本对齐兵马调度 */
-    const cityHtml = b.city
-      ? '<span class="world-bat-city">' + esc(b.city) + '</span>'
-      : '';
-
-    const atkStyle = '--wb-atk-c:' + atkColor.glow + ';--wb-atk-bg:' + atkColor.film + ';--wb-atk-bd:' + atkColor.stroke;
-    const defStyle = '--wb-def-c:' + defColor.glow + ';--wb-def-bg:' + defColor.film + ';--wb-def-bd:' + defColor.stroke;
-
-    const atkLoss = b.attacker_loss != null
-      ? '<div class="world-bat-loss-cell"><span class="wbl-role">攻</span><span class="wbl-val">-' + b.attacker_loss + '</span></div>'
-      : '';
-    const defLoss = b.defender_loss != null
-      ? '<div class="world-bat-loss-cell"><span class="wbl-role">守</span><span class="wbl-val">-' + b.defender_loss + '</span></div>'
-      : '';
+    const atkLossZero = (b.attacker_loss === 0 || b.attacker_loss === '0');
+    const defLossZero = (b.defender_loss === 0 || b.defender_loss === '0');
 
     return '<div class="world-bat-row" data-result="' + resultCls + '">' +
-      '<div class="world-bat-main">' +
-        '<div class="world-bat-col world-bat-col--atk">' +
-          '<span class="world-bat-side world-bat-atk" style="' + atkStyle + '">' +
-            '<span class="world-bat-badge" data-side="atk">' + esc(atkBadge) + '</span>' +
-            '<span class="world-bat-name">' + esc(atkName) + '</span>' +
-          '</span>' +
-          atkLoss +
-        '</div>' +
-        '<span class="world-bat-arrow">›</span>' +
-        '<div class="world-bat-col world-bat-col--def">' +
-          '<span class="world-bat-side world-bat-def" style="' + defStyle + '">' +
-            '<span class="world-bat-badge" data-side="def">' + esc(defBadge) + '</span>' +
-            '<span class="world-bat-name">' + esc(defName) + '</span>' +
-          '</span>' +
-          defLoss +
-        '</div>' +
-        cityHtml +
+      '<div class="world-bat-atk">' +
+        '<span class="world-bat-badge" style="color:' + atkColor.glow + ';border-color:' + atkColor.stroke + '">' + esc(atkLabel) + '</span>' +
+        '<span class="world-bat-name">' + esc(atkName) + '</span>' +
+        '<span class="world-bat-loss' + (atkLossZero ? ' is-zero' : '') + '">-' + (b.attacker_loss != null ? b.attacker_loss : '0') + '</span>' +
+      '</div>' +
+      '<div class="world-bat-center">' +
         '<span class="world-bat-result">' + esc(result) + '</span>' +
+        (city ? '<span class="world-bat-city">' + esc(city) + '</span>' : '') +
+      '</div>' +
+      '<div class="world-bat-def">' +
+        '<span class="world-bat-loss' + (defLossZero ? ' is-zero' : '') + '">-' + (b.defender_loss != null ? b.defender_loss : '0') + '</span>' +
+        '<span class="world-bat-name">' + esc(defName) + '</span>' +
+        '<span class="world-bat-badge" style="color:' + defColor.glow + ';border-color:' + defColor.stroke + '">' + esc(defLabel) + '</span>' +
       '</div>' +
     '</div>';
   }
