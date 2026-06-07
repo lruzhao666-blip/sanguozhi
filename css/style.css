@@ -10950,145 +10950,6 @@ body.is-viewer-mode #diag-toast {
    战况结算行 .world-bat-row
    字段:攻方徽 + 攻方名 / 箭头 / 守方徽 + 守方名 / 城名 / 结果徽 / 伤亡
    ══════════════════════════════════════════ */
-.world-bat-row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 10px 6px 12px;
-  border-left: 2px solid var(--wb-tone, var(--gold-dim));
-  border-radius: 0 var(--r) var(--r) 0;
-  background: rgba(18,10,6,.42);
-  transition: background .18s;
-}
-.world-bat-row:hover { background: rgba(35,18,10,.7); }
-.world-bat-row[data-result="win"]  { --wb-tone: var(--gold); }
-.world-bat-row[data-result="lose"] { --wb-tone: rgba(140,128,108,.55); }
-.world-bat-row[data-result="draw"] { --wb-tone: var(--gold-dim); }
-
-/* 主体行:攻 → 守 + 城 + 结果 */
-.world-bat-main {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-  min-width: 0;
-  /* #battle-city-baseline-v1: 改 baseline 对齐兵马调度 */
-}
-
-/* 攻守整体单元(徽章 + 名) */
-.world-bat-side {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-}
-
-/* 攻守徽章:线框风,与烽烟 faction 徽章同款 */
-.world-bat-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 7px;
-  font-family: var(--font-serif);
-  font-size: .66rem;
-  font-weight: 700;
-  letter-spacing: .06em;
-  border-radius: 3px;
-  background: rgba(0,0,0,.2);
-  white-space: nowrap;
-  line-height: 1.5;
-}
-.world-bat-badge[data-side="atk"] {
-  color: var(--wb-atk-c, var(--gold-dim));
-  border: 1px solid var(--wb-atk-bd, rgba(155,120,45,.4));
-}
-.world-bat-badge[data-side="def"] {
-  color: var(--wb-def-c, var(--gold-dim));
-  border: 1px solid var(--wb-def-bd, rgba(155,120,45,.4));
-}
-
-.world-bat-name {
-  font-family: var(--font-serif);
-  font-size: .84rem;
-  font-weight: 900;
-  color: var(--text-main);
-  letter-spacing: .02em;
-  white-space: nowrap;
-}
-
-.world-bat-arrow {
-  color: var(--text-dim);
-  font-weight: 700;
-  margin: 0 2px;
-}
-
-/* [legacy v1]
-.world-bat-city {
-  font-size: .66rem;
-  color: var(--text-dim);
-  padding: 1px 7px;
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 8px;
-  white-space: nowrap;
-}
-*/
-.world-bat-city {
-  font-size: .74rem;
-  color: var(--text-sub);
-  white-space: nowrap;
-  /* #battle-city-style-B-v1: 去胶囊，对齐兵马调度纯文本风格 */
-}
-
-/* 结果徽章:暗金风(方案乙),胜=金/负=灰/平=暗金 */
-.world-bat-result {
-  margin-left: auto;
-  font-family: var(--font-serif);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .12em;
-  padding: 1px 9px;
-  border-radius: 3px;
-  background: rgba(0,0,0,.28);
-  border: 1px solid var(--wb-tone);
-  color: var(--wb-tone);
-  line-height: 1.5;
-  flex-shrink: 0;
-}
-
-/* 伤亡行(独立一行,左对齐缩进与名字对齐) */
-.world-bat-loss {
-  font-family: var(--font-sans);
-  font-size: .66rem;
-  color: var(--text-dim);
-  letter-spacing: .04em;
-  padding-left: 2px;
-  font-variant-numeric: tabular-nums;
-}
-.world-bat-loss .wbl-num {
-  color: var(--text-sub);
-  margin: 0 4px;
-}
-.world-bat-loss .wbl-sep {
-  color: rgba(212,168,67,.28);
-  margin: 0 2px;
-}
-
-/* ── 移动端 ≤600px ── */
-@media (max-width: 600px) {
-  .world-list .world-subsec-title {
-    font-size: .66rem;
-    letter-spacing: .1em;
-  }
-  .world-bat-main {
-    gap: 3px 6px;
-  }
-  .world-bat-name { font-size: .8rem; }
-  .world-bat-badge { font-size: .62rem; padding: 1px 6px; }
-  .world-bat-city { font-size: .62rem; }
-  .world-bat-result { font-size: .68rem; padding: 1px 8px; }
-  .world-bat-loss { font-size: .62rem; }
-  .world-fold-btn { font-size: .66rem; padding: 6px 10px; }
-}
-
 /* ╚══ END v20261110d 工单#world-fonyan-battles-fold ══════════ */
 
 /* ════════════════════════════════════════════════════════════
@@ -11103,56 +10964,6 @@ body.is-viewer-mode #diag-toast {
 }
 /* ╚══ END v20261111a ══════════════════════════════════════════ */
 
-/* ════════════════════════════════════════════════════════════
-   v20261112a 工单#world-bat-loss-inline
-   - 战况结算伤亡数字嵌入到攻守武将名下方
-   - 攻/守标签弱化为副信息,数字加强为主信息
-   - 旧 .world-bat-loss 不删,保留可回滚性(JS 端已不输出该节点)
-   ──────────────────────────────────────────────────────────── */
-
-.world-bat-main {
-  align-items: flex-start;
-}
-.world-bat-col {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.world-bat-arrow {
-  align-self: center;
-  margin-top: 2px;
-}
-.world-bat-result {
-  align-self: center;
-}
-.world-bat-loss-cell {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-  padding-left: 2px;
-  font-family: var(--font-sans);
-  letter-spacing: .02em;
-  font-variant-numeric: tabular-nums;
-}
-.world-bat-loss-cell .wbl-role {
-  font-size: .62rem;
-  color: var(--text-dim);
-  font-weight: 400;
-  letter-spacing: .08em;
-}
-.world-bat-loss-cell .wbl-val {
-  font-size: .7rem;
-  color: rgba(192,57,43,.72);
-  font-weight: 700;
-}
-
-@media (max-width: 600px) {
-  .world-bat-loss-cell .wbl-role { font-size: .58rem; }
-  .world-bat-loss-cell .wbl-val  { font-size: .66rem; }
-}
-
-/* ╚══ END v20261112a ══════════════════════════════════════════ */
 
 /* ════════ #changes-note-inline-v1 ════════ */
 /* 工单:收支明细 note 改为 inline 括号灰字,紧贴 val 后面
@@ -11225,29 +11036,181 @@ body.is-viewer-mode #diag-toast {
   gap: unset !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   工单#world-bat-city-align-v1
-   战况结算城名与武将名基线对齐
-   .world-bat-main 是 flex-start，城名需独立 align-self 居中
-   ════════════════════════════════════════════════════════════ */
 
-.world-bat-city {
-  align-self: center !important;
+
+
+
+/* ════════════════════════════════════════════════════════════
+   v20260607b 工单#battle-parser-v2-and-ui-redesign
+   战况结算 UI 全新设计 — 左侧结果徽 + 右侧攻守双行 + 城池注脚
+   设计语言：暗金线框 · 极简行流 · 对齐兵马调度视觉密度
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 战况行外壳 ── */
+.world-bat-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  border-radius: var(--r);
+  background: rgba(18,10,6,.42);
+  border: 1px solid rgba(255,255,255,.04);
+  border-left: none;
+  overflow: hidden;
+  transition: background .18s;
+  position: relative;
+}
+.world-bat-row:hover {
+  background: rgba(35,18,10,.7);
 }
 
-/* ════════════════════════════════════════════════════════════
-   工单#world-bat-city-align-v2
-   战况结算：城名/结果徽/箭头与武将名第一行基线对齐
-   覆盖 v1 的 center + v20261112a 的 center
-   ════════════════════════════════════════════════════════════ */
+/* 左侧色条（通过 ::before 实现，颜色由 data-result 驱动）*/
+.world-bat-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+}
+.world-bat-row[data-result="win"]::before  { background: #6dca7d; }
+.world-bat-row[data-result="lose"]::before { background: #e07060; }
+.world-bat-row[data-result="draw"]::before { background: #b89868; }
 
-.world-bat-city {
-  align-self: baseline !important;
+/* ── 左侧结果徽章列 ── */
+.world-bat-result-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 8px 10px 8px 12px;
 }
 .world-bat-result {
-  align-self: baseline !important;
+  font-family: var(--font-serif);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: rgba(0,0,0,.32);
+  border: 1px solid rgba(255,255,255,.08);
+  line-height: 1.4;
+  white-space: nowrap;
 }
-.world-bat-arrow {
-  align-self: baseline !important;
-  margin-top: 0 !important;
+.world-bat-row[data-result="win"] .world-bat-result {
+  color: #7dd87d;
+  border-color: rgba(61,190,108,.35);
+  background: rgba(0,60,22,.22);
 }
+.world-bat-row[data-result="lose"] .world-bat-result {
+  color: #e87060;
+  border-color: rgba(220,80,40,.35);
+  background: rgba(60,10,2,.22);
+}
+.world-bat-row[data-result="draw"] .world-bat-result {
+  color: #e8c560;
+  border-color: rgba(200,155,0,.35);
+  background: rgba(60,42,0,.22);
+}
+
+/* ── 主体区（攻守双行 + 城池）── */
+.world-bat-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 12px 6px 8px;
+  min-width: 0;
+}
+
+/* ── 攻/守单行 ── */
+.world-bat-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* 攻/守角色标 */
+.world-bat-role {
+  font-family: var(--font-serif);
+  font-size: .58rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: .1em;
+  flex-shrink: 0;
+  min-width: 1.2em;
+}
+
+/* 阵营徽章 */
+.world-bat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  font-family: var(--font-serif);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  border-radius: 2px;
+  border: 1px solid;
+  background: transparent;
+  white-space: nowrap;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+/* 武将名 */
+.world-bat-name {
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: .02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 伤亡数字 */
+.world-bat-loss {
+  font-family: var(--font-sans);
+  font-size: .66rem;
+  font-weight: 700;
+  color: rgba(224,112,96,.75);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ── 城池注脚行 ── */
+.world-bat-city-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 2.4em;
+  margin-top: 1px;
+}
+.world-bat-city-icon {
+  font-size: .6rem;
+  color: var(--text-dim);
+  opacity: .6;
+}
+.world-bat-city {
+  font-family: var(--font-serif);
+  font-size: .68rem;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+}
+
+/* ── 移动端 ≤600px ── */
+@media (max-width: 600px) {
+  .world-bat-result-col { padding: 6px 8px 6px 10px; }
+  .world-bat-result { font-size: .66rem; padding: 2px 6px; }
+  .world-bat-body { padding: 5px 10px 5px 6px; }
+  .world-bat-name { font-size: .78rem; }
+  .world-bat-badge { font-size: .58rem; padding: 0 5px; }
+  .world-bat-loss { font-size: .62rem; }
+  .world-bat-city-line { padding-left: 2em; }
+  .world-bat-city { font-size: .64rem; }
+}
+
+/* ╚══ END v20260607b 战况结算 UI 重写 ══════════════════════════ */

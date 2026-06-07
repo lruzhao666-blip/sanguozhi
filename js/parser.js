@@ -574,80 +574,76 @@ window.SGParser = (function () {
   //  解析战报
   //  格式：攻方→守方 | 胜/平/负 | 伤亡:攻X守Y
   // ─────────────────────────────────────────
+
+
   function _parseBattles(raw) {
     if (!raw || !raw.trim()) return [];
     const battles = [];
-    const re = /^(.+?)[→\->＞]\s*(.+?)\s*[|｜]\s*(胜|平|负)\s*[|｜]\s*伤亡[:：]攻(\d+)守(\d+)/;
-    // 从一段名字字面值推断 slot / faction
-    // 规则:开头是"甲/乙/丙" → slot=0/1/2;否则视为 NPC 阵营名(faction)
-    // 兼容写法:"甲→宛城NPC"、"甲 关羽 → 曹操 夏侯惇" 等
-    /* [legacy v1]
-    const _inferSide = (txt) => {
-      const t = (txt || '').trim();
-      if (!t) return { slot: null, faction: null };
-      const first = t.charAt(0);
-      if (first === '甲') return { slot: 0, faction: null };
-      if (first === '乙') return { slot: 1, faction: null };
-      if (first === '丙') return { slot: 2, faction: null };
-      // NPC:取首段非空白非分隔为阵营名,长度 1-6 字
-      const m = t.match(/^([^\s\/|,，、(()）]{1,6})/);
-      return { slot: null, faction: m ? m[1] : null };
+
+    // v2: 对齐 GM 规则书 v3.42 M-29 红线七
+    // 新格式: [攻方阵营]攻方将领(城名) → [守方阵营]守方将领(城名) | 档位 | 伤亡:攻X守Y
+    // 档位六选一: 惨胜/小胜/大胜/平局/小负/大败 + 兼容旧零损接管「胜/平/负」
+    const re = /^\[([^\]]{1,6})\]([^\s(（]+)(?:[（(]([^\)）]+)[）)])?\s*→\s*(?:\[([^\]]{1,6})\])?\s*([^\s(（|]+)(?:[（(]([^\)）]+)[）)])?\s*[|｜]\s*(惨胜|小胜|大胜|平局|小负|大败|胜|平|负)\s*[|｜]\s*伤亡[:：]攻(\d+)守(\d+)/;
+
+    // 结果 → success 映射（攻方视角）
+    const RESULT_SUCCESS = {
+      '惨胜': true, '小胜': true, '大胜': true, '胜': true,
+      '平局': false, '平': false,
+      '小负': false, '大败': false, '负': false,
     };
-    */
-    const _inferSide = (txt) => {
-      const t = (txt || '').trim();
-      if (!t) return { slot: null, faction: null };
-      const first = t.charAt(0);
-      if (first === '甲') return { slot: 0, faction: null };
-      if (first === '乙') return { slot: 1, faction: null };
-      if (first === '丙') return { slot: 2, faction: null };
-      /* #battle-faction-city-fix-v1: 优先识别 [阵营] 方括号标签 */
-      const bracketM = t.match(/^\[([^\]]{1,6})\]/);
-      if (bracketM) return { slot: null, faction: bracketM[1] };
-      // NPC:取首段非空白非分隔为阵营名,长度 1-6 字
-      const m = t.match(/^([^\s\/|,，、(()）\[\]]{1,6})/);
-      return { slot: null, faction: m ? m[1] : null };
+
+    // slot 推断：甲=0 乙=1 丙=2，其他为 NPC faction
+    const _slotFromFaction = (f) => {
+      if (f === '甲') return { slot: 0, faction: null };
+      if (f === '乙') return { slot: 1, faction: null };
+      if (f === '丙') return { slot: 2, faction: null };
+      return { slot: null, faction: f || null };
     };
+
     for (const line of raw.split('\n').map(l => l.trim()).filter(Boolean)) {
       if (/^本回合无战事/.test(line)) continue;
       const m = line.match(re);
-      if (m) {
-        const atkSide = _inferSide(m[1]);
-        const defSide = _inferSide(m[2]);
-        /* [legacy v1]
-        battles.push({
-          attacker:      m[1].trim(),
-          defender:      m[2].trim(),
-          result:        m[3],
-          attacker_loss: parseInt(m[4]),
-          defender_loss: parseInt(m[5]),
-          success:       m[3] === '胜',
-          attackerSlot:    atkSide.slot,
-          attackerFaction: atkSide.faction,
-          defenderSlot:    defSide.slot,
-          defenderFaction: defSide.faction,
-        });
-        */
-        /* #battle-faction-city-fix-v1: 从攻守方文本提取尾部 (城名) */
-        const _extractCity = (raw) => {
-          const cm = (raw || '').match(/[（(]([\u4e00-\u9fa5]{1,6})[）)]$/);
-          return cm ? cm[1] : null;
-        };
-        const city = _extractCity(m[2]) || _extractCity(m[1]) || null;
-        battles.push({
-          attacker:      m[1].trim(),
-          defender:      m[2].trim(),
-          result:        m[3],
-          attacker_loss: parseInt(m[4]),
-          defender_loss: parseInt(m[5]),
-          success:       m[3] === '胜',
-          city:            city,
-          attackerSlot:    atkSide.slot,
-          attackerFaction: atkSide.faction,
-          defenderSlot:    defSide.slot,
-          defenderFaction: defSide.faction,
-        });
+      if (!m) {
+        // 静默跳过不匹配行
+        continue;
       }
+
+      const atkFactionRaw = m[1];  // 攻方阵营标签
+      const atkGeneral    = m[2];  // 攻方武将名
+      const atkCity       = m[3] || null;  // 攻方城名（可为空）
+      const defFactionRaw = m[4] || null;  // 守方阵营标签（可为空）
+      const defGeneral    = m[5];  // 守方武将名
+      const defCity       = m[6] || null;  // 守方城名（交战城池）
+      const result        = m[7];  // 档位
+      const atkLoss       = parseInt(m[8], 10);
+      const defLoss       = parseInt(m[9], 10);
+
+      const atkSide = _slotFromFaction(atkFactionRaw);
+      const defSide = _slotFromFaction(defFactionRaw);
+
+      // city 取守方城名优先（交战城池），攻方城名兜底
+      const city = defCity || atkCity || null;
+
+      battles.push({
+        attacker:        m[0].split('→')[0].trim(),  // 原文攻方半段
+        defender:        m[0].split('→')[1].split(/[|｜]/)[0].trim(),  // 原文守方半段
+        result:          result,
+        attacker_loss:   atkLoss,
+        defender_loss:   defLoss,
+        success:         !!RESULT_SUCCESS[result],
+        city:            city,
+        attackerSlot:    atkSide.slot,
+        attackerFaction: atkSide.faction,
+        defenderSlot:    defSide.slot,
+        defenderFaction: defSide.faction,
+        // v2 新增：结构化字段供 UI 直接消费
+        attackerGeneral: atkGeneral,
+        defenderGeneral: defGeneral,
+        attackerCity:    atkCity,
+        defenderCity:    defCity,
+        attackerFactionRaw: atkFactionRaw,
+        defenderFactionRaw: defFactionRaw,
+      });
     }
     return battles;
   }
