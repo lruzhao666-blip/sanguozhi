@@ -855,8 +855,16 @@
       renderRoundBar(latest);
       renderDigest(latest);
       renderPlayerCards();
+
+      /* [legacy v1]
       renderMap();
       renderWorld(latest);
+      renderChangesDetail();
+      */
+
+      renderMap();
+      renderWorld(latest);
+      renderJunbao(latest);    // #battle-splitblock-fix-v1: 补回军报板块渲染调用
       renderChangesDetail();
       renderHistorySection();
     }
