@@ -11234,3 +11234,20 @@ body.is-viewer-mode #diag-toast {
 .world-bat-city {
   align-self: center !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   工单#world-bat-city-align-v2
+   战况结算：城名/结果徽/箭头与武将名第一行基线对齐
+   覆盖 v1 的 center + v20261112a 的 center
+   ════════════════════════════════════════════════════════════ */
+
+.world-bat-city {
+  align-self: baseline !important;
+}
+.world-bat-result {
+  align-self: baseline !important;
+}
+.world-bat-arrow {
+  align-self: baseline !important;
+  margin-top: 0 !important;
+}
