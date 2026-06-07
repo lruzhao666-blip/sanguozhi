@@ -2287,6 +2287,22 @@
   //   }
   //   return s || raw;
   // }
+  /* [legacy v1] */
+  // function _junbaoStripPrefix(raw, badgeText) {
+  //   if (!raw) return '';
+  //   let s = String(raw).trim();
+  //   // 去掉开头的 甲/乙/丙
+  //   s = s.replace(/^[甲乙丙]\s*/, '');
+  //   /* #battle-faction-city-fix-v1: 去掉开头的 [阵营] 方括号标签 */
+  //   s = s.replace(/^\[[^\]]{1,6}\]\s*/, '');
+  //   // 去掉开头的阵营名(如"袁绍 颜良" → "颜良")
+  //   if (badgeText && badgeText.length >= 2 && s.indexOf(badgeText) === 0) {
+  //     s = s.slice(badgeText.length).trim();
+  //   }
+  //   /* #battle-faction-city-fix-v1: 去掉尾部 (城名) 括号 */
+  //   s = s.replace(/[（(][\u4e00-\u9fa5]{1,6}[）)]$/, '').trim();
+  //   return s || raw;
+  // }
   function _junbaoStripPrefix(raw, badgeText) {
     if (!raw) return '';
     let s = String(raw).trim();
@@ -2295,8 +2311,13 @@
     /* #battle-faction-city-fix-v1: 去掉开头的 [阵营] 方括号标签 */
     s = s.replace(/^\[[^\]]{1,6}\]\s*/, '');
     // 去掉开头的阵营名(如"袁绍 颜良" → "颜良")
+    /* #battle-strip-prefix-guard-v1: 防护——去掉后若以括号开头，
+       说明剥离的是武将名本身而非冗余前缀，不执行 */
     if (badgeText && badgeText.length >= 2 && s.indexOf(badgeText) === 0) {
-      s = s.slice(badgeText.length).trim();
+      const remainder = s.slice(badgeText.length).trim();
+      if (remainder && !(/^[（(]/.test(remainder))) {
+        s = remainder;
+      }
     }
     /* #battle-faction-city-fix-v1: 去掉尾部 (城名) 括号 */
     s = s.replace(/[（(][\u4e00-\u9fa5]{1,6}[）)]$/, '').trim();
