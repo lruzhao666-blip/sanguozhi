@@ -132,8 +132,18 @@
         (latest.parsed.npcCities || []).forEach(c => {
           (c.holders || []).forEach(h => push(h, `NPC ${c.name}守将`));
         });
+        /* [legacy v1]
         (latest.parsed.transit || []).forEach(t => {
           if (t.general) push(t.general, `[调度]段(${t.from}→${t.to})`);
+        });
+        */
+        /* #diag-r1-transit-split-v1: 多将共率按 "/" 拆分，逐人参与查重 */
+        (latest.parsed.transit || []).forEach(t => {
+          if (!t.general) return;
+          const names = t.general.split('/').map(s => s.trim()).filter(Boolean);
+          names.forEach(name => {
+            push(name, `[调度]段(${t.from}→${t.to})`);
+          });
         });
         (latest.parsed.world || []).forEach(w => {
           if (w.name) push(w.name, `[世界]段(${w.status})`);
