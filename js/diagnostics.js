@@ -237,10 +237,17 @@
           });
         });
 
-        /* #diag-r2-strict-v2: 本回合在册武将名含非法字符(符号/数字/标点)视为格式写错,等同失踪 */
-        const ILLEGAL_NAME_RE = /[0-9\(\)（）\[\]【】\|｜:：,，\/\\;；\.\+\-\*=<>!！\?？@#$%^&_~`'"{}]/;
+        /* #diag-r2-strict-v2: 本回合在册武将名含非法字符(符号/数字/标点)视为格式写错,等同失踪
+           排除调度段来源:调度段多将共率/路线符号经 parser 拆分后可能残留碎片,不误报 */
+        const ILLEGAL_NAME_RE = /[0-9\(\)（）\[\]【】\|｜:：,，\/\\;；\.\+\-\*=<>!！\?？@#$%^&_~`'"{}→←↔►▸▶]/;
+        /* 收集调度段所有武将名,作为豁免白名单 */
+        const _transitNames = new Set();
+        (latest.parsed.transit || []).forEach(t => {
+          if (t.general) _transitNames.add(t.general);
+        });
         currSet.forEach(name => {
           if (!name || name.length < 1) return;
+          if (_transitNames.has(name)) return;  /* 调度段来源不报 */
           if (ILLEGAL_NAME_RE.test(name)) {
             issues.push({
               id: `R2-r${round}-fmt-${name}`,
