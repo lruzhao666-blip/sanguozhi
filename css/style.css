@@ -11224,3 +11224,13 @@ body.is-viewer-mode #diag-toast {
   align-items: unset !important;
   gap: unset !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   工单#world-bat-city-align-v1
+   战况结算城名与武将名基线对齐
+   .world-bat-main 是 flex-start，城名需独立 align-self 居中
+   ════════════════════════════════════════════════════════════ */
+
+.world-bat-city {
+  align-self: center !important;
+}
