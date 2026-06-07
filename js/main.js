@@ -864,7 +864,7 @@
 
       renderMap();
       renderWorld(latest);
-      renderJunbao(latest);    // #battle-fix-full-v1: 补回军报板块渲染调用
+      renderJunbao(latest);    // #battle-splitblock-fix-v1: 补回军报板块渲染调用
       renderChangesDetail();
       renderHistorySection();
     }
