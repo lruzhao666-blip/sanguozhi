@@ -10968,10 +10968,11 @@ body.is-viewer-mode #diag-toast {
 /* 主体行:攻 → 守 + 城 + 结果 */
 .world-bat-main {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   flex-wrap: wrap;
   gap: 4px 8px;
   min-width: 0;
+  /* #battle-city-baseline-v1: 改 baseline 对齐兵马调度 */
 }
 
 /* 攻守整体单元(徽章 + 名) */
