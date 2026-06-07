@@ -11251,3 +11251,202 @@ body.is-viewer-mode #diag-toast {
   align-self: baseline !important;
   margin-top: 0 !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20260607b 工单#battle-parser-v2-and-ui-redesign
+   战况结算 UI v3 — 左右对战布局（后写覆盖旧规则）
+   ──────────────────────────────────────────────────────────── */
+
+.world-bat-row {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr !important;
+  align-items: center !important;
+  gap: 0 !important;
+  padding: 10px 14px !important;
+  border-radius: var(--r) !important;
+  background: rgba(18,10,6,.5) !important;
+  border: 1px solid rgba(255,255,255,.04) !important;
+  border-left: none !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: background .18s !important;
+  flex-direction: unset !important;
+}
+.world-bat-row:hover {
+  background: rgba(35,18,10,.72) !important;
+}
+.world-bat-row::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important; top: 0 !important; bottom: 0 !important;
+  width: 2px !important;
+  border-radius: 0 !important;
+  background: var(--text-dim) !important;
+}
+.world-bat-row[data-result="win"]::before  { background: #6dca7d !important; }
+.world-bat-row[data-result="lose"]::before { background: #e07060 !important; }
+.world-bat-row[data-result="draw"]::before { background: #b89868 !important; }
+
+/* 攻方（左侧） */
+.world-bat-atk {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  justify-content: flex-start !important;
+  min-width: 0 !important;
+}
+
+/* 守方（右侧镜像） */
+.world-bat-def {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  justify-content: flex-end !important;
+  min-width: 0 !important;
+}
+
+/* 中央结果列 */
+.world-bat-center {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 0 12px !important;
+  flex-shrink: 0 !important;
+}
+
+/* 结果徽章 */
+.world-bat-result {
+  font-family: var(--font-serif) !important;
+  font-size: .76rem !important;
+  font-weight: 900 !important;
+  letter-spacing: .06em !important;
+  padding: 2px 10px !important;
+  border-radius: 3px !important;
+  background: rgba(0,0,0,.4) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  line-height: 1.5 !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+  width: auto !important;
+}
+.world-bat-row[data-result="win"] .world-bat-result {
+  color: #7dd87d !important;
+  border-color: rgba(61,190,108,.4) !important;
+  background: rgba(0,60,22,.25) !important;
+}
+.world-bat-row[data-result="lose"] .world-bat-result {
+  color: #e87060 !important;
+  border-color: rgba(220,80,40,.4) !important;
+  background: rgba(60,10,2,.25) !important;
+}
+.world-bat-row[data-result="draw"] .world-bat-result {
+  color: #e8c560 !important;
+  border-color: rgba(200,155,0,.4) !important;
+  background: rgba(60,42,0,.25) !important;
+}
+
+/* 城名 */
+.world-bat-city {
+  font-family: var(--font-serif) !important;
+  font-size: .62rem !important;
+  color: var(--text-dim) !important;
+  letter-spacing: .06em !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  align-self: center !important;
+  white-space: nowrap !important;
+}
+
+/* 阵营徽章 */
+.world-bat-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 1px 6px !important;
+  font-family: var(--font-serif) !important;
+  font-size: .6rem !important;
+  font-weight: 700 !important;
+  letter-spacing: .04em !important;
+  border-radius: 2px !important;
+  border: 1px solid !important;
+  background: transparent !important;
+  white-space: nowrap !important;
+  line-height: 1.5 !important;
+  flex-shrink: 0 !important;
+}
+
+/* 武将名 */
+.world-bat-name {
+  font-family: var(--font-serif) !important;
+  font-size: .88rem !important;
+  font-weight: 800 !important;
+  color: var(--text-main) !important;
+  letter-spacing: .03em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* 伤亡 */
+.world-bat-loss {
+  font-family: var(--font-sans) !important;
+  font-size: .68rem !important;
+  font-weight: 700 !important;
+  color: rgba(224,112,96,.8) !important;
+  font-variant-numeric: tabular-nums !important;
+  flex-shrink: 0 !important;
+  margin-left: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+.world-bat-loss.is-zero {
+  color: var(--text-dim) !important;
+  opacity: .6 !important;
+}
+
+/* 隐藏旧 DOM 结构残留（v20261112a 的 .world-bat-col / .world-bat-main 等） */
+.world-bat-col,
+.world-bat-main,
+.world-bat-arrow,
+.world-bat-side,
+.world-bat-role,
+.world-bat-loss-cell,
+.world-bat-city-line,
+.world-bat-city-icon,
+.world-bat-col--atk,
+.world-bat-col--def {
+  display: contents !important;
+}
+
+/* 移动端 ≤480px：上下堆叠 */
+@media (max-width: 480px) {
+  .world-bat-row {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto auto !important;
+    gap: 4px !important;
+    padding: 8px 12px !important;
+  }
+  .world-bat-atk {
+    justify-content: flex-start !important;
+    order: 1 !important;
+  }
+  .world-bat-center {
+    flex-direction: row !important;
+    gap: 8px !important;
+    padding: 4px 0 !important;
+    order: 2 !important;
+    justify-content: center !important;
+  }
+  .world-bat-def {
+    justify-content: flex-start !important;
+    order: 3 !important;
+  }
+  .world-bat-name { font-size: .82rem !important; }
+  .world-bat-result { font-size: .7rem !important; }
+}
+
+/* ╚══ END v20260607b 战况结算 UI v3 左右对战 ══════════════════ */
