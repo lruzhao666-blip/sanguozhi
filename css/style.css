@@ -11642,3 +11642,181 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260607e ══════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608d 工单#gen-organizer-v2-rebuild-C
+   武将整理 v2 · 融入武将列表区 · .gou-* 极简样式
+   设计：对齐站点 .gen-section-title 渐变线语言，零装饰
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 分组容器 ── */
+.gou-group {
+  margin-bottom: 2px;
+}
+.gou-group:last-of-type {
+  margin-bottom: 0;
+}
+
+/* ── 分组标题行：小灰字 + 渐变尾线（对齐 .gen-section-title）── */
+.gou-group-hd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 3px;
+  margin-bottom: 5px;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.gou-group-label {
+  font-family: var(--font-sans);
+  font-size: .58rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.gou-group-cnt {
+  font-family: var(--font-sans);
+  font-size: .54rem;
+  color: var(--text-dim);
+  opacity: .6;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* 渐变尾线 */
+.gou-group-hd::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,.08), transparent);
+  border-radius: 1px;
+}
+
+/* 可编辑态的分组标题行加交互暗示 */
+.pcard-v4 .gou-group-hd {
+  cursor: context-menu;
+}
+
+/* ── 组内 tag 列表 ── */
+.gou-group-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 0 6px;
+}
+
+/* ── 空分组提示 ── */
+.gou-group-empty {
+  font-family: var(--font-sans);
+  font-size: .62rem;
+  color: var(--text-dim);
+  opacity: .4;
+  padding: 4px 0 8px;
+  letter-spacing: .04em;
+}
+
+/* ── 新建分组按钮 ── */
+.gou-add-group {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 0;
+  font-family: var(--font-sans);
+  font-size: .62rem;
+  color: var(--text-dim);
+  opacity: .5;
+  cursor: pointer;
+  letter-spacing: .06em;
+  transition: opacity .18s, color .18s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.gou-add-group:hover {
+  opacity: 1;
+  color: var(--gold-dim);
+}
+
+/* ══════════ 右键 / 长按操作菜单 ══════════ */
+.gou-menu {
+  position: fixed;
+  z-index: 9800;
+  min-width: 140px;
+  max-width: 220px;
+  background: rgba(16,8,4,.97);
+  border: 1px solid rgba(212,168,67,.3);
+  border-radius: var(--r);
+  padding: 3px 0;
+  box-shadow: 0 6px 24px rgba(0,0,0,.65);
+  animation: gouMenuIn .1s ease-out;
+}
+
+@keyframes gouMenuIn {
+  from { opacity: 0; transform: scale(.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.gou-menu-item {
+  display: block;
+  width: 100%;
+  padding: 7px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  font-family: var(--font-sans);
+  font-size: .74rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background .1s, color .1s;
+  letter-spacing: .02em;
+}
+.gou-menu-item:hover {
+  background: rgba(212,168,67,.08);
+  color: var(--gold-light);
+}
+
+.gou-menu-danger {
+  color: rgba(224,112,96,.7);
+}
+.gou-menu-danger:hover {
+  background: rgba(200,40,0,.08);
+  color: #e07070;
+}
+
+.gou-menu-divider {
+  height: 1px;
+  margin: 3px 10px;
+  background: rgba(255,255,255,.06);
+}
+
+/* ══════════ 移动端 ══════════ */
+@media (max-width: 720px) {
+  .gou-group-label {
+    font-size: .56rem;
+    letter-spacing: .1em;
+  }
+  .gou-group-cnt {
+    font-size: .52rem;
+  }
+  .gou-group-tags {
+    gap: 5px;
+  }
+  .gou-group-empty {
+    font-size: .58rem;
+  }
+  .gou-add-group {
+    font-size: .58rem;
+  }
+  .gou-menu {
+    min-width: 160px;
+  }
+  .gou-menu-item {
+    padding: 9px 16px;
+    font-size: .76rem;
+  }
+}
+
+/* ╚══ END v20260608d 武将整理 v2 ══════════════════════════════ */
