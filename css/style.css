@@ -12691,3 +12691,50 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608b 工单#gen-org-ui-polish-v1 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608c 工单#gen-org-overview-v1
+   「武将」文字徽标 + 无分组总览辅助样式
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 麾下武将折叠区标题文字徽标 [武将] ── */
+.pcs-badge {
+  display: inline-block;
+  font-family: var(--font-serif);
+  font-size: .58rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  background: rgba(212,168,67,.08);
+  border: 1px solid rgba(212,168,67,.22);
+  border-radius: 3px;
+  padding: 1px 6px;
+  letter-spacing: .05em;
+  line-height: 1.7;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* ── 总览 tab 武将标签上的小分组徽标 ── */
+.gor-gen-grp-badge {
+  display: inline-block;
+  font-family: var(--font-serif);
+  font-size: .52rem;
+  font-weight: 600;
+  color: var(--gold-dim);
+  background: rgba(212,168,67,.07);
+  border: 1px solid rgba(212,168,67,.18);
+  border-radius: 2px;
+  padding: 0 4px;
+  margin-left: 4px;
+  letter-spacing: .03em;
+  line-height: 1.6;
+  vertical-align: middle;
+  opacity: .85;
+}
+
+/* ── 总览 tab 样式（与普通 tab 统一，额外加粗以示固定） ── */
+.gor-tab-overview {
+  font-weight: 700;
+}
+
+/* ╚══ END v20260608c 工单#gen-org-overview-v1 ══════════════ */

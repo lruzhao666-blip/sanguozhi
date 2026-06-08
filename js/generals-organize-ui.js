@@ -74,13 +74,43 @@
 
     if (countEl) countEl.textContent = groups.length + ' 组';
 
-    var tabNames = groups.map(function (g) { return g.group_name; });
+    // 「全部武将」是固定总览 tab，始终排在首位
+    var tabNames = ['全部武将'].concat(groups.map(function (g) { return g.group_name; }));
     if (tabNames.indexOf(_activeTab[slot]) === -1) _activeTab[slot] = '全部武将';
+
+    // 所有武将聚合（用于总览 tab）
+    var allGenerals = [];
+    var seenNames = {};
+    groups.forEach(function (g) {
+      (g.generals || []).forEach(function (gen) {
+        if (!seenNames[gen.name]) {
+          seenNames[gen.name] = true;
+          allGenerals.push({ name: gen.name, order: gen.order, groupName: g.group_name });
+        }
+      });
+    });
+    // 加入无分组武将（在当前回合名册中但不在任何分组的）
+    var currentGensAll = _getCurrentGenerals(slot);
+    currentGensAll.forEach(function (gen, i) {
+      if (!seenNames[gen.name]) {
+        seenNames[gen.name] = true;
+        allGenerals.push({ name: gen.name, order: 9000 + i, groupName: null });
+      }
+    });
 
     var html = '';
 
     // Tab 横条
     html += '<div class="gor-tabs" data-slot="' + slot + '">';
+    // 固定总览 tab
+    var isOverviewActive = _activeTab[slot] === '全部武将';
+    html += '<button class="gor-tab gor-tab-overview' + (isOverviewActive ? ' gor-tab-active' : '') + '"'
+      + ' data-slot="' + slot + '"'
+      + ' data-group="全部武将"'
+      + ' type="button">全部武将'
+      + '<span class="gor-tab-cnt">' + allGenerals.length + '</span>'
+      + '</button>';
+    // 用户自定义分组
     groups.forEach(function (g) {
       var isActive = g.group_name === _activeTab[slot];
       html += '<button class="gor-tab' + (isActive ? ' gor-tab-active' : '') + '"'
@@ -97,25 +127,56 @@
     html += '</div>';
 
     // 当前选中分组内容
-    var activeGroup = null;
-    groups.forEach(function (g) {
-      if (g.group_name === _activeTab[slot]) activeGroup = g;
-    });
-
-    if (activeGroup) {
-      html += _renderGroupContent(slot, activeGroup, groups, editable);
+    if (_activeTab[slot] === '全部武将') {
+      html += _renderOverviewContent(slot, allGenerals, groups, editable);
+    } else {
+      var activeGroup = null;
+      groups.forEach(function (g) {
+        if (g.group_name === _activeTab[slot]) activeGroup = g;
+      });
+      if (activeGroup) {
+        html += _renderGroupContent(slot, activeGroup, groups, editable);
+      }
     }
 
     bodyEl.innerHTML = html;
   }
 
+  // 「全部武将」总览 tab 内容：聚合所有分组武将，只读展示
+  function _renderOverviewContent(slot, allGenerals, allGroups, editable) {
+    var html = '';
+    var sorted = allGenerals.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+
+    if (sorted.length) {
+      html += '<div class="gor-gen-list">';
+      sorted.forEach(function (gen) {
+        var groupLabel = gen.groupName ? gen.groupName : '';
+        html += '<span class="gor-gen-tag gen-tag"'
+          + ' data-slot="' + slot + '"'
+          + ' data-group="' + _esc(gen.groupName || '') + '"'
+          + ' data-name="' + _esc(gen.name) + '"'
+          + ' title="' + (groupLabel ? '分组：' + _esc(groupLabel) : '无分组') + '"'
+          + '>' + _esc(gen.name);
+        if (groupLabel) {
+          html += '<span class="gor-gen-grp-badge">' + _esc(groupLabel) + '</span>';
+        }
+        html += '</span>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="gor-empty">暂无武将</div>';
+    }
+
+    // 总览 tab 不提供添加控件（各分组内操作）
+    return html;
+  }
+
   function _renderGroupContent(slot, group, allGroups, editable) {
     var html = '';
     var gName = group.group_name;
-    var isDefault = gName === '全部武将';
 
     // 分组操作栏
-    if (editable && !isDefault) {
+    if (editable) {
       html += '<div class="gor-group-bar">';
       html += '<span class="gor-group-name">' + _esc(gName) + '</span>';
       html += '<div class="gor-group-actions">';
@@ -158,7 +219,7 @@
         html += '<option value="">+ 添加武将到此分组…</option>';
         available.forEach(function (g) {
           var fromGroup = window.SGGenOrg.findGeneralGroup(slot, g.name);
-          var suffix = fromGroup !== gName ? '（' + fromGroup + '）' : '';
+          var suffix = fromGroup ? '（' + fromGroup + '）' : '（无分组）';
           html += '<option value="' + _esc(g.name) + '">' + _esc(g.name) + suffix + '</option>';
         });
         html += '</select></div>';
@@ -212,9 +273,9 @@
       items.push({ label: '移到「' + g.group_name + '」', act: 'move-to', target: g.group_name });
     });
 
-    if (groupName !== '全部武将') {
-      var hasDefault = items.some(function (it) { return it.target === '全部武将'; });
-      if (!hasDefault) items.push({ label: '移出到「全部武将」', act: 'move-to', target: '全部武将' });
+    // 如果武将属于某分组，提供「取消分组」选项
+    if (groupName) {
+      items.push({ label: '取消分组（移到无分组）', act: 'remove-from-group' });
     }
 
     items.forEach(function (it) {
@@ -269,6 +330,9 @@
       window.SGGenOrg.reorderGeneral(slot, group, gen, 'down').then(function () { renderSlot(slot); });
     } else if (act === 'move-to' && target) {
       window.SGGenOrg.moveGeneral(slot, gen, group, target).then(function () { renderSlot(slot); });
+    } else if (act === 'remove-from-group' && group) {
+      // 武将移出分组：从所属分组的 generals 数组中删除，变为无分组状态
+      window.SGGenOrg.removeFromGroup(slot, gen, group).then(function () { renderSlot(slot); });
     }
   }
 
@@ -312,9 +376,17 @@
       if (!name || isNaN(slot) || !group) return;
 
       var fromGroup = window.SGGenOrg.findGeneralGroup(slot, name);
-      window.SGGenOrg.moveGeneral(slot, name, fromGroup, group).then(function () {
-        renderSlot(slot);
-      }).catch(function (e) { _toast('添加失败：' + e); });
+      if (fromGroup) {
+        // 武将当前在某分组，移动到目标分组
+        window.SGGenOrg.moveGeneral(slot, name, fromGroup, group).then(function () {
+          renderSlot(slot);
+        }).catch(function (e) { _toast('添加失败：' + e); });
+      } else {
+        // 武将当前无分组，直接添加到目标分组
+        window.SGGenOrg.addToGroup(slot, name, group).then(function () {
+          renderSlot(slot);
+        }).catch(function (e) { _toast('添加失败：' + e); });
+      }
     });
 
     // 右键菜单
@@ -388,7 +460,7 @@
       });
 
     } else if (act === 'delete') {
-      if (!confirm('确认删除分组「' + groupName + '」？\n组内武将将移回「全部武将」。')) return;
+      if (!confirm('确认删除分组「' + groupName + '」？\n组内武将将变为无分组状态。')) return;
       window.SGGenOrg.deleteGroup(slot, groupName).then(function () {
         _activeTab[slot] = '全部武将';
         renderSlot(slot);
@@ -396,28 +468,15 @@
       }).catch(function (e) { _toast('删除失败：' + e); });
 
     } else if (act === 'group-up') {
-      // 在可移动的用户分组列表（排除「未分组」）中检查边界
       var _allUp = window.SGGenOrg.getGroups(slot);
-      var _userUp = _allUp.filter(function (g) { return g.group_name !== '全部武将'; });
-      var _idxUp = _userUp.findIndex(function (g) { return g.group_name === groupName; });
-      if (_idxUp <= 0) return; // 已是第一个用户分组，无法继续左移
-      // 若 SGGenOrg.reorderGroup 会与「未分组」交换，需连续调用两次
-      var _fullIdx = _allUp.findIndex(function (g) { return g.group_name === groupName; });
-      var _swapTarget = _allUp[_fullIdx - 1];
-      if (_swapTarget && _swapTarget.group_name === '全部武将') {
-        // 相邻的是「未分组」，连续交换两次让它跳过去
-        window.SGGenOrg.reorderGroup(slot, groupName, 'up')
-          .then(function () { return window.SGGenOrg.reorderGroup(slot, groupName, 'up'); })
-          .then(function () { renderSlot(slot); });
-      } else {
-        window.SGGenOrg.reorderGroup(slot, groupName, 'up').then(function () { renderSlot(slot); });
-      }
+      var _idxUp = _allUp.findIndex(function (g) { return g.group_name === groupName; });
+      if (_idxUp <= 0) return; // 已是第一个分组
+      window.SGGenOrg.reorderGroup(slot, groupName, 'up').then(function () { renderSlot(slot); });
 
     } else if (act === 'group-down') {
       var _allDn = window.SGGenOrg.getGroups(slot);
-      var _userDn = _allDn.filter(function (g) { return g.group_name !== '全部武将'; });
-      var _idxDn = _userDn.findIndex(function (g) { return g.group_name === groupName; });
-      if (_idxDn < 0 || _idxDn >= _userDn.length - 1) return; // 已是最后一个，无法继续右移
+      var _idxDn = _allDn.findIndex(function (g) { return g.group_name === groupName; });
+      if (_idxDn < 0 || _idxDn >= _allDn.length - 1) return; // 已是最后一个
       window.SGGenOrg.reorderGroup(slot, groupName, 'down').then(function () { renderSlot(slot); });
     }
   }

@@ -117,13 +117,7 @@
             });
           }
         });
-        // 确保每个 slot 都有「未分组」
-        [0, 1, 2].forEach(function (s) {
-          var hasDefault = _data[s].some(function (g) { return g.group_name === '全部武将'; });
-          if (!hasDefault) {
-            _createGroup(s, '全部武将', 0);
-          }
-        });
+        // 「全部武将」是纯 UI 总览 tab，数据层不存在该分组
         _loaded = true;
         _loading = false;
       })
@@ -195,7 +189,6 @@
   // ══════════════════════════════════════════
   function renameGroup(slot, oldName, newName) {
     if (!_isValidSlot(slot)) return Promise.reject('invalid slot');
-    if (oldName === '全部武将') return Promise.reject('cannot rename default');
     newName = (newName || '').trim();
     if (!newName) return Promise.reject('empty name');
     if (newName.length > 20) return Promise.reject('name too long');
@@ -223,26 +216,11 @@
   // ══════════════════════════════════════════
   function deleteGroup(slot, name) {
     if (!_isValidSlot(slot)) return Promise.reject('invalid slot');
-    if (name === '全部武将') return Promise.reject('cannot delete default');
 
     var group = _findGroup(slot, name);
     if (!group) return Promise.reject('not found');
 
-    // 先把该组武将移回「未分组」
-    var defaultGrp = _findGroup(slot, '全部武将');
-    if (defaultGrp && group.generals.length) {
-      var maxOrder = 0;
-      defaultGrp.generals.forEach(function (g) {
-        if (g.order > maxOrder) maxOrder = g.order;
-      });
-      group.generals.forEach(function (g, i) {
-        defaultGrp.generals.push({ name: g.name, order: maxOrder + 1 + i });
-      });
-      // 更新「未分组」
-      _updateGroupGenerals(slot, defaultGrp);
-    }
-
-    // 删除该分组
+    // 删除该分组（组内武将变为无分组，「全部武将」总览 tab 仍可见）
     return _fetch(_apiUrl('?id=eq.' + group.id), { method: 'DELETE' })
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -277,6 +255,44 @@
       _updateGroupGenerals(slot, srcGrp),
       _updateGroupGenerals(slot, dstGrp)
     ]).then(function () {
+      _broadcast('sg-gen-org-updated');
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  将无分组武将添加到指定分组
+  // ══════════════════════════════════════════
+  function addToGroup(slot, generalName, targetGroupName) {
+    if (!_isValidSlot(slot)) return Promise.reject('invalid slot');
+    var dstGrp = _findGroup(slot, targetGroupName);
+    if (!dstGrp) return Promise.reject('group not found');
+
+    // 检查是否已在该分组
+    var already = dstGrp.generals.some(function (g) { return g.name === generalName; });
+    if (already) return Promise.resolve();
+
+    var maxOrder = 0;
+    dstGrp.generals.forEach(function (g) {
+      if (g.order > maxOrder) maxOrder = g.order;
+    });
+    dstGrp.generals.push({ name: generalName, order: maxOrder + 1 });
+
+    return _updateGroupGenerals(slot, dstGrp).then(function () {
+      _broadcast('sg-gen-org-updated');
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  将武将从分组中移出（变为无分组状态）
+  // ══════════════════════════════════════════
+  function removeFromGroup(slot, generalName, groupName) {
+    if (!_isValidSlot(slot)) return Promise.reject('invalid slot');
+    var group = _findGroup(slot, groupName);
+    if (!group) return Promise.reject('group not found');
+
+    group.generals = group.generals.filter(function (g) { return g.name !== generalName; });
+
+    return _updateGroupGenerals(slot, group).then(function () {
       _broadcast('sg-gen-org-updated');
     });
   }
@@ -384,24 +400,7 @@
       }
     });
 
-    // 找出未分配的武将，加入「未分组」
-    var defaultGrp = _findGroup(slot, '全部武将');
-    if (defaultGrp) {
-      var maxOrder = 0;
-      defaultGrp.generals.forEach(function (g) {
-        if (g.order > maxOrder) maxOrder = g.order;
-      });
-      var added = false;
-      Object.keys(currentNames).forEach(function (name) {
-        if (!assignedNames[name]) {
-          defaultGrp.generals.push({ name: name, order: ++maxOrder });
-          added = true;
-        }
-      });
-      if (added && dirty.indexOf(defaultGrp) === -1) {
-        dirty.push(defaultGrp);
-      }
-    }
+    // 未分配的武将不归属任何分组，「全部武将」总览 tab 会聚合显示它们
 
     if (!dirty.length) return Promise.resolve();
 
@@ -455,7 +454,7 @@
   }
 
   function findGeneralGroup(slot, generalName) {
-    var result = '全部武将';
+    var result = null; // null 表示无分组（会在「全部武将」总览中显示）
     _data[slot].forEach(function (g) {
       g.generals.forEach(function (gen) {
         if (gen.name === generalName) result = g.group_name;
@@ -507,6 +506,8 @@
     renameGroup: renameGroup,
     deleteGroup: deleteGroup,
     moveGeneral: moveGeneral,
+    addToGroup: addToGroup,
+    removeFromGroup: removeFromGroup,
     reorderGeneral: reorderGeneral,
     reorderGroup: reorderGroup,
     syncWithRoster: syncWithRoster,
