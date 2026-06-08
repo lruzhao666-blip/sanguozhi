@@ -1026,6 +1026,76 @@
       },
     },
 
+    /* ─────── R17 被俘/在野武将即将到期 ─────── */
+    /* #diag-r17-world-expiry-v1 (2026-06-08):
+       依据 M-31【[世界] 段填写规则·硬】:
+       - 被俘:剩 1 时 GM 必须挂处置选项(斩首/释放/再劝降/囚禁续押+2)
+       - 在野:剩 1 时 GM 必须安排归宿(投靠/隐居/病故/从数据移除并以事件交代)
+       - 不得让武将到期后无落点消失
+
+       检测策略:
+       - 扫最新回合 world[] 中 status=被俘/在野 的条目
+       - remaining=2 → warn(提醒 GM 下回合须安排)
+       - remaining=1 → error(本回合必须处置)
+       - remaining=0 或缺失 → 不报(parser 层或继承层已处理) */
+    {
+      id: 'R17', name: '武将即将到期', level: 'warn', enabled: true,
+      check(rounds, latest) {
+        if (!latest || !latest.parsed) return [];
+        const round = latest.round || 0;
+        const world = latest.parsed.world || [];
+        if (!world.length) return [];
+
+        const issues = [];
+
+        world.forEach(function (w) {
+          if (!w || !w.name) return;
+          var status = String(w.status || '');
+          if (status !== '被俘' && status !== '在野') return;
+
+          var rem = w.remaining;
+          if (rem === Infinity || rem === '∞') return;
+          var n = Number(rem);
+          if (!Number.isFinite(n)) return;
+
+          var loc = w.location || '未知位置';
+          var statusLabel = status === '被俘' ? '被俘' : '在野';
+
+          if (n === 1) {
+            /* 剩 1 → error：本回合必须处置 */
+            var actionHint = status === '被俘'
+              ? '按 M-31 须在行动建议中挂处置选项(斩首/释放/再劝降/囚禁续押)，否则 GM 将直觉裁定(释放/病故/自缢/越狱)。'
+              : '按 M-31 须在本回合安排归宿(投靠某势力/隐居病故/从数据移除并以事件交代)，不得让武将无落点消失。';
+
+            issues.push({
+              id: 'R17-r' + round + '-' + w.name + '-1',
+              ruleId: 'R17', ruleName: '武将即将到期', level: 'error',
+              body: '<b>' + escHtml(w.name) + '</b>(' + escHtml(statusLabel) + '·' + escHtml(loc) + ')剩余 <span class="diag-mark">1 回合</span>，下回合将到期。' + actionHint,
+              copy: '【第' + round + '回合数据核对】[R17·武将到期警告] ' + w.name + '(' + statusLabel + '·' + loc + ')剩余 1 回合，下回合到期。' + (status === '被俘'
+                ? '请在本回合行动建议中挂处置选项(斩首/释放/再劝降/囚禁续押+2)，或主动安排该武将归宿。'
+                : '请在本回合安排该武将归宿(投靠/隐居/病故等)，不得让武将到期后无落点消失。'),
+            });
+          } else if (n === 2) {
+            /* 剩 2 → warn：提醒 GM 提前规划 */
+            var planHint = status === '被俘'
+              ? '建议主持人提前考虑处置方案(招降/释放/斩首/囚禁续押)，下回合将触发强制处置。'
+              : '建议主持人提前规划归宿(来投事件/隐居/病故)，下回合将触发强制安排。';
+
+            issues.push({
+              id: 'R17-r' + round + '-' + w.name + '-2',
+              ruleId: 'R17', ruleName: '武将即将到期', level: 'warn',
+              body: '<b>' + escHtml(w.name) + '</b>(' + escHtml(statusLabel) + '·' + escHtml(loc) + ')剩余 <span class="diag-mark">2 回合</span>。' + planHint,
+              copy: '【第' + round + '回合数据核对】[R17·武将到期提醒] ' + w.name + '(' + statusLabel + '·' + loc + ')剩余 2 回合。' + (status === '被俘'
+                ? '建议提前考虑处置方案(招降/释放/斩首/囚禁续押)，下回合剩 1 时将触发强制处置。'
+                : '建议提前规划归宿(来投/隐居/病故等)，下回合剩 1 时将触发强制安排。'),
+            });
+          }
+        });
+
+        return issues;
+      },
+    },
+
   ];
 
   /* ═══════════════════════════════════════════
