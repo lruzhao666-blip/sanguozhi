@@ -11615,3 +11615,30 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260607d 工单#world-bat-ui-B-v2 ══════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260607e 工单#world-bat-ui-B-v2-hotfix-2
+   战况结算城名+伤亡右对齐修复
+   ──────────────────────────────────────────────────────────── */
+
+.wbr-right {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* 覆盖旧规则：城名不再单独 margin-left:auto */
+.wbr-city {
+  margin-left: 0 !important;
+}
+
+@media (max-width: 480px) {
+  .wbr-right {
+    gap: 8px !important;
+  }
+}
+
+/* ╚══ END v20260607e ══════════════════════════════════════════ */

@@ -2616,11 +2616,13 @@
       '<span class="wbr-vs">vs</span>' +
       '<span class="wbr-badge" style="color:' + defColor.glow + ';border-color:' + defColor.stroke + '">' + esc(defLabel) + '</span>' +
       '<span class="wbr-name">' + esc(defName) + '</span>' +
-      (city ? '<span class="wbr-city">' + esc(city) + '</span>' : '') +
-      '<span class="wbr-losses">' +
-        '<span class="' + (atkZero ? 'zero' : '') + '">-' + atkLoss + '</span>' +
-        '<span class="wbr-sep">/</span>' +
-        '<span class="' + (defZero ? 'zero' : '') + '">-' + defLoss + '</span>' +
+      '<span class="wbr-right">' +
+        (city ? '<span class="wbr-city">' + esc(city) + '</span>' : '') +
+        '<span class="wbr-losses">' +
+          '<span class="' + (atkZero ? 'zero' : '') + '">-' + atkLoss + '</span>' +
+          '<span class="wbr-sep">/</span>' +
+          '<span class="' + (defZero ? 'zero' : '') + '">-' + defLoss + '</span>' +
+        '</span>' +
       '</span>' +
     '</div>';
   }
