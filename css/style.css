@@ -11642,3 +11642,345 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260607e ══════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608a 工单#gen-organizer-v3-step3
+   武将整理折叠区 · .gor-* 全量样式
+   设计语言：对齐站点暗金拓本风 + .pc-section 折叠区规范
+   依赖：工单 2A HTML 节点 + 工单 2B JS 渲染的 .gor-* 类名
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 折叠区主体容器 ── */
+.pc-organize .pc-organize-body {
+  padding: 10px 12px 12px;
+}
+
+/* ══════════ Tab 横条 ══════════ */
+.gor-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  padding: 0 0 8px;
+  border-bottom: 1px solid rgba(212,168,67,.12);
+  position: relative;
+}
+.gor-tabs::-webkit-scrollbar { display: none; }
+
+/* 右侧渐变遮罩（暗示可滚动） */
+.gor-tabs::after {
+  content: '';
+  position: sticky;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  flex-shrink: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(8,3,3,.6) 50%,
+    rgba(8,3,3,.92));
+}
+
+.gor-tab {
+  flex-shrink: 0;
+  padding: 6px 12px 7px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: var(--font-serif);
+  font-size: .74rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  transition: color .18s, border-bottom-color .18s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gor-tab:hover {
+  color: var(--text-sub);
+}
+.gor-tab-active {
+  color: var(--gold-light);
+  border-bottom-color: var(--gold);
+}
+
+/* Tab 内武将计数 */
+.gor-tab-cnt {
+  font-family: var(--font-sans);
+  font-size: .58rem;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-left: 2px;
+  opacity: .7;
+  font-variant-numeric: tabular-nums;
+}
+.gor-tab-active .gor-tab-cnt {
+  color: var(--gold-dim);
+  opacity: 1;
+}
+
+/* 新建分组 + 按钮 */
+.gor-tab-add {
+  color: var(--gold-dim);
+  font-size: .82rem;
+  font-weight: 700;
+  padding: 5px 10px 6px;
+  opacity: .6;
+  transition: opacity .18s, color .18s;
+}
+.gor-tab-add:hover {
+  opacity: 1;
+  color: var(--gold-light);
+}
+
+/* ══════════ 分组操作栏 ══════════ */
+.gor-group-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(212,168,67,.08);
+}
+
+.gor-group-name {
+  font-family: var(--font-serif);
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: .06em;
+}
+
+.gor-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.gor-btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: .72rem;
+  padding: 3px 6px;
+  border-radius: 3px;
+  transition: color .15s, background .15s;
+  line-height: 1;
+}
+.gor-btn-icon:hover {
+  color: var(--gold-light);
+  background: rgba(212,168,67,.08);
+}
+.gor-btn-danger:hover {
+  color: #e07070;
+  background: rgba(200,40,0,.08);
+}
+
+/* ══════════ 组内武将标签列表 ══════════ */
+.gor-gen-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0 8px;
+}
+
+/* 武将标签：完全复用站点 gen-tag 拓本印章风 */
+.gor-gen-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  font-family: var(--font-sans);
+  font-size: .82rem;
+  font-weight: 500;
+  color: #c8b89a;
+  background: linear-gradient(180deg, rgba(52,34,10,.65) 0%, rgba(28,18,5,.65) 100%);
+  border: 1px solid rgba(212,168,67,.6);
+  border-radius: 5px;
+  letter-spacing: .04em;
+  cursor: default;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 0 1px rgba(240,192,96,.12),
+    inset 0 1px 0 rgba(255,220,140,.08),
+    inset 0 -1px 0 rgba(0,0,0,.28);
+  transition: color .18s, background .18s, border-color .18s, transform .18s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.gor-gen-tag:hover {
+  color: #f0e6d3;
+  background: linear-gradient(180deg, rgba(84,56,18,.72) 0%, rgba(52,34,10,.72) 100%);
+  border-color: #f0c060;
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 0 0 1px rgba(240,192,96,.22),
+    inset 0 1px 0 rgba(255,220,140,.14),
+    inset 0 -1px 0 rgba(0,0,0,.3);
+}
+
+/* 可编辑态的标签加微妙的交互暗示 */
+.gor-gen-tag[data-slot] {
+  cursor: pointer;
+}
+
+/* ══════════ 空态 ══════════ */
+.gor-empty {
+  padding: 14px 6px;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: .74rem;
+  color: var(--text-dim);
+  letter-spacing: .1em;
+  opacity: .5;
+}
+
+/* ══════════ 下拉添加武将 ══════════ */
+.gor-add-wrap {
+  padding: 6px 0 2px;
+}
+
+.gor-add-select {
+  width: 100%;
+  padding: 7px 10px;
+  background: rgba(0,0,0,.32);
+  border: 1px solid rgba(212,168,67,.2);
+  border-radius: var(--r);
+  color: var(--text-sub);
+  font-family: var(--font-sans);
+  font-size: .74rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .18s;
+  appearance: none;
+  -webkit-appearance: none;
+  /* 自定义下拉箭头 */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a6a5a'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px 6px;
+  padding-right: 28px;
+}
+.gor-add-select:hover,
+.gor-add-select:focus {
+  border-color: rgba(212,168,67,.45);
+}
+.gor-add-select option {
+  background: #1a1008;
+  color: var(--text-main);
+}
+
+/* ══════════ 右键/长按操作菜单 ══════════ */
+.gor-menu {
+  position: fixed;
+  z-index: 9800;
+  min-width: 160px;
+  max-width: 240px;
+  background: linear-gradient(180deg, rgba(20,10,4,.98), rgba(10,5,2,.98));
+  border: 1px solid rgba(212,168,67,.35);
+  border-radius: var(--r);
+  padding: 4px 0;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,220,150,.06);
+  overflow: hidden;
+  animation: gorMenuIn .12s ease-out;
+}
+
+@keyframes gorMenuIn {
+  from { opacity: 0; transform: scale(.95) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.gor-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  font-family: var(--font-serif);
+  font-size: .76rem;
+  letter-spacing: .03em;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+  white-space: nowrap;
+}
+.gor-menu-item:hover {
+  background: rgba(212,168,67,.1);
+  color: var(--gold-light);
+}
+.gor-menu-item:active {
+  background: rgba(212,168,67,.18);
+}
+
+/* ══════════ 移动端适配 ══════════ */
+@media (max-width: 720px) {
+  .pc-organize .pc-organize-body {
+    padding: 8px 10px 10px;
+  }
+
+  .gor-tab {
+    padding: 5px 10px 6px;
+    font-size: .7rem;
+  }
+
+  .gor-tab-cnt {
+    font-size: .54rem;
+  }
+
+  .gor-gen-tag {
+    padding: 4px 9px;
+    font-size: .78rem;
+  }
+
+  .gor-gen-list {
+    gap: 5px;
+  }
+
+  .gor-group-bar {
+    padding: 5px 0 4px;
+    margin-bottom: 4px;
+  }
+
+  .gor-group-name {
+    font-size: .74rem;
+  }
+
+  .gor-btn-icon {
+    font-size: .68rem;
+    padding: 3px 5px;
+  }
+
+  .gor-add-select {
+    font-size: .7rem;
+    padding: 6px 9px;
+    padding-right: 26px;
+  }
+
+  .gor-menu {
+    min-width: 180px;
+  }
+
+  .gor-menu-item {
+    padding: 10px 16px;
+    font-size: .78rem;
+  }
+
+  .gor-empty {
+    font-size: .7rem;
+    padding: 10px 4px;
+  }
+}
+
+/* ╚══ END v20260608a 武将整理折叠区 ══════════════════════════ */
