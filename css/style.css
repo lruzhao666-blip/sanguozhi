@@ -13002,3 +13002,209 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608r 工单#world-mil-wrap-fix-v3 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608s 工单#gen-tab-redesign-A1
+   武将分组 Tab 栏重做 — 方案 A「铜简横卷」底线锚定型
+   设计：对齐站点 #main-nav .nav-btn 底线金色语言
+   - Tab：透明底 + 底部 2px 金线标记选中 + .74rem 衬线
+   - 操作按钮：下划线纯文字链接，极度弱化
+   - 旧 .gor-tab / .gor-pill-btn 规则不删，靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+/* ═══ Tab 横条容器 ═══ */
+.gor-tabs {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0 !important;
+  border-bottom: 1px solid rgba(212,168,67,.18) !important;
+  margin-bottom: 10px !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+/* ═══ 单个 Tab 按钮 ═══ */
+.gor-tab {
+  font-family: var(--font-serif) !important;
+  font-size: .74rem !important;
+  font-weight: 600 !important;
+  color: var(--text-dim) !important;
+  letter-spacing: .08em !important;
+  padding: 7px 14px 8px !important;
+  cursor: pointer !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  transition: color .18s, border-bottom-color .18s, background .18s !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  box-shadow: none !important;
+  min-width: auto !important;
+}
+.gor-tab:hover {
+  color: var(--text-sub) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  border-bottom-color: rgba(212,168,67,.25) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ═══ 选中态 ═══ */
+.gor-tab.gor-tab-active,
+.gor-tab-active {
+  color: var(--gold-light) !important;
+  border-bottom-color: var(--gold) !important;
+  background: rgba(212,168,67,.05) !important;
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  box-shadow: none !important;
+}
+.gor-tab.gor-tab-active:hover {
+  color: var(--gold-light) !important;
+  border-bottom-color: var(--gold) !important;
+  background: rgba(212,168,67,.05) !important;
+}
+
+/* 选中态取消旧竖线伪元素 */
+.gor-tab.gor-tab-active::before,
+.gor-tab.gor-tab-active::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* ═══ Tab 内计数 ═══ */
+.gor-tab-cnt {
+  font-family: var(--font-sans) !important;
+  font-size: .58rem !important;
+  color: var(--text-dim) !important;
+  font-variant-numeric: tabular-nums !important;
+  margin-left: 3px !important;
+  opacity: .8 !important;
+}
+.gor-tab.gor-tab-active .gor-tab-cnt,
+.gor-tab-active .gor-tab-cnt {
+  color: var(--gold-dim) !important;
+  opacity: 1 !important;
+}
+
+/* ═══ + 新建分组 Tab ═══ */
+.gor-tab-add {
+  color: var(--gold-dim) !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  font-size: .74rem !important;
+  padding: 7px 12px 8px !important;
+  box-shadow: none !important;
+}
+.gor-tab-add:hover {
+  color: var(--gold-light) !important;
+  border-bottom-color: rgba(212,168,67,.25) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ═══ 总览 Tab 字重加粗 ═══ */
+.gor-tab-overview {
+  font-weight: 700 !important;
+}
+
+/* ═══ 操作胶囊按钮 → 下划线纯文字链接 ═══ */
+.gor-pill-btn {
+  font-family: var(--font-sans) !important;
+  font-size: .62rem !important;
+  font-weight: 400 !important;
+  color: var(--text-dim) !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 2px 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  box-shadow: none !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgba(120,100,60,.3) !important;
+  text-underline-offset: 3px !important;
+  cursor: pointer !important;
+  transition: color .15s, text-decoration-color .15s !important;
+  letter-spacing: .04em !important;
+}
+.gor-pill-btn:hover {
+  color: var(--gold-dim) !important;
+  text-decoration-color: rgba(212,168,67,.5) !important;
+  background: transparent !important;
+  border: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.gor-pill-btn:active {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 图标隐藏（纯文字链接不需要图标） */
+.gor-pill-ico {
+  display: none !important;
+}
+
+/* 文字部分字号对齐 */
+.gor-pill-txt {
+  font-size: .62rem !important;
+}
+
+/* 删除按钮：红色文字 */
+.gor-pill-danger {
+  color: rgba(192,100,90,.6) !important;
+  text-decoration-color: rgba(192,57,43,.2) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.gor-pill-danger:hover {
+  color: #d08880 !important;
+  text-decoration-color: rgba(220,80,60,.45) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 操作栏容器间距微调 */
+.gor-group-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+/* ═══ 移动端微调 ═══ */
+@media (max-width: 720px) {
+  .gor-tab {
+    font-size: .68rem !important;
+    padding: 6px 10px 7px !important;
+  }
+  .gor-tab-cnt {
+    font-size: .54rem !important;
+  }
+  .gor-tab-add {
+    font-size: .68rem !important;
+    padding: 6px 10px 7px !important;
+  }
+  .gor-pill-btn {
+    font-size: .58rem !important;
+  }
+  .gor-pill-txt {
+    font-size: .58rem !important;
+  }
+  .gor-group-actions {
+    gap: 10px !important;
+  }
+}
+
+/* ╚══ END v20260608s 工单#gen-tab-redesign-A1 ══════════════ */
