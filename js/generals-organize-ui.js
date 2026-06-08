@@ -1,52 +1,43 @@
 /**
- * generals-organize-ui.js v2 — 武将整理 UI（融入武将列表区）
- * 工单 #gen-organizer-v2-rebuild-B
+ * generals-organize-ui.js v3 — 武将整理 UI（编辑模式隔离）
+ * 工单 #gen-organizer-v2-fix-D
  *
- * 设计：
- *  - 直接接管 #gen-list-0/1/2 的 innerHTML
- *  - 武将按分组渲染，每组一个小标题行 + gen-tag 列表
- *  - gen-tag 保持 class="gen-tag" + data-name + data-status，
- *    generals-tooltip.js 悬浮卡自动生效
- *  - 分组管理 / 武将移动 全部走右键（桌面）/ 长按（移动端）菜单
- *  - 预设分组：首次加载自动创建「前锋」「内政」
- *  - 仅本人 slot 可编辑，其他 slot 只读展示分组
+ * 核心变化（v2 → v3）：
+ *  - 移除武将标签上的右键/长按菜单，消除与悬浮卡的冲突
+ *  - 分组标题行右侧加「编辑」文字按钮
+ *  - 编辑态：武将标签浮现 × 号（移回未分组）+ 底部下拉添加
+ *  - 非编辑态：武将标签完全干净，悬浮卡正常
+ *  - 分组管理（重命名/删除/排序）仍走分组标题右键/长按菜单
  *
- * 依赖：
- *  - window.SGGenOrg（generals-organize.js）
- *  - window.SGRole.get()（role-login.js）
- *  - window.SGState（main.js）
- *  - #gen-list-0/1/2（index.html 现有节点）
- *
- * CSS class 前缀：.gou-*（generals-organize-ui 缩写）
+ * 依赖不变：SGGenOrg / SGRole / SGState / #gen-list-0/1/2
+ * CSS class 前缀：.gou-*
  */
 (function () {
   'use strict';
 
-  // ══════════════════════════════════════════
-  //  常量
-  // ══════════════════════════════════════════
   var ROLE_TO_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
   var PRESET_GROUPS = ['前锋', '内政'];
 
-  // 菜单状态
+  // 每个 slot 的编辑状态：{ slot: groupName | null }
+  var _editingGroup = { 0: null, 1: null, 2: null };
+
+  // 菜单
   var _menuEl = null;
+
+  // 长按
   var _longPressTimer = null;
   var _longPressTriggered = false;
 
-  // 防止 main.js renderGenList 覆盖我们的输出
-  // 通过标记 + MutationObserver 实现
+  // 防 main.js 覆盖
   var _rendering = { 0: false, 1: false, 2: false };
 
   // ══════════════════════════════════════════
-  //  工具函数
+  //  工具
   // ══════════════════════════════════════════
   function _esc(s) {
     if (s == null) return '';
-    return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function _isMySlot(slot) {
@@ -69,7 +60,7 @@
   }
 
   // ══════════════════════════════════════════
-  //  获取当前回合武将列表（含 status）
+  //  数据
   // ══════════════════════════════════════════
   function _getCurrentGenerals(slot) {
     var st = window.SGState;
@@ -77,12 +68,9 @@
     var latest = st.rounds[st.rounds.length - 1];
     var players = (latest.parsed && latest.parsed.players) || [];
     if (!players[slot]) return [];
-    return (players[slot].generals || []).filter(function (g) {
-      return g && g.name;
-    });
+    return (players[slot].generals || []).filter(function (g) { return g && g.name; });
   }
 
-  // 建立 name → status 映射表
   function _buildStatusMap(slot) {
     var map = {};
     _getCurrentGenerals(slot).forEach(function (g) {
@@ -92,7 +80,7 @@
   }
 
   // ══════════════════════════════════════════
-  //  预设分组（首次自动创建）
+  //  预设分组
   // ══════════════════════════════════════════
   function _ensurePresetGroups() {
     if (!window.SGGenOrg || !window.SGGenOrg.isLoaded()) return;
@@ -107,13 +95,11 @@
   }
 
   // ══════════════════════════════════════════
-  //  主渲染入口
+  //  渲染
   // ══════════════════════════════════════════
   function renderAll() {
     if (!window.SGGenOrg || !window.SGGenOrg.isLoaded()) return;
-    for (var s = 0; s < 3; s++) {
-      renderSlot(s);
-    }
+    for (var s = 0; s < 3; s++) renderSlot(s);
   }
 
   function renderSlot(slot) {
@@ -123,64 +109,107 @@
     var groups = window.SGGenOrg.getGroups(slot);
     var statusMap = _buildStatusMap(slot);
     var editable = _isMySlot(slot);
-    var totalCount = 0;
+    var editingGroupName = _editingGroup[slot];
 
     var html = '';
 
-    // 按 group_order 排序渲染每个分组
     groups.forEach(function (group) {
+      var gName = group.group_name;
+      var isDefault = gName === '未分组';
+      var isEditing = editable && editingGroupName === gName;
       var sorted = (group.generals || []).slice().sort(function (a, b) {
         return (a.order || 0) - (b.order || 0);
       });
 
-      // 只有武将的才渲染（「未分组」空也渲染，作为兜底）
-      if (!sorted.length && group.group_name !== '未分组') return;
+      // 空分组（非未分组、非编辑态）跳过
+      if (!sorted.length && !isDefault && !isEditing) return;
 
-      totalCount += sorted.length;
+      html += '<div class="gou-group' + (isEditing ? ' gou-editing' : '') + '"'
+        + ' data-slot="' + slot + '"'
+        + ' data-group="' + _esc(gName) + '">';
 
-      // 分组标题行
-      html += '<div class="gou-group" data-slot="' + slot + '" data-group="' + _esc(group.group_name) + '">';
+      // ── 分组标题行 ──
       html += '<div class="gou-group-hd">';
-      html += '<span class="gou-group-label">' + _esc(group.group_name) + '</span>';
+      html += '<span class="gou-group-label">' + _esc(gName) + '</span>';
       html += '<span class="gou-group-cnt">' + sorted.length + '</span>';
+
+      // 编辑/完成 按钮（仅本人 slot）
+      if (editable) {
+        if (isEditing) {
+          html += '<span class="gou-edit-btn gou-edit-done" data-slot="' + slot + '" data-group="' + _esc(gName) + '">完成</span>';
+        } else {
+          html += '<span class="gou-edit-btn" data-slot="' + slot + '" data-group="' + _esc(gName) + '">编辑</span>';
+        }
+      }
       html += '</div>';
 
-      // 武将 tag 列表
+      // ── 武将标签列表 ──
       if (sorted.length) {
         html += '<div class="gou-group-tags">';
         sorted.forEach(function (g) {
           var status = statusMap[g.name] || '健康';
-          html += '<span class="gen-tag"'
-            + ' data-name="' + _esc(g.name) + '"'
-            + ' data-status="' + _esc(status) + '"'
-            + ' data-gou-slot="' + slot + '"'
-            + ' data-gou-group="' + _esc(group.group_name) + '"'
-            + '>' + _esc(g.name) + '</span>';
+
+          if (isEditing) {
+            // 编辑态：标签 + × 按钮（包裹在容器里）
+            html += '<span class="gou-tag-wrap">'
+              + '<span class="gen-tag" data-name="' + _esc(g.name) + '" data-status="' + _esc(status) + '">'
+              + _esc(g.name)
+              + '</span>'
+              + '<span class="gou-remove-btn" data-slot="' + slot + '" data-group="' + _esc(gName) + '" data-name="' + _esc(g.name) + '"></span>'
+              + '</span>';
+          } else {
+            // 浏览态：纯 gen-tag，悬浮卡正常
+            html += '<span class="gen-tag" data-name="' + _esc(g.name) + '" data-status="' + _esc(status) + '"'
+              + ' data-gou-slot="' + slot + '"'
+              + ' data-gou-group="' + _esc(gName) + '"'
+              + '>' + _esc(g.name) + '</span>';
+          }
         });
         html += '</div>';
       } else {
-        html += '<div class="gou-group-empty">拖入武将或右键添加</div>';
+        if (isEditing) {
+          html += '<div class="gou-group-empty">从下方选择武将添加</div>';
+        } else if (isDefault) {
+          html += '<div class="gou-group-empty">全部武将已分组</div>';
+        }
+      }
+
+      // ── 编辑态：底部下拉添加 ──
+      if (isEditing) {
+        var allGens = _getCurrentGenerals(slot);
+        var inThisGroup = {};
+        sorted.forEach(function (g) { inThisGroup[g.name] = true; });
+        var available = allGens.filter(function (g) { return !inThisGroup[g.name]; });
+
+        if (available.length) {
+          html += '<div class="gou-add-wrap">';
+          html += '<select class="gou-add-select" data-slot="' + slot + '" data-group="' + _esc(gName) + '">';
+          html += '<option value="">+ 添加武将…</option>';
+          available.forEach(function (g) {
+            var from = window.SGGenOrg.findGeneralGroup(slot, g.name);
+            var suffix = from !== gName ? ' (' + from + ')' : '';
+            html += '<option value="' + _esc(g.name) + '">' + _esc(g.name) + suffix + '</option>';
+          });
+          html += '</select>';
+          html += '</div>';
+        }
       }
 
       html += '</div>';
     });
 
-    // 底部：新建分组按钮（仅本人可见）
+    // ── 新建分组 ──
     if (editable) {
       html += '<div class="gou-add-group" data-slot="' + slot + '">+ 新建分组</div>';
     }
 
-    // 标记正在渲染，防止 main.js 的 renderGenList 覆盖
     _rendering[slot] = true;
     listEl.innerHTML = html;
-    // 用 setTimeout 让 main.js 的 renderAll 链先跑完
     setTimeout(function () { _rendering[slot] = false; }, 50);
   }
 
   // ══════════════════════════════════════════
-  //  拦截 main.js 的 renderGenList 覆盖
-  //  策略：MutationObserver 监控 gen-list 节点，
-  //  若被 main.js 重写（不含 .gou-group 子节点），立即重渲染
+  //  MutationObserver 防覆盖
   // ══════════════════════════════════════════
   function _setupOverrideGuard() {
     for (var s = 0; s < 3; s++) {
@@ -189,7 +218,6 @@
         if (!el) return;
         var observer = new MutationObserver(function () {
           if (_rendering[slot]) return;
-          // 检查是否被 main.js 覆盖（不含我们的分组节点）
           if (!el.querySelector('.gou-group') && window.SGGenOrg && window.SGGenOrg.isLoaded()) {
             renderSlot(slot);
           }
@@ -200,21 +228,17 @@
   }
 
   // ══════════════════════════════════════════
-  //  右键 / 长按菜单
+  //  分组标题右键/长按菜单（仅管理分组本身）
   // ══════════════════════════════════════════
   function _hideMenu() {
-    if (_menuEl && _menuEl.parentNode) {
-      _menuEl.parentNode.removeChild(_menuEl);
-    }
+    if (_menuEl && _menuEl.parentNode) _menuEl.parentNode.removeChild(_menuEl);
     _menuEl = null;
     document.removeEventListener('click', _onDocClick, true);
     document.removeEventListener('touchstart', _onDocClick, true);
   }
 
   function _onDocClick(ev) {
-    if (_menuEl && !_menuEl.contains(ev.target)) {
-      _hideMenu();
-    }
+    if (_menuEl && !_menuEl.contains(ev.target)) _hideMenu();
   }
 
   function _showMenu(items, x, y) {
@@ -242,82 +266,21 @@
       menu.appendChild(btn);
     });
 
-    // 定位
-    var W = window.innerWidth;
-    var H = window.innerHeight;
     menu.style.position = 'fixed';
     menu.style.zIndex = '9800';
     document.body.appendChild(menu);
-    // 获取实际尺寸后调整
-    var mw = menu.offsetWidth || 180;
-    var mh = menu.offsetHeight || 100;
+    var W = window.innerWidth, H = window.innerHeight;
+    var mw = menu.offsetWidth || 160, mh = menu.offsetHeight || 80;
     menu.style.left = Math.min(x, W - mw - 8) + 'px';
     menu.style.top = Math.min(y, H - mh - 8) + 'px';
-
     _menuEl = menu;
+
     setTimeout(function () {
       document.addEventListener('click', _onDocClick, true);
       document.addEventListener('touchstart', _onDocClick, true);
     }, 10);
   }
 
-  // ── 武将 tag 的菜单 ──
-  function _showGenMenu(slot, groupName, genName, x, y) {
-    if (!_isMySlot(slot)) return;
-    var groups = window.SGGenOrg.getGroups(slot);
-
-    // 当前组内排序信息
-    var currentGroup = null;
-    groups.forEach(function (g) { if (g.group_name === groupName) currentGroup = g; });
-    var sorted = [];
-    if (currentGroup && currentGroup.generals) {
-      sorted = currentGroup.generals.slice().sort(function (a, b) {
-        return (a.order || 0) - (b.order || 0);
-      });
-    }
-    var idx = -1;
-    sorted.forEach(function (g, i) { if (g.name === genName) idx = i; });
-
-    var items = [];
-
-    // 上移/下移
-    if (idx > 0) {
-      items.push({
-        label: '上移',
-        fn: function () {
-          window.SGGenOrg.reorderGeneral(slot, groupName, genName, 'up')
-            .then(function () { renderSlot(slot); });
-        }
-      });
-    }
-    if (idx >= 0 && idx < sorted.length - 1) {
-      items.push({
-        label: '下移',
-        fn: function () {
-          window.SGGenOrg.reorderGeneral(slot, groupName, genName, 'down')
-            .then(function () { renderSlot(slot); });
-        }
-      });
-    }
-
-    if (items.length) items.push({ divider: true });
-
-    // 移到其他分组
-    groups.forEach(function (g) {
-      if (g.group_name === groupName) return;
-      items.push({
-        label: '移到「' + g.group_name + '」',
-        fn: function () {
-          window.SGGenOrg.moveGeneral(slot, genName, groupName, g.group_name)
-            .then(function () { renderSlot(slot); });
-        }
-      });
-    });
-
-    _showMenu(items, x, y);
-  }
-
-  // ── 分组标题的菜单 ──
   function _showGroupMenu(slot, groupName, x, y) {
     if (!_isMySlot(slot)) return;
     var isDefault = groupName === '未分组';
@@ -327,20 +290,20 @@
       items.push({
         label: '重命名',
         fn: function () {
-          var n = prompt('重命名分组「' + groupName + '」为：', groupName);
+          var n = prompt('重命名「' + groupName + '」为：', groupName);
           if (!n || !n.trim() || n.trim() === groupName) return;
           n = n.trim();
           if (n.length > 20) { _toast('不能超过 20 字'); return; }
           window.SGGenOrg.renameGroup(slot, groupName, n)
-            .then(function () { renderSlot(slot); })
-            .catch(function (e) {
-              _toast(e === 'duplicate' ? '已有同名分组' : '重命名失败');
-            });
+            .then(function () {
+              if (_editingGroup[slot] === groupName) _editingGroup[slot] = n;
+              renderSlot(slot);
+            })
+            .catch(function (e) { _toast(e === 'duplicate' ? '已有同名' : '失败'); });
         }
       });
     }
 
-    // 分组排序
     var groups = window.SGGenOrg.getGroups(slot);
     var gIdx = -1;
     groups.forEach(function (g, i) { if (g.group_name === groupName) gIdx = i; });
@@ -365,14 +328,17 @@
     }
 
     if (!isDefault) {
-      items.push({ divider: true });
+      if (items.length) items.push({ divider: true });
       items.push({
         label: '删除分组',
         danger: true,
         fn: function () {
-          if (!confirm('删除「' + groupName + '」？武将将移回未分组。')) return;
+          if (!confirm('删除「' + groupName + '」？武将移回未分组。')) return;
           window.SGGenOrg.deleteGroup(slot, groupName)
-            .then(function () { renderSlot(slot); _toast('已删除'); })
+            .then(function () {
+              if (_editingGroup[slot] === groupName) _editingGroup[slot] = null;
+              renderSlot(slot);
+            })
             .catch(function () { _toast('删除失败'); });
         }
       });
@@ -382,74 +348,105 @@
   }
 
   // ══════════════════════════════════════════
-  //  事件绑定（全局委托）
+  //  事件绑定
   // ══════════════════════════════════════════
   function bindEvents() {
-    // ── 桌面右键 ──
-    document.addEventListener('contextmenu', function (ev) {
-      // 武将 tag 右键
-      var tag = ev.target.closest('.gen-tag[data-gou-slot]');
-      if (tag) {
-        var slot = parseInt(tag.getAttribute('data-gou-slot'), 10);
-        if (!isNaN(slot) && _isMySlot(slot)) {
-          ev.preventDefault();
-          _showGenMenu(
-            slot,
-            tag.getAttribute('data-gou-group'),
-            tag.getAttribute('data-name'),
-            ev.clientX, ev.clientY
-          );
+
+    // ── 编辑/完成 按钮 ──
+    document.addEventListener('click', function (ev) {
+      var editBtn = ev.target.closest('.gou-edit-btn');
+      if (editBtn) {
+        var slot = parseInt(editBtn.getAttribute('data-slot'), 10);
+        var group = editBtn.getAttribute('data-group');
+        if (isNaN(slot)) return;
+
+        if (editBtn.classList.contains('gou-edit-done')) {
+          // 完成
+          _editingGroup[slot] = null;
+        } else {
+          // 进入编辑
+          _editingGroup[slot] = group;
         }
+        renderSlot(slot);
         return;
       }
 
-      // 分组标题右键
-      var hd = ev.target.closest('.gou-group-hd');
-      if (hd) {
-        var grp = hd.closest('.gou-group');
-        if (grp) {
-          var s = parseInt(grp.getAttribute('data-slot'), 10);
-          if (!isNaN(s) && _isMySlot(s)) {
-            ev.preventDefault();
-            _showGroupMenu(s, grp.getAttribute('data-group'), ev.clientX, ev.clientY);
-          }
-        }
+      // ── × 移出按钮 ──
+      var removeBtn = ev.target.closest('.gou-remove-btn');
+      if (removeBtn) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var rSlot = parseInt(removeBtn.getAttribute('data-slot'), 10);
+        var rGroup = removeBtn.getAttribute('data-group');
+        var rName = removeBtn.getAttribute('data-name');
+        if (isNaN(rSlot) || !rGroup || !rName) return;
+
+        window.SGGenOrg.moveGeneral(rSlot, rName, rGroup, '未分组')
+          .then(function () { renderSlot(rSlot); });
+        return;
+      }
+
+      // ── 新建分组 ──
+      var addBtn = ev.target.closest('.gou-add-group');
+      if (addBtn) {
+        var aSlot = parseInt(addBtn.getAttribute('data-slot'), 10);
+        if (isNaN(aSlot) || !_isMySlot(aSlot)) return;
+
+        var name = prompt('新建分组名称（不超过 20 字）：');
+        if (!name || !name.trim()) return;
+        name = name.trim();
+        if (name.length > 20) { _toast('不能超过 20 字'); return; }
+
+        window.SGGenOrg.createGroup(aSlot, name)
+          .then(function () { renderSlot(aSlot); _toast('已创建「' + name + '」'); })
+          .catch(function (e) { _toast(e === 'duplicate' ? '已有同名' : '创建失败'); });
         return;
       }
     });
 
-    // ── 移动端长按 ──
-    var _lpTarget = null;
-    var _lpX = 0, _lpY = 0;
+    // ── 下拉添加武将 ──
+    document.addEventListener('change', function (ev) {
+      var sel = ev.target.closest('.gou-add-select');
+      if (!sel) return;
+      var slot = parseInt(sel.getAttribute('data-slot'), 10);
+      var group = sel.getAttribute('data-group');
+      var name = sel.value;
+      if (!name || isNaN(slot) || !group) return;
 
-    document.addEventListener('touchstart', function (ev) {
-      var tag = ev.target.closest('.gen-tag[data-gou-slot]');
+      var fromGroup = window.SGGenOrg.findGeneralGroup(slot, name);
+      window.SGGenOrg.moveGeneral(slot, name, fromGroup, group)
+        .then(function () { renderSlot(slot); })
+        .catch(function (e) { _toast('添加失败'); });
+    });
+
+    // ── 分组标题：桌面右键 ──
+    document.addEventListener('contextmenu', function (ev) {
       var hd = ev.target.closest('.gou-group-hd');
-      if (!tag && !hd) return;
+      if (!hd) return;
+      var grp = hd.closest('.gou-group');
+      if (!grp) return;
+      var s = parseInt(grp.getAttribute('data-slot'), 10);
+      if (isNaN(s) || !_isMySlot(s)) return;
+      ev.preventDefault();
+      _showGroupMenu(s, grp.getAttribute('data-group'), ev.clientX, ev.clientY);
+    });
+
+    // ── 分组标题：移动端长按 ──
+    document.addEventListener('touchstart', function (ev) {
+      var hd = ev.target.closest('.gou-group-hd');
+      if (!hd) return;
+      var grp = hd.closest('.gou-group');
+      if (!grp) return;
+      var s = parseInt(grp.getAttribute('data-slot'), 10);
+      if (isNaN(s) || !_isMySlot(s)) return;
 
       _longPressTriggered = false;
       var touch = ev.touches[0];
-      _lpX = touch.clientX;
-      _lpY = touch.clientY;
-      _lpTarget = tag || hd;
+      var tx = touch.clientX, ty = touch.clientY;
 
       _longPressTimer = setTimeout(function () {
         _longPressTriggered = true;
-        if (tag) {
-          var slot = parseInt(tag.getAttribute('data-gou-slot'), 10);
-          if (!isNaN(slot) && _isMySlot(slot)) {
-            _showGenMenu(slot, tag.getAttribute('data-gou-group'),
-              tag.getAttribute('data-name'), _lpX, _lpY);
-          }
-        } else if (hd) {
-          var grp = hd.closest('.gou-group');
-          if (grp) {
-            var s = parseInt(grp.getAttribute('data-slot'), 10);
-            if (!isNaN(s) && _isMySlot(s)) {
-              _showGroupMenu(s, grp.getAttribute('data-group'), _lpX, _lpY);
-            }
-          }
-        }
+        _showGroupMenu(s, grp.getAttribute('data-group'), tx, ty);
       }, 500);
     }, { passive: true });
 
@@ -460,40 +457,20 @@
       if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
     });
 
-    // 阻止长按后的 click 穿透
     document.addEventListener('click', function (ev) {
       if (_longPressTriggered) {
-        var t = ev.target.closest('.gen-tag[data-gou-slot]') || ev.target.closest('.gou-group-hd');
-        if (t) {
+        var hd = ev.target.closest('.gou-group-hd');
+        if (hd) {
           ev.preventDefault();
           ev.stopPropagation();
           _longPressTriggered = false;
         }
       }
     }, true);
-
-    // ── 新建分组按钮 ──
-    document.addEventListener('click', function (ev) {
-      var addBtn = ev.target.closest('.gou-add-group');
-      if (!addBtn) return;
-      var slot = parseInt(addBtn.getAttribute('data-slot'), 10);
-      if (isNaN(slot) || !_isMySlot(slot)) return;
-
-      var name = prompt('新建分组名称（不超过 20 字）：');
-      if (!name || !name.trim()) return;
-      name = name.trim();
-      if (name.length > 20) { _toast('不能超过 20 字'); return; }
-
-      window.SGGenOrg.createGroup(slot, name)
-        .then(function () { renderSlot(slot); _toast('已创建「' + name + '」'); })
-        .catch(function (e) {
-          _toast(e === 'duplicate' ? '已有同名分组' : '创建失败');
-        });
-    });
   }
 
   // ══════════════════════════════════════════
-  //  武将同步
+  //  同步
   // ══════════════════════════════════════════
   function syncAllSlots() {
     if (!window.SGGenOrg || !window.SGGenOrg.isLoaded()) return;
@@ -513,7 +490,6 @@
   function init() {
     bindEvents();
 
-    // 等 SGGenOrg 就绪
     var _waitCount = 0;
     function tryStart() {
       if (window.SGGenOrg && window.SGGenOrg.isLoaded()) {
@@ -528,23 +504,11 @@
     }
     tryStart();
 
-    // 监听数据层变化
-    window.addEventListener('sg-gen-org-updated', function () {
-      renderAll();
-    });
-
-    // 监听回合更新
+    window.addEventListener('sg-gen-org-updated', function () { renderAll(); });
     window.addEventListener('sg-rounds-updated', function () {
-      setTimeout(function () {
-        syncAllSlots();
-        renderAll();
-      }, 150);
+      setTimeout(function () { syncAllSlots(); renderAll(); }, 150);
     });
-
-    // 监听身份切换
-    window.addEventListener('sg-role-changed', function () {
-      renderAll();
-    });
+    window.addEventListener('sg-role-changed', function () { renderAll(); });
   }
 
   if (document.readyState === 'loading') {
