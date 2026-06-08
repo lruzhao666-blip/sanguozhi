@@ -2547,8 +2547,8 @@
     const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
     const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
 
-    const atkLabel = b.attackerFactionRaw || _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
-    const defLabel = b.defenderFactionRaw || _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+    const atkLabel = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+    const defLabel = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
 
     const atkName = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkLabel);
     const defName = b.defenderGeneral || _junbaoStripPrefix(b.defender, defLabel);
@@ -2589,8 +2589,8 @@
     const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
     const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
 
-    const atkLabel = b.attackerFactionRaw || _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
-    const defLabel = b.defenderFactionRaw || _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+    const atkLabel = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+    const defLabel = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
 
     const atkName = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkLabel);
     const defName = b.defenderGeneral || _junbaoStripPrefix(b.defender, defLabel);
