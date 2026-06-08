@@ -12879,3 +12879,44 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608n 工单#gen-svg-icon-v1 ══════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608o 工单#world-mobile-inline-fix-v1
+   世界板块手机端行内排版对齐电脑端
+   - 取消 ≤600px 对武将动态行/烽烟行的行内重排
+   - 保留 ≤900px 的双列→单列堆叠不动
+   - 保留 ≤600px 的头部 padding / body 内边距微调不动
+   ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  /* 武将动态：恢复横排（取消 column 堆叠） */
+  .world-gen-main {
+    flex-direction: row !important;
+    align-items: baseline !important;
+    gap: 10px !important;
+  }
+  .world-gen-loc {
+    font-size: .74rem !important;
+    color: var(--text-sub) !important;
+  }
+
+  /* 烽烟：恢复桌面端四列横排（取消 grid-template-areas 重排） */
+  .world-mil-row {
+    grid-template-columns: auto 1fr auto auto !important;
+    grid-template-areas: none !important;
+    gap: 10px !important;
+  }
+  .world-mil-faction { grid-area: unset !important; }
+  .world-mil-main {
+    grid-area: unset !important;
+    flex-direction: row !important;
+    gap: 9px !important;
+    align-items: baseline !important;
+  }
+  .world-mil-troop  { grid-area: unset !important; }
+  .world-mil-status { grid-area: unset !important; }
+  .world-mil-route  { font-size: .74rem !important; }
+  .world-mil-general { font-size: .86rem !important; }
+}
+
+/* ╚══ END v20260608o 工单#world-mobile-inline-fix-v1 ════════ */
