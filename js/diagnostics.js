@@ -1109,22 +1109,6 @@
         if (!latest || !latest.parsed) return [];
         var round = latest.round || 0;
         if (round < 5 || round % 5 !== 0) return [];
-        var INVEST_RE = /^(.+?)兴(?:-(.+))?$/;
-        var hasAny = false;
-        for (var i = 0; i < rounds.length && !hasAny; i++) {
-          var chs = (rounds[i].parsed && rounds[i].parsed.changes) || [];
-          for (var j = 0; j < chs.length && !hasAny; j++) {
-            if (!chs[j].breakdown) continue;
-            ['金','粮'].forEach(function(res) {
-              var bd = chs[j].breakdown[res];
-              if (!bd || !Array.isArray(bd.items)) return;
-              bd.items.forEach(function(it) {
-                if (INVEST_RE.test(String(it.label||'').trim())) hasAny = true;
-              });
-            });
-          }
-        }
-        if (!hasAny) return [];
         return [{
           id: 'R18-r' + round + '-reminder',
           ruleId: 'R18', ruleName: '治政工程定期检查', level: 'warn',
