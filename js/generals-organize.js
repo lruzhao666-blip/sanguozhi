@@ -446,7 +446,10 @@
   // ══════════════════════════════════════════
   function getGroups(slot) {
     if (!_isValidSlot(slot)) return [];
-    return _data[slot].slice().sort(function (a, b) { return a.group_order - b.group_order; });
+    // 过滤掉数据库中残留的「全部武将」行——该名称现为纯 UI 总览 tab，不是真实分组
+    return _data[slot]
+      .filter(function (g) { return g.group_name !== '全部武将'; })
+      .slice().sort(function (a, b) { return a.group_order - b.group_order; });
   }
 
   function getGroupNames(slot) {

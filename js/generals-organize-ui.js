@@ -150,17 +150,12 @@
     if (sorted.length) {
       html += '<div class="gor-gen-list">';
       sorted.forEach(function (gen) {
-        var groupLabel = gen.groupName ? gen.groupName : '';
         html += '<span class="gor-gen-tag gen-tag"'
           + ' data-slot="' + slot + '"'
           + ' data-group="' + _esc(gen.groupName || '') + '"'
           + ' data-name="' + _esc(gen.name) + '"'
-          + ' title="' + (groupLabel ? '分组：' + _esc(groupLabel) : '无分组') + '"'
-          + '>' + _esc(gen.name);
-        if (groupLabel) {
-          html += '<span class="gor-gen-grp-badge">' + _esc(groupLabel) + '</span>';
-        }
-        html += '</span>';
+          + ' title="' + (gen.groupName ? '分组：' + _esc(gen.groupName) : '无分组') + '"'
+          + '>' + _esc(gen.name) + '</span>';
       });
       html += '</div>';
     } else {
