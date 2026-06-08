@@ -23,7 +23,27 @@
   var SLOT_NAMES = ['甲', '乙', '丙'];
   var ROLE_TO_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
 
-  var _activeTab = { 0: '全部', 1: '全部', 2: '全部' };
+  var _STORAGE_KEY = 'sg_gen_org_active_tab';
+
+  // 从 localStorage 恢复上次选中的 tab
+  function _loadActiveTab() {
+    try {
+      var saved = localStorage.getItem(_STORAGE_KEY);
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (e) { /* 展开失败就用默认值 */ }
+    return { 0: '全部', 1: '全部', 2: '全部' };
+  }
+
+  var _activeTab = _loadActiveTab();
+
+  // 写 activeTab 并同步持久化
+  function _setActiveTab(slot, val) {
+    _activeTab[slot] = val;
+    try { localStorage.setItem(_STORAGE_KEY, JSON.stringify(_activeTab)); } catch (e) { /* 存储满则忽略 */ }
+  }
 
   var _menuEl = null;
   var _menuSlot = null;
@@ -76,7 +96,7 @@
 
     // 「全部武将」是固定总览 tab，始终排在首位
     var tabNames = ['全部'].concat(groups.map(function (g) { return g.group_name; }));
-    if (tabNames.indexOf(_activeTab[slot]) === -1) _activeTab[slot] = '全部';
+    if (tabNames.indexOf(_activeTab[slot]) === -1) _setActiveTab(slot, '全部');
 
     // 所有武将聚合（用于总览 tab）
     var allGenerals = [];
@@ -339,7 +359,7 @@
         var slot = parseInt(tab.getAttribute('data-slot'), 10);
         var group = tab.getAttribute('data-group');
         if (group != null && !isNaN(slot)) {
-          _activeTab[slot] = group;
+          _setActiveTab(slot, group);
           renderSlot(slot);
         }
         return;
@@ -430,7 +450,7 @@
     name = name.trim();
     if (name.length > 20) { _toast('分组名不能超过 20 字'); return; }
     window.SGGenOrg.createGroup(slot, name).then(function () {
-      _activeTab[slot] = name;
+      _setActiveTab(slot, name);
       renderSlot(slot);
       _toast('已创建分组「' + name + '」');
     }).catch(function (e) {
@@ -447,7 +467,7 @@
       newName = newName.trim();
       if (newName.length > 20) { _toast('分组名不能超过 20 字'); return; }
       window.SGGenOrg.renameGroup(slot, groupName, newName).then(function () {
-        _activeTab[slot] = newName;
+        _setActiveTab(slot, newName);
         renderSlot(slot);
         _toast('已重命名为「' + newName + '」');
       }).catch(function (e) {
@@ -457,7 +477,7 @@
     } else if (act === 'delete') {
       if (!confirm('确认删除分组「' + groupName + '」？\n组内武将将变为无分组状态。')) return;
       window.SGGenOrg.deleteGroup(slot, groupName).then(function () {
-        _activeTab[slot] = '全部';
+        _setActiveTab(slot, '全部');
         renderSlot(slot);
         _toast('已删除分组「' + groupName + '」');
       }).catch(function (e) { _toast('删除失败：' + e); });
