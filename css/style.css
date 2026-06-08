@@ -12773,3 +12773,37 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608k 工单#gen-tab-compact-v1 ══════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608l 工单#gen-pill-compact-v1
+   分组操作胶囊按钮对齐 tab 字号/padding
+   ──────────────────────────────────────────────────────────── */
+
+.gor-pill-btn {
+  font-size: .62rem !important;
+  padding: 3px 9px !important;
+  gap: 3px !important;
+}
+
+.gor-pill-ico {
+  font-size: .62rem !important;
+}
+
+.gor-pill-txt {
+  font-size: .58rem !important;
+}
+
+@media (max-width: 720px) {
+  .gor-pill-btn {
+    font-size: .58rem !important;
+    padding: 2px 7px !important;
+  }
+  .gor-pill-ico {
+    font-size: .58rem !important;
+  }
+  .gor-pill-txt {
+    font-size: .54rem !important;
+  }
+}
+
+/* ╚══ END v20260608l 工单#gen-pill-compact-v1 ══════════════════ */
