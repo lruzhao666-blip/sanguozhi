@@ -46,6 +46,7 @@
   // ══════════════════════════════════════════
   var _realtimeChannel = null;
   var _realtimeReloadTimer = null;
+  var _suppressReloadUntil = 0;
 
   function setupRealtime() {
     if (typeof window.supabase === 'undefined' ||
@@ -72,6 +73,7 @@
     if (_realtimeReloadTimer) clearTimeout(_realtimeReloadTimer);
     _realtimeReloadTimer = setTimeout(function () {
       _realtimeReloadTimer = null;
+      if (Date.now() < _suppressReloadUntil) return;
       loadAll().then(function () {
         _broadcast('sg-gen-org-updated');
       });
@@ -326,6 +328,14 @@
     groups[idx].group_order = groups[swapIdx].group_order;
     groups[swapIdx].group_order = tmpOrder;
 
+    // 如果交换后两者 order 相同（初始数据全为 0 的边界情况），强制拉开
+    if (groups[idx].group_order === groups[swapIdx].group_order) {
+      groups[swapIdx].group_order = groups[idx].group_order + 1;
+    }
+
+    // 抑制 Realtime reload 2 秒，防止覆盖刚写入的内存
+    _suppressReloadUntil = Date.now() + 2000;
+
     return Promise.all([
       _fetch(_apiUrl('?id=eq.' + groups[idx].id), {
         method: 'PATCH',
@@ -336,6 +346,8 @@
         body: JSON.stringify({ group_order: groups[swapIdx].group_order })
       })
     ]).then(function () {
+      // 重新排序内存数据，确保下次操作读到最新顺序
+      _data[slot].sort(function (a, b) { return a.group_order - b.group_order; });
       _broadcast('sg-gen-org-updated');
     });
   }
