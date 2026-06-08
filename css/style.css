@@ -12858,3 +12858,24 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608m 工单#gen-pill-flat-v1 ══════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608n 工单#gen-svg-icon-v1
+   麾下武将 SVG 交叉双剑图标（跨端一致渲染）
+   ──────────────────────────────────────────────────────────── */
+
+.pcs-svg-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold-dim);
+  opacity: .75;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.pcs-svg-icon svg {
+  display: block;
+}
+
+/* ╚══ END v20260608n 工单#gen-svg-icon-v1 ══════════════════ */
