@@ -12920,3 +12920,31 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608o 工单#world-mobile-inline-fix-v1 ════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608p 工单#world-mil-mobile-wrap-v1
+   修复烽烟兵马调度行移动端文本截断
+   允许武将名+路线在窄屏自动换行
+   ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .world-mil-main {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+  }
+  .world-mil-general {
+    white-space: normal !important;
+    word-break: break-all !important;
+  }
+  .world-mil-route {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-break: break-all !important;
+  }
+  .world-mil-troop {
+    white-space: normal !important;
+  }
+}
+
+/* ╚══ END v20260608p 工单#world-mil-mobile-wrap-v1 ════════════ */
