@@ -119,9 +119,9 @@
         });
         // 确保每个 slot 都有「未分组」
         [0, 1, 2].forEach(function (s) {
-          var hasDefault = _data[s].some(function (g) { return g.group_name === '未分组'; });
+          var hasDefault = _data[s].some(function (g) { return g.group_name === '全部武将'; });
           if (!hasDefault) {
-            _createGroup(s, '未分组', 0);
+            _createGroup(s, '全部武将', 0);
           }
         });
         _loaded = true;
@@ -195,7 +195,7 @@
   // ══════════════════════════════════════════
   function renameGroup(slot, oldName, newName) {
     if (!_isValidSlot(slot)) return Promise.reject('invalid slot');
-    if (oldName === '未分组') return Promise.reject('cannot rename default');
+    if (oldName === '全部武将') return Promise.reject('cannot rename default');
     newName = (newName || '').trim();
     if (!newName) return Promise.reject('empty name');
     if (newName.length > 20) return Promise.reject('name too long');
@@ -223,13 +223,13 @@
   // ══════════════════════════════════════════
   function deleteGroup(slot, name) {
     if (!_isValidSlot(slot)) return Promise.reject('invalid slot');
-    if (name === '未分组') return Promise.reject('cannot delete default');
+    if (name === '全部武将') return Promise.reject('cannot delete default');
 
     var group = _findGroup(slot, name);
     if (!group) return Promise.reject('not found');
 
     // 先把该组武将移回「未分组」
-    var defaultGrp = _findGroup(slot, '未分组');
+    var defaultGrp = _findGroup(slot, '全部武将');
     if (defaultGrp && group.generals.length) {
       var maxOrder = 0;
       defaultGrp.generals.forEach(function (g) {
@@ -385,7 +385,7 @@
     });
 
     // 找出未分配的武将，加入「未分组」
-    var defaultGrp = _findGroup(slot, '未分组');
+    var defaultGrp = _findGroup(slot, '全部武将');
     if (defaultGrp) {
       var maxOrder = 0;
       defaultGrp.generals.forEach(function (g) {
@@ -455,7 +455,7 @@
   }
 
   function findGeneralGroup(slot, generalName) {
-    var result = '未分组';
+    var result = '全部武将';
     _data[slot].forEach(function (g) {
       g.generals.forEach(function (gen) {
         if (gen.name === generalName) result = g.group_name;

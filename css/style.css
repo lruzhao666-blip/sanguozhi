@@ -12583,3 +12583,111 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608j 工单#gen-organize-css-v3-gou-v1 ════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608b 工单#gen-org-ui-polish-v1
+   武将整理分组操作栏胶囊按钮
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 操作栏容器 ── */
+.gor-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── 胶囊按钮基底 ── */
+.gor-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-family: var(--font-serif);
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  background: linear-gradient(180deg, rgba(52,34,10,.55) 0%, rgba(28,18,5,.55) 100%);
+  border: 1px solid rgba(212,168,67,.45);
+  border-radius: 14px;
+  cursor: pointer;
+  letter-spacing: .03em;
+  white-space: nowrap;
+  transition: all .18s;
+  line-height: 1.4;
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,140,.08),
+    inset 0 -1px 0 rgba(0,0,0,.2);
+}
+.gor-pill-btn:hover {
+  color: var(--gold-light);
+  border-color: var(--gold);
+  background: linear-gradient(180deg, rgba(75,50,12,.65) 0%, rgba(40,26,8,.65) 100%);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,140,.14),
+    inset 0 -1px 0 rgba(0,0,0,.25),
+    0 2px 8px rgba(0,0,0,.35);
+}
+.gor-pill-btn:active {
+  transform: translateY(0);
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,140,.06),
+    inset 0 -1px 0 rgba(0,0,0,.25);
+}
+
+/* 图标 */
+.gor-pill-ico {
+  font-size: .76rem;
+  line-height: 1;
+  opacity: .8;
+}
+.gor-pill-btn:hover .gor-pill-ico {
+  opacity: 1;
+}
+
+/* 文字 */
+.gor-pill-txt {
+  font-size: .64rem;
+  letter-spacing: .04em;
+}
+
+/* ── 删除按钮：红色警示变体 ── */
+.gor-pill-danger {
+  color: #c08070;
+  border-color: rgba(192,57,43,.4);
+  background: linear-gradient(180deg, rgba(60,15,10,.5) 0%, rgba(30,8,5,.5) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,180,160,.06),
+    inset 0 -1px 0 rgba(0,0,0,.2);
+}
+.gor-pill-danger:hover {
+  color: #f0a090;
+  border-color: rgba(220,80,60,.65);
+  background: linear-gradient(180deg, rgba(90,20,12,.6) 0%, rgba(50,12,8,.6) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,180,160,.12),
+    inset 0 -1px 0 rgba(0,0,0,.25),
+    0 2px 8px rgba(60,0,0,.4);
+}
+
+/* ── 移动端紧凑 ── */
+@media (max-width: 480px) {
+  .gor-pill-btn {
+    padding: 3px 8px;
+    font-size: .62rem;
+    gap: 3px;
+    border-radius: 12px;
+  }
+  .gor-pill-ico {
+    font-size: .7rem;
+  }
+  .gor-pill-txt {
+    font-size: .58rem;
+  }
+  .gor-group-actions {
+    gap: 4px;
+  }
+}
+
+/* ╚══ END v20260608b 工单#gen-org-ui-polish-v1 ══════════════ */
