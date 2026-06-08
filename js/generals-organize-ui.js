@@ -134,7 +134,7 @@
     if (sorted.length) {
       html += '<div class="gor-gen-list">';
       sorted.forEach(function (g) {
-        html += '<span class="gor-gen-tag"'
+        html += '<span class="gor-gen-tag gen-tag"'
           + ' data-slot="' + slot + '"'
           + ' data-group="' + _esc(gName) + '"'
           + ' data-name="' + _esc(g.name) + '"'
