@@ -396,9 +396,28 @@
       }).catch(function (e) { _toast('删除失败：' + e); });
 
     } else if (act === 'group-up') {
-      window.SGGenOrg.reorderGroup(slot, groupName, 'up').then(function () { renderSlot(slot); });
+      // 在可移动的用户分组列表（排除「未分组」）中检查边界
+      var _allUp = window.SGGenOrg.getGroups(slot);
+      var _userUp = _allUp.filter(function (g) { return g.group_name !== '未分组'; });
+      var _idxUp = _userUp.findIndex(function (g) { return g.group_name === groupName; });
+      if (_idxUp <= 0) return; // 已是第一个用户分组，无法继续左移
+      // 若 SGGenOrg.reorderGroup 会与「未分组」交换，需连续调用两次
+      var _fullIdx = _allUp.findIndex(function (g) { return g.group_name === groupName; });
+      var _swapTarget = _allUp[_fullIdx - 1];
+      if (_swapTarget && _swapTarget.group_name === '未分组') {
+        // 相邻的是「未分组」，连续交换两次让它跳过去
+        window.SGGenOrg.reorderGroup(slot, groupName, 'up')
+          .then(function () { return window.SGGenOrg.reorderGroup(slot, groupName, 'up'); })
+          .then(function () { renderSlot(slot); });
+      } else {
+        window.SGGenOrg.reorderGroup(slot, groupName, 'up').then(function () { renderSlot(slot); });
+      }
 
     } else if (act === 'group-down') {
+      var _allDn = window.SGGenOrg.getGroups(slot);
+      var _userDn = _allDn.filter(function (g) { return g.group_name !== '未分组'; });
+      var _idxDn = _userDn.findIndex(function (g) { return g.group_name === groupName; });
+      if (_idxDn < 0 || _idxDn >= _userDn.length - 1) return; // 已是最后一个，无法继续右移
       window.SGGenOrg.reorderGroup(slot, groupName, 'down').then(function () { renderSlot(slot); });
     }
   }
