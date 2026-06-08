@@ -12307,3 +12307,279 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608c 工单#gen-organize-ui-redesign-A1 ════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608j 工单#gen-organize-css-v3-gou-v1
+   武将分组 UI v3 — 方案 A「竹简卷轴」样式
+   对应 generals-organize-ui.js v3（.gou-* 前缀）
+   JS 直接渲染到 #gen-list-0/1/2，覆盖武将列表区
+   回滚：整段删除即可
+   ──────────────────────────────────────────────────────────── */
+
+/* ═══ 分组容器 ═══ */
+.gou-group {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(212,168,67,.1);
+}
+.gou-group:last-of-type {
+  margin-bottom: 6px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* ═══ 分组标题行 ═══ */
+.gou-group-hd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+  padding: 0 2px;
+  cursor: default;
+}
+
+.gou-group-label {
+  font-family: var(--font-serif);
+  font-size: .74rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: .06em;
+}
+
+.gou-group-cnt {
+  font-family: var(--font-sans);
+  font-size: .6rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  margin-right: auto;
+}
+
+/* 编辑/完成 按钮 */
+.gou-edit-btn {
+  font-family: var(--font-serif);
+  font-size: .66rem;
+  color: var(--text-dim);
+  letter-spacing: .06em;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 3px;
+  transition: all .18s;
+  user-select: none;
+}
+.gou-edit-btn:hover {
+  color: var(--gold-light);
+  background: rgba(212,168,67,.08);
+}
+.gou-edit-done {
+  color: var(--gold-light) !important;
+  background: rgba(212,168,67,.12);
+  border: 1px solid rgba(212,168,67,.35);
+  border-radius: 3px;
+}
+.gou-edit-done:hover {
+  background: rgba(212,168,67,.22);
+  border-color: rgba(212,168,67,.55);
+}
+
+/* ═══ 编辑态分组高亮 ═══ */
+.gou-editing {
+  background: rgba(212,168,67,.04);
+  border: 1px solid rgba(212,168,67,.18);
+  border-radius: var(--r);
+  padding: 8px 10px 10px;
+  margin-bottom: 10px;
+}
+.gou-editing .gou-group-hd {
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(212,168,67,.15);
+  margin-bottom: 8px;
+}
+
+/* ═══ 武将标签列表 ═══ */
+.gou-group-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+/* 编辑态标签包裹容器（标签 + × 按钮） */
+.gou-tag-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* × 移出按钮 */
+.gou-remove-btn {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(180,40,20,.85);
+  border: 1px solid rgba(220,60,40,.6);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 2;
+  transition: all .15s;
+}
+.gou-remove-btn::before {
+  content: '×';
+  font-size: .62rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+.gou-remove-btn:hover {
+  background: rgba(220,50,30,.95);
+  transform: scale(1.15);
+}
+
+/* ═══ 空态 ═══ */
+.gou-group-empty {
+  font-family: var(--font-serif);
+  font-size: .72rem;
+  color: var(--text-dim);
+  opacity: .55;
+  padding: 6px 2px;
+  letter-spacing: .06em;
+}
+
+/* ═══ 下拉添加武将 ═══ */
+.gou-add-wrap {
+  margin-top: 6px;
+}
+
+.gou-add-select {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: .72rem;
+  color: var(--text-dim);
+  background: rgba(0,0,0,.28);
+  border: 1px dashed rgba(212,168,67,.25);
+  border-radius: var(--r);
+  padding: 6px 10px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .18s, color .18s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.gou-add-select:hover {
+  border-color: rgba(212,168,67,.5);
+  color: var(--text-sub);
+}
+.gou-add-select:focus {
+  border-color: var(--gold);
+  color: var(--text-main);
+}
+.gou-add-select option {
+  background: #1a0f08;
+  color: var(--text-main);
+}
+
+/* ═══ + 新建分组 按钮 ═══ */
+.gou-add-group {
+  font-family: var(--font-serif);
+  font-size: .7rem;
+  color: var(--gold-dim);
+  letter-spacing: .08em;
+  text-align: center;
+  padding: 7px 0;
+  margin-top: 4px;
+  border: 1px dashed rgba(212,168,67,.22);
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: all .18s;
+  user-select: none;
+}
+.gou-add-group:hover {
+  color: var(--gold-light);
+  border-color: rgba(212,168,67,.5);
+  background: rgba(212,168,67,.05);
+}
+
+/* ═══ 右键/长按菜单 ═══ */
+.gou-menu {
+  background: rgba(14,8,8,.97);
+  border: 1px solid rgba(212,168,67,.35);
+  border-radius: var(--r);
+  padding: 4px 0;
+  box-shadow: 0 8px 28px rgba(0,0,0,.7);
+  min-width: 140px;
+}
+.gou-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  font-family: var(--font-serif);
+  font-size: .74rem;
+  padding: 7px 14px;
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: all .12s;
+}
+.gou-menu-item:hover {
+  color: var(--gold-light);
+  background: rgba(212,168,67,.08);
+}
+.gou-menu-danger {
+  color: #e07070 !important;
+}
+.gou-menu-danger:hover {
+  background: rgba(200,40,20,.08) !important;
+}
+.gou-menu-divider {
+  height: 1px;
+  margin: 3px 10px;
+  background: rgba(212,168,67,.12);
+}
+
+/* ═══ 移动端微调 ═══ */
+@media (max-width: 720px) {
+  .gou-group-label {
+    font-size: .7rem;
+  }
+  .gou-group-cnt {
+    font-size: .56rem;
+  }
+  .gou-edit-btn {
+    font-size: .62rem;
+    padding: 2px 6px;
+  }
+  .gou-group-tags {
+    gap: 5px;
+  }
+  .gou-remove-btn {
+    width: 14px;
+    height: 14px;
+    top: -3px;
+    right: -3px;
+  }
+  .gou-remove-btn::before {
+    font-size: .56rem;
+  }
+  .gou-add-select {
+    font-size: .68rem;
+    padding: 5px 9px;
+  }
+  .gou-group-empty {
+    font-size: .68rem;
+  }
+  .gou-add-group {
+    font-size: .66rem;
+    padding: 6px 0;
+  }
+  .gou-editing {
+    padding: 6px 8px 8px;
+  }
+}
+
+/* ╚══ END v20260608j 工单#gen-organize-css-v3-gou-v1 ════════ */
