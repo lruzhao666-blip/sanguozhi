@@ -16,7 +16,7 @@
   'use strict';
 
   var ROLE_TO_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
-  var PRESET_GROUPS = ['前锋', '内政'];
+  var PRESET_GROUPS = ['军师', '先锋', '守备', '内政'];
 
   // 每个 slot 的编辑状态：{ slot: groupName | null }
   var _editingGroup = { 0: null, 1: null, 2: null };

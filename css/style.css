@@ -11980,3 +11980,48 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608e 武将整理 v3 编辑模式 ════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608f 工单#gen-organizer-v3-fix-F
+   修复：分组标题渐变线被编辑按钮截断
+   方案：标题行改为 position:relative，渐变线用独立伪元素铺底，
+         编辑按钮绝对定位浮在右侧，不参与 flex 排布
+   ──────────────────────────────────────────────────────────── */
+
+/* 覆盖工单 C 的 .gou-group-hd 布局 */
+.gou-group-hd {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 3px;
+  margin-bottom: 5px;
+}
+
+/* 覆盖工单 C 的 ::after 渐变尾线 → 改为全宽底线 */
+.gou-group-hd::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,.1), rgba(255,255,255,.04) 60%, transparent);
+  flex: none;
+}
+
+/* 编辑按钮：绝对定位浮在右侧，不挤占渐变线空间 */
+.gou-edit-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0;
+}
+
+/* 分组标签和计数后面的 flex 空间填充（让渐变线可见） */
+.gou-group-cnt {
+  margin-right: auto;
+}
+
+/* ╚══ END v20260608f 渐变线修复 ══════════════════════════════ */
