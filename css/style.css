@@ -12807,3 +12807,54 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608l 工单#gen-pill-compact-v1 ══════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608m 工单#gen-pill-flat-v1
+   分组操作胶囊按钮视觉降档，对齐 tab 质感
+   ──────────────────────────────────────────────────────────── */
+
+.gor-pill-btn {
+  background: transparent !important;
+  border: 1px solid rgba(212,168,67,.22) !important;
+  box-shadow: none !important;
+  color: var(--text-dim) !important;
+  font-weight: 500 !important;
+  border-radius: 20px !important;
+}
+
+.gor-pill-btn:hover {
+  background: transparent !important;
+  border-color: rgba(212,168,67,.45) !important;
+  color: var(--text-sub) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.gor-pill-btn:active {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.gor-pill-ico {
+  opacity: .7 !important;
+}
+
+.gor-pill-btn:hover .gor-pill-ico {
+  opacity: .9 !important;
+}
+
+.gor-pill-danger {
+  background: transparent !important;
+  border-color: rgba(192,57,43,.25) !important;
+  color: var(--text-dim) !important;
+  box-shadow: none !important;
+}
+
+.gor-pill-danger:hover {
+  background: transparent !important;
+  border-color: rgba(220,80,60,.45) !important;
+  color: #d08880 !important;
+  box-shadow: none !important;
+}
+
+/* ╚══ END v20260608m 工单#gen-pill-flat-v1 ══════════════════ */
