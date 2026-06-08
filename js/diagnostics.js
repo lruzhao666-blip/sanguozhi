@@ -1102,6 +1102,38 @@
       },
     },
 
+    /* ─────── R18 治政工程定期检查提醒 ─────── */
+    {
+      id: 'R18', name: '治政工程定期检查', level: 'warn', enabled: true,
+      check(rounds, latest) {
+        if (!latest || !latest.parsed) return [];
+        var round = latest.round || 0;
+        if (round < 3 || round % 3 !== 0) return [];
+        var INVEST_RE = /^(.+?)兴(?:-(.+))?$/;
+        var hasAny = false;
+        for (var i = 0; i < rounds.length && !hasAny; i++) {
+          var chs = (rounds[i].parsed && rounds[i].parsed.changes) || [];
+          for (var j = 0; j < chs.length && !hasAny; j++) {
+            if (!chs[j].breakdown) continue;
+            ['金','粮'].forEach(function(res) {
+              var bd = chs[j].breakdown[res];
+              if (!bd || !Array.isArray(bd.items)) return;
+              bd.items.forEach(function(it) {
+                if (INVEST_RE.test(String(it.label||'').trim())) hasAny = true;
+              });
+            });
+          }
+        }
+        if (!hasAny) return [];
+        return [{
+          id: 'R18-r' + round + '-reminder',
+          ruleId: 'R18', ruleName: '治政工程定期检查', level: 'warn',
+          body: '当前为第 <span class="diag-mark">' + round + '</span> 回合（每 3 回合定期提醒）。按 M-23 规则，治政工程投入后需在到期回合一次性入账，GM 容易遗忘。建议提醒主持人检查三家的<b>治政工程在建</b>（是否有到期未入账）和<b>已建成设施</b>（是否仍在生效）。',
+          copy: '【第' + round + '回合·定期核对】[R18·治政工程检查] 当前第 ' + round + ' 回合，按 M-23 规则定期提醒：请检查三家治政工程情况——\n1. 在建工程：是否有到期未入账的工程？（小工程 3 回合/中工程 5 回合/大工程 8 回合）\n2. 已建成设施：是否仍在生效？是否有被战乱/天灾摧毁的？\n3. 新投入工程：本回合是否有新工程投入需要开始追踪？',
+        }];
+      },
+    },
+
   ];
 
   /* ═══════════════════════════════════════════
