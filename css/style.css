@@ -12982,3 +12982,23 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608q 工单#world-mil-wrap-fix-v2 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608r 工单#world-mil-wrap-fix-v3
+   修复烽烟行武将名+路线换行布局错乱
+   覆盖 v20260608q + 原始 flex-shrink:0
+   ──────────────────────────────────────────────────────────── */
+
+/* 武将名：允许缩小 + 允许换行（去掉 flex-shrink:0） */
+.world-mil-general {
+  flex-shrink: 1 !important;
+  min-width: 0 !important;
+}
+
+/* 路线：不再 flex:1 独占剩余空间，改为自然宽度 */
+.world-mil-route {
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+}
+
+/* ╚══ END v20260608r 工单#world-mil-wrap-fix-v3 ══════════════ */
