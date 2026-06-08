@@ -174,7 +174,6 @@
           + ' data-slot="' + slot + '"'
           + ' data-group="' + _esc(gen.groupName || '') + '"'
           + ' data-name="' + _esc(gen.name) + '"'
-          + ' title="' + (gen.groupName ? '分组：' + _esc(gen.groupName) : '无分组') + '"'
           + '>' + _esc(gen.name) + '</span>';
       });
       html += '</div>';
