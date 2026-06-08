@@ -12738,3 +12738,38 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608c 工单#gen-org-overview-v1 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608k 工单#gen-tab-compact-v1
+   武将分组 tab 缩小一档，退居标题之下
+   ──────────────────────────────────────────────────────────── */
+
+.gor-tab {
+  font-size: .62rem !important;
+  padding: 3px 9px !important;
+}
+
+.gor-tab-cnt {
+  font-size: .52rem !important;
+}
+
+.gor-tab-add {
+  font-size: .62rem !important;
+  padding: 3px 9px !important;
+}
+
+@media (max-width: 720px) {
+  .gor-tab {
+    font-size: .58rem !important;
+    padding: 2px 7px !important;
+  }
+  .gor-tab-cnt {
+    font-size: .48rem !important;
+  }
+  .gor-tab-add {
+    font-size: .58rem !important;
+    padding: 2px 7px !important;
+  }
+}
+
+/* ╚══ END v20260608k 工单#gen-tab-compact-v1 ══════════════════ */
