@@ -2600,30 +2600,29 @@
     const result = String(b.result || '');
     const WIN_SET = ['惨胜','小胜','大胜','胜'];
     const LOSE_SET = ['小负','大败','负'];
-    const resultCls = WIN_SET.includes(result) ? 'win'
-                    : LOSE_SET.includes(result) ? 'lose'
-                    : 'draw';
+    const resultCls = WIN_SET.includes(result) ? 'siege'
+                    : LOSE_SET.includes(result) ? 'urgent'
+                    : 'march';
 
     const atkLoss = b.attacker_loss != null ? b.attacker_loss : '0';
     const defLoss = b.defender_loss != null ? b.defender_loss : '0';
-    const atkZero = (b.attacker_loss === 0 || b.attacker_loss === '0');
-    const defZero = (b.defender_loss === 0 || b.defender_loss === '0');
 
-    return '<div class="world-bat-row ' + resultCls + '" style="--wm-c:' + atkColor.glow + '">' +
-      '<span class="wbr-result">' + esc(result) + '</span>' +
-      '<span class="wbr-badge" style="color:' + atkColor.glow + ';border-color:' + atkColor.stroke + '">' + esc(atkLabel) + '</span>' +
-      '<span class="wbr-name">' + esc(atkName) + '</span>' +
-      '<span class="wbr-vs">vs</span>' +
-      '<span class="wbr-badge" style="color:' + defColor.glow + ';border-color:' + defColor.stroke + '">' + esc(defLabel) + '</span>' +
-      '<span class="wbr-name">' + esc(defName) + '</span>' +
-      '<span class="wbr-right">' +
-        (city ? '<span class="wbr-city">' + esc(city) + '</span>' : '') +
-        '<span class="wbr-losses">' +
-          '<span class="' + (atkZero ? 'zero' : '') + '">-' + atkLoss + '</span>' +
-          '<span class="wbr-sep">/</span>' +
-          '<span class="' + (defZero ? 'zero' : '') + '">-' + defLoss + '</span>' +
+    var troopStr = '';
+    if (city) troopStr += esc(city) + ' ';
+    troopStr += '-' + atkLoss + '/-' + defLoss;
+
+    return '<div class="world-mil-row" style="--wm-c:' + atkColor.glow + '">' +
+      '<span class="world-mil-faction" style="color:' + atkColor.glow + ';border-color:' + atkColor.stroke + '">' + esc(atkLabel) + '</span>' +
+      '<div class="world-mil-main">' +
+        '<span class="world-mil-general">' + esc(atkName) + '</span>' +
+        '<span class="world-mil-route">' +
+          '<span class="arrow">vs</span>' +
+          '<span class="world-mil-faction" style="color:' + defColor.glow + ';border-color:' + defColor.stroke + ';margin:0 4px">' + esc(defLabel) + '</span>' +
+          esc(defName) +
         '</span>' +
-      '</span>' +
+      '</div>' +
+      (troopStr ? '<span class="world-mil-troop">' + troopStr + '</span>' : '') +
+      '<span class="world-mil-status ' + resultCls + '">' + esc(result) + '</span>' +
     '</div>';
   }
 
