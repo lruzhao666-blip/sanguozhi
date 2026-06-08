@@ -13208,3 +13208,78 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260608s 工单#gen-tab-redesign-A1 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260608t 工单#gen-tab-redesign-A2
+   武将分组 Tab 栏尺寸缩小一档
+   覆盖 v20260608s 的字号/间距，旧规则不删
+   ──────────────────────────────────────────────────────────── */
+
+/* Tab 按钮缩小 */
+.gor-tab {
+  font-size: .66rem !important;
+  padding: 5px 11px 6px !important;
+  letter-spacing: .06em !important;
+}
+
+/* 选中态同步 */
+.gor-tab.gor-tab-active {
+  font-size: .66rem !important;
+  padding: 5px 11px 6px !important;
+}
+
+/* 计数缩小 */
+.gor-tab-cnt {
+  font-size: .52rem !important;
+  margin-left: 2px !important;
+}
+
+/* + 新建分组按钮同步 */
+.gor-tab-add {
+  font-size: .66rem !important;
+  padding: 5px 9px 6px !important;
+}
+
+/* 操作文字链接缩小 */
+.gor-pill-btn {
+  font-size: .56rem !important;
+}
+.gor-pill-txt {
+  font-size: .56rem !important;
+}
+
+/* 操作栏间距收紧 */
+.gor-group-actions {
+  gap: 10px !important;
+}
+
+/* 容器底部间距收紧 */
+.gor-tabs {
+  margin-bottom: 8px !important;
+}
+
+/* ═══ 移动端 ═══ */
+@media (max-width: 720px) {
+  .gor-tab {
+    font-size: .6rem !important;
+    padding: 4px 8px 5px !important;
+  }
+  .gor-tab-cnt {
+    font-size: .48rem !important;
+  }
+  .gor-tab-add {
+    font-size: .6rem !important;
+    padding: 4px 8px 5px !important;
+  }
+  .gor-pill-btn {
+    font-size: .52rem !important;
+  }
+  .gor-pill-txt {
+    font-size: .52rem !important;
+  }
+  .gor-group-actions {
+    gap: 8px !important;
+  }
+}
+
+/* ╚══ END v20260608t 工单#gen-tab-redesign-A2 ══════════════ */
