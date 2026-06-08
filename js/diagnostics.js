@@ -21,6 +21,8 @@
  *                                       R2 includes 单字不抵消 + 加防御日志,R11 整条下线。
  * #diag-r2-currset-fix-v1 (2026-06-04): 修复 R2 collectFrom 闭包硬绑 prevSet 导致 currSet 永远为空。
  * #diag-r9-r10-remove-v1 (2026-06-04): R9 维护栏偏离 + R10 行动栏消耗偏低 整条下线。
+ * #diag-r2r5-sixgrade-fix-v1 (2026-06-08): R5 六档胜系兼容(惨胜/小胜/大胜/胜均算赢);
+ *                                           R2 collectFrom 调度段多将共率拆分对齐 R1。
  */
 
 (function () {
@@ -213,7 +215,10 @@
           (parsed.npcCities || []).forEach(c => {
             (c.holders || []).forEach(h => set.add(h));
           });
-          (parsed.transit || []).forEach(t => { if (t.general) set.add(t.general); });
+          (parsed.transit || []).forEach(t => {
+            if (!t.general) return;
+            t.general.split('/').map(s => s.trim()).filter(Boolean).forEach(name => set.add(name));
+          });
           (parsed.world || []).forEach(w => { if (w.name) set.add(w.name); });
         };
         /* 上回合在册武将集合(含玩家武将、守将、调度、世界、NPC 守将)*/
@@ -420,8 +425,9 @@
 
           /* 战报中本 slot 作为攻方且 result=胜 + 有 city 的场数 */
           const slotIdx = SLOT_IDX[slot];
+          const WIN_RESULTS = ['惨胜','小胜','大胜','胜'];
           const wonWithCity = (latest.parsed.battles || []).filter(
-            b => b.attackerSlot === slotIdx && b.result === '胜' && b.city
+            b => b.attackerSlot === slotIdx && WIN_RESULTS.includes(b.result) && b.city
           ).length;
 
           if (gainCities > 0 && wonWithCity < gainCities) {
