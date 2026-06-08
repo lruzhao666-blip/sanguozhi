@@ -23,7 +23,7 @@
   var SLOT_NAMES = ['甲', '乙', '丙'];
   var ROLE_TO_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
 
-  var _activeTab = { 0: '全部武将', 1: '全部武将', 2: '全部武将' };
+  var _activeTab = { 0: '全部', 1: '全部', 2: '全部' };
 
   var _menuEl = null;
   var _menuSlot = null;
@@ -75,8 +75,8 @@
     if (countEl) countEl.textContent = groups.length + ' 组';
 
     // 「全部武将」是固定总览 tab，始终排在首位
-    var tabNames = ['全部武将'].concat(groups.map(function (g) { return g.group_name; }));
-    if (tabNames.indexOf(_activeTab[slot]) === -1) _activeTab[slot] = '全部武将';
+    var tabNames = ['全部'].concat(groups.map(function (g) { return g.group_name; }));
+    if (tabNames.indexOf(_activeTab[slot]) === -1) _activeTab[slot] = '全部';
 
     // 所有武将聚合（用于总览 tab）
     var allGenerals = [];
@@ -103,11 +103,11 @@
     // Tab 横条
     html += '<div class="gor-tabs" data-slot="' + slot + '">';
     // 固定总览 tab
-    var isOverviewActive = _activeTab[slot] === '全部武将';
+    var isOverviewActive = _activeTab[slot] === '全部';
     html += '<button class="gor-tab gor-tab-overview' + (isOverviewActive ? ' gor-tab-active' : '') + '"'
       + ' data-slot="' + slot + '"'
-      + ' data-group="全部武将"'
-      + ' type="button">全部武将'
+      + ' data-group="全部"'
+      + ' type="button">全部'
       + '<span class="gor-tab-cnt">' + allGenerals.length + '</span>'
       + '</button>';
     // 用户自定义分组
@@ -127,7 +127,7 @@
     html += '</div>';
 
     // 当前选中分组内容
-    if (_activeTab[slot] === '全部武将') {
+    if (_activeTab[slot] === '全部') {
       html += _renderOverviewContent(slot, allGenerals, groups, editable);
     } else {
       var activeGroup = null;
@@ -457,7 +457,7 @@
     } else if (act === 'delete') {
       if (!confirm('确认删除分组「' + groupName + '」？\n组内武将将变为无分组状态。')) return;
       window.SGGenOrg.deleteGroup(slot, groupName).then(function () {
-        _activeTab[slot] = '全部武将';
+        _activeTab[slot] = '全部';
         renderSlot(slot);
         _toast('已删除分组「' + groupName + '」');
       }).catch(function (e) { _toast('删除失败：' + e); });
