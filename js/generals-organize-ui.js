@@ -119,10 +119,10 @@
       html += '<div class="gor-group-bar">';
       html += '<span class="gor-group-name">' + _esc(gName) + '</span>';
       html += '<div class="gor-group-actions">';
-      html += '<button class="gor-btn-icon" data-act="rename" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="重命名">改名</button>';
-      html += '<button class="gor-btn-icon" data-act="group-up" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="左移">←</button>';
-      html += '<button class="gor-btn-icon" data-act="group-down" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="右移">→</button>';
-      html += '<button class="gor-btn-icon gor-btn-danger" data-act="delete" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="删除">删除</button>';
+      html += '<button class="gor-btn-icon" data-act="rename" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="重命名">✎</button>';
+      html += '<button class="gor-btn-icon" data-act="group-up" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="左移">◀</button>';
+      html += '<button class="gor-btn-icon" data-act="group-down" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="右移">▶</button>';
+      html += '<button class="gor-btn-icon gor-btn-danger" data-act="delete" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="删除">✕</button>';
       html += '</div></div>';
     }
 
