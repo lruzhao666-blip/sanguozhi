@@ -23,7 +23,7 @@
   var SLOT_NAMES = ['甲', '乙', '丙'];
   var ROLE_TO_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
 
-  var _activeTab = { 0: '未分组', 1: '未分组', 2: '未分组' };
+  var _activeTab = { 0: '全部武将', 1: '全部武将', 2: '全部武将' };
 
   var _menuEl = null;
   var _menuSlot = null;
@@ -75,7 +75,7 @@
     if (countEl) countEl.textContent = groups.length + ' 组';
 
     var tabNames = groups.map(function (g) { return g.group_name; });
-    if (tabNames.indexOf(_activeTab[slot]) === -1) _activeTab[slot] = '未分组';
+    if (tabNames.indexOf(_activeTab[slot]) === -1) _activeTab[slot] = '全部武将';
 
     var html = '';
 
@@ -112,17 +112,17 @@
   function _renderGroupContent(slot, group, allGroups, editable) {
     var html = '';
     var gName = group.group_name;
-    var isDefault = gName === '未分组';
+    var isDefault = gName === '全部武将';
 
     // 分组操作栏
     if (editable && !isDefault) {
       html += '<div class="gor-group-bar">';
       html += '<span class="gor-group-name">' + _esc(gName) + '</span>';
       html += '<div class="gor-group-actions">';
-      html += '<button class="gor-btn-icon" data-act="rename" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="重命名">改名</button>';
-      html += '<button class="gor-btn-icon" data-act="group-up" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="左移">←</button>';
-      html += '<button class="gor-btn-icon" data-act="group-down" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="右移">→</button>';
-      html += '<button class="gor-btn-icon gor-btn-danger" data-act="delete" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="删除">删除</button>';
+      html += '<button class="gor-pill-btn" data-act="rename" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="重命名"><span class="gor-pill-ico">✎</span><span class="gor-pill-txt">改名</span></button>';
+      html += '<button class="gor-pill-btn" data-act="group-up" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="左移"><span class="gor-pill-ico">‹</span><span class="gor-pill-txt">左移</span></button>';
+      html += '<button class="gor-pill-btn" data-act="group-down" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="右移"><span class="gor-pill-ico">›</span><span class="gor-pill-txt">右移</span></button>';
+      html += '<button class="gor-pill-btn gor-pill-danger" data-act="delete" data-slot="' + slot + '" data-group="' + _esc(gName) + '" title="删除"><span class="gor-pill-ico">✕</span><span class="gor-pill-txt">删除</span></button>';
       html += '</div></div>';
     }
 
@@ -212,9 +212,9 @@
       items.push({ label: '移到「' + g.group_name + '」', act: 'move-to', target: g.group_name });
     });
 
-    if (groupName !== '未分组') {
-      var hasDefault = items.some(function (it) { return it.target === '未分组'; });
-      if (!hasDefault) items.push({ label: '移出到「未分组」', act: 'move-to', target: '未分组' });
+    if (groupName !== '全部武将') {
+      var hasDefault = items.some(function (it) { return it.target === '全部武将'; });
+      if (!hasDefault) items.push({ label: '移出到「全部武将」', act: 'move-to', target: '全部武将' });
     }
 
     items.forEach(function (it) {
@@ -293,7 +293,7 @@
         return;
       }
 
-      var actBtn = ev.target.closest('.gor-btn-icon');
+      var actBtn = ev.target.closest('.gor-pill-btn');
       if (actBtn) {
         var act = actBtn.getAttribute('data-act');
         var sl = parseInt(actBtn.getAttribute('data-slot'), 10);
@@ -388,9 +388,9 @@
       });
 
     } else if (act === 'delete') {
-      if (!confirm('确认删除分组「' + groupName + '」？\n组内武将将移回「未分组」。')) return;
+      if (!confirm('确认删除分组「' + groupName + '」？\n组内武将将移回「全部武将」。')) return;
       window.SGGenOrg.deleteGroup(slot, groupName).then(function () {
-        _activeTab[slot] = '未分组';
+        _activeTab[slot] = '全部武将';
         renderSlot(slot);
         _toast('已删除分组「' + groupName + '」');
       }).catch(function (e) { _toast('删除失败：' + e); });
@@ -398,13 +398,13 @@
     } else if (act === 'group-up') {
       // 在可移动的用户分组列表（排除「未分组」）中检查边界
       var _allUp = window.SGGenOrg.getGroups(slot);
-      var _userUp = _allUp.filter(function (g) { return g.group_name !== '未分组'; });
+      var _userUp = _allUp.filter(function (g) { return g.group_name !== '全部武将'; });
       var _idxUp = _userUp.findIndex(function (g) { return g.group_name === groupName; });
       if (_idxUp <= 0) return; // 已是第一个用户分组，无法继续左移
       // 若 SGGenOrg.reorderGroup 会与「未分组」交换，需连续调用两次
       var _fullIdx = _allUp.findIndex(function (g) { return g.group_name === groupName; });
       var _swapTarget = _allUp[_fullIdx - 1];
-      if (_swapTarget && _swapTarget.group_name === '未分组') {
+      if (_swapTarget && _swapTarget.group_name === '全部武将') {
         // 相邻的是「未分组」，连续交换两次让它跳过去
         window.SGGenOrg.reorderGroup(slot, groupName, 'up')
           .then(function () { return window.SGGenOrg.reorderGroup(slot, groupName, 'up'); })
@@ -415,7 +415,7 @@
 
     } else if (act === 'group-down') {
       var _allDn = window.SGGenOrg.getGroups(slot);
-      var _userDn = _allDn.filter(function (g) { return g.group_name !== '未分组'; });
+      var _userDn = _allDn.filter(function (g) { return g.group_name !== '全部武将'; });
       var _idxDn = _userDn.findIndex(function (g) { return g.group_name === groupName; });
       if (_idxDn < 0 || _idxDn >= _userDn.length - 1) return; // 已是最后一个，无法继续右移
       window.SGGenOrg.reorderGroup(slot, groupName, 'down').then(function () { renderSlot(slot); });
