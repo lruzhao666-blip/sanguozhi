@@ -84,6 +84,7 @@
         { text: '', secret: false, _blank: false },
       ],
       locked: false,
+      hidden: false,
       fromAdvice: {},
     };
   }
@@ -348,6 +349,40 @@
     const card = $(`sa-card-${slot}`);
     if (!card) return;
 
+    // ── 隐藏行动:权限控制 + 占位渲染 ──
+    const mySlot = getMySlot();
+    const hideToggle = $(`sa-hide-toggle-${slot}`);
+    const hideCb     = $(`sa-hide-cb-${slot}`);
+
+    // 隐藏 checkbox 只有本人可操作,队友/未登录置 disabled
+    if (hideToggle) {
+      const isOwner = (mySlot === slot);
+      hideToggle.classList.toggle('disabled', !isOwner);
+      if (hideCb) {
+        hideCb.disabled = !isOwner || data.locked;
+        // 回填 checked 状态(本人视角从 localState 读)
+        if (isOwner) hideCb.checked = !!data.hidden;
+      }
+    }
+
+    // 队友视角 + 对方已隐藏 → 整卡显示占位
+    const maskZone = card.querySelector('.sa-mask-zone');
+    let placeholder = card.querySelector('.sa-hidden-placeholder');
+    if (data.hidden && mySlot !== slot) {
+      card.classList.add('sa-card-hidden');
+      if (!placeholder && maskZone) {
+        const playerName = $(`sa-player-name-${slot}`);
+        const name = playerName ? playerName.textContent.trim() : `城主${'甲乙丙'[slot]}`;
+        placeholder = document.createElement('div');
+        placeholder.className = 'sa-hidden-placeholder';
+        placeholder.innerHTML = `<span class="sa-hidden-placeholder-icon">🙈</span><span>${name} 已隐藏行动</span>`;
+        maskZone.insertBefore(placeholder, maskZone.firstChild);
+      }
+    } else {
+      card.classList.remove('sa-card-hidden');
+      if (placeholder) placeholder.remove();
+    }
+
     // 4 个军令行(v20260921a · 增加 _blank 空白态处理)
     data.orders.forEach((o, idx) => {
       const row = card.querySelector(`.sa-order-row[data-slot="${slot}"][data-idx="${idx}"]`);
@@ -544,7 +579,13 @@
         publicLines.push(`${numChar} ${o.text.trim()}`);
       }
     });
-    const publicText = publicLines.join('\n');
+    // 检测隐藏开关
+    const hideCb = document.getElementById(`sa-hide-cb-${slot}`);
+    const isHidden = !!(hideCb && hideCb.checked);
+    localState.slots[slot].hidden = isHidden;
+    const publicText = isHidden
+      ? ('__HIDDEN__\n' + publicLines.join('\n'))
+      : publicLines.join('\n');
     const secretText = secretLines.length ? secretLines.join('\n') : null;
 
     // 全空仍允许锁定(代表"本回合无行动")— 与原版语义一致
@@ -691,7 +732,20 @@
           localSlot.orders = parseRemoteToOrders(r.content, r.secret_text);
         } else {
           // 队友:仅反解析明令,密令位置留空且打标记
-          localSlot.orders = parsePublicOnlyOrders(r.content);
+          const parsed = parsePublicOnlyOrders(r.content);
+          if (parsed && parsed._hidden) {
+            // 队友勾选了隐藏行动
+            localSlot.hidden = true;
+            localSlot.orders = [
+              { text: '', secret: false, _blank: true },
+              { text: '', secret: false, _blank: true },
+              { text: '', secret: false, _blank: true },
+              { text: '', secret: false, _blank: true },
+            ];
+          } else {
+            localSlot.hidden = false;
+            localSlot.orders = parsed;
+          }
         }
       });
 
@@ -794,6 +848,10 @@
        并打 _blank:true 标记,供 renderCard 渲染为空白行
   ───────────────────────────────────────────── */
   function parsePublicOnlyOrders(content) {
+    // 检测隐藏标记
+    if (content && content.trimStart().startsWith('__HIDDEN__')) {
+      return { _hidden: true, orders: [] };
+    }
     const orders = [
       { text: '', secret: false, _blank: true },
       { text: '', secret: false, _blank: true },
@@ -883,7 +941,11 @@
       // slot 在云端无记录 → 该玩家未锁定本回合行动
       if (!row) return `${head}\n(本回合无行动)`;
 
-      const c = (row.content     || '').trim();
+      let c = (row.content     || '').trim();
+      // 剥除隐藏标记前缀(GM 复制时正常输出内容)
+      if (c.startsWith('__HIDDEN__')) {
+        c = c.replace(/^__HIDDEN__\n?/, '').trim();
+      }
       const s = (row.secret_text || '').trim();
       const pubLines = c ? c.split('\n').map(x => x.trim()).filter(Boolean) : [];
       const secLines = s ? s.split('\n').map(x => x.trim()).filter(Boolean) : [];
@@ -919,6 +981,11 @@
   function resetLocal() {
     clearMyDraft();
     localState.slots = [makeEmptySlot(), makeEmptySlot(), makeEmptySlot()];
+    // 重置隐藏 checkbox
+    [0, 1, 2].forEach(s => {
+      const cb = $(`sa-hide-cb-${s}`);
+      if (cb) cb.checked = false;
+    });
     localState.allDone     = false;
     localState.remoteSlots = [];
     localState._remoteRows = [];
