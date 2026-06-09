@@ -13698,3 +13698,27 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260609a 工单#world-layout-flex-B-v2 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260609b 工单#gen-tag-corner-flag-fix-v1
+   修复武将标签状态封角小旗被 overflow:hidden + border-radius 裁切
+   方案B：三角形缩小至 7px 并内缩 1px，完全落在 5px 圆角安全区内
+   旧规则不删，靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+.pcard-v4[data-slot] .gen-tag::after {
+  border-width: 7px 7px 0 0 !important;
+  left: 1px !important;
+  top: 1px !important;
+}
+
+/* 移动端同步缩小 */
+@media (max-width: 720px) {
+  .pcard-v4[data-slot] .gen-tag::after {
+    border-width: 6px 6px 0 0 !important;
+    left: 1px !important;
+    top: 1px !important;
+  }
+}
+
+/* ╚══ END v20260609b 工单#gen-tag-corner-flag-fix-v1 ══════════ */
