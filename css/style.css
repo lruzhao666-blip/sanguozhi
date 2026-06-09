@@ -14127,3 +14127,109 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260609f 工单#world-to-fengyan-v1 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260609c 工单#hide-action-v1
+   军帐"隐藏行动"checkbox + 队友占位态
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 隐藏开关(卡片底部,锁定按钮左侧) ── */
+.sa-hide-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  margin-right: auto;
+  transition: opacity .18s;
+}
+.sa-hide-toggle.disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.sa-hide-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(180,140,60,.4);
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all .18s;
+  flex-shrink: 0;
+  margin: 0;
+}
+.sa-hide-checkbox:hover {
+  border-color: var(--gold);
+}
+.sa-hide-checkbox:checked {
+  background: var(--gold-dim);
+  border-color: var(--gold-light);
+}
+.sa-hide-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: -2px;
+  left: 1px;
+  color: #080808;
+  font-size: .7rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.sa-hide-checkbox:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+.sa-hide-label {
+  font-family: var(--font-sans);
+  font-size: .66rem;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+}
+.sa-hide-hint {
+  font-size: .58rem;
+  color: var(--gold-dim);
+  letter-spacing: .04em;
+  opacity: 0;
+  transition: opacity .18s;
+}
+.sa-hide-checkbox:checked ~ .sa-hide-hint {
+  opacity: 1;
+}
+
+/* ── 队友视角:已隐藏占位态 ── */
+.sa-hidden-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 14px;
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  color: var(--text-dim);
+  letter-spacing: .08em;
+  opacity: .65;
+}
+.sa-hidden-placeholder-icon {
+  font-size: 1.1rem;
+  opacity: .6;
+}
+
+/* 隐藏占位态下,军令列表 + 额度条不显示 */
+.sa-card.sa-card-hidden .sa-orders-list,
+.sa-card.sa-card-hidden .sa-quota-bar,
+.sa-card.sa-card-hidden .sa-ta-legacy {
+  display: none !important;
+}
+
+/* 移动端微调 */
+@media (max-width: 640px) {
+  .sa-hide-toggle { gap: 4px; }
+  .sa-hide-label { font-size: .62rem; }
+  .sa-hide-hint { font-size: .54rem; }
+}
+
+/* ╚══ END v20260609c 工单#hide-action-v1 ══════════════════════ */
