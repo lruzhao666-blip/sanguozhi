@@ -238,6 +238,7 @@ window.SGParser = (function () {
   //          或 ⑥ ...
   //  破折号支持 —— / -- / —— / 全角 / 半角组合
   // ─────────────────────────────────────────
+  /* [legacy v1]
   function _parseCmdItems(text) {
     const items = [];
     if (!text) return items;
@@ -257,6 +258,46 @@ window.SGParser = (function () {
         note = rest.slice(dashIdx).replace(/^[——──\s\-—]+/, '').trim();
       }
       items.push({ num: m[1], name, note });
+    }
+    return items;
+  }
+  */
+
+  function _parseCmdItems(text) {
+    const items = [];
+    if (!text) return items;
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    // v2: 支持 A/B/C 分支行预读
+    const numRe = /^([④⑤⑥⑦⑧⑨⑩])\s*(.+)$/;
+    const branchRe = /^\s*[A-Ca-c](?:[.．、]|[：:]|\s)\s*.+/;
+    const branchLetter = l => l.trim().slice(0, 1).toUpperCase();
+    const branchText = l => l.trim().replace(/^[A-Ca-c](?:[.．、]|[：:]|\s)\s*/, '');
+
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      const m = line.match(numRe);
+      if (!m) { i++; continue; }
+      const rest = m[2].trim();
+      // 拆破折号
+      const dashIdx = rest.search(/——|──|\s[-—]{2}\s/);
+      let name = rest, note = '';
+      if (dashIdx > 0) {
+        name = rest.slice(0, dashIdx).trim();
+        note = rest.slice(dashIdx).replace(/^[——──\s\-—]+/, '').trim();
+      }
+      // 向前预读 A/B/C 分支行
+      const branches = [];
+      i++;
+      while (i < lines.length) {
+        if (branchRe.test(lines[i])) {
+          branches.push({ key: branchLetter(lines[i]), text: branchText(lines[i]) });
+          i++;
+        } else {
+          break;
+        }
+      }
+      items.push({ num: m[1], name, note, branches });
     }
     return items;
   }
