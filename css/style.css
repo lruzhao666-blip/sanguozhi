@@ -14122,10 +14122,7 @@ body.is-viewer-mode #diag-toast {
 .wbat-info,
 .wbat-city,
 .wbat-losses,
-.wbat-status,
-.world-mil-row,
-.world-mil-identity,
-.world-mil-right {
+.wbat-status {
   display: none !important;
 }
 
