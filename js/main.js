@@ -2516,27 +2516,27 @@
     _bindWorldFoldBtn(listEl);
   }
 
-  // 单行调度(从原 _renderWorldMil 拆出,保持渲染逻辑完全一致)
+  // 单行调度(方案B v2: Flex + identity分组)
   function _buildWorldMilRow(t) {
-    const side = _getWorldMilSide(t);
-    const faction = side.factionLabel;
-    const mc      = side.factionColor;
-    const general = String(t.general || '');
-    const from    = String(t.from || '');
-    const to      = String(t.to || '');
-    const troopStr = _formatTransitTroops(t);
-    const status  = String(t.status || '');
+    var side = _getWorldMilSide(t);
+    var faction = side.factionLabel;
+    var mc      = side.factionColor;
+    var general = String(t.general || '');
+    var from    = String(t.from || '');
+    var to      = String(t.to || '');
+    var troopStr = _formatTransitTroops(t);
+    var status  = String(t.status || '');
 
     return '<div class="world-mil-row" style="--wm-c:' + mc + '">' +
-      '<span class="world-mil-faction">' + esc(faction) + '</span>' +
-      '<div class="world-mil-main">' +
+      '<span class="world-mil-identity">' +
+        '<span class="world-mil-faction">' + esc(faction) + '</span>' +
         '<span class="world-mil-general">' + esc(general) + '</span>' +
-        '<span class="world-mil-route">' + esc(from) + '<span class="arrow">›</span>' + esc(to) + '</span>' +
-      '</div>' +
-      (troopStr
-        ? '<span class="world-mil-troop">' + troopStr + '</span>'
-        : '') +
-      _renderWorldStatus(status) +
+      '</span>' +
+      '<span class="world-mil-route">' + esc(from) + '<span class="arrow">›</span>' + esc(to) + '</span>' +
+      '<span class="world-mil-right">' +
+        (troopStr ? '<span class="world-mil-troop">' + troopStr + '</span>' : '') +
+        _renderWorldStatus(status) +
+      '</span>' +
     '</div>';
   }
 
@@ -2586,43 +2586,42 @@
   }
   */
   function _buildWorldBatRow(b) {
-    const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
-    const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
+    var atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
+    var defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
 
-    const atkLabel = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
-    const defLabel = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+    var atkLabel = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+    var defLabel = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
 
-    const atkName = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkLabel);
-    const defName = b.defenderGeneral || _junbaoStripPrefix(b.defender, defLabel);
+    var atkName = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkLabel);
+    var defName = b.defenderGeneral || _junbaoStripPrefix(b.defender, defLabel);
 
-    const city = b.defenderCity || b.city || '';
+    var city = b.defenderCity || b.city || '';
 
-    const result = String(b.result || '');
-    const WIN_SET = ['惨胜','小胜','大胜','胜'];
-    const LOSE_SET = ['小负','大败','负'];
-    const resultCls = WIN_SET.includes(result) ? 'siege'
-                    : LOSE_SET.includes(result) ? 'urgent'
-                    : 'march';
+    var result = String(b.result || '');
+    var WIN_SET = ['惨胜','小胜','大胜','胜'];
+    var LOSE_SET = ['小负','大败','负'];
+    var resultCls = WIN_SET.includes(result) ? 'win'
+                  : LOSE_SET.includes(result) ? 'lose'
+                  : 'draw';
 
-    const atkLoss = b.attacker_loss != null ? b.attacker_loss : '0';
-    const defLoss = b.defender_loss != null ? b.defender_loss : '0';
+    var atkLoss = b.attacker_loss != null ? b.attacker_loss : '0';
+    var defLoss = b.defender_loss != null ? b.defender_loss : '0';
 
-    var troopStr = '';
-    if (city) troopStr += esc(city) + ' ';
-    troopStr += '-' + atkLoss + '/-' + defLoss;
-
-    return '<div class="world-mil-row" style="--wm-c:' + atkColor.glow + '">' +
-      '<span class="world-mil-faction" style="color:' + atkColor.glow + ';border-color:' + atkColor.stroke + '">' + esc(atkLabel) + '</span>' +
-      '<div class="world-mil-main">' +
+    return '<div class="wbat-row ' + resultCls + '" style="--wm-c:' + atkColor.glow + '">' +
+      '<span class="wbat-atk-group">' +
+        '<span class="world-mil-faction" style="color:' + atkColor.glow + ';border-color:' + atkColor.stroke + '">' + esc(atkLabel) + '</span>' +
         '<span class="world-mil-general">' + esc(atkName) + '</span>' +
-        '<span class="world-mil-route">' +
-          '<span class="arrow">vs</span>' +
-          '<span class="world-mil-faction" style="color:' + defColor.glow + ';border-color:' + defColor.stroke + ';margin:0 4px">' + esc(defLabel) + '</span>' +
-          esc(defName) +
-        '</span>' +
-      '</div>' +
-      (troopStr ? '<span class="world-mil-troop">' + troopStr + '</span>' : '') +
-      '<span class="world-mil-status ' + resultCls + '">' + esc(result) + '</span>' +
+      '</span>' +
+      '<span class="wbat-vs">vs</span>' +
+      '<span class="wbat-def-group">' +
+        '<span class="world-mil-faction" style="color:' + defColor.glow + ';border-color:' + defColor.stroke + '">' + esc(defLabel) + '</span>' +
+        '<span class="world-mil-general">' + esc(defName) + '</span>' +
+      '</span>' +
+      '<span class="wbat-info">' +
+        (city ? '<span class="wbat-city">' + esc(city) + '</span>' : '') +
+        '<span class="wbat-losses">-' + atkLoss + '/-' + defLoss + '</span>' +
+        '<span class="wbat-status ' + resultCls + '">' + esc(result) + '</span>' +
+      '</span>' +
     '</div>';
   }
 
