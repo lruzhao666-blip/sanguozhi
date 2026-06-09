@@ -14233,3 +14233,173 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260609c 工单#hide-action-v1 ══════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════
+   v20260609d 工单#secret-cmd-ui-fix-v1
+   密报板块内 .sa-advice-* 样式镜像
+   原因:.sa-advice-* 规则全部在 .sa-block-v5 父级下,
+        密报板块容器为 .secret-bureau,样式不命中
+   方案:用 .secret-bureau 前缀复刻全部规则
+   回滚:整段删除即可
+   ──────────────────────────────────────────────────────────── */
+
+.secret-bureau .sa-advice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.secret-bureau .sa-advice-card {
+  position: relative;
+  padding: 10px 12px 11px 14px;
+  background: linear-gradient(135deg, rgba(40,28,6,.42), rgba(20,14,2,.62));
+  border: 1px solid rgba(212,168,67,.22);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--r);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 14px;
+  align-items: start;
+  transition: background .18s, border-color .18s;
+}
+.secret-bureau .sa-advice-card:hover {
+  background: linear-gradient(135deg, rgba(55,38,8,.52), rgba(30,20,4,.72));
+  border-color: rgba(212,168,67,.42);
+}
+.secret-bureau .sa-advice-card.is-accepted {
+  background: rgba(0,0,0,.32);
+  border-left-color: #5dda8a;
+  border-color: rgba(80,200,110,.22);
+  opacity: .8;
+}
+
+.secret-bureau .sa-advice-head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.secret-bureau .sa-advice-num {
+  font-family: var(--font-serif);
+  font-size: .92rem;
+  font-weight: 900;
+  color: var(--gold-light);
+  letter-spacing: .04em;
+}
+
+.secret-bureau .sa-advice-name {
+  font-family: var(--font-serif);
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: .03em;
+}
+
+.secret-bureau .sa-advice-accepted-tag {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: .62rem;
+  color: #5dda8a;
+  background: rgba(80,200,110,.1);
+  border: 1px solid rgba(80,200,110,.28);
+  border-radius: 9px;
+  padding: 1px 8px;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
+.secret-bureau .sa-advice-note {
+  font-family: var(--font-serif);
+  font-size: .78rem;
+  line-height: 1.75;
+  color: var(--text-sub);
+  letter-spacing: .02em;
+  margin-top: 4px;
+}
+
+.secret-bureau .sa-advice-branches {
+  margin-top: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.secret-bureau .sa-advice-branch {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(0,0,0,.22);
+  border-left: 2px solid rgba(212,168,67,.28);
+  border-radius: 0 4px 4px 0;
+  font-size: .74rem;
+}
+
+.secret-bureau .sa-advice-branch-label {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: var(--gold-dim);
+  flex-shrink: 0;
+  min-width: 14px;
+}
+
+.secret-bureau .sa-advice-branch-text {
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.secret-bureau .sa-advice-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-self: center;
+}
+
+.secret-bureau .sa-advice-btn {
+  font-family: var(--font-serif);
+  font-size: .72rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  background: rgba(60,35,0,.55);
+  border: 1px solid rgba(212,168,67,.4);
+  color: var(--gold-light);
+  border-radius: var(--r);
+  cursor: pointer;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  transition: all .18s;
+}
+.secret-bureau .sa-advice-btn:hover {
+  background: rgba(90,52,5,.75);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+.secret-bureau .sa-advice-btn.is-undo {
+  background: transparent;
+  color: rgba(255,255,255,.55);
+  border-color: rgba(255,255,255,.18);
+}
+.secret-bureau .sa-advice-btn.is-undo:hover {
+  color: rgba(255,255,255,.85);
+  border-color: rgba(255,255,255,.35);
+  background: rgba(255,255,255,.04);
+}
+.secret-bureau .sa-advice-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 移动端 */
+@media (max-width: 640px) {
+  .secret-bureau .sa-advice-card {
+    grid-template-columns: 1fr;
+  }
+  .secret-bureau .sa-advice-actions {
+    flex-direction: row;
+    align-self: flex-start;
+  }
+}
+
+/* ╚══ END v20260609d 工单#secret-cmd-ui-fix-v1 ══════════════ */
