@@ -134,45 +134,7 @@
   // [世界] 段继承:从上回合 world 拷贝,所有 remaining 自动 -1,
   //             剩 0 的条目剔除并打 warn。
   function applyWorldInheritance() {
-    let lastWorld = null;  // 最近一个完整 [世界] 的数组拷贝(已减 1 处理)
-
-    for (let i = 0; i < state.rounds.length; i++) {
-      const rd = state.rounds[i];
-      const p = rd.parsed;
-      const isInherit = p.worldInherit === true;
-      const roundNum = rd.round || 0;
-
-      if (!isInherit) {
-        // 完整回合:本回合 world 即为下一回合的继承基准
-        lastWorld = (p.world || []).map(w => Object.assign({}, w));
-      } else {
-        // 继承回合:拷贝上一份并自动减 1
-        if (!lastWorld) {
-          console.warn('[SG] R' + roundNum + ' 写了 [世界] 同上,但无上回合快照,跳过继承');
-          p.world = [];
-          continue;
-        }
-        const inherited = [];
-        lastWorld.forEach(w => {
-          const copy = Object.assign({}, w);
-          if (copy.remaining === Infinity || copy.remaining === '∞') {
-            // ∞ 不减
-            inherited.push(copy);
-          } else {
-            const newRem = Number(copy.remaining) - 1;
-            if (newRem <= 0) {
-              console.warn('[SG] R' + roundNum + ' 武将 ' + copy.name + ' 到期但 AI 未安排归宿,自动剔除');
-            } else {
-              copy.remaining = newRem;
-              inherited.push(copy);
-            }
-          }
-        });
-        p.world = inherited;
-        // 把本回合处理后的 world 作为下一回合的继承基准
-        lastWorld = inherited.map(w => Object.assign({}, w));
-      }
-    }
+    // v20260609-fengyan: 武将动态已下线，世界继承停用
   }
 
   // ════ #sanguo-inherit-batch2-v1 ════
@@ -2175,10 +2137,11 @@
         const badgeText = _junbaoGetBadgeText(t.slot, t.faction);
         // v28 (2026-XX): 对齐 GM 规则书 v3.40 M-29 红线九,
         // 状态白名单收窄至 4 种;旧词由 parser 归一化处理,UI 不再兜底。
+        // v20260609-fengyan: 保留已知状态的专属 class，其余一律走 jbt-march
         const statusCls = t.status === '攻城中' ? 'jbt-siege'
                         : t.status === '交战中' ? 'jbt-battle'
                         : t.status === '客驻'   ? 'jbt-resident'
-                        : 'jbt-march';  // 剩N 走 jbt-march
+                        : 'jbt-march';
         const styleStr = [
           `--strip-color:${sideColor.glow}`,
           `--badge-bg:${sideColor.film}`,
@@ -2345,24 +2308,25 @@
   function renderWorld(latest) {
     const block   = document.getElementById('block-world');
     if (!block) return;
-    const genList = document.getElementById('world-gen-list');
     const milList = document.getElementById('world-mil-list');
-    const genCnt  = document.getElementById('world-gen-count');
     const milCnt  = document.getElementById('world-mil-count');
-    if (!genList || !milList || !genCnt || !milCnt) return;
+    if (!milList || !milCnt) return;
 
     const parsed = (latest && latest.parsed) ? latest.parsed : {};
-    const world   = Array.isArray(parsed.world)   ? parsed.world   : [];
     const transit = Array.isArray(parsed.transit) ? parsed.transit : [];
     const battles = Array.isArray(parsed.battles) ? parsed.battles : [];
 
-    // ── 武将动态:整段 world 数组 ──
-    _renderWorldGen(genList, genCnt, world);
+    // 调度+战报均为空时隐藏整块
+    if (!transit.length && !battles.length) {
+      block.classList.add('hidden');
+      return;
+    }
+    block.classList.remove('hidden');
 
-    // ── 烽烟:全部调度都并入(NPC 与玩家)+ 战况结算 ──
     _renderWorldMil(milList, milCnt, transit, battles);
   }
 
+  /* v20260609-fengyan: 武将动态已下线，以下函数停用
   // 武将动态排序:剩余升序,∞ 排尾,同剩余按状态权重
   function _sortWorldGen(list) {
     const ORDER = { '被俘': 0, '在野': 1, '客途': 2 };
@@ -2375,6 +2339,7 @@
       return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN');
     });
   }
+  v20260609-fengyan: END */
 
   // ─────────────────────────────────────────
   // 烽烟行势力展示信息 v1 #world-mil-include-players-v1
@@ -2407,6 +2372,7 @@
     return { factionLabel: fac, factionColor: color };
   }
 
+  /* v20260609-fengyan: 武将动态已下线，以下函数停用
   // 武将动态折叠阈值
   function _renderWorldGen(listEl, cntEl, data) {
     cntEl.textContent = data.length;
@@ -2432,6 +2398,7 @@
 
     listEl.innerHTML = rowsHtml;
   }
+  v20260609-fengyan: END */
 
   // 烽烟折叠阈值
 
@@ -2643,16 +2610,19 @@
   // 状态白名单收窄至 4 种;旧词由 parser 归一化处理,UI 不再兜底。
   function _renderWorldStatus(s) {
     if (!s) return '<span class="world-mil-status">—</span>';
-    if (s === '攻城中') return '<span class="world-mil-status siege">攻城中</span>';
-    if (s === '交战中') return '<span class="world-mil-status battle">交战中</span>';
-    if (s === '客驻')   return '<span class="world-mil-status guest">客驻</span>';
-    const m = s.match(/^剩(\d+)$/);
+    // v20260609-fengyan: 主持人写什么就显示什么，不做固定映射
+    // 保留几个已知状态的 CSS class 以维持现有配色
+    if (s === '攻城中') return '<span class="world-mil-status siege">' + esc(s) + '</span>';
+    if (s === '交战中') return '<span class="world-mil-status battle">' + esc(s) + '</span>';
+    if (s === '客驻')   return '<span class="world-mil-status guest">' + esc(s) + '</span>';
+    var m = s.match(/^剩(\d+)$/);
     if (m) {
-      const n = parseInt(m[1], 10);
-      const cls = n <= 1 ? 'world-mil-status urgent' : 'world-mil-status march';
+      var n = parseInt(m[1], 10);
+      var cls = n <= 1 ? 'world-mil-status urgent' : 'world-mil-status march';
       return '<span class="' + cls + '">' + esc(s) + '</span>';
     }
-    return '<span class="world-mil-status">' + esc(s) + '</span>';
+    // 未知状态：用 march 默认色显示原文
+    return '<span class="world-mil-status march">' + esc(s) + '</span>';
   }
 
   window.__showHistoryRound = function (roundNum) {
