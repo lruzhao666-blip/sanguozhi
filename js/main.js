@@ -2626,7 +2626,13 @@
   }
 
   // 折叠按钮事件绑定(委托到 listEl,幂等)
+  /* [legacy v1]
   function _bindWorldFoldBtn(listEl) {
+    if (listEl._sgWorldFoldBound) return;
+    listEl._sgWorldFoldBound = true;
+  */
+  function _bindWorldFoldBtn(listEl) {
+    listEl._sgWorldFoldBound = false;
     if (listEl._sgWorldFoldBound) return;
     listEl._sgWorldFoldBound = true;
     listEl.addEventListener('click', function (ev) {
