@@ -2439,7 +2439,7 @@
     }
     const overflow = sorted.length - WORLD_GEN_FOLD_LIMIT;
     listEl.innerHTML =
-      '<div class="world-fold-wrap" data-fold-collapsed="1">' +
+      '<div class="world-fold-wrap" data-fold-collapsed="1" data-fold-limit="' + WORLD_GEN_FOLD_LIMIT + '">' +
         rowsHtml +
         '<button class="world-fold-btn" type="button" data-fold-action="toggle">' +
           '<span class="wfb-text-collapsed">▼ 展开剩余 ' + overflow + ' 位</span>' +
@@ -2447,6 +2447,7 @@
         '</button>' +
       '</div>';
     _bindWorldFoldBtn(listEl);
+    listEl.querySelectorAll('.world-fold-wrap').forEach(_applyWorldFold);
   }
 
   // 烽烟折叠阈值
@@ -2481,7 +2482,7 @@
         out.push(milRows);
       } else {
         const overflow = transit.length - WORLD_MIL_FOLD_LIMIT;
-        out.push('<div class="world-fold-wrap" data-fold-collapsed="1">');
+        out.push('<div class="world-fold-wrap" data-fold-collapsed="1" data-fold-limit="' + WORLD_MIL_FOLD_LIMIT + '">');
         out.push(milRows);
         out.push('<button class="world-fold-btn" type="button" data-fold-action="toggle">');
         out.push('<span class="wfb-text-collapsed">▼ 展开剩余 ' + overflow + ' 队</span>');
@@ -2501,7 +2502,7 @@
         out.push(batRows);
       } else {
         const overflow = battles.length - WORLD_BAT_FOLD_LIMIT;
-        out.push('<div class="world-fold-wrap" data-fold-collapsed="1">');
+        out.push('<div class="world-fold-wrap" data-fold-collapsed="1" data-fold-limit="' + WORLD_BAT_FOLD_LIMIT + '">');
         out.push(batRows);
         out.push('<button class="world-fold-btn" type="button" data-fold-action="toggle">');
         out.push('<span class="wfb-text-collapsed">▼ 展开剩余 ' + overflow + ' 战</span>');
@@ -2514,6 +2515,7 @@
 
     listEl.innerHTML = out.join('');
     _bindWorldFoldBtn(listEl);
+    listEl.querySelectorAll('.world-fold-wrap').forEach(_applyWorldFold);
   }
 
   // 单行调度(方案B v2: Flex + identity分组)
@@ -2632,17 +2634,39 @@
     listEl._sgWorldFoldBound = true;
   */
   function _bindWorldFoldBtn(listEl) {
-    listEl._sgWorldFoldBound = false;
     if (listEl._sgWorldFoldBound) return;
     listEl._sgWorldFoldBound = true;
     listEl.addEventListener('click', function (ev) {
-      const btn = ev.target.closest('.world-fold-btn');
+      var btn = ev.target.closest('.world-fold-btn');
       if (!btn) return;
-      const wrap = btn.closest('.world-fold-wrap');
+      var wrap = btn.closest('.world-fold-wrap');
       if (!wrap) return;
-      const collapsed = wrap.getAttribute('data-fold-collapsed') === '1';
+      var collapsed = wrap.getAttribute('data-fold-collapsed') === '1';
       wrap.setAttribute('data-fold-collapsed', collapsed ? '0' : '1');
+      _applyWorldFold(wrap);
     });
+  }
+
+  function _applyWorldFold(wrap) {
+    var collapsed = wrap.getAttribute('data-fold-collapsed') === '1';
+    var rows = wrap.querySelectorAll('.world-gen-row, .world-mil-row, .wbat-row');
+    var limit = parseInt(wrap.getAttribute('data-fold-limit') || '0', 10);
+    if (!limit) {
+      // 从按钮文案中推断 limit：总数 - overflow = limit
+      var btn = wrap.querySelector('.world-fold-btn');
+      if (btn) {
+        var m = btn.textContent.match(/剩余\s*(\d+)/);
+        if (m) limit = rows.length - parseInt(m[1], 10);
+      }
+      if (!limit || limit <= 0) limit = rows.length;
+    }
+    for (var i = 0; i < rows.length; i++) {
+      if (collapsed && i >= limit) {
+        rows[i].style.display = 'none';
+      } else {
+        rows[i].style.display = '';
+      }
+    }
   }
 
   // 位置渲染:含 → 时按箭头切分,其他原样输出

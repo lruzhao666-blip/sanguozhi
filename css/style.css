@@ -13722,3 +13722,16 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260609b 工单#gen-tag-corner-flag-fix-v1 ══════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260610e 工单#world-fold-rebind-fix-v2
+   折叠改由 JS 控制 style.display，禁用旧的纯 CSS 折叠规则
+   旧规则不删，靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+.world-list .world-fold-wrap[data-fold-collapsed="1"] > .world-gen-row:nth-of-type(n+7),
+.world-subsec .world-fold-wrap[data-fold-collapsed="1"] > .world-mil-row:nth-of-type(n+5),
+.world-subsec .world-fold-wrap[data-fold-collapsed="1"] > .world-bat-row:nth-of-type(n+4),
+.world-subsec .world-fold-wrap[data-fold-collapsed="1"] > .wbat-row:nth-of-type(n+4) {
+  display: revert !important;
+}
