@@ -13524,3 +13524,38 @@ body.is-viewer-mode #diag-toast {
   padding: 8px;
   border: 1px solid rgba(212,168,67,.1);
 }
+
+/* ══════════════════════════════════════════
+   整队按钮纯文字化 — 对齐 .pcs-count
+   工单 #gen-organize-v2-B2
+   v20260609c
+══════════════════════════════════════════ */
+
+.gor-summary-btn {
+  border: none !important;
+  background: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin-left: 6px !important;
+  font-size: .7rem !important;
+  font-weight: 400 !important;
+  color: var(--text-dim) !important;
+  letter-spacing: .04em !important;
+  transition: color .2s !important;
+}
+
+.gor-summary-btn-edit:hover {
+  color: var(--gold) !important;
+  background: none !important;
+  border: none !important;
+}
+
+.gor-summary-btn-done {
+  color: #6dce6d !important;
+}
+
+.gor-summary-btn-done:hover {
+  color: #88f0a0 !important;
+  background: none !important;
+  border: none !important;
+}
