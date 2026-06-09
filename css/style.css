@@ -13735,3 +13735,14 @@ body.is-viewer-mode #diag-toast {
 .world-subsec .world-fold-wrap[data-fold-collapsed="1"] > .wbat-row:nth-of-type(n+4) {
   display: revert !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20260610e 工单#gen-tag-corner-flag-visible-v1
+   修复武将 tag 状态封角小旗被 overflow:hidden + border-radius 裁切不可见
+   方案：去掉 overflow:hidden，让 ::after 三角自然溢出显示
+   旧规则不删，靠后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+.pcard-v4[data-slot] .gen-tag {
+  overflow: visible !important;
+}
