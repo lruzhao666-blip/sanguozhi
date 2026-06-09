@@ -2408,8 +2408,6 @@
   }
 
   // 武将动态折叠阈值
-  const WORLD_GEN_FOLD_LIMIT = 6;
-
   function _renderWorldGen(listEl, cntEl, data) {
     cntEl.textContent = data.length;
     if (!data.length) {
@@ -2432,27 +2430,10 @@
       '</div>';
     }).join('');
 
-    // 折叠机制
-    if (sorted.length <= WORLD_GEN_FOLD_LIMIT) {
-      listEl.innerHTML = rowsHtml;
-      return;
-    }
-    const overflow = sorted.length - WORLD_GEN_FOLD_LIMIT;
-    listEl.innerHTML =
-      '<div class="world-fold-wrap" data-fold-collapsed="1" data-fold-limit="' + WORLD_GEN_FOLD_LIMIT + '">' +
-        rowsHtml +
-        '<button class="world-fold-btn" type="button" data-fold-action="toggle">' +
-          '<span class="wfb-text-collapsed">▼ 展开剩余 ' + overflow + ' 位</span>' +
-          '<span class="wfb-text-expanded">▲ 收起</span>' +
-        '</button>' +
-      '</div>';
-    _bindWorldFoldBtn(listEl);
-    listEl.querySelectorAll('.world-fold-wrap').forEach(_applyWorldFold);
+    listEl.innerHTML = rowsHtml;
   }
 
   // 烽烟折叠阈值
-  const WORLD_MIL_FOLD_LIMIT = 4;
-  const WORLD_BAT_FOLD_LIMIT = 3;
 
   function _renderWorldMil(listEl, cntEl, transitData, battlesData) {
     const transit = Array.isArray(transitData) ? transitData : [];
@@ -2478,18 +2459,7 @@
       out.push('<div class="world-empty world-empty--inline">本回合无调度</div>');
     } else {
       const milRows = transit.map(t => _buildWorldMilRow(t)).join('');
-      if (transit.length <= WORLD_MIL_FOLD_LIMIT) {
-        out.push(milRows);
-      } else {
-        const overflow = transit.length - WORLD_MIL_FOLD_LIMIT;
-        out.push('<div class="world-fold-wrap" data-fold-collapsed="1" data-fold-limit="' + WORLD_MIL_FOLD_LIMIT + '">');
-        out.push(milRows);
-        out.push('<button class="world-fold-btn" type="button" data-fold-action="toggle">');
-        out.push('<span class="wfb-text-collapsed">▼ 展开剩余 ' + overflow + ' 队</span>');
-        out.push('<span class="wfb-text-expanded">▲ 收起</span>');
-        out.push('</button>');
-        out.push('</div>');
-      }
+      out.push(milRows);
     }
     out.push('</div>');
 
@@ -2498,23 +2468,11 @@
       out.push('<div class="world-subsec world-subsec--bat">');
       out.push('<h5 class="world-subsec-title">战况结算</h5>');
       const batRows = battles.map(b => _buildWorldBatRow(b)).join('');
-      if (battles.length <= WORLD_BAT_FOLD_LIMIT) {
-        out.push(batRows);
-      } else {
-        const overflow = battles.length - WORLD_BAT_FOLD_LIMIT;
-        out.push('<div class="world-fold-wrap" data-fold-collapsed="1" data-fold-limit="' + WORLD_BAT_FOLD_LIMIT + '">');
-        out.push(batRows);
-        out.push('<button class="world-fold-btn" type="button" data-fold-action="toggle">');
-        out.push('<span class="wfb-text-collapsed">▼ 展开剩余 ' + overflow + ' 战</span>');
-        out.push('<span class="wfb-text-expanded">▲ 收起</span>');
-        out.push('</button>');
-        out.push('</div>');
-      }
+      out.push(batRows);
       out.push('</div>');
     }
 
     listEl.innerHTML = out.join('');
-    _bindWorldFoldBtn(listEl);
     listEl.querySelectorAll('.world-fold-wrap').forEach(_applyWorldFold);
   }
 
@@ -2633,20 +2591,6 @@
     if (listEl._sgWorldFoldBound) return;
     listEl._sgWorldFoldBound = true;
   */
-  function _bindWorldFoldBtn(listEl) {
-    if (listEl._sgWorldFoldBound) return;
-    listEl._sgWorldFoldBound = true;
-    listEl.addEventListener('click', function (ev) {
-      var btn = ev.target.closest('.world-fold-btn');
-      if (!btn) return;
-      var wrap = btn.closest('.world-fold-wrap');
-      if (!wrap) return;
-      var collapsed = wrap.getAttribute('data-fold-collapsed') === '1';
-      wrap.setAttribute('data-fold-collapsed', collapsed ? '0' : '1');
-      _applyWorldFold(wrap);
-    });
-  }
-
   function _applyWorldFold(wrap) {
     var collapsed = wrap.getAttribute('data-fold-collapsed') === '1';
     var rows = wrap.querySelectorAll('.world-gen-row, .world-mil-row, .wbat-row');
