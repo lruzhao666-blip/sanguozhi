@@ -1,18 +1,19 @@
 /**
- * generals-organize-ui.js — 武将整队 UI v2
- * 工单 #gen-organize-v2-lineup
+ * generals-organize-ui.js — 武将整队 UI v2.1
+ * 工单 #gen-organize-v2-B1
  *
- * 交互：
- *  1. 默认：武将标签按保存顺序平铺排列
- *  2. 本人 slot 显示「整队」按钮 → 点击进入整队模式
- *  3. 整队模式：标签可拖拽排序（桌面拖拽 + 移动端 touch）
- *  4. 点「完成」→ 保存到 Supabase → 退出整队模式
+ * 改动（相对 v2）：
+ *  - 「整队/完成」按钮从 body 区 .gor-toolbar 移到 <summary> 行内
+ *    （紧跟在 .pcs-count 后面、.pcs-chevron 前面）
+ *  - 删除 .gor-toolbar
+ *  - 仅本人 slot 且已登录时注入按钮
  *
  * 依赖：
  *  - window.SGGenOrg（generals-organize.js v2）
  *  - window.SGRole.get()（role-login.js）
  *  - window.SGState（main.js）
  *  - #pc-org-body-0/1/2、#pc-org-count-0/1/2（HTML）
+ *  - #pc-organize-0/1/2 > summary（HTML，按钮注入目标）
  *
  * CSS class 前缀：.gor-*
  */
@@ -20,8 +21,6 @@
   'use strict';
 
   var ROLE_TO_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
-
-  // 整队模式状态：{ slot: true/false }
   var _editingSlot = {};
 
   // 拖拽状态
@@ -74,6 +73,62 @@
   }
 
   // ══════════════════════════════════════════
+  //  summary 行内按钮注入
+  // ══════════════════════════════════════════
+  var _BTN_ID_PREFIX = 'gor-summary-btn-';
+
+  function _injectSummaryBtn(slot) {
+    var details = document.getElementById('pc-organize-' + slot);
+    if (!details) return;
+    var summary = details.querySelector('summary');
+    if (!summary) return;
+
+    // 移除旧按钮
+    var oldBtn = document.getElementById(_BTN_ID_PREFIX + slot);
+    if (oldBtn) oldBtn.parentNode.removeChild(oldBtn);
+
+    // 仅本人 slot 才注入
+    if (!_isMySlot(slot)) return;
+
+    var editing = !!_editingSlot[slot];
+    var btn = document.createElement('button');
+    btn.id = _BTN_ID_PREFIX + slot;
+    btn.type = 'button';
+    btn.setAttribute('data-slot', slot);
+
+    if (editing) {
+      btn.className = 'gor-summary-btn gor-summary-btn-done';
+      btn.setAttribute('data-act', 'done');
+      btn.textContent = '完成';
+    } else {
+      btn.className = 'gor-summary-btn gor-summary-btn-edit';
+      btn.setAttribute('data-act', 'edit');
+      btn.textContent = '整队';
+    }
+
+    // 阻止按钮点击触发 details 的展开/收起
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (editing) {
+        exitEdit(slot);
+      } else {
+        // 确保 details 是展开的
+        details.open = true;
+        enterEdit(slot);
+      }
+    });
+
+    // 插入到 .pcs-chevron 前面
+    var chevron = summary.querySelector('.pcs-chevron');
+    if (chevron) {
+      summary.insertBefore(btn, chevron);
+    } else {
+      summary.appendChild(btn);
+    }
+  }
+
+  // ══════════════════════════════════════════
   //  渲染
   // ══════════════════════════════════════════
   function renderAll() {
@@ -86,10 +141,9 @@
     var countEl = document.getElementById('pc-org-count-' + slot);
     if (!bodyEl) return;
 
-    var editable = _isMySlot(slot);
     var editing = !!_editingSlot[slot];
 
-    // 合并排序：已保存顺序优先，新武将追加末尾
+    // 合并排序
     var savedOrder = window.SGGenOrg.getOrder(slot);
     var rosterNames = _getCurrentGenerals(slot);
 
@@ -110,20 +164,11 @@
 
     if (countEl) countEl.textContent = ordered.length + ' 将';
 
+    // 注入/更新 summary 行内按钮
+    _injectSummaryBtn(slot);
+
+    // body 区：只放标签列表，不放按钮
     var html = '';
-
-    // 工具栏
-    if (editable) {
-      html += '<div class="gor-toolbar">';
-      if (editing) {
-        html += '<button class="gor-btn gor-btn-done" data-slot="' + slot + '" data-act="done" type="button">完成</button>';
-      } else {
-        html += '<button class="gor-btn gor-btn-edit" data-slot="' + slot + '" data-act="edit" type="button">整队</button>';
-      }
-      html += '</div>';
-    }
-
-    // 武将标签列表
     if (ordered.length) {
       html += '<div class="gor-list' + (editing ? ' gor-list-editing' : '') + '" data-slot="' + slot + '">';
       ordered.forEach(function (name) {
@@ -149,7 +194,6 @@
   }
 
   function exitEdit(slot) {
-    // 收集当前 DOM 顺序并保存
     var listEl = document.querySelector('.gor-list[data-slot="' + slot + '"]');
     if (listEl) {
       var names = [];
@@ -180,7 +224,6 @@
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', tag.getAttribute('data-name'));
 
-    // 创建占位符
     _placeholder = document.createElement('span');
     _placeholder.className = 'gor-tag-placeholder';
     _placeholder.textContent = '\u00A0';
@@ -209,7 +252,6 @@
   function onDragEnd(e) {
     if (!_dragEl) return;
     _dragEl.classList.remove('gor-tag-ghost');
-    // 把拖拽元素放到 placeholder 位置
     if (_placeholder && _placeholder.parentNode) {
       _placeholder.parentNode.insertBefore(_dragEl, _placeholder);
       _placeholder.parentNode.removeChild(_placeholder);
@@ -230,12 +272,10 @@
     _touchSlot = tag.closest('.gor-list').getAttribute('data-slot');
     _touchStarted = false;
 
-    // 长按 300ms 触发拖拽
     _touchLongTimer = setTimeout(function () {
       _touchStarted = true;
       tag.classList.add('gor-tag-ghost');
 
-      // 创建浮动副本
       _touchClone = tag.cloneNode(true);
       _touchClone.className = 'gor-tag gor-tag-clone';
       document.body.appendChild(_touchClone);
@@ -244,7 +284,6 @@
       _touchClone.style.left = (touch.clientX - 30) + 'px';
       _touchClone.style.top = (touch.clientY - 16) + 'px';
 
-      // 占位符
       _placeholder = document.createElement('span');
       _placeholder.className = 'gor-tag-placeholder';
       _placeholder.textContent = '\u00A0';
@@ -265,7 +304,6 @@
       _touchClone.style.top = (touch.clientY - 16) + 'px';
     }
 
-    // 找到手指下方的 tag
     if (_touchClone) _touchClone.style.pointerEvents = 'none';
     var el = document.elementFromPoint(touch.clientX, touch.clientY);
     if (_touchClone) _touchClone.style.pointerEvents = '';
@@ -310,17 +348,8 @@
   //  事件委托
   // ══════════════════════════════════════════
   function bindEvents() {
-    // 按钮点击
-    document.addEventListener('click', function (ev) {
-      var btn = ev.target.closest('.gor-btn');
-      if (!btn) return;
-      var slot = parseInt(btn.getAttribute('data-slot'), 10);
-      var act = btn.getAttribute('data-act');
-      if (isNaN(slot)) return;
-
-      if (act === 'edit') enterEdit(slot);
-      else if (act === 'done') exitEdit(slot);
-    });
+    // summary 按钮的点击由 _injectSummaryBtn 中的 addEventListener 处理，
+    // 不需要在这里做额外委托
 
     // 桌面拖拽
     document.addEventListener('dragstart', onDragStart);
