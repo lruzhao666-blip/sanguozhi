@@ -354,7 +354,7 @@ window.SGParser = (function () {
   //  按方括号标签切块
   // ─────────────────────────────────────────
   function _splitBlocks(text) {
-    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','调度','世界','变动','驻城']);
+    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','调度','变动','驻城']);
     const lines  = text.split('\n');
     const blocks = {};
     let curKey = null, curBuf = [];
@@ -704,7 +704,7 @@ window.SGParser = (function () {
     //   兵种段从单兵种放宽到多兵种同行,语法 兵种:数量(,兵种:数量)*
     //   状态白名单维持 4 种(剩N/攻城中/交战中/客驻),
     //   旧词归一化保留兼容(围攻中/对峙中/撤退中/驻屯中)。
-    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]:\d+(?:,[步弓骑水蛮]:\d+)*)\s+(剩\d+|攻城中|交战中|客驻|对峙中|撤退中|驻屯中|围攻中)(?:\s+(.+))?\s*$/;
+    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]:\d+(?:,[步弓骑水蛮]:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
 
     // 状态归一化映射:旧词 → 新白名单
     const STATUS_NORMALIZE = {
@@ -749,14 +749,13 @@ window.SGParser = (function () {
       // m[7] 现在是状态(原来是 m[7]),m[8] 现在是 note(原来也是 m[8]),
       // 因为兵种段从两个捕获组合并为一个,后续捕获组编号相应前移。
       let status = m[6];
+      // v20260609-fengyan: 保留旧词归一化兼容，新词直接透传
       if (status === '撤退中') {
         status = '剩1';
-        /* #parser-silence-warns-v1 silenced */
       } else if (STATUS_NORMALIZE[status]) {
-        const newStatus = STATUS_NORMALIZE[status];
-        /* #parser-silence-warns-v1 silenced */
-        status = newStatus;
+        status = STATUS_NORMALIZE[status];
       }
+      // 其他任意状态文本直接透传，不过滤
 
       result.push({
         faction: factionRaw,
@@ -909,49 +908,8 @@ window.SGParser = (function () {
   //  无内容时 GM 写:本回合世界无事
   // ─────────────────────────────────────────
   function _parseWorld(raw) {
-    if (!raw || !raw.trim()) return [];
-    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length === 1 && /本回合世界无事/.test(lines[0])) return [];
-
-    // v16 (2026-XX): 对齐 GM 规则书 v3.40 M-29 红线十一,
-    // [世界] 段状态白名单收窄至 2 种(被俘/在野),旧词「客途」归一化为「在野」。
-    const VALID_STATUS_W = ['被俘', '在野'];
-    // 正则保留「客途」识别,内部归一化为「在野」
-    const re = /^(\S+?)\|(被俘|在野|客途)\|(\S+?)\|剩(\d+|∞)回合$/;
-    const result = [];
-
-    for (const line of lines) {
-      const m = line.match(re);
-      if (!m) {
-        /* #parser-silence-warns-v1 silenced */
-        continue;
-      }
-      const name      = m[1].trim();
-      let status      = m[2];
-      const location  = m[3].trim();
-      const remRaw    = m[4];
-      const remaining = remRaw === '∞' ? Infinity : parseInt(remRaw, 10);
-
-      // 旧词「客途」归一化为「在野」
-      if (status === '客途') {
-        /* #parser-silence-warns-v1 silenced */
-        status = '在野';
-      }
-
-      if (!VALID_STATUS_W.includes(status)) {
-        /* #parser-silence-warns-v1 silenced */
-        continue;
-      }
-
-      result.push({
-        name,
-        status,
-        location,
-        remaining,
-        raw: line,
-      });
-    }
-    return result;
+    // v20260609-fengyan: 武将动态已下线，直接返回空数组
+    return [];
   }
 
   // ─────────────────────────────────────────
