@@ -13559,3 +13559,142 @@ body.is-viewer-mode #diag-toast {
   background: none !important;
   border: none !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20260609a 工单#world-layout-flex-B-v2
+   世界板块兵马调度+战况结算 Flex 重排
+   旧 Grid 规则保留不删，本段后写覆盖
+   ──────────────────────────────────────────────────────────── */
+
+/* ═══ 兵马调度行 ═══ */
+.world-mil-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: baseline !important;
+  gap: 3px 10px !important;
+  grid-template-columns: unset !important;
+  overflow: hidden !important;
+}
+
+.world-mil-identity {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.world-mil-route {
+  font-size: .74rem;
+  color: var(--text-sub);
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.world-mil-right {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 1;
+  white-space: nowrap;
+}
+
+/* ═══ 战况结算行 ═══ */
+.wbat-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 8px;
+  padding: 6px 10px 6px 12px;
+  border-left: 2px solid var(--wm-c, var(--gold-dim));
+  border-radius: 0 var(--r) var(--r) 0;
+  background: rgba(18,10,6,.42);
+  transition: background .18s;
+  overflow: hidden;
+}
+.wbat-row:hover { background: rgba(35,18,10,.7); }
+
+/* 左侧色条 */
+.wbat-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--wm-c, var(--gold-dim));
+}
+
+/* 攻守分组 */
+.wbat-atk-group,
+.wbat-def-group {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.wbat-vs {
+  font-family: var(--font-sans);
+  font-size: .6rem;
+  color: var(--text-dim);
+  opacity: .55;
+  letter-spacing: .06em;
+  flex-shrink: 0;
+}
+
+/* 城名+伤亡+结果 */
+.wbat-info {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 1;
+  white-space: nowrap;
+}
+
+.wbat-city {
+  font-size: .68rem;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+}
+
+.wbat-losses {
+  font-size: .68rem;
+  color: rgba(224,112,96,.8);
+  font-variant-numeric: tabular-nums;
+}
+
+.wbat-status {
+  font-size: .76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.wbat-status.win  { color: #7dd87d; }
+.wbat-status.lose { color: #e87060; }
+.wbat-status.draw { color: #e8c560; }
+
+/* ═══ 隐藏旧 _buildWorldBatRow 残留 DOM class ═══ */
+/* 旧版用 .world-bat-row / .world-bat-atk 等 div 容器，
+   新版改为 .wbat-row + 扁平 span，以下确保旧 class 不干扰 */
+.world-bat-row,
+.world-bat-atk,
+.world-bat-center,
+.world-bat-def,
+.world-bat-col,
+.world-bat-main,
+.world-bat-arrow,
+.world-bat-side,
+.wbr-result,
+.wbr-badge,
+.wbr-name,
+.wbr-vs,
+.wbr-city,
+.wbr-losses,
+.wbr-sep,
+.wbr-right {
+  display: none !important;
+}
+
+/* ╚══ END v20260609a 工单#world-layout-flex-B-v2 ══════════════ */
