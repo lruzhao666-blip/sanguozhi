@@ -118,6 +118,7 @@
   // 行为:点击 → 调 SGArmyCouncil.acceptToFirstEmpty(slot, text, adviceKey, {secret:true})
   //       已采纳 → 显示"撤销"按钮 + "✓ 已采纳到 N 军令框"标签
   //       槽位锁定 → 按钮 disabled
+  /* [legacy v1]
   function renderCmdBlock(s, currentRole, roundNum, secretIdx) {
     const items = Array.isArray(s.items) ? s.items : [];
     if (!items.length) return '';
@@ -162,16 +163,91 @@
         ? `<span class="sb-cmd-accepted-tag">✓ 已采纳到 ${ICONS[acceptedOrderIdx] || (acceptedOrderIdx + 1)} 军令框</span>`
         : '';
 
-      return `
-        <div class="sb-cmd-row${isAccepted ? ' is-accepted' : ''}">
-          <span class="sb-cmd-num">${esc(num)}</span>
-          <span class="sb-cmd-name">${esc(name)}</span>
-          ${note ? `<span class="sb-cmd-sep">——</span><span class="sb-cmd-note">${esc(note)}</span>` : ''}
-          ${acceptedTag}
-          ${btnHtml}
+      return \`
+        <div class="sb-cmd-row\${isAccepted ? ' is-accepted' : ''}">
+          <span class="sb-cmd-num">\${esc(num)}</span>
+          <span class="sb-cmd-name">\${esc(name)}</span>
+          \${note ? \`<span class="sb-cmd-sep">——</span><span class="sb-cmd-note">\${esc(note)}</span>\` : ''}
+          \${acceptedTag}
+          \${btnHtml}
         </div>
-      `;
+      \`;
     }).join('');
+    return html;
+  }
+  */
+  function renderCmdBlock(s, currentRole, roundNum, secretIdx) {
+    const items = Array.isArray(s.items) ? s.items : [];
+    if (!items.length) return '';
+
+    const ROLE_TO_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
+    const ICONS = ['①','②','③','④','⑤','⑥'];
+    const slot = ROLE_TO_SLOT[currentRole];
+    const hasSAC = !!(window.SGArmyCouncil);
+    const locked = hasSAC && typeof SGArmyCouncil.isSlotLocked === 'function'
+      ? SGArmyCouncil.isSlotLocked(slot) : false;
+
+    let html = '<div class="sa-advice-list">';
+    items.forEach((it, itemIdx) => {
+      const name = it.name || '';
+      const note = it.note || '';
+      const num  = it.num  || ICONS[itemIdx] || '';
+      const branches = Array.isArray(it.branches) ? it.branches : [];
+      const hasBranch = branches.length > 0;
+      const adviceKey = `secret::r${roundNum}::s${secretIdx}::i${itemIdx}`;
+
+      // 反查是否已采纳
+      let acceptedOrderIdx = -1;
+      if (hasSAC && typeof SGArmyCouncil.findAcceptedOrderIdx === 'function' && slot !== undefined) {
+        try { acceptedOrderIdx = SGArmyCouncil.findAcceptedOrderIdx(slot, adviceKey); }
+        catch (e) { acceptedOrderIdx = -1; }
+      }
+      const isAccepted = acceptedOrderIdx >= 0;
+
+      html += `<div class="sa-advice-card${isAccepted ? ' is-accepted' : ''}" data-advice-key="${esc(adviceKey)}" data-idx="${itemIdx}">`;
+      html += `<div>`;
+
+      // 头部
+      html += `<div class="sa-advice-head">`;
+      html += `<span class="sa-advice-num">${esc(num)}</span>`;
+      html += `<span class="sa-advice-name">${esc(name)}</span>`;
+      if (isAccepted) {
+        const orderNum = ICONS[acceptedOrderIdx] || (acceptedOrderIdx + 1);
+        html += `<span class="sa-advice-accepted-tag">✓ 已采纳到 ${orderNum} 军令框</span>`;
+      }
+      html += `</div>`;
+
+      // 注解
+      if (note) {
+        html += `<div class="sa-advice-note">${esc(note)}</div>`;
+      }
+
+      // 分支列表
+      if (hasBranch) {
+        html += `<div class="sa-advice-branches">`;
+        branches.forEach(br => {
+          html += `<div class="sa-advice-branch">`;
+          html += `<span class="sa-advice-branch-label">${esc(br.key)}</span>`;
+          html += `<span class="sa-advice-branch-text">${esc(br.text)}</span>`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+
+      // 操作按钮区
+      html += `<div class="sa-advice-actions">`;
+      if (isAccepted) {
+        html += `<button class="sa-advice-btn is-undo sb-cmd-adopt-btn" data-act="undo" data-advice-key="${esc(adviceKey)}" data-name="${esc(name)}" data-note="${esc(note)}"${locked ? ' disabled' : ''}>撤销</button>`;
+      } else {
+        html += `<button class="sa-advice-btn sb-cmd-adopt-btn" data-act="${hasBranch ? 'accept-branch' : 'accept'}" data-advice-key="${esc(adviceKey)}" data-name="${esc(name)}" data-note="${esc(note)}" data-branches='${hasBranch ? JSON.stringify(branches).replace(/'/g, "&#39;") : ""}'${locked ? ' disabled' : ''}>${hasBranch ? '采纳…' : '采纳'}</button>`;
+      }
+      html += `</div>`;
+
+      html += `</div>`;
+    });
+    html += '</div>';
     return html;
   }
 
@@ -339,6 +415,25 @@
         return;
       }
 
+      if (act === 'accept-branch') {
+        // 有分支:复用军帐弹窗 #sa-branch-overlay
+        const branchesRaw = btn.getAttribute('data-branches') || '[]';
+        let branches = [];
+        try { branches = JSON.parse(branchesRaw); } catch (e) { branches = []; }
+        if (!branches.length) {
+          // 降级:无分支数据则当普通采纳
+          const text = (typeof SAC.buildAcceptText === 'function')
+            ? SAC.buildAcceptText(name, note)
+            : (note ? name + ' - ' + note : name);
+          const r = SAC.acceptToFirstEmpty(slot, text, adviceKey, { secret: true });
+          _handleAdoptResult(r);
+          return;
+        }
+        // 打开分支弹窗
+        _openBranchModal(slot, adviceKey, name, note, branches);
+        return;
+      }
+
       if (act === 'accept') {
         const text = (typeof SAC.buildAcceptText === 'function')
           ? SAC.buildAcceptText(name, note)
@@ -359,6 +454,114 @@
         }
       }
     });
+  }
+
+  // ── 分支弹窗(复用 #sa-branch-overlay)──
+  function _openBranchModal(slot, adviceKey, name, note, branches) {
+    const overlay = document.getElementById('sa-branch-overlay');
+    const titleEl = document.getElementById('sa-branch-title');
+    const optsEl  = document.getElementById('sa-branch-options');
+    const confirmBtn = document.getElementById('sa-branch-confirm');
+    const cancelBtn  = document.getElementById('sa-branch-cancel');
+
+    if (!overlay || !optsEl || !confirmBtn) {
+      // DOM 不存在 → 降级 prompt
+      const keys = branches.map(b => b.key).join('/');
+      const pick = (prompt('选择「' + name + '」的分支(' + keys + '):', branches[0].key) || '').trim().toUpperCase();
+      const br = branches.find(b => b.key === pick);
+      if (!br) return;
+      _doAcceptWithBranch(slot, adviceKey, name, note, br);
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = '选择「' + name + '」的分支';
+
+    let html = '';
+    branches.forEach(br => {
+      html += '<div class="sa-branch-opt" data-key="' + esc(br.key) + '">';
+      html += '<div class="sa-branch-opt-radio"></div>';
+      html += '<div class="sa-branch-opt-body">';
+      html += '<div class="sa-branch-opt-label">' + esc(br.key) + '</div>';
+      html += '<div class="sa-branch-opt-text">' + esc(br.text) + '</div>';
+      html += '</div></div>';
+    });
+    optsEl.innerHTML = html;
+    confirmBtn.disabled = true;
+    overlay.classList.remove('hidden');
+
+    // 状态
+    const state = { slot, adviceKey, name, note, branches, selectedKey: null };
+
+    // 选项点击(每次重绑,用一次性 handler)
+    const optHandler = function (ev) {
+      const opt = ev.target.closest('.sa-branch-opt');
+      if (!opt) return;
+      state.selectedKey = opt.getAttribute('data-key');
+      optsEl.querySelectorAll('.sa-branch-opt').forEach(el => {
+        el.classList.toggle('selected', el.getAttribute('data-key') === state.selectedKey);
+      });
+      confirmBtn.disabled = false;
+    };
+    optsEl.addEventListener('click', optHandler);
+
+    // 确定
+    const confirmHandler = function () {
+      if (!state.selectedKey) return;
+      const br = state.branches.find(b => b.key === state.selectedKey);
+      cleanup();
+      if (br) _doAcceptWithBranch(state.slot, state.adviceKey, state.name, state.note, br);
+    };
+    confirmBtn.addEventListener('click', confirmHandler);
+
+    // 取消
+    const cancelHandler = function () { cleanup(); };
+    if (cancelBtn) cancelBtn.addEventListener('click', cancelHandler);
+
+    // 遮罩点击关闭
+    const overlayHandler = function (ev) { if (ev.target === overlay) cleanup(); };
+    overlay.addEventListener('click', overlayHandler);
+
+    // ESC
+    const escHandler = function (ev) { if (ev.key === 'Escape') cleanup(); };
+    document.addEventListener('keydown', escHandler);
+
+    function cleanup() {
+      overlay.classList.add('hidden');
+      optsEl.removeEventListener('click', optHandler);
+      confirmBtn.removeEventListener('click', confirmHandler);
+      if (cancelBtn) cancelBtn.removeEventListener('click', cancelHandler);
+      overlay.removeEventListener('click', overlayHandler);
+      document.removeEventListener('keydown', escHandler);
+    }
+  }
+
+  function _doAcceptWithBranch(slot, adviceKey, name, note, br) {
+    const SAC = window.SGArmyCouncil;
+    if (!SAC || typeof SAC.acceptToFirstEmpty !== 'function') return;
+    const text = (typeof SAC.buildAcceptText === 'function')
+      ? SAC.buildAcceptText(name, br.text)
+      : name + ' - ' + br.text;
+    const r = SAC.acceptToFirstEmpty(slot, text, adviceKey, { secret: true });
+    _handleAdoptResult(r);
+  }
+
+  function _handleAdoptResult(r) {
+    const ICONS = ['①','②','③','④','⑤','⑥'];
+    if (!r || typeof r !== 'object') { render(); return; }
+    if (r.ok) {
+      render();
+      const orderNum = ICONS[r.orderIdx] || (r.orderIdx + 1);
+      showToast('✓ 已采纳到 ' + orderNum + ' 军令框');
+      return;
+    }
+    if (r.reason === 'full') {
+      showToast('⚠️ 军令已满,请先清空一个框再采纳');
+    } else if (r.reason === 'locked') {
+      showToast('⚠️ 该方军令已锁定,请先解除锁定');
+    } else {
+      showToast('⚠️ 采纳失败');
+    }
+    render();
   }
 
   // 在 render() 后自动绑(幂等,只绑一次)
