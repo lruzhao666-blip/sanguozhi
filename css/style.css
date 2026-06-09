@@ -13746,3 +13746,42 @@ body.is-viewer-mode #diag-toast {
 .pcard-v4[data-slot] .gen-tag {
   overflow: visible !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20260609f 工单#world-to-fengyan-v1
+   世界→烽烟：删武将动态 + 双栏→单栏
+   ──────────────────────────────────────────────────────────── */
+
+/* 双栏→单栏：覆盖 .world-cols grid */
+.world-cols {
+  display: block !important;
+  grid-template-columns: none !important;
+}
+
+/* 武将动态行隐藏兜底（HTML 已删，此为安全网） */
+.world-gen-row,
+.world-gen-status,
+.world-gen-main,
+.world-gen-name,
+.world-gen-loc,
+.world-gen-rem {
+  display: none !important;
+}
+
+/* 段标题去掉计数区多余间距 */
+.block-world .world-sec-title {
+  display: none !important;
+}
+
+/* 板块内 body 间距微调（单栏不需要左右 gap） */
+.block-world .ib-body {
+  padding: 10px 18px 12px !important;
+}
+
+@media (max-width: 900px) {
+  .world-cols {
+    display: block !important;
+  }
+}
+
+/* ╚══ END v20260609f ══════════════════════════════════════════ */
