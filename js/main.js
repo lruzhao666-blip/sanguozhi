@@ -2200,7 +2200,7 @@
     const battlesListEl = document.getElementById('wb-battles-list');
     if (battlesListEl) {
       if (!battles.length) {
-        battlesListEl.innerHTML = '<div class="wb-empty">本回合无战事</div>';
+        battlesListEl.innerHTML = '<div class="wb-empty-wrap"><div class="wb-empty-seal">戰</div><div class="wb-empty-frame"></div><span class="wb-empty">本回合无战事</span></div>';
       } else {
         battlesListEl.innerHTML = battles.map(function(b) { return _buildWbBattleCard(b); }).join('');
       }
@@ -2210,7 +2210,7 @@
     const transitListEl = document.getElementById('wb-transit-list');
     if (transitListEl) {
       if (!transit.length) {
-        transitListEl.innerHTML = '<div class="wb-empty">本回合无调度部队</div>';
+        transitListEl.innerHTML = '<div class="wb-empty-wrap"><div class="wb-empty-seal">調</div><div class="wb-empty-frame"></div><span class="wb-empty">本回合无调度部队</span></div>';
       } else {
         transitListEl.innerHTML = transit.map(function(t) { return _buildWbTransitCard(t); }).join('');
       }

@@ -14611,3 +14611,87 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260619a 工单#warboard-html-css-v1 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260619b 工单#warboard-empty-decor-v1
+   战情速报空态装饰：篆刻字 + 印章方框 + 径向辉光
+   ──────────────────────────────────────────────────────────── */
+
+/* 空态包裹容器 */
+.wb-empty-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  padding: 32px 16px;
+}
+
+/* 径向暖金辉光（最底层） */
+.wb-empty-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 120px 120px at center, rgba(212,168,67,.04), transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 篆刻大字 */
+.wb-empty-seal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-serif);
+  font-size: 5rem;
+  font-weight: 900;
+  color: rgba(212,168,67,.055);
+  letter-spacing: .1em;
+  pointer-events: none;
+  z-index: 2;
+  text-shadow:
+    0 0 40px rgba(212,168,67,.03),
+    0 2px 0 rgba(0,0,0,.3);
+  -webkit-text-stroke: 1px rgba(212,168,67,.04);
+  user-select: none;
+}
+
+/* 印章方框 */
+.wb-empty-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 88px;
+  height: 88px;
+  border: 1.5px solid rgba(212,168,67,.06);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 空态文字（覆盖工单 A 的 .wb-empty，提升 z-index 确保在装饰之上） */
+.wb-empty-wrap .wb-empty {
+  position: relative;
+  z-index: 3;
+  padding: 0;
+  min-height: 0;
+}
+
+/* 移动端微调 */
+@media (max-width: 720px) {
+  .wb-empty-wrap {
+    min-height: 140px;
+    padding: 28px 12px;
+  }
+  .wb-empty-seal {
+    font-size: 4rem;
+  }
+  .wb-empty-frame {
+    width: 72px;
+    height: 72px;
+  }
+}
+
+/* ╚══ END v20260619b 工单#warboard-empty-decor-v1 ══════════ */
