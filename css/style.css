@@ -14695,3 +14695,59 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260619b 工单#warboard-empty-decor-v1 ══════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260619c 工单#warboard-empty-decor-resize-v1
+   空态装饰自适应：撑满列高 + 字号/方框按容器比例缩放
+   ──────────────────────────────────────────────────────────── */
+
+/* 空态容器撑满整列剩余高度 */
+.wb-empty-wrap {
+  min-height: 0 !important;
+  padding: 0 !important;
+  flex: 1;
+  align-self: stretch;
+  height: 100%;
+}
+
+/* 让 .wb-list 成为 flex 容器，空态时 wrap 撑满 */
+.wb-list {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* .wb-col 也需要 flex 拉伸 */
+.wb-col {
+  display: flex !important;
+  flex-direction: column;
+}
+
+/* 篆刻字：用视口/容器相对单位自适应 */
+.wb-empty-seal {
+  font-size: clamp(4rem, 12vw, 8rem) !important;
+}
+
+/* 印章方框：按篆刻字比例缩放 */
+.wb-empty-frame {
+  width: clamp(72px, 18vw, 140px) !important;
+  height: clamp(72px, 18vw, 140px) !important;
+}
+
+/* 辉光范围同步放大 */
+.wb-empty-wrap::before {
+  background: radial-gradient(ellipse 60% 60% at center, rgba(212,168,67,.04), transparent 70%) !important;
+}
+
+/* 移动端微调 */
+@media (max-width: 720px) {
+  .wb-empty-seal {
+    font-size: clamp(3rem, 20vw, 5rem) !important;
+  }
+  .wb-empty-frame {
+    width: clamp(60px, 22vw, 100px) !important;
+    height: clamp(60px, 22vw, 100px) !important;
+  }
+}
+
+/* ╚══ END v20260619c 工单#warboard-empty-decor-resize-v1 ══════ */
