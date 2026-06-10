@@ -753,9 +753,23 @@
         const isEmpty = localSlot.orders.every(o => !o.text);
         if (!isEmpty) return;
 
+        /* [legacy v1]
         if (s === mySlot) {
           // 本人:完整反解析(明令 + 密令)
           localSlot.orders = parseRemoteToOrders(r.content, r.secret_text);
+        } else {
+        */
+        if (s === mySlot) {
+          // 本人:完整反解析(明令 + 密令)
+          // 检测并恢复隐藏标记
+          var rawContent = r.content || '';
+          if (rawContent.trimStart().startsWith('__HIDDEN__')) {
+            localSlot.hidden = true;
+            rawContent = rawContent.replace(/^\s*__HIDDEN__\n?/, '');
+          } else {
+            localSlot.hidden = false;
+          }
+          localSlot.orders = parseRemoteToOrders(rawContent, r.secret_text);
         } else {
           // 队友:仅反解析明令,密令位置留空且打标记
           const parsed = parsePublicOnlyOrders(r.content);
