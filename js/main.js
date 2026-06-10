@@ -1884,17 +1884,13 @@
   }
 
   function buildGenTag(g, slot) {
-    // 势力色：slot 0/1/2 → 红/绿/蓝；其他兜底用旧状态色
-    var fc = GEN_FACTION_STYLES[slot] || GEN_STATUS_STYLES.healthy;
+    // 确保 g 是对象且包含 name 和 status 字段
+    const name = typeof g === 'string' ? g : (g.name || '');
+    const status = typeof g === 'string' ? '健康' : (g.status || '健康');
 
-    // inline 仅注入颜色三项（背景/边框/字色），形态与状态色条由 CSS 负责
-    var wrapStyle = 'background-color:' + fc.bg + ';'
-      + 'border:1px solid ' + fc.bd + ';'
-      + 'color:' + fc.c + ';';
-
-    return '<span class="gen-tag" data-status="' + esc(g.status || '健康')
-      + '" data-name="' + esc(g.name) + '">'
-      + esc(g.name)
+    return '<span class="gen-tag" data-status="' + esc(status)
+      + '" data-name="' + esc(name) + '">'
+      + esc(name)
       + '</span>';
   }
 
