@@ -2094,131 +2094,9 @@
   //  色源:  SGMap.P_COLOR(玩家)/ SGMap.getFactionColor(NPC)
   // ══════════════════════════════════════════
   function renderJunbao(latest) {
-    const block = document.getElementById('block-junbao');
-    const body  = document.getElementById('junbao-body');
-    if (!block || !body) return;
-
-    const parsed  = latest && latest.parsed ? latest.parsed : {};
-    const transit = Array.isArray(parsed.transit) ? parsed.transit : [];
-    const battles = Array.isArray(parsed.battles) ? parsed.battles : [];
-
-    // v27 (2026-05-26): 调度+战报均为空时隐藏整块
-    const _block = document.getElementById('block-junbao');
-    if (_block) {
-      const _hasTransit = (transit && transit.length > 0);
-      const _hasBattles = (battles && battles.length > 0);
-      if (!_hasTransit && !_hasBattles) {
-        _block.classList.add('hidden');
-        return;
-      } else {
-        _block.classList.remove('hidden');
-      }
-    }
-
-    // 无调度也无战报 → 整块隐藏
-    if (!transit.length && !battles.length) {
-      block.classList.add('hidden');
-      body.innerHTML = '';
-      return;
-    }
-    block.classList.remove('hidden');
-
-    const html = [];
-
-    // ── 调度部队段 ──
-    html.push('<div class="jbt-title">调度</div>');
-    if (transit.length) {
-      html.push('<div class="jbt-list">');
-      transit.forEach(t => {
-        const sideColor = _junbaoGetSideColor(t.slot, t.faction);
-        const badgeText = _junbaoGetBadgeText(t.slot, t.faction);
-        // v28 (2026-XX): 对齐 GM 规则书 v3.40 M-29 红线九,
-        // 状态白名单收窄至 4 种;旧词由 parser 归一化处理,UI 不再兜底。
-        // v20260609-fengyan: 保留已知状态的专属 class，其余一律走 jbt-march
-        const statusCls = t.status === '攻城中' ? 'jbt-siege'
-                        : t.status === '交战中' ? 'jbt-battle'
-                        : t.status === '客驻'   ? 'jbt-resident'
-                        : 'jbt-march';
-        const styleStr = [
-          `--strip-color:${sideColor.glow}`,
-          `--badge-bg:${sideColor.film}`,
-          `--badge-border:${sideColor.stroke}`,
-          `--badge-color:${sideColor.glow}`
-        ].join(';');
-        html.push(`
-          <div class="jbt-row ${statusCls}" style="${styleStr}">
-            <div class="jbt-strip"></div>
-            <div class="jbt-inner">
-              <span class="jbt-faction-badge">${esc(badgeText)}</span>
-              <span class="jbt-general">${esc(t.general || '')}</span>
-              <span class="jbt-route">${esc(t.from || '')}<span class="jbt-arrow">›</span>${esc(t.to || '')}</span>
-              <!-- [legacy v14] note 追加在徽章群之后,语义错位 -->
-              <!-- <span class="jbt-troop">\${esc(t.troopType || '')} \${t.troopCount || 0}</span> -->
-              <!-- <span class="jbt-status">\${esc(t.status || '')}</span> -->
-              <!-- \${t.note ? \`<span class="jbt-note">\${esc(t.note)}</span>\` : ''} -->
-              <!-- v15 (2026-05-26): note 紧贴路径,使用 ↪ 引导符,语义自洽 -->
-              ${t.note ? `<span class="jbt-note">↪ ${esc(t.note)}</span>` : ''}
-              <span class="jbt-troop">${_formatTransitTroops(t)}</span>
-              <span class="jbt-status">${esc(t.status || '')}</span>
-            </div>
-          </div>
-        `);
-      });
-      html.push('</div>');
-    } else {
-      html.push('<div class="jbt-empty">本回合无调度部队</div>');
-    }
-
-    // ── 战报段 ──
-    if (battles.length) {
-      html.push('<div class="battle-list">');
-      html.push('<div class="battle-list-title">战报</div>');
-      battles.forEach(b => {
-        const WIN_SET = ['惨胜','小胜','大胜','胜'];
-        const LOSE_SET = ['小负','大败','负'];
-        const cardCls = WIN_SET.includes(b.result) ? 'success'
-                      : LOSE_SET.includes(b.result) ? 'fail'
-                      : 'draw';
-        const atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
-        const defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
-        const atkBadge = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
-        const defBadge = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
-        const atkName  = _junbaoStripPrefix(b.attacker, atkBadge);
-        const defName  = _junbaoStripPrefix(b.defender, defBadge);
-        const atkStyle = `--badge-bg:${atkColor.film};--badge-border:${atkColor.stroke};--badge-color:${atkColor.glow}`;
-        const defStyle = `--badge-bg:${defColor.film};--badge-border:${defColor.stroke};--badge-color:${defColor.glow}`;
-        html.push(`
-          <div class="battle-card ${cardCls}">
-            <div class="bc-strip"></div>
-            <div class="bc-body">
-              <span class="bc-badge">${esc(b.result || '')}</span>
-              <div class="bc-versus">
-                <div class="bc-side-v">
-                  <span class="bc-role-v">攻</span>
-                  <span class="bc-faction-badge" style="${atkStyle}">${esc(atkBadge)}</span>
-                  <span class="bc-name-v">${esc(atkName)}</span>
-                  <span class="bc-loss-v">-${b.attacker_loss || 0}</span>
-                </div>
-                <span class="bc-vs">vs</span>
-                <div class="bc-side-v">
-                  <span class="bc-role-v">守</span>
-                  <span class="bc-faction-badge" style="${defStyle}">${esc(defBadge)}</span>
-                  <span class="bc-name-v">${esc(defName)}</span>
-                  <span class="bc-loss-v">-${b.defender_loss || 0}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        `);
-      });
-      html.push('</div>');
-    } else {
-      // [legacy v23] html.push('<div class="jbt-empty">本回合无战事</div>');
-      // v27 (2026-05-26): 套 .battle-list 外壳,配合 CSS :has() 选择器整段隐藏
-      html.push('<div class="battle-list"><div class="battle-list-title">战报</div><div class="battle-empty">本回合无战事</div></div>');
-    }
-
-    body.innerHTML = html.join('');
+    // v20260619a #warboard-js-v1: 旧军报板块已下线，由 renderWorld() 接管
+    // 保留空函数避免 renderAll() 调用链报错
+    return;
   }
 
   // 取势力色:玩家走 SGMap.P_COLOR,NPC 走 SGMap.getFactionColor;兜底暗金
@@ -2303,25 +2181,110 @@
   //  排序:紧迫度优先(剩余回合升序,∞ 排尾,同剩余按状态权重)
   // ══════════════════════════════════════════
   function renderWorld(latest) {
-    const block   = document.getElementById('block-world');
+    // v20260619a #warboard-js-v1: 重写为战情速报板块渲染
+    const block = document.getElementById('block-warboard');
     if (!block) return;
-    const milList = document.getElementById('world-mil-list');
-    const milCnt  = document.getElementById('world-mil-count');
-    if (!milList || !milCnt) return;
 
-    const parsed = (latest && latest.parsed) ? latest.parsed : {};
+    const parsed  = (latest && latest.parsed) ? latest.parsed : {};
     const transit = Array.isArray(parsed.transit) ? parsed.transit : [];
     const battles = Array.isArray(parsed.battles) ? parsed.battles : [];
 
-    // 调度+战报均为空时隐藏整块
+    // 双空 → 隐藏整块
     if (!transit.length && !battles.length) {
       block.classList.add('hidden');
       return;
     }
     block.classList.remove('hidden');
 
-    _renderWorldMil(milList, milCnt, transit, battles);
+    // 渲染战报列
+    const battlesListEl = document.getElementById('wb-battles-list');
+    if (battlesListEl) {
+      if (!battles.length) {
+        battlesListEl.innerHTML = '<div class="wb-empty">本回合无战事</div>';
+      } else {
+        battlesListEl.innerHTML = battles.map(function(b) { return _buildWbBattleCard(b); }).join('');
+      }
+    }
+
+    // 渲染调度列
+    const transitListEl = document.getElementById('wb-transit-list');
+    if (transitListEl) {
+      if (!transit.length) {
+        transitListEl.innerHTML = '<div class="wb-empty">本回合无调度部队</div>';
+      } else {
+        transitListEl.innerHTML = transit.map(function(t) { return _buildWbTransitCard(t); }).join('');
+      }
+    }
   }
+
+  // ── 战情速报：单张战报卡片 ──
+  function _buildWbBattleCard(b) {
+    var WIN_SET = ['惨胜','小胜','大胜','胜'];
+    var LOSE_SET = ['小负','大败','负'];
+    var cardCls = WIN_SET.indexOf(b.result) !== -1 ? 'win'
+                : LOSE_SET.indexOf(b.result) !== -1 ? 'lose'
+                : 'draw';
+
+    var atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
+    var defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
+    var atkBadge = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+    var defBadge = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+    var atkName  = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkBadge);
+    var defName  = b.defenderGeneral || _junbaoStripPrefix(b.defender, defBadge);
+    var city     = b.defenderCity || b.city || '';
+
+    var atkLoss = b.attacker_loss != null ? b.attacker_loss : 0;
+    var defLoss = b.defender_loss != null ? b.defender_loss : 0;
+    var isZeroLoss = (atkLoss === 0 && defLoss === 0);
+    var lossText = isZeroLoss ? '零损接管' : ('攻' + atkLoss + ' 守' + defLoss);
+    var lossStyle = isZeroLoss ? ' style="color:var(--text-dim);opacity:.5"' : '';
+
+    return '<div class="wb-br-card ' + cardCls + '">'
+      + '<span class="wb-br-result">' + esc(b.result || '') + '</span>'
+      + '<span class="wb-br-badge" style="color:' + atkColor.glow + ';border-color:' + atkColor.stroke + '">' + esc(atkBadge) + '</span>'
+      + '<span class="wb-br-name">' + esc(atkName) + '</span>'
+      + '<span class="wb-br-vs">vs</span>'
+      + '<span class="wb-br-badge" style="color:' + defColor.glow + ';border-color:' + defColor.stroke + '">' + esc(defBadge) + '</span>'
+      + '<span class="wb-br-name">' + esc(defName) + '</span>'
+      + (city ? '<span class="wb-br-city">' + esc(city) + '</span>' : '')
+      + '<span class="wb-br-losses"' + lossStyle + '>' + lossText + '</span>'
+      + '</div>';
+  }
+
+  // ── 战情速报：单张调度卡片 ──
+  function _buildWbTransitCard(t) {
+    var side = _getWorldMilSide(t);
+    var color = side.factionColor;
+    var label = side.factionLabel;
+
+    // 状态 CSS class 映射
+    var statusCls = 'wb-st-generic';
+    var s = t.status || '';
+    if (s === '攻城中')      statusCls = 'wb-st-siege';
+    else if (s === '交战中') statusCls = 'wb-st-battle';
+    else if (s === '客驻')   statusCls = 'wb-st-guest';
+    else if (s === '巡防')   statusCls = 'wb-st-patrol';
+    else if (s === '撤退中') statusCls = 'wb-st-retreat';
+    else if (s === '驻屯')   statusCls = 'wb-st-camp';
+    else if (s === '护送')   statusCls = 'wb-st-escort';
+    else if (s === '待命')   statusCls = 'wb-st-standby';
+    else if (/^剩\d+$/.test(s)) statusCls = 'wb-st-march';
+
+    var troopStr = _formatTransitTroops(t);
+
+    return '<div class="wb-dp-card" style="--wb-strip-c:' + color + '">'
+      + '<div class="wb-dp-line1">'
+        + '<span class="wb-dp-badge" style="color:' + color + ';border-color:' + color + '">' + esc(label) + '</span>'
+        + '<span class="wb-dp-general">' + esc(t.general || '') + '</span>'
+        + '<span class="wb-dp-status ' + statusCls + '">' + esc(s) + '</span>'
+      + '</div>'
+      + '<div class="wb-dp-line2">'
+        + '<span class="wb-dp-route">' + esc(t.from || '') + '<span class="wb-arrow">→</span>' + esc(t.to || '') + '</span>'
+        + (troopStr ? '<span class="wb-dp-troop">' + troopStr + '</span>' : '')
+      + '</div>'
+      + '</div>';
+  }
+
 
   /* v20260609-fengyan: 武将动态已下线，以下函数停用
   // 武将动态排序:剩余升序,∞ 排尾,同剩余按状态权重
