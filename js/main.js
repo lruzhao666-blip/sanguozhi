@@ -1884,15 +1884,16 @@
   }
 
   function buildGenTag(g, slot) {
-    // 确保 g 是对象且包含 name 和 status 字段
-    const name = typeof g === 'string' ? g : (g.name || '');
-    const status = typeof g === 'string' ? '健康' : (g.status || '健康');
+  // 提取武将名和状态
+  const name = (g && g.name) || '';
+  const status = (g && g.status) || '健康';
 
-    return '<span class="gen-tag" data-status="' + esc(status)
-      + '" data-name="' + esc(name) + '">'
-      + esc(name)
-      + '</span>';
-  }
+  // 只输出 class + data-status + data-name，样式完全由 CSS 控制
+  return '<span class="gen-tag" data-status="' + esc(status)
+    + '" data-name="' + esc(name) + '">'
+    + esc(name)
+    + '</span>';
+}
 
 
 
