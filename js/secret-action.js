@@ -406,11 +406,7 @@
       if (ta) {
         const desiredVal = isBlank ? '' : o.text;
         if (ta.value !== desiredVal) ta.value = desiredVal;
-        /* [legacy v1]
         ta.disabled = data.locked || isBlank;
-        */
-        const isOwnerSlot = (getMySlot() === slot);
-        ta.disabled = data.locked || isBlank || !isOwnerSlot;
         ta.placeholder = isBlank ? '' : (o.secret ? '写下一条密令…' : '写下一条军令…');
         // 自适应高度
         ta.style.height = 'auto';
@@ -423,11 +419,7 @@
       }
       if (cb) {
         cb.checked = !isBlank && !!o.secret;
-        /* [legacy v1]
         cb.disabled = data.locked || isBlank;
-        */
-        const isOwnerSlot2 = (getMySlot() === slot);
-        cb.disabled = data.locked || isBlank || !isOwnerSlot2;
         if (!cb._saBound) {
           cb.addEventListener('change', onSecretToggle);
           cb._saBound = true;
