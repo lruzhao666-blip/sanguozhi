@@ -2442,28 +2442,45 @@
 
   // 单行调度(方案B v2: Flex + identity分组)
   function _buildWorldMilRow(t) {
-    var side = _getWorldMilSide(t);
-    var faction = side.factionLabel;
-    var mc      = side.factionColor;
-    var general = String(t.general || '');
-    var from    = String(t.from || '');
-    var to      = String(t.to || '');
-    var troopStr = _formatTransitTroops(t);
-    var status  = String(t.status || '');
+  // 提取数据
+  var side = _getWorldMilSide(t);
+  var faction = side.factionLabel;
+  var factionColor = side.factionColor;
+  var general = String(t.general || '');
+  var from = String(t.from || '');
+  var to = String(t.to || '');
+  var status = String(t.status || '');
+  var troopStr = _buildWorldMilTroopStr(t);
 
-    return '<div class="world-mil-row" style="--wm-c:' + mc + '">' +
-      '<span class="world-mil-identity">' +
-        '<span class="world-mil-faction">' + esc(faction) + '</span>' +
-        '<span class="world-mil-general">' + esc(general) + '</span>' +
-      '</span>' +
-      '<span class="world-mil-route">' + esc(from) + '<span class="arrow">›</span>' + esc(to) + '</span>' +
-      '<span class="world-mil-right">' +
-        (troopStr ? '<span class="world-mil-troop">' + troopStr + '</span>' : '') +
-        _renderWorldStatus(status) +
-      '</span>' +
-    '</div>';
-  }
+  // 设置 data-faction 用于 CSS 着色
+  var dataFaction = '';
+  if (t.slot === 0) dataFaction = 'p0';
+  else if (t.slot === 1) dataFaction = 'p1';
+  else if (t.slot === 2) dataFaction = 'p2';
+  else dataFaction = 'npc';
 
+  // 状态 class 映射（9种）
+  var statusClass = 'march'; // 默认
+  if (status.indexOf('攻城中') !== -1) statusClass = 'siege';
+  else if (status.indexOf('交战中') !== -1) statusClass = 'battle';
+  else if (status.indexOf('客驻') !== -1) statusClass = 'guest';
+  else if (status.indexOf('撤退中') !== -1) statusClass = 'retreat';
+  else if (status.indexOf('驻屯') !== -1) statusClass = 'garrison';
+  else if (status.indexOf('巡防') !== -1) statusClass = 'patrol';
+  else if (status.indexOf('护送') !== -1) statusClass = 'escort';
+  else if (status.indexOf('待命') !== -1) statusClass = 'standby';
+  else if (/剩\d/.test(status)) statusClass = 'march';
+
+  return '<div class="world-mil-row" data-faction="' + dataFaction + '">' +
+    '<span class="wm-faction ' + dataFaction + '">' + esc(faction) + '</span>' +
+    '<div class="wm-main">' +
+      '<span class="wm-general">' + esc(general) + '</span>' +
+      '<span class="wm-route">' + esc(from) + '<span class="wm-arrow">→</span>' + esc(to) + '</span>' +
+    '</div>' +
+    '<span class="wm-troop">' + troopStr + '</span>' +
+    '<span class="wm-status ' + statusClass + '">' + esc(status) + '</span>' +
+  '</div>';
+}
   // 单行战况:攻方→守方 + 城名 + 结果徽章 + 伤亡
   // 攻守双方徽章色复用 _junbaoGetSideColor / _junbaoGetBadgeText
   /* [legacy v1]
@@ -2510,44 +2527,54 @@
   }
   */
   function _buildWorldBatRow(b) {
-    var atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
-    var defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
+  // 攻守双方信息
+  var atkColor = _junbaoGetSideColor(b.attackerSlot, b.attackerFaction);
+  var defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
+  var atkLabel = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
+  var defLabel = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+  var atkName = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkLabel);
+  var defName = b.defenderGeneral || _junbaoStripPrefix(b.defender, defLabel);
+  var city = b.defenderCity || b.city || '';
 
-    var atkLabel = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
-    var defLabel = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
+  // 结果分类
+  var result = String(b.result || '');
+  var WIN_SET = ['惨胜', '小胜', '大胜', '胜'];
+  var LOSE_SET = ['小负', '大败', '负'];
+  var resultCls = WIN_SET.indexOf(result) !== -1 ? 'win'
+                : LOSE_SET.indexOf(result) !== -1 ? 'lose'
+                : 'draw';
 
-    var atkName = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkLabel);
-    var defName = b.defenderGeneral || _junbaoStripPrefix(b.defender, defLabel);
+  var atkLoss = b.attacker_loss != null ? b.attacker_loss : 0;
+  var defLoss = b.defender_loss != null ? b.defender_loss : 0;
 
-    var city = b.defenderCity || b.city || '';
+  // 攻方 data-atk 用于边框着色
+  var dataAtk = '';
+  if (b.attackerSlot === 0) dataAtk = 'p0';
+  else if (b.attackerSlot === 1) dataAtk = 'p1';
+  else if (b.attackerSlot === 2) dataAtk = 'p2';
+  else dataAtk = 'npc';
 
-    var result = String(b.result || '');
-    var WIN_SET = ['惨胜','小胜','大胜','胜'];
-    var LOSE_SET = ['小负','大败','负'];
-    var resultCls = WIN_SET.includes(result) ? 'win'
-                  : LOSE_SET.includes(result) ? 'lose'
-                  : 'draw';
+  // 守方 class
+  var defClass = '';
+  if (b.defenderSlot === 0) defClass = 'p0';
+  else if (b.defenderSlot === 1) defClass = 'p1';
+  else if (b.defenderSlot === 2) defClass = 'p2';
+  else defClass = 'npc';
 
-    var atkLoss = b.attacker_loss != null ? b.attacker_loss : '0';
-    var defLoss = b.defender_loss != null ? b.defender_loss : '0';
+  // 攻方 class
+  var atkClass = dataAtk;
 
-    return '<div class="wbat-row ' + resultCls + '" style="--wm-c:' + atkColor.glow + '">' +
-      '<span class="wbat-atk-group">' +
-        '<span class="world-mil-faction" style="color:' + atkColor.glow + ';border-color:' + atkColor.stroke + '">' + esc(atkLabel) + '</span>' +
-        '<span class="world-mil-general">' + esc(atkName) + '</span>' +
-      '</span>' +
-      '<span class="wbat-vs">vs</span>' +
-      '<span class="wbat-def-group">' +
-        '<span class="world-mil-faction" style="color:' + defColor.glow + ';border-color:' + defColor.stroke + '">' + esc(defLabel) + '</span>' +
-        '<span class="world-mil-general">' + esc(defName) + '</span>' +
-      '</span>' +
-      '<span class="wbat-info">' +
-        (city ? '<span class="wbat-city">' + esc(city) + '</span>' : '') +
-        '<span class="wbat-losses">-' + atkLoss + '/-' + defLoss + '</span>' +
-        '<span class="wbat-status ' + resultCls + '">' + esc(result) + '</span>' +
-      '</span>' +
-    '</div>';
-  }
+  return '<div class="world-bat-row" data-atk="' + dataAtk + '">' +
+    '<span class="wbat-faction ' + atkClass + '">' + esc(atkLabel) + '</span>' +
+    '<span class="wbat-name">' + esc(atkName) + '</span>' +
+    '<span class="wbat-arrow">→</span>' +
+    '<span class="wbat-faction ' + defClass + '">' + esc(defLabel) + '</span>' +
+    '<span class="wbat-name">' + esc(defName) + '</span>' +
+    (city ? '<span class="wbat-city">(' + esc(city) + ')</span>' : '<span class="wbat-city"></span>') +
+    '<span class="wbat-result ' + resultCls + '">' + esc(result) + '</span>' +
+    '<span class="wbat-loss">伤亡 攻' + atkLoss + ' 守' + defLoss + '</span>' +
+  '</div>';
+}
 
   // 折叠按钮事件绑定(委托到 listEl,幂等)
   /* [legacy v1]
