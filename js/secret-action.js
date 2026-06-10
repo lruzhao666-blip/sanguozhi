@@ -362,6 +362,16 @@
         hideCb.disabled = !isOwner || data.locked;
         // 回填 checked 状态(本人视角从 localState 读)
         if (isOwner) hideCb.checked = !!data.hidden;
+        // 绑定 change 事件(幂等,只绑一次)实时同步到 localState
+        if (!hideCb._saHideBound) {
+          hideCb._saHideBound = true;
+          hideCb.addEventListener('change', function () {
+            var s = parseInt(this.dataset.slot, 10);
+            if (!isNaN(s) && localState.slots[s]) {
+              localState.slots[s].hidden = this.checked;
+            }
+          });
+        }
       }
     }
 
