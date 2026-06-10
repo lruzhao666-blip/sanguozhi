@@ -430,6 +430,7 @@
     const seal = $(`sa-seal-badge-${slot}`);
     if (seal) seal.classList.toggle('hidden', !data.locked);
 
+    /* [legacy v1]
     // 锁定/解锁按钮
     const btn = $(`sa-submit-${slot}`);
     if (btn) {
@@ -440,6 +441,21 @@
       } else {
         btn.textContent = '锁定行动 🔒';
         btn.classList.remove('sa-btn-unlock');
+      }
+    }
+    */
+    // 锁定/解锁按钮:仅本人可操作
+    const btn = $(`sa-submit-${slot}`);
+    if (btn) {
+      const isOwner = (getMySlot() === slot);
+      if (data.locked) {
+        btn.textContent = '解除锁定';
+        btn.classList.add('sa-btn-unlock');
+        btn.disabled = !isOwner;
+      } else {
+        btn.textContent = '锁定行动 🔒';
+        btn.classList.remove('sa-btn-unlock');
+        btn.disabled = !isOwner;
       }
     }
 
