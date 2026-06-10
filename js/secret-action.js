@@ -987,7 +987,7 @@
         c = c.replace(/^__HIDDEN__\n?/, '').trim();
       }
       const s = (row.secret_text || '').trim();
-      const pubLines = c ? c.split('\n').map(x => x.trim()).filter(Boolean) : [];
+      const pubLines = c ? c.split('\n').map(x => x.trim()).filter(Boolean).map(line => line.replace(/^[①②③④]\s+/, '')) : [];
       const secLines = s ? s.split('\n').map(x => x.trim()).filter(Boolean) : [];
 
       // 该玩家锁定时填的全空(明令密令都空)
