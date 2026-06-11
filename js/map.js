@@ -20,7 +20,7 @@
  * v22 (2026-05): 战况层重做 — 燕尾旗 + 六边形虚线光环,
  *                删除行军虚线/旧 marker
  *
- * ✦ 60 座城池，十二大州区
+ * ✦ 66 座城池，十二大州区
  * ✦ flat-top 六边形，整个矩形网格完整铺满（无空白）
  * ✦ 空地按地形显示淡色底色，城池格在地形底色上叠加主体
  * ✦ 城池格：玩家彩色渐变 / NPC 金棕 / 空城半透暗色
@@ -165,7 +165,7 @@ const CITY_TIER_MAP = {
   '晋阳':'州治','上党':'郡城',
   '北海':'郡城','济南':'郡城',
   '洛阳':'雄都','弘农':'郡城','河内':'郡城','虎牢关':'县城','潼关':'县城',
-  '长安':'雄都','天水':'郡城','安定':'郡城','武威':'郡城','西平':'县城','街亭':'县城',
+  '长安':'雄都','陈仓':'郡城','天水':'郡城','安定':'郡城','武威':'郡城','西平':'县城','街亭':'县城',
   '濮阳':'郡城','陈留':'州治','许昌':'雄都','汝南':'郡城','谯郡':'郡城',
   '下邳':'州治','小沛':'县城','广陵':'郡城',
   '宛城':'郡城','新野':'县城','襄阳':'雄都','江夏':'州治','江陵':'郡城',
@@ -226,6 +226,7 @@ const BONUS_MULT = {
 
     /* ══ 雍凉 ══ */
     { id:'changan',   name:'长安',  region:'雍凉', hx:10, hy:6,  tier:'雄都', bonusKey:'金丰', bonusKeys:['金丰','谋略+','防御+'],  terrain:'平原', npcGuard:'李傕',   terrainDesc:'前汉旧都，关中沃野，八百里秦川。' },
+    { id:'chencang',  name:'陈仓',  region:'雍凉', hx:9,  hy:6,  tier:'郡城', bonusKey:'险关', bonusKeys:['粮丰','险关'],  terrain:'关隘', npcGuard:'',       terrainDesc:'关中西陲门户，陈仓古道天险，屯粮重镇。' },
     { id:'anding',    name:'安定',  region:'雍凉', hx:9,  hy:5,  tier:'郡城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产'],  terrain:'山地', npcGuard:'梁兴',   terrainDesc:'泾水之畔，黄土高原，胡笳声不绝。' },
     { id:'jietingx',  name:'街亭',  region:'雍凉', hx:8,  hy:5,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'马遵',   terrainDesc:'陇右门户，失此则陇道断绝。' },
     { id:'tianshui',  name:'天水',  region:'雍凉', hx:8,  hy:6,  tier:'郡城', bonusKey:'骑兵强', bonusKeys:['骑兵强'],   terrain:'山地', npcGuard:'姜冏',   terrainDesc:'陇右重镇，胡汉杂居，出名马良将。' },
@@ -303,6 +304,9 @@ const BONUS_MULT = {
     ['ye','henei'],['jinyang','henei'],['shangdang','henei'],['shangdang','luoyang'],
     ['henei','luoyang'],['luoyang','hongnong'],['luoyang','huguan'],
     ['hongnong','tongguan'],['tongguan','changan'],
+    ['changan','chencang'],
+    ['chencang','tianshui'],
+    ['chencang','anding'],
     ['changan','anding'],['changan','tianshui'],['anding','tianshui'],
     ['anding','wuwei'],['wuwei','xiping'],['tianshui','jietingx'],['jietingx','anding'],
     ['luoyang','xuchang'],['luoyang','puyang'],
