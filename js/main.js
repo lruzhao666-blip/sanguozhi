@@ -1282,6 +1282,26 @@
   function highlightRaw(rawText) {
     if (!rawText) return '';
 
+    // #storm-intel-v1: 按当前登录身份过滤密报标签 [[密|X]]...[[/密]]
+    // 规则：
+    //  - 未登录 → 所有密报都不显示
+    //  - 已登录 → 只显示 [[密|当前身份]] 或 [[密|甲,乙,丙]] 包含当前身份的密报
+    //  - 被过滤的密报块不渲染任何 DOM（不是 display:none，是根本不插入）
+    const currentRole = window.SGRole ? window.SGRole.get() : null;
+    if (rawText.includes('[[密|')) {
+      const RE = /\[\[密\|([甲乙丙,]+)\]\]([\s\S]*?)\[\[\/密\]\]/g;
+      rawText = rawText.replace(RE, (match, slotsRaw, content) => {
+        if (!currentRole) return ''; // 未登录，全部过滤
+        const slots = slotsRaw.split(',').map(s => s.trim()).filter(Boolean);
+        if (slots.includes(currentRole)) {
+          // 当前身份能看到，保留内容（去掉标签本身）
+          return content;
+        }
+        // 当前身份看不到，过滤整个块（不留任何痕迹）
+        return '';
+      });
+    }
+
     // ── 第一步：预处理，把所有「🎯 行动建议」块整体替换成占位符
     // 这样后续逐行循环完全不会碰到 ①②③ 行，彻底避免 NUMBULLET_RE 抢先匹配
     const { text, placeholders } = _preRenderActionBlocks(rawText);
