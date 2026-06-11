@@ -15139,3 +15139,45 @@ body.is-viewer-mode #diag-toast {
   border-color: rgba(170,170,170,0.40);
   color: rgba(200,200,200,0.85);
 }
+
+/* ═══════════════════════════════════════════
+   #secret-visual-marker-v1: 密报专属视觉标识
+   ═══════════════════════════════════════════ */
+
+.secret-only-block {
+  position: relative;
+  margin: 1.2rem 0;
+  padding: 1rem 1rem 1rem 1.2rem;
+  background: rgba(212, 168, 67, 0.05);
+  border-left: 3px solid #d4a843;
+  border-radius: 4px;
+}
+
+.secret-only-label {
+  position: absolute;
+  top: -0.65rem;
+  left: 1rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #d4a843;
+  background: var(--bg-dark);
+  border: 1px solid rgba(212, 168, 67, 0.4);
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .secret-only-block {
+    margin: 1rem 0;
+    padding: 0.85rem 0.85rem 0.85rem 1rem;
+  }
+
+  .secret-only-label {
+    font-size: 0.65rem;
+    padding: 0.18rem 0.5rem;
+    top: -0.6rem;
+    left: 0.85rem;
+  }
+}
