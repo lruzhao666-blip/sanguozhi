@@ -186,7 +186,8 @@ window.SGParser = (function () {
     }
 
     // 从原文中剥除所有密报块,防止泄露到 rawDigest
-    return text.replace(RE, '').replace(/\n{3,}/g, '\n\n').trim();
+    // #storm-intel-v1: 保留密报块原文，交由 main.js highlightRaw 按身份过滤渲染
+    return text;
   }
 
   // ─────────────────────────────────────────
