@@ -14751,3 +14751,79 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260619c 工单#warboard-empty-decor-resize-v1 ══════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260619d 工单#warboard-empty-fix-v1
+   空态装饰居中修复 + 移动端适配
+   问题：
+   1. flex:1 撑满后 absolute 定位的字/框基于容器左上角偏移，
+      但容器自身没有 position:relative 导致参考系错乱
+   2. 移动端上下堆叠时空态区域需要固定合理高度，不能无限撑高
+   ──────────────────────────────────────────────────────────── */
+
+/* 强制容器为定位参考系 */
+.wb-empty-wrap {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 篆刻字：强制居中对齐（覆盖所有旧偏移规则） */
+.wb-empty-seal {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
+/* 印章方框：强制居中对齐 */
+.wb-empty-frame {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* 空态文字：居中且在最上层 */
+.wb-empty-wrap .wb-empty {
+  position: relative !important;
+  z-index: 3 !important;
+  text-align: center !important;
+}
+
+/* ═══ 移动端 ≤720px：上下堆叠时的修复 ═══ */
+@media (max-width: 720px) {
+  /* 移动端不需要 flex:1 撑满（上下堆叠没有"等高"需求） */
+  .wb-empty-wrap {
+    flex: none !important;
+    min-height: 160px !important;
+    height: auto !important;
+    align-self: auto !important;
+  }
+
+  /* 移动端列不需要 flex 拉伸 */
+  .wb-col {
+    flex: none !important;
+  }
+
+  /* 移动端列表不需要 flex:1 */
+  .wb-list {
+    flex: none !important;
+  }
+
+  /* 篆刻字移动端缩小 */
+  .wb-empty-seal {
+    font-size: 3.5rem !important;
+  }
+
+  /* 方框移动端缩小 */
+  .wb-empty-frame {
+    width: 64px !important;
+    height: 64px !important;
+  }
+}
+
+/* ╚══ END v20260619d 工单#warboard-empty-fix-v1 ══════════════ */
