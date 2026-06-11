@@ -14972,3 +14972,123 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260611a 工单#warboard-empty-minimal-v1 ══════════ */
+
+/* ════════════════════════════════════════════════════════════
+   #fog-of-war-css-v1: 战争迷雾开关样式
+   英雄联盟风格 - 金属质感滑动开关
+   ════════════════════════════════════════════════════════════ */
+
+.fog-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.fog-toggle-label {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.fog-toggle-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.fog-toggle-switch {
+  position: relative;
+  width: 42px;
+  height: 22px;
+  background: rgba(40,45,55,0.85);
+  border: 1px solid rgba(175,148,82,0.35);
+  border-radius: 11px;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.fog-toggle-switch::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 3px;
+  top: 2px;
+  background: linear-gradient(135deg, rgba(175,148,82,0.9) 0%, rgba(135,108,52,0.9) 100%);
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.fog-toggle-checkbox:checked + .fog-toggle-switch {
+  background: rgba(185,158,100,0.25);
+  border-color: rgba(212,168,67,0.55);
+  box-shadow: inset 0 1px 3px rgba(212,168,67,0.15), 0 0 8px rgba(212,168,67,0.15);
+}
+
+.fog-toggle-checkbox:checked + .fog-toggle-switch::before {
+  transform: translateX(20px);
+  background: linear-gradient(135deg, rgba(212,168,67,0.95) 0%, rgba(185,145,48,0.95) 100%);
+  box-shadow: 0 2px 6px rgba(212,168,67,0.45), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+.fog-toggle:hover .fog-toggle-switch {
+  border-color: rgba(212,168,67,0.65);
+}
+
+.fog-toggle:hover .fog-toggle-switch::before {
+  box-shadow: 0 2px 6px rgba(212,168,67,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.fog-toggle-status {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  min-width: 20px;
+  font-weight: 600;
+}
+
+.fog-toggle-checkbox:checked ~ .fog-toggle-status {
+  color: rgba(212,168,67,0.95);
+}
+
+/* 城池悬浮卡 - 兵力隐藏状态 */
+.sgt-dim.fog-hidden {
+  color: rgba(212,168,67,0.45);
+  font-style: italic;
+  font-size: 0.88em;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .fog-toggle {
+    gap: 6px;
+  }
+
+  .fog-toggle-label {
+    font-size: 0.82rem;
+  }
+
+  .fog-toggle-switch {
+    width: 38px;
+    height: 20px;
+  }
+
+  .fog-toggle-switch::before {
+    width: 14px;
+    height: 14px;
+    left: 3px;
+    top: 2px;
+  }
+
+  .fog-toggle-checkbox:checked + .fog-toggle-switch::before {
+    transform: translateX(18px);
+  }
+
+  .fog-toggle-status {
+    font-size: 0.8rem;
+  }
+}
