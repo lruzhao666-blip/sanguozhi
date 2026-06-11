@@ -14913,3 +14913,50 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260619e 工单#warboard-empty-e4-v1 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260619g 工单#warboard-empty-f1-v1
+   空态 F1 方案：左右对称短金线 + 居中衬线文字
+   ──────────────────────────────────────────────────────────── */
+
+.wb-list .wb-empty {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  text-align: center !important;
+  font-family: var(--font-serif) !important;
+  font-size: .8rem !important;
+  color: rgba(160,120,48,.55) !important;
+  letter-spacing: .2em !important;
+  opacity: 1 !important;
+  padding: 24px 0 !important;
+  min-height: 120px !important;
+}
+
+.wb-list .wb-empty::before,
+.wb-list .wb-empty::after {
+  content: '' !important;
+  display: block !important;
+  width: 36px !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(212,168,67,.2), transparent) !important;
+  flex-shrink: 0 !important;
+}
+
+/* 移动端微调 */
+@media (max-width: 720px) {
+  .wb-list .wb-empty {
+    min-height: 80px !important;
+    gap: 10px !important;
+    font-size: .74rem !important;
+    padding: 18px 0 !important;
+  }
+  .wb-list .wb-empty::before,
+  .wb-list .wb-empty::after {
+    width: 28px !important;
+  }
+}
+
+/* ╚══ END v20260619g 工单#warboard-empty-f1-v1 ══════════════ */
