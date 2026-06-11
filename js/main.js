@@ -89,7 +89,37 @@
     bindGMPanel();
     initParticles();
     initTipsCard();
+    bindFogToggle();  // #fog-of-war-main-v1: 绑定战争迷雾开关
     loadFromCloud();
+  }
+
+  // #fog-of-war-main-v1: 战争迷雾开关逻辑
+  function bindFogToggle() {
+    const checkbox = document.getElementById('fog-checkbox');
+    const statusEl = document.getElementById('fog-status');
+    if (!checkbox || !statusEl) return;
+
+    // 从 localStorage 读取状态（默认开启）
+    const saved = localStorage.getItem('sg_fog_of_war');
+    const enabled = saved !== '0';
+    checkbox.checked = enabled;
+    statusEl.textContent = enabled ? '开' : '关';
+
+    // 监听开关变化
+    checkbox.addEventListener('change', () => {
+      const nowEnabled = checkbox.checked;
+      localStorage.setItem('sg_fog_of_war', nowEnabled ? '1' : '0');
+      statusEl.textContent = nowEnabled ? '开' : '关';
+      // 重新渲染战局动态（应用密报过滤）
+      if (state.rounds.length > 0) {
+        const latest = state.rounds[state.rounds.length - 1];
+        renderDigest(latest);
+      }
+      // 触发地图重渲染（应用兵力过滤）
+      if (typeof window.SGMap !== 'undefined' && window.SGMap.refresh) {
+        window.SGMap.refresh();
+      }
+    });
   }
 
   // ══════════════════════════════════════════
@@ -1282,24 +1312,26 @@
   function highlightRaw(rawText) {
     if (!rawText) return '';
 
-    // #storm-intel-v1: 按当前登录身份过滤密报标签 [[密|X]]...[[/密]]
-    // 规则：
-    //  - 未登录 → 所有密报都不显示
-    //  - 已登录 → 只显示 [[密|当前身份]] 或 [[密|甲,乙,丙]] 包含当前身份的密报
-    //  - 被过滤的密报块不渲染任何 DOM（不是 display:none，是根本不插入）
+    // #fog-of-war-main-v1 + #storm-intel-v1:
+    // 按战争迷雾开关 + 当前登录身份过滤密报标签 [[密|X]]...[[/密]]
+    const fogEnabled = localStorage.getItem('sg_fog_of_war') !== '0'; // 默认开启
     const currentRole = window.SGRole ? window.SGRole.get() : null;
-    if (rawText.includes('[[密|')) {
+
+    if (rawText.includes('[[密|') && fogEnabled) {
+      // 战争迷雾开启：按身份过滤
       const RE = /\[\[密\|([甲乙丙,]+)\]\]([\s\S]*?)\[\[\/密\]\]/g;
       rawText = rawText.replace(RE, (match, slotsRaw, content) => {
         if (!currentRole) return ''; // 未登录，全部过滤
         const slots = slotsRaw.split(',').map(s => s.trim()).filter(Boolean);
         if (slots.includes(currentRole)) {
-          // 当前身份能看到，保留内容（去掉标签本身）
-          return content;
+          return content; // 当前身份能看到，保留内容（去掉标签）
         }
-        // 当前身份看不到，过滤整个块（不留任何痕迹）
-        return '';
+        return ''; // 当前身份看不到，过滤整个块
       });
+    } else if (rawText.includes('[[密|') && !fogEnabled) {
+      // 战争迷雾关闭：去掉所有密报标签，显示所有内容
+      const RE = /\[\[密\|([甲乙丙,]+)\]\]|\[\[\/密\]\]/g;
+      rawText = rawText.replace(RE, ''); // 去掉标签，保留内容
     }
 
     // ── 第一步：预处理，把所有「🎯 行动建议」块整体替换成占位符
