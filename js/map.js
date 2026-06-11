@@ -1117,14 +1117,37 @@ const BONUS_MULT = {
     // 兵力
     const troops = ow?.troops || {};
     const hasTroop = Object.keys(troops).some(k => (troops[k] || 0) > 0);
+    // #fog-of-war-map-v1: 兵力按战争迷雾开关 + 身份过滤
     let troopHtml = '';
     const _chips = (t) => TROOP_TYPES.filter(k => (t[k]||0) > 0)
       .map(k => `<span class="sgt-troop-chip"><b>${k}</b><span>${Number(t[k]).toLocaleString()}</span></span>`).join('');
+
+    const fogEnabled = localStorage.getItem('sg_fog_of_war') !== '0'; // 默认开启
+    const currentRole = (window.SGRole && window.SGRole.get) ? window.SGRole.get() : null;
+
+    // 判断当前城池是否属于当前登录玩家
+    const isOwnCity = isPlayer && currentRole && ow.playerIdx !== undefined
+      && (['甲','乙','丙'][ow.playerIdx] === currentRole);
+
+    // 兵力显示规则：
+    // 1. 战争迷雾关闭 → 所有兵力都显示
+    // 2. 战争迷雾开启 + 玩家城池：
+    //    - 是自己的城 → 显示兵力
+    //    - 不是自己的城 → 隐藏兵力（显示"情报未明"）
+    // 3. 战争迷雾开启 + NPC城池 → 始终显示兵力（NPC不参与PVP博弈）
+
     if (isPlayer) {
-      troopHtml = hasTroop
-        ? `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-troop-list">${_chips(troops)}</span></div>`
-        : `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-dim">无兵</span></div>`;
+      if (!fogEnabled || isOwnCity) {
+        // 战争迷雾关闭 或 是自己的城 → 显示兵力
+        troopHtml = hasTroop
+          ? `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-troop-list">${_chips(troops)}</span></div>`
+          : `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-dim">无兵</span></div>`;
+      } else {
+        // 战争迷雾开启 且 不是自己的城 → 隐藏兵力
+        troopHtml = `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-dim fog-hidden">情报未明</span></div>`;
+      }
     } else if (isNPC && hasTroop) {
+      // NPC 城池：战争迷雾不影响（始终显示）
       troopHtml = `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-troop-list">${_chips(troops)}</span></div>`;
     }
 
@@ -1333,6 +1356,10 @@ const BONUS_MULT = {
       const slot = _npcFactionSlots[factionName];
       if (slot === undefined || slot === null) return null;
       return NPC_FACTION_COLORS[slot] || null;
+    },
+    refresh: () => {  // #fog-of-war-map-v1: 供开关触发重渲染
+      const c = document.getElementById('map-svg-container');
+      if (c) _build(c);
     },
   };
 
