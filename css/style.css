@@ -14827,3 +14827,89 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260619d 工单#warboard-empty-fix-v1 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260619e 工单#warboard-empty-e4-v1
+   空态装饰重做 — E4 水墨晕染 · 纯 flex 居中 · 零 absolute
+   覆盖工单 C/D/E 的旧印章方框规则
+   ──────────────────────────────────────────────────────────── */
+
+/* 旧方框节点兜底隐藏（防残留 DOM） */
+.wb-empty-frame {
+  display: none !important;
+}
+
+/* ═══ 容器：flex 居中 + 自适应撑满列高 ═══ */
+.wb-empty-wrap {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  flex: 1 !important;
+  align-self: stretch !important;
+  min-height: 160px !important;
+  padding: 24px 16px !important;
+  overflow: hidden !important;
+}
+
+/* 水墨晕染：多层偏心径向渐变 */
+.wb-empty-wrap::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background:
+    radial-gradient(ellipse 50% 60% at 48% 45%, rgba(212,168,67,.04), transparent 60%),
+    radial-gradient(ellipse 30% 40% at 52% 55%, rgba(160,80,30,.03), transparent 50%) !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+/* ═══ 篆刻大字：flex 流内居中，不用 absolute ═══ */
+.wb-empty-seal {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  display: block !important;
+  font-family: var(--font-serif) !important;
+  font-size: clamp(4rem, 14vw, 7rem) !important;
+  font-weight: 900 !important;
+  color: rgba(212,168,67,.055) !important;
+  line-height: 1 !important;
+  letter-spacing: .1em !important;
+  text-align: center !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+  text-shadow:
+    0 0 40px rgba(212,168,67,.03),
+    0 3px 0 rgba(0,0,0,.2),
+    0 -1px 0 rgba(212,168,67,.02) !important;
+  -webkit-text-stroke: .5px rgba(212,168,67,.04) !important;
+}
+
+/* ═══ 空态文字：flex 流内，在字下方 ═══ */
+.wb-empty-wrap .wb-empty {
+  position: relative !important;
+  z-index: 2 !important;
+  text-align: center !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+}
+
+/* ═══ 移动端 ≤720px ═══ */
+@media (max-width: 720px) {
+  .wb-empty-wrap {
+    flex: none !important;
+    min-height: 140px !important;
+    padding: 20px 12px !important;
+    gap: 10px !important;
+  }
+  .wb-empty-seal {
+    font-size: clamp(3rem, 18vw, 5rem) !important;
+  }
+}
+
+/* ╚══ END v20260619e 工单#warboard-empty-e4-v1 ══════════════ */
