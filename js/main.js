@@ -1312,26 +1312,12 @@
   function highlightRaw(rawText) {
     if (!rawText) return '';
 
-    // #fog-of-war-main-v1 + #storm-intel-v1:
-    // 按战争迷雾开关 + 当前登录身份过滤密报标签 [[密|X]]...[[/密]]
-    const fogEnabled = localStorage.getItem('sg_fog_of_war') !== '0'; // 默认开启
-    const currentRole = window.SGRole ? window.SGRole.get() : null;
-
-    if (rawText.includes('[[密|') && fogEnabled) {
-      // 战争迷雾开启：按身份过滤
+    // #fog-of-war-main-v1 + #storm-intel-v1 + #secret-digest-fix-v1:
+    // 密报块在"战局动态"中完全不显示（有专门的"密报阁"板块）
+    // 无条件删除所有 [[密|X]]...[[/密]] 块（包括标签和内容）
+    if (rawText.includes('[[密|')) {
       const RE = /\[\[密\|([甲乙丙,]+)\]\]([\s\S]*?)\[\[\/密\]\]/g;
-      rawText = rawText.replace(RE, (match, slotsRaw, content) => {
-        if (!currentRole) return ''; // 未登录，全部过滤
-        const slots = slotsRaw.split(',').map(s => s.trim()).filter(Boolean);
-        if (slots.includes(currentRole)) {
-          return content; // 当前身份能看到，保留内容（去掉标签）
-        }
-        return ''; // 当前身份看不到，过滤整个块
-      });
-    } else if (rawText.includes('[[密|') && !fogEnabled) {
-      // 战争迷雾关闭：去掉所有密报标签，显示所有内容
-      const RE = /\[\[密\|([甲乙丙,]+)\]\]|\[\[\/密\]\]/g;
-      rawText = rawText.replace(RE, ''); // 去掉标签，保留内容
+      rawText = rawText.replace(RE, ''); // 删除整个密报块
     }
 
     // ── 第一步：预处理，把所有「🎯 行动建议」块整体替换成占位符
