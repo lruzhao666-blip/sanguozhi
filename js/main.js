@@ -2244,13 +2244,49 @@
       }
     }
 
-    // 渲染调度列
+    // 渲染调度列 + #fog-transit-filter-v1: 战争迷雾过滤
     const transitListEl = document.getElementById('wb-transit-list');
     if (transitListEl) {
-      if (!transit.length) {
+      // 读取当前登录身份
+      const currentRole = window.SGRole ? window.SGRole.get() : null;
+      const currentSlot = currentRole === '甲' ? 0 : currentRole === '乙' ? 1 : currentRole === '丙' ? 2 : null;
+
+      // 战争迷雾过滤：只隐藏"其他玩家攻击玩家"的调度
+      const visibleTransit = transit.filter(function(t) {
+        // 1. 自己的调度 → 可见
+        if (t.slot === currentSlot) return true;
+
+        // 2. 已交战 → 可见（战争迷雾已揭开）
+        if (t.status === '交战中') return true;
+
+        // 3. NPC 调度（slot=null）→ 可见
+        if (t.slot === null) return true;
+
+        // 4. 玩家调度：判断目标是否为玩家城池
+        if (t.slot === 0 || t.slot === 1 || t.slot === 2) {
+          // 获取所有玩家城池列表
+          const allPlayerCities = [];
+          state.players.forEach(function(p) {
+            if (p.cities_list && p.cities_list.length) {
+              p.cities_list.forEach(function(c) { allPlayerCities.push(c.name); });
+            }
+          });
+
+          // 目标是玩家城池 → 隐藏（玩家间军事隔离）
+          if (allPlayerCities.indexOf(t.to) !== -1) return false;
+
+          // 目标是 NPC 城池 → 可见（公开情报）
+          return true;
+        }
+
+        // 兜底：可见
+        return true;
+      });
+
+      if (!visibleTransit.length) {
         transitListEl.innerHTML = '<div class="wb-empty-wrap"><span class="wb-empty">本回合无调度部队</span></div>';
       } else {
-        transitListEl.innerHTML = transit.map(function(t) { return _buildWbTransitCard(t); }).join('');
+        transitListEl.innerHTML = visibleTransit.map(function(t) { return _buildWbTransitCard(t); }).join('');
       }
     }
   }
