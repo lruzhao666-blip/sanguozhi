@@ -14960,3 +14960,15 @@ body.is-viewer-mode #diag-toast {
 }
 
 /* ╚══ END v20260619g 工单#warboard-empty-f1-v1 ══════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260611a 工单#warboard-empty-minimal-v1
+   战情速报空态极简化 — 删除篆刻字，仅保留纯文字
+   ════════════════════════════════════════════════════════════ */
+
+/* 隐藏篆刻字（兼容残留 DOM） */
+.wb-empty-seal {
+  display: none !important;
+}
+
+/* ╚══ END v20260611a 工单#warboard-empty-minimal-v1 ══════════ */
