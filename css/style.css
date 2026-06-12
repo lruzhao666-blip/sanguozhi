@@ -15883,3 +15883,236 @@ body.is-viewer-mode #diag-toast {
     padding: 14px 16px 16px;
   }
 }
+
+/* ══════════════════════════════════════════
+   v20260612c 工单#sanling-options-v1: 三令选项样式优化
+══════════════════════════════════════════ */
+
+.sanling-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.ling-card {
+  background: linear-gradient(135deg, rgba(50,20,10,.5), rgba(30,10,5,.35));
+  border: 1px solid var(--border-gold);
+  border-radius: var(--rl);
+  overflow: hidden;
+}
+
+.ling-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  background: linear-gradient(90deg, rgba(80,40,20,.4), rgba(50,25,10,.2) 60%);
+  border-bottom: 1px solid rgba(160,120,40,.25);
+}
+
+.ling-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.ling-title {
+  font-family: var(--font-serif);
+  font-size: .98rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: .1em;
+}
+
+.ling-subtitle {
+  font-size: .72rem;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
+.ling-body {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ling-option {
+  display: block;
+  position: relative;
+  cursor: pointer;
+}
+
+.ling-radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ling-option-content {
+  background: rgba(20,10,5,.4);
+  border: 1px solid rgba(160,120,40,.25);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  transition: all .2s;
+}
+
+.ling-radio:checked + .ling-option-content {
+  background: rgba(60,30,15,.5);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(212,168,67,.2);
+}
+
+.ling-option:hover .ling-option-content {
+  background: rgba(40,20,10,.5);
+  border-color: rgba(180,140,40,.4);
+}
+
+.ling-option-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ling-option-label {
+  font-family: var(--font-serif);
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 26px;
+}
+
+.ling-option-name {
+  font-family: var(--font-serif);
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: .04em;
+}
+
+.ling-option-desc {
+  font-size: .82rem;
+  color: var(--text-sub);
+  line-height: 1.5;
+  margin-bottom: 8px;
+  padding-left: 34px;
+}
+
+.ling-option-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 34px;
+}
+
+.ling-risk-tag {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.ling-risk-tag.stable {
+  background: rgba(76,175,80,.2);
+  color: #81c784;
+  border: 1px solid rgba(76,175,80,.4);
+}
+
+.ling-risk-tag.medium {
+  background: rgba(255,152,0,.2);
+  color: #ffb74d;
+  border: 1px solid rgba(255,152,0,.4);
+}
+
+.ling-risk-tag.risky {
+  background: rgba(244,67,54,.2);
+  color: #e57373;
+  border: 1px solid rgba(244,67,54,.4);
+}
+
+.ling-prestige {
+  font-size: .78rem;
+  color: var(--gold-light);
+  font-weight: 600;
+}
+
+.ling-option-custom .ling-option-content {
+  padding: 12px 14px 10px;
+}
+
+.ling-custom-input {
+  width: 100%;
+  background: rgba(10,5,2,.6);
+  border: 1px solid rgba(160,120,40,.3);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: var(--font-sans);
+  font-size: .88rem;
+  color: var(--text-main);
+  margin-top: 8px;
+  transition: all .2s;
+}
+
+.ling-custom-input:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.ling-custom-input:not(:disabled):focus {
+  outline: none;
+  border-color: var(--gold);
+  background: rgba(20,10,5,.8);
+}
+
+.ling-custom-counter {
+  text-align: right;
+  font-size: .7rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.ling-opportunity-select {
+  margin-top: 4px;
+}
+
+.ling-opp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 34px;
+  margin-top: 8px;
+}
+
+.ling-opp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .82rem;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+
+.ling-opp-item input {
+  cursor: pointer;
+}
+
+.ling-opp-item:hover {
+  color: var(--text-main);
+}
+
+@media (max-width: 720px) {
+  .ling-header {
+    padding: 10px 14px;
+  }
+
+  .ling-body {
+    padding: 12px 14px 14px;
+  }
+
+  .ling-option-desc,
+  .ling-option-foot {
+    padding-left: 26px;
+  }
+}
