@@ -61,6 +61,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  padding-top: 0;
+  margin: 0;
 }
 body::before {
   content: ''; position: fixed; inset: 0;
@@ -75,6 +77,11 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ══ HEADER ══ */
 #site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   background: linear-gradient(180deg, rgba(60,0,0,.98), rgba(14,3,3,.96));
   border-bottom: 1px solid var(--border-gold);
   padding: 14px 0 0; text-align: center;
@@ -100,7 +107,11 @@ header, nav, main, footer { position: relative; z-index: 1; }
   display: flex; justify-content: center;
   background: rgba(6,1,1,.99);
   border-bottom: 1px solid rgba(100,30,20,.4);
-  position: sticky; top: 0; z-index: 100;
+  position: fixed;
+  top: 68px;
+  left: 0;
+  right: 0;
+  z-index: 999;
 }
 .nav-btn {
   font-family: var(--font-serif); font-size: .84rem; font-weight: 600;
@@ -116,7 +127,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══ MAIN CONTENT - 独立滚动容器 ══ */
 #main-content {
   position: fixed;
-  top: 110px;
+  top: 115px;
   left: 0;
   right: 0;
   bottom: 0;
@@ -16162,5 +16173,21 @@ body.is-viewer-mode #diag-toast {
 
   .gm-page {
     padding: 12px 10px 40px;
+  }
+}
+
+@media (max-width: 720px) {
+  #site-header {
+    position: fixed;
+    top: 0;
+  }
+
+  #main-nav {
+    position: fixed;
+    top: 53px;
+  }
+
+  #main-content {
+    top: 100px;
   }
 }
