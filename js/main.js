@@ -100,6 +100,9 @@
     // v20260619b 工单#opportunities-panel-v1: 渲染公共机遇
     renderOpportunities(rd);
 
+    // v20260619c 工单#sanling-options-v1: 渲染三令选项
+    renderActionOptions(rd);
+
     // 渲染威望排行
     if (prestige) {
       const maxScore = Math.max(...prestige.players.map(p => p.total), 1);
@@ -5029,6 +5032,127 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * v20260619c 工单#sanling-options-v1
+   * 渲染三令选项
+   */
+  function renderActionOptions(rd) {
+    if (!rd || !rd.raw_content) return;
+
+    // 解析选项
+    const options = window.SGParser && window.SGParser.parseActionOptions
+      ? window.SGParser.parseActionOptions(rd.raw_content)
+      : { wu: [], wen: [], ce: [] };
+
+    // 渲染武令
+    renderLingOptions('wu', options.wu);
+
+    // 渲染文令
+    renderLingOptions('wen', options.wen);
+
+    // 渲染策令
+    renderLingOptions('ce', options.ce);
+
+    // 绑定自拟输入框事件
+    bindCustomInputEvents();
+  }
+
+  /**
+   * v20260619c 工单#sanling-options-v1
+   * 渲染单个令的选项
+   */
+  function renderLingOptions(type, options) {
+    if (options.length === 0) return;
+
+    options.forEach(opt => {
+      const label = opt.label.toLowerCase(); // 'A' -> 'a'
+
+      // 更新选项名称
+      const nameEl = document.getElementById(`${type}-${label}-name`);
+      if (nameEl) {
+        nameEl.textContent = opt.name;
+      }
+
+      // 更新描述
+      const descEl = document.getElementById(`${type}-${label}-desc`);
+      if (descEl) {
+        descEl.textContent = opt.desc;
+      }
+
+      // 更新风险标签
+      const riskEl = document.getElementById(`${type}-${label}-risk`);
+      if (riskEl) {
+        riskEl.textContent = opt.risk;
+        // 移除旧的风险类
+        riskEl.classList.remove('stable', 'medium', 'risky');
+        // 添加新的风险类
+        if (opt.risk === '稳') {
+          riskEl.classList.add('stable');
+        } else if (opt.risk === '中') {
+          riskEl.classList.add('medium');
+        } else if (opt.risk === '险') {
+          riskEl.classList.add('risky');
+        }
+      }
+
+      // 更新威望
+      const prestigeEl = document.getElementById(`${type}-${label}-prestige`);
+      if (prestigeEl) {
+        prestigeEl.textContent = `+${opt.prestige} 威望`;
+      }
+    });
+  }
+
+  /**
+   * v20260619c 工单#sanling-options-v1
+   * 绑定自拟输入框事件
+   */
+  function bindCustomInputEvents() {
+    // 武令自拟
+    bindCustomInput('wu');
+    // 文令自拟
+    bindCustomInput('wen');
+    // 策令自拟
+    bindCustomInput('ce');
+  }
+
+  /**
+   * v20260619c 工单#sanling-options-v1
+   * 绑定单个令的自拟输入框
+   */
+  function bindCustomInput(type) {
+    const customRadio = document.querySelector(`input[name="${type}-ling"][value="custom"]`);
+    const customInput = document.getElementById(`${type}-custom-input`);
+    const customCount = document.getElementById(`${type}-custom-count`);
+
+    if (!customRadio || !customInput || !customCount) return;
+
+    // 监听单选框变化
+    document.querySelectorAll(`input[name="${type}-ling"]`).forEach(radio => {
+      radio.addEventListener('change', function() {
+        if (this.value === 'custom') {
+          customInput.disabled = false;
+          customInput.focus();
+        } else {
+          customInput.disabled = true;
+        }
+      });
+    });
+
+    // 监听输入框输入
+    customInput.addEventListener('input', function() {
+      const length = this.value.length;
+      customCount.textContent = length;
+
+      // 超过30字标红
+      if (length > 30) {
+        customCount.style.color = 'var(--red-bright)';
+      } else {
+        customCount.style.color = 'var(--text-dim)';
+      }
+    });
   }
 
   /* ─────────────────────────────────────────────

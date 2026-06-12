@@ -2001,11 +2001,89 @@ if (/^产出△/.test(line)) {
     return result;
   }
 
+  /**
+   * v20260610c 工单#sanling-options-v1
+   * 解析三令选项
+   * 格式：武令|A.强攻合肥:集结主力猛攻...(险·+5威望)
+   * 返回 { wu: [{label, name, desc, risk, prestige}], wen: [...], ce: [...] }
+   */
+  function parseActionOptions(text) {
+    const result = {
+      wu: [],
+      wen: [],
+      ce: []
+    };
+
+    const lines = text.split('\n');
+    let currentPlayer = null;
+
+    for (let line of lines) {
+      line = line.trim();
+
+      // 检测玩家名号行
+      if (line.match(/^([^:：]+)[:：]\s*\(威望[:：]\d+\)/)) {
+        currentPlayer = line;
+        continue;
+      }
+
+      // 如果没有进入玩家区域，跳过
+      if (!currentPlayer) continue;
+
+      // 匹配武令|A.标题:描述(风险·+N威望)
+      const wuMatch = line.match(/^武令\|([AB])\.\s*([^:：]+)[:：]\s*([^(]+)\(([^·]+)[·•]\+?([^)]+)威望\)/);
+      if (wuMatch) {
+        result.wu.push({
+          label: wuMatch[1],
+          name: wuMatch[2].trim(),
+          desc: wuMatch[3].trim(),
+          risk: wuMatch[4].trim(),
+          prestige: wuMatch[5].trim()
+        });
+        continue;
+      }
+
+      // 匹配文令
+      const wenMatch = line.match(/^文令\|([AB])\.\s*([^:：]+)[:：]\s*([^(]+)\(([^·]+)[·•]\+?([^)]+)威望\)/);
+      if (wenMatch) {
+        result.wen.push({
+          label: wenMatch[1],
+          name: wenMatch[2].trim(),
+          desc: wenMatch[3].trim(),
+          risk: wenMatch[4].trim(),
+          prestige: wenMatch[5].trim()
+        });
+        continue;
+      }
+
+      // 匹配策令
+      const ceMatch = line.match(/^策令\|([AB])\.\s*([^:：]+)[:：]\s*([^(]+)\(([^·]+)[·•]\+?([^)]+)威望\)/);
+      if (ceMatch) {
+        result.ce.push({
+          label: ceMatch[1],
+          name: ceMatch[2].trim(),
+          desc: ceMatch[3].trim(),
+          risk: ceMatch[4].trim(),
+          prestige: ceMatch[5].trim()
+        });
+        continue;
+      }
+
+      // 遇到分隔线，重置当前玩家
+      if (line === '---') {
+        currentPlayer = null;
+        continue;
+      }
+    }
+
+    return result;
+  }
+
   // 暴露给全局
   window.SGParser = window.SGParser || {};
   window.SGParser.parsePrestige = parsePrestige;
   window.SGParser.parseFirstMover = parseFirstMover;
   window.SGParser.parseOpportunities = parseOpportunities;
+  window.SGParser.parseActionOptions = parseActionOptions;
 
   return { parse, summarize, formatTroops, TROOP_TYPES };
 })();
