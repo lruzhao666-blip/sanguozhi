@@ -97,6 +97,9 @@
       ? window.SGParser.parseFirstMover(rd.rawContent)
       : '';
 
+    // v20260619b 工单#opportunities-panel-v1: 渲染公共机遇
+    renderOpportunities(rd);
+
     // 渲染威望排行
     if (prestige) {
       const maxScore = Math.max(...prestige.players.map(p => p.total), 1);
@@ -4937,6 +4940,95 @@
 
     const r = SAC.acceptToFirstEmpty(slot, text, adviceKey);
     handleAcceptResult(r);
+  }
+
+  /**
+   * v20260619b 工单#opportunities-panel-v1
+   * 渲染公共机遇面板
+   */
+  function renderOpportunities(rd) {
+    const oppBody = document.getElementById('opp-body');
+    if (!oppBody) return;
+
+    if (!rd || !rd.rawContent) {
+      oppBody.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
+      return;
+    }
+
+    // 解析机遇
+    const opportunities = window.SGParser && window.SGParser.parseOpportunities
+      ? window.SGParser.parseOpportunities(rd.rawContent)
+      : [];
+
+    if (opportunities.length === 0) {
+      oppBody.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
+      return;
+    }
+
+    // 渲染机遇卡片
+    let html = '';
+    opportunities.forEach(opp => {
+      const typeBadgeClass = opp.type === 'compete' ? 'compete' : 'cooperate';
+      const typeBadgeText = opp.type === 'compete' ? '争夺' : '协力';
+
+      html += `
+        <div class="opp-card" data-opp-id="${opp.id}">
+          <div class="opp-card-header">
+            <span class="opp-card-title">${escapeHtml(opp.title)}</span>
+            <span class="opp-type-badge ${typeBadgeClass}">${typeBadgeText}</span>
+          </div>
+          <div class="opp-card-desc">${escapeHtml(opp.desc)}</div>
+          <div class="opp-card-footer">
+            <span class="opp-prestige">预估 +${opp.prestige} 威望</span>
+          </div>
+        </div>
+      `;
+    });
+
+    oppBody.innerHTML = html;
+
+    // 绑定点击事件（点击机遇卡 → 自动跳到策令区并选中）
+    document.querySelectorAll('.opp-card').forEach(card => {
+      card.addEventListener('click', function() {
+        const oppId = this.getAttribute('data-opp-id');
+        selectOpportunityInCeLing(oppId);
+      });
+    });
+  }
+
+  /**
+   * v20260619b 工单#opportunities-panel-v1
+   * 点击机遇卡后，自动在策令区选中该机遇
+   */
+  function selectOpportunityInCeLing(oppId) {
+    // 选中策令的"改选机遇"单选框
+    const ceOppRadio = document.querySelector('input[name="ce-ling"][value="opp"]');
+    if (ceOppRadio) {
+      ceOppRadio.checked = true;
+      ceOppRadio.disabled = false;
+    }
+
+    // 选中对应的机遇checkbox
+    const oppCheckbox = document.querySelector(`input[name="ce-opp"][value="${oppId}"]`);
+    if (oppCheckbox) {
+      oppCheckbox.checked = true;
+      oppCheckbox.disabled = false;
+    }
+
+    // 平滑滚动到策令区
+    const ceLingCard = document.querySelector('.ce-ling');
+    if (ceLingCard) {
+      ceLingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  /**
+   * HTML转义工具函数
+   */
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   /* ─────────────────────────────────────────────
