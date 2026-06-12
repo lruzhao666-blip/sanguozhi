@@ -15083,3 +15083,536 @@ body.is-viewer-mode #diag-toast {
   border-color: rgba(170,170,170,0.40);
   color: rgba(200,200,200,0.85);
 }
+
+/* ══════════════════════════════════════════
+   三令提交界面 v4.0 样式
+   ══════════════════════════════════════════ */
+
+/* ── 行动页容器 ── */
+.actions-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ══ 1. 公共机遇面板 ══ */
+.opportunities-panel {
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #d4af37;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.opp-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.opp-icon {
+  font-size: 20px;
+}
+
+.opp-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #d4af37;
+}
+
+.opp-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.opp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.opp-empty {
+  text-align: center;
+  padding: 32px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+}
+
+/* ── 公共机遇卡片 ── */
+.opp-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border-left: 4px solid #d4af37;
+  transition: all 0.2s;
+}
+
+.opp-card.compete {
+  border-left-color: #e74c3c;
+}
+
+.opp-card.cooperate {
+  border-left-color: #3498db;
+}
+
+.opp-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.opp-card-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.opp-card-content {
+  flex: 1;
+}
+
+.opp-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.opp-card-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.opp-card-type {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.opp-card-type.compete {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+}
+
+.opp-card-type.cooperate {
+  background: rgba(52, 152, 219, 0.2);
+  color: #3498db;
+  border: 1px solid #3498db;
+}
+
+.opp-card-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.opp-card-foot {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.opp-card-prestige {
+  color: #f39c12;
+  font-weight: bold;
+}
+
+.opp-card-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.opp-select-btn {
+  padding: 8px 16px;
+  background: rgba(212, 175, 55, 0.2);
+  border: 1px solid #d4af37;
+  border-radius: 4px;
+  color: #d4af37;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.opp-select-btn:hover {
+  background: rgba(212, 175, 55, 0.3);
+  transform: translateY(-1px);
+}
+
+.opp-select-btn.compete {
+  border-color: #e74c3c;
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.2);
+}
+
+.opp-select-btn.compete:hover {
+  background: rgba(231, 76, 60, 0.3);
+}
+
+.opp-select-btn.cooperate {
+  border-color: #3498db;
+  color: #3498db;
+  background: rgba(52, 152, 219, 0.2);
+}
+
+.opp-select-btn.cooperate:hover {
+  background: rgba(52, 152, 219, 0.3);
+}
+
+/* ══ 2. 三令提交区 ══ */
+.sanling-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* ── 令卡通用样式 ── */
+.ling-card {
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #d4af37;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.ling-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.ling-icon {
+  font-size: 20px;
+}
+
+.ling-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #d4af37;
+}
+
+.ling-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ling-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── 令选项卡片 ── */
+.ling-option {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ling-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+.ling-option:has(.ling-radio:checked) {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: #d4af37;
+}
+
+.ling-radio {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: #d4af37;
+}
+
+.ling-option-content {
+  flex: 1;
+}
+
+.ling-option-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ling-option-label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #d4af37;
+}
+
+.ling-option-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.ling-option-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.ling-option-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ling-risk-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.ling-risk-tag.stable,
+.ling-risk-tag[data-risk="稳"] {
+  background: rgba(39, 174, 96, 0.2);
+  color: #27ae60;
+  border: 1px solid #27ae60;
+}
+
+.ling-risk-tag.medium,
+.ling-risk-tag[data-risk="中"] {
+  background: rgba(243, 156, 18, 0.2);
+  color: #f39c12;
+  border: 1px solid #f39c12;
+}
+
+.ling-risk-tag.risky,
+.ling-risk-tag[data-risk="险"] {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+}
+
+.ling-prestige {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ling-prestige strong {
+  color: #f39c12;
+  font-weight: bold;
+}
+
+/* ── 自拟输入框 ── */
+.ling-option-custom {
+  cursor: default;
+}
+
+.ling-custom-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  margin-top: 8px;
+  transition: all 0.2s;
+}
+
+.ling-custom-input:focus {
+  outline: none;
+  border-color: #d4af37;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.ling-custom-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ling-custom-counter {
+  text-align: right;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 4px;
+}
+
+/* ── 策令改选机遇 ── */
+.ling-opportunity-select {
+  margin-top: 8px;
+}
+
+.ling-option-opp {
+  cursor: default;
+}
+
+.ling-opp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ling-opp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ling-opp-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.ling-opp-item input[type="radio"] {
+  accent-color: #d4af37;
+}
+
+.ling-opp-item input[type="radio"]:disabled {
+  opacity: 0.5;
+}
+
+/* ══ 3. 零消耗行动区 ══ */
+.zero-actions-panel {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px dashed rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.zero-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed rgba(212, 175, 55, 0.2);
+}
+
+.zero-icon {
+  font-size: 18px;
+}
+
+.zero-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #d4af37;
+}
+
+.zero-subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.zero-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zero-textarea {
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 80px;
+  transition: all 0.2s;
+}
+
+.zero-textarea:focus {
+  outline: none;
+  border-color: #d4af37;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.zero-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.zero-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+}
+
+/* ══ 4. 提交按钮 ══ */
+.actions-submit {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.btn-submit-actions {
+  padding: 14px 48px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.2));
+  border: 2px solid #d4af37;
+  border-radius: 6px;
+  color: #d4af37;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.btn-submit-actions:hover {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.4), rgba(212, 175, 55, 0.3));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.btn-submit-actions:active {
+  transform: translateY(0);
+}
+
+/* ══ 5. 响应式布局 ══ */
+@media (max-width: 768px) {
+  .actions-page {
+    padding: 16px;
+  }
+
+  .opp-card {
+    flex-direction: column;
+  }
+
+  .opp-card-icon {
+    font-size: 24px;
+  }
+
+  .ling-title {
+    font-size: 16px;
+  }
+
+  .ling-option {
+    padding: 12px;
+  }
+
+  .btn-submit-actions {
+    width: 100%;
+    padding: 14px 24px;
+  }
+}
