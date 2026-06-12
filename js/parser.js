@@ -118,7 +118,7 @@ window.SGParser = (function () {
 
       // 匹配三令：武令|A.行动名:描述(风险·+N威望) 或 (风险·+N~M威望)
       // 改动：威望段允许 +N 或 +N~M 单符号写法
-      const actionRe = /(武令|文令|策令)\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*\+?([\d~～\-+]+?)\s*威望[）)]/g;
+      const actionRe = /(武令|文令|策令)\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/g;
       let m;
       while ((m = actionRe.exec(section)) !== null) {
         const lingType = m[1] === '武令' ? 'wu' : m[1] === '文令' ? 'wen' : 'ce';
@@ -2040,7 +2040,7 @@ if (/^产出△/.test(line)) {
 
       // 匹配武令|A.标题:描述(风险·+N威望) 或 (风险·+N~M威望)
       // 改动：威望区间用 [\d~～\-+] 字符类，兼容 +2 / +2~3 / +2-3
-      const wuMatch = line.match(/^武令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
+      const wuMatch = line.match(/^武令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
       if (wuMatch) {
         result.wu.push({
           label: wuMatch[1],
@@ -2052,7 +2052,7 @@ if (/^产出△/.test(line)) {
         continue;
       }
 
-      const wenMatch = line.match(/^文令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
+      const wenMatch = line.match(/^文令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
       if (wenMatch) {
         result.wen.push({
           label: wenMatch[1],
@@ -2064,7 +2064,7 @@ if (/^产出△/.test(line)) {
         continue;
       }
 
-      const ceMatch = line.match(/^策令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
+      const ceMatch = line.match(/^策令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
       if (ceMatch) {
         result.ce.push({
           label: ceMatch[1],
