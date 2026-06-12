@@ -1959,10 +1959,53 @@ if (/^产出△/.test(line)) {
     return match ? match[1].trim() : '';
   }
 
+  /**
+   * v20260610b 工单#opportunities-panel-v1
+   * 解析公共机遇
+   * 格式：机遇1 · {标题} — {描述}(⚔争夺/🤝协力·预估+{N}威望)
+   * 返回 [{id, title, desc, type, prestige}]
+   */
+  function parseOpportunities(text) {
+    const result = [];
+    const lines = text.split('\n');
+
+    for (let line of lines) {
+      line = line.trim();
+
+      // 匹配：⚔ 公共机遇(选则占用策令):
+      if (line.includes('公共机遇')) {
+        continue;
+      }
+
+      // 匹配机遇行：机遇1 · 招降张郃 — 描述内容(⚔争夺·预估+6威望)
+      const oppMatch = line.match(/机遇(\d+)\s*[·•]\s*([^—]+)\s*—\s*([^(]+)\(([⚔🤝])(争夺|协力)[·•]预估\+(\d+)威望\)/);
+
+      if (oppMatch) {
+        const id = parseInt(oppMatch[1]);
+        const title = oppMatch[2].trim();
+        const desc = oppMatch[3].trim();
+        const typeIcon = oppMatch[4];
+        const typeText = oppMatch[5];
+        const prestige = parseInt(oppMatch[6]);
+
+        result.push({
+          id: id,
+          title: title,
+          desc: desc,
+          type: typeText === '争夺' ? 'compete' : 'cooperate',
+          prestige: prestige
+        });
+      }
+    }
+
+    return result;
+  }
+
   // 暴露给全局
   window.SGParser = window.SGParser || {};
   window.SGParser.parsePrestige = parsePrestige;
   window.SGParser.parseFirstMover = parseFirstMover;
+  window.SGParser.parseOpportunities = parseOpportunities;
 
   return { parse, summarize, formatTroops, TROOP_TYPES };
 })();
