@@ -56,11 +56,7 @@ body {
   font-family: var(--font-sans);
   background: var(--black-deep);
   color: var(--text-main);
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -118,9 +114,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ══ MAIN CONTENT - 独立滚动容器 ══ */
 #main-content {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
   position: relative;
 }
 
@@ -133,9 +126,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══ TAB - 每个Tab独立滚动 ══ */
 .tab-panel {
   display: none;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .tab-panel.active {
