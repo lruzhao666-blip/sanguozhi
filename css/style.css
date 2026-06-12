@@ -115,59 +115,38 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ══ MAIN CONTENT ══ */
 #main-content {
-  position: fixed;
-  top: 110px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
+  position: relative;
+  min-height: calc(100vh - 110px);
 }
 
 /* ══ TAB ══ */
 .tab-panel {
   display: none;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
+  min-height: calc(100vh - 110px);
 }
 .tab-panel.active {
   display: block;
 }
 
-/* Tab内容容器 */
-.tab-panel > div {
-  min-height: 100%;
-}
-
-/* 战局总览容器 */
-#tab-arena {
-  padding: 0;
-}
-
+/* 战局总览容器 - 保持原有样式 */
 #tab-arena .arena-wrap {
+  max-width: 1360px;
+  margin: 0 auto;
   padding: 16px 16px 48px;
 }
 
-/* 行动页容器 */
-#tab-action {
-  padding: 0;
-}
-
+/* 行动页容器 - 保持原有样式 */
 #tab-action .actions-page {
-  padding: 16px 16px 48px;
   max-width: 1360px;
   margin: 0 auto;
+  padding: 16px 16px 48px;
 }
 
-/* GM录入页容器 */
-#tab-gm {
-  padding: 0;
-}
-
+/* GM录入页容器 - 保持原有样式 */
 #tab-gm .gm-page {
-  padding: 16px 16px 48px;
   max-width: 1360px;
   margin: 0 auto;
+  padding: 16px 16px 48px;
 }
 .hidden { display: none !important; }
 
@@ -16169,7 +16148,11 @@ body.is-viewer-mode #diag-toast {
 /* 移动端适配 */
 @media (max-width: 720px) {
   #main-content {
-    top: 95px;
+    min-height: calc(100vh - 95px);
+  }
+
+  .tab-panel {
+    min-height: calc(100vh - 95px);
   }
 
   #tab-arena .arena-wrap,
