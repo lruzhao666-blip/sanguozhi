@@ -1887,5 +1887,82 @@ if (/^产出△/.test(line)) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  /**
+   * v20260610a 工单#decision-ref-v1
+   * 解析威望段 [威望]
+   * 返回 { players: [{conquest, govern, talent, goal, total}], npcHighest: {name, score} }
+   */
+  function parsePrestige(text) {
+    const result = {
+      players: [
+        {conquest: 0, govern: 0, talent: 0, goal: 0, total: 0},
+        {conquest: 0, govern: 0, talent: 0, goal: 0, total: 0},
+        {conquest: 0, govern: 0, talent: 0, goal: 0, total: 0}
+      ],
+      npcHighest: {name: '', score: 0}
+    };
+
+    const lines = text.split('\n');
+    let inPrestigeBlock = false;
+
+    for (let line of lines) {
+      line = line.trim();
+
+      if (line === '[威望]') {
+        inPrestigeBlock = true;
+        continue;
+      }
+
+      if (inPrestigeBlock) {
+        // 匹配玩家行：甲 征伐:20 治政:12 人才:8 目标:5 合计:45
+        const playerMatch = line.match(/^([甲乙丙])\s+征伐:(\d+)\s+治政:(\d+)\s+人才:(\d+)\s+目标:(\d+)\s+合计:(\d+)/);
+        if (playerMatch) {
+          const slot = {'甲': 0, '乙': 1, '丙': 2}[playerMatch[1]];
+          if (slot !== undefined) {
+            result.players[slot] = {
+              conquest: parseInt(playerMatch[2]),
+              govern: parseInt(playerMatch[3]),
+              talent: parseInt(playerMatch[4]),
+              goal: parseInt(playerMatch[5]),
+              total: parseInt(playerMatch[6])
+            };
+          }
+          continue;
+        }
+
+        // 匹配NPC最高：NPC最高:{名}:{分数}
+        const npcMatch = line.match(/^NPC最高:([^:]+):(\d+)/);
+        if (npcMatch) {
+          result.npcHighest = {
+            name: npcMatch[1].trim(),
+            score: parseInt(npcMatch[2])
+          };
+          continue;
+        }
+
+        // 遇到下一个方括号块，退出
+        if (line.startsWith('[') && line !== '[威望]') {
+          break;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * v20260610a 工单#decision-ref-v1
+   * 解析先手权：本回合先手:{玩家名}
+   */
+  function parseFirstMover(text) {
+    const match = text.match(/本回合先手[:：]\s*([^\s\n]+)/);
+    return match ? match[1].trim() : '';
+  }
+
+  // 暴露给全局
+  window.SGParser = window.SGParser || {};
+  window.SGParser.parsePrestige = parsePrestige;
+  window.SGParser.parseFirstMover = parseFirstMover;
+
   return { parse, summarize, formatTroops, TROOP_TYPES };
 })();

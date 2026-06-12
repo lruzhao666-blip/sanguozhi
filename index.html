@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260611f" />
+  <link rel="stylesheet" href="css/style.css?v=20260612a" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -319,6 +319,59 @@
      ══════════════════════════════════════════ -->
 
 <div class="actions-page">
+
+  <!-- ══ 0. 决策参考区（新增 v4.0）══ -->
+  <div class="decision-ref" id="decision-ref">
+    <div class="dr-header">
+      <span class="dr-icon">📊</span>
+      <span class="dr-title">决策参考</span>
+    </div>
+    <div class="dr-grid">
+      <!-- 威望排行 -->
+      <div class="dr-card">
+        <div class="dr-card-title">🏆 威望排行</div>
+        <div class="dr-card-content" id="prestige-rank-content">
+          <div class="prestige-bar">
+            <span class="pb-label">甲</span>
+            <span class="pb-value" id="prestige-val-0">—</span>
+            <div class="pb-bar"><div class="pb-fill" id="prestige-bar-0" style="width: 0%"></div></div>
+          </div>
+          <div class="prestige-bar">
+            <span class="pb-label">乙</span>
+            <span class="pb-value" id="prestige-val-1">—</span>
+            <div class="pb-bar"><div class="pb-fill" id="prestige-bar-1" style="width: 0%"></div></div>
+          </div>
+          <div class="prestige-bar">
+            <span class="pb-label">丙</span>
+            <span class="pb-value" id="prestige-val-2">—</span>
+            <div class="pb-bar"><div class="pb-fill" id="prestige-bar-2" style="width: 0%"></div></div>
+          </div>
+          <div class="npc-highest" id="npc-highest" style="margin-top: 8px; font-size: .78rem; color: var(--text-dim);">
+            NPC最高：<span id="npc-highest-name">—</span> <span id="npc-highest-score" style="color: var(--red-bright);">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 先手权 -->
+      <div class="dr-card">
+        <div class="dr-card-title">⚔️ 本回合先手</div>
+        <div class="dr-card-content" id="first-mover-content">
+          <span class="first-mover">
+            <span>👑</span>
+            <span id="first-mover-name">等待GM数据</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- 本幕目标 -->
+      <div class="dr-card">
+        <div class="dr-card-title">🎯 本幕目标进度</div>
+        <div class="dr-card-content" id="goals-content" style="font-size: .82rem; line-height: 1.6; color: var(--text-dim);">
+          等待GM公布目标...
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ══ 1. 公共机遇面板 ══ -->
   <div class="opportunities-panel" id="opportunities-panel">
@@ -712,7 +765,7 @@
   </div>
 </div>
 
-<script src="js/parser.js?v=20260609f"></script>
+<script src="js/parser.js?v=20260610a"></script>
 <script src="js/map.js?v=20261111a"></script>
 <script src="js/tips.js?v=v20260601a"></script>
 <script src="js/generals-tooltip.js?v=v20260601a"></script>
@@ -720,7 +773,7 @@
 <script src="js/generals-organize.js?v=20260608a"></script>
 
 <script src="js/generals-organize-ui.js?v=20260608r"></script>
-<script src="js/main.js?v=20260618b"></script>
+<script src="js/main.js?v=20260619a"></script>
 <script src="js/achievement-sync.js?v=20261105a"></script>
 <script src="js/role-login.js?v=v20260601a"></script>
 <script src="js/secret-bureau.js?v=v20260601b"></script>

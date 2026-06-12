@@ -15616,3 +15616,121 @@ body.is-viewer-mode #diag-toast {
     padding: 14px 24px;
   }
 }
+
+/* ══════════════════════════════════════════
+   v20260612a 工单#decision-ref-v1: 决策参考区
+══════════════════════════════════════════ */
+
+.decision-ref {
+  background: linear-gradient(135deg, rgba(75,0,0,.5), rgba(35,0,0,.35));
+  border: 1px solid var(--border-gold);
+  border-radius: var(--rl);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.dr-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(212,168,67,.15);
+}
+
+.dr-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.dr-title {
+  font-family: var(--font-serif);
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: .08em;
+}
+
+.dr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.dr-card {
+  background: rgba(20,10,5,.45);
+  border: 1px solid rgba(160,120,40,.2);
+  border-radius: var(--r);
+  padding: 12px 14px;
+}
+
+.dr-card-title {
+  font-size: .78rem;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  letter-spacing: .04em;
+}
+
+.dr-card-content {
+  font-size: .88rem;
+  color: var(--text-main);
+}
+
+.prestige-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.prestige-bar:first-child {
+  margin-top: 0;
+}
+
+.pb-label {
+  font-size: .75rem;
+  color: var(--text-dim);
+  min-width: 45px;
+}
+
+.pb-value {
+  font-weight: 700;
+  color: var(--gold-light);
+  min-width: 30px;
+}
+
+.pb-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(40,20,10,.6);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pb-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold-light));
+  transition: width .3s ease;
+}
+
+.first-mover {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(212,168,67,.15);
+  border: 1px solid var(--gold-dim);
+  border-radius: 12px;
+  font-size: .8rem;
+  color: var(--gold-light);
+}
+
+@media (max-width: 720px) {
+  .dr-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .decision-ref {
+    padding: 14px 16px;
+  }
+}
