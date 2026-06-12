@@ -70,23 +70,27 @@ window.SGParser = (function () {
     if (!text) return result;
 
     // Step 1: 提取 🎯 行动令段
-    const actionsMatch = text.match(/🎯\s*行动令([\s\S]*?)(?=📋|$)/);
+    // 结束符放宽：═══(三个或更多全角=) / ════(任意长全角=横线) / 36 个半角= / 📋 / 文末
+    const actionsMatch = text.match(/🎯\s*行动令([\s\S]*?)(?=═{3,}|={20,}|📋|$)/);
     if (!actionsMatch) return result;
 
     const actionsText = actionsMatch[1];
 
-    // Step 2: 提取先手权
-    const firstMoveMatch = actionsText.match(/本回合先手[:：]\s*([甲乙丙])/);
+    // Step 2: 提取先手权（玩家名号或单字甲/乙/丙，括号说明可选）
+    // 改动：允许玩家名号(2-8 汉字) + 可选括号说明
+    const firstMoveMatch = actionsText.match(/本回合先手[:：]\s*([\u4e00-\u9fa5]{1,8})(?:[（(][^）)]*[）)])?/);
     if (firstMoveMatch) {
-      result.firstMove = firstMoveMatch[1];
+      result.firstMove = firstMoveMatch[1].trim();
     }
 
     // Step 3: 提取公共机遇
-    const oppMatch = actionsText.match(/⚔\s*公共机遇[\s\S]*?(?=---)/);
+    // 结束符放宽：═══ / 36 个 = / 📋 / 文末
+    const oppMatch = actionsText.match(/⚔\s*公共机遇[\s\S]*?(?=═{3,}|={20,}|📋|$)/);
     if (oppMatch) {
       const oppText = oppMatch[0];
-      // 匹配每条机遇：机遇1 · 标题 — 描述(类型·预估+N威望)
-      const oppRe = /机遇(\d+)\s*·\s*([^—]+)\s*—\s*([^(]+)\(([⚔🤝])([^·]+)·预估\+(\d+)威望\)/g;
+      // 匹配每条机遇：机遇N · 标题 — 描述(⚔争夺·预估+N威望) 或 (🤝协力·预估+N威望)
+      // 改动：emoji 后允许紧跟"争夺/协力"二字
+      const oppRe = /机遇(\d+)\s*·\s*([^—]+?)\s*—\s*([^(（]+?)\s*[（(]([⚔🤝])(?:争夺|协力)\s*·\s*预估\+(\d+)\s*威望[）)]/g;
       let m;
       while ((m = oppRe.exec(oppText)) !== null) {
         result.opportunities.push({
@@ -94,23 +98,27 @@ window.SGParser = (function () {
           title: m[2].trim(),
           desc: m[3].trim(),
           type: m[4] === '⚔' ? 'compete' : 'cooperate',
-          prestige: parseInt(m[6])
+          prestige: parseInt(m[5])
         });
       }
     }
 
     // Step 4: 提取每个玩家的三令选项
-    const playerSections = actionsText.split(/---\s*/);
+    // 改动核心：玩家段标识改为 "玩家名号 [甲]:" 格式
+    // 用 --- 分隔玩家段，但要先把行动令段开头到第一个 [甲]/[乙]/[丙] 之前的内容剥掉
+    const playerSections = actionsText.split(/^[-—]{3,}\s*$/m);
     playerSections.forEach(section => {
-      // 匹配玩家名：城主甲:(威望:45)
-      const playerMatch = section.match(/城主([甲乙丙])/);
+      // 匹配玩家槽位：玩家名号 [甲]:(威望:N) 或 玩家名号[甲]:(威望:N)
+      // 改动：从 "城主([甲乙丙])" 改为 "\[([甲乙丙])\]" 抓方括号槽位
+      const playerMatch = section.match(/\[([甲乙丙])\]\s*[:：]/);
       if (!playerMatch) return;
 
       const slot = playerMatch[1];
       result.playerActions[slot] = { wu: {}, wen: {}, ce: {} };
 
-      // 匹配三令：武令|A.行动名:描述(风险·+N威望)
-      const actionRe = /(武令|文令|策令)\|([AB])\.([^:]+):([^(]+)\(([^·]+)·\+([^)]+)威望\)/g;
+      // 匹配三令：武令|A.行动名:描述(风险·+N威望) 或 (风险·+N~M威望)
+      // 改动：威望段允许 +N 或 +N~M 单符号写法
+      const actionRe = /(武令|文令|策令)\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*\+?([\d~～\-+]+?)\s*威望[）)]/g;
       let m;
       while ((m = actionRe.exec(section)) !== null) {
         const lingType = m[1] === '武令' ? 'wu' : m[1] === '文令' ? 'wen' : 'ce';
@@ -2020,8 +2028,9 @@ if (/^产出△/.test(line)) {
     for (let line of lines) {
       line = line.trim();
 
-      // 检测玩家名号行
-      if (line.match(/^([^:：]+)[:：]\s*\(威望[:：]\d+\)/)) {
+      // 检测玩家名号行：玩家名号 [甲]:(威望:N) 或 玩家名号[甲]:(威望:N)
+      // 改动：要求方括号槽位标记
+      if (line.match(/\[([甲乙丙])\]\s*[:：]\s*[（(]威望[:：]\d+[）)]/)) {
         currentPlayer = line;
         continue;
       }
@@ -2029,8 +2038,9 @@ if (/^产出△/.test(line)) {
       // 如果没有进入玩家区域，跳过
       if (!currentPlayer) continue;
 
-      // 匹配武令|A.标题:描述(风险·+N威望)
-      const wuMatch = line.match(/^武令\|([AB])\.\s*([^:：]+)[:：]\s*([^(]+)\(([^·]+)[·•]\+?([^)]+)威望\)/);
+      // 匹配武令|A.标题:描述(风险·+N威望) 或 (风险·+N~M威望)
+      // 改动：威望区间用 [\d~～\-+] 字符类，兼容 +2 / +2~3 / +2-3
+      const wuMatch = line.match(/^武令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
       if (wuMatch) {
         result.wu.push({
           label: wuMatch[1],
@@ -2042,8 +2052,7 @@ if (/^产出△/.test(line)) {
         continue;
       }
 
-      // 匹配文令
-      const wenMatch = line.match(/^文令\|([AB])\.\s*([^:：]+)[:：]\s*([^(]+)\(([^·]+)[·•]\+?([^)]+)威望\)/);
+      const wenMatch = line.match(/^文令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
       if (wenMatch) {
         result.wen.push({
           label: wenMatch[1],
@@ -2055,8 +2064,7 @@ if (/^产出△/.test(line)) {
         continue;
       }
 
-      // 匹配策令
-      const ceMatch = line.match(/^策令\|([AB])\.\s*([^:：]+)[:：]\s*([^(]+)\(([^·]+)[·•]\+?([^)]+)威望\)/);
+      const ceMatch = line.match(/^策令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
       if (ceMatch) {
         result.ce.push({
           label: ceMatch[1],
@@ -2068,8 +2076,8 @@ if (/^产出△/.test(line)) {
         continue;
       }
 
-      // 遇到分隔线，重置当前玩家
-      if (line === '---') {
+      // 遇到玩家分隔线，重置当前玩家（半角 --- 或全角 ═══）
+      if (/^[-—]{3,}$/.test(line) || /^═{3,}$/.test(line)) {
         currentPlayer = null;
         continue;
       }
