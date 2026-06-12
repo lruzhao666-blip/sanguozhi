@@ -113,9 +113,62 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .gm-nav-btn { color: rgba(220,100,80,.7) !important; }
 .gm-nav-btn.active { border-bottom-color: var(--red-bright) !important; color: var(--red-bright) !important; }
 
+/* ══ MAIN CONTENT ══ */
+#main-content {
+  position: fixed;
+  top: 110px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
 /* ══ TAB ══ */
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
+.tab-panel {
+  display: none;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.tab-panel.active {
+  display: block;
+}
+
+/* Tab内容容器 */
+.tab-panel > div {
+  min-height: 100%;
+}
+
+/* 战局总览容器 */
+#tab-arena {
+  padding: 0;
+}
+
+#tab-arena .arena-wrap {
+  padding: 16px 16px 48px;
+}
+
+/* 行动页容器 */
+#tab-action {
+  padding: 0;
+}
+
+#tab-action .actions-page {
+  padding: 16px 16px 48px;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+/* GM录入页容器 */
+#tab-gm {
+  padding: 0;
+}
+
+#tab-gm .gm-page {
+  padding: 16px 16px 48px;
+  max-width: 1360px;
+  margin: 0 auto;
+}
 .hidden { display: none !important; }
 
 /* ══════════════════════════════════════════
@@ -130,9 +183,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
 @media (max-width: 720px) {
   .arena-wrap {
     padding: 12px 10px 40px;
-  }
-  #tab-gm {
-    padding: 12px 10px 44px;
   }
 }
 
@@ -1225,7 +1275,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
 /* ══════════════════════════════════════════
    GM 录入
 ══════════════════════════════════════════ */
-#tab-gm { padding: 16px 16px 52px; max-width: 860px; margin: 0 auto; }
 .gm-panel {
   background: linear-gradient(135deg, rgba(16,6,6,.98), rgba(8,3,3,.97));
   border: 1px solid var(--border-gold); border-radius: var(--rl);
@@ -16114,5 +16163,18 @@ body.is-viewer-mode #diag-toast {
   .ling-option-desc,
   .ling-option-foot {
     padding-left: 26px;
+  }
+}
+
+/* 移动端适配 */
+@media (max-width: 720px) {
+  #main-content {
+    top: 95px;
+  }
+
+  #tab-arena .arena-wrap,
+  #tab-action .actions-page,
+  #tab-gm .gm-page {
+    padding: 12px 10px 40px;
   }
 }
