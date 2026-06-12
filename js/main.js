@@ -339,15 +339,15 @@
     bindGMPanel();
     initParticles();
     initTipsCard();
-    bindFogToggle();  // #fog-of-war-main-v1: 绑定战争迷雾开关
+    bindFogToggle();
     loadFromCloud();
 
-    // 延迟绑定行动提交（确保DOM已渲染）
-    setTimeout(() => {
+    // 延迟绑定行动提交，确保函数已加载
+    setTimeout(function() {
       if (typeof bindActionSubmit === 'function') {
         bindActionSubmit();
       }
-    }, 100);
+    }, 200);
   }
 
   // #fog-of-war-main-v1: 战争迷雾开关逻辑
