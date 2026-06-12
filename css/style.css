@@ -16164,3 +16164,32 @@ body.is-viewer-mode #diag-toast {
     padding: 12px 10px 40px;
   }
 }
+
+/* ══════════════════════════════════════════
+   v20260612final 工单#tab-independent-scroll
+   Tab独立滚动容器 - 终极方案
+══════════════════════════════════════════ */
+
+/* 主容器高度限制 */
+#main-content {
+  max-height: calc(100vh - 110px);
+  overflow: hidden;
+}
+
+/* 每个Tab独立滚动 */
+.tab-panel {
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 移动端适配 */
+@media (max-width: 720px) {
+  #main-content {
+    max-height: calc(100vh - 95px);
+  }
+
+  .tab-panel {
+    max-height: calc(100vh - 95px);
+  }
+}
