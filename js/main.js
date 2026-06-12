@@ -87,6 +87,7 @@
     applyGMGate();
     bindNav();
     bindGMPanel();
+    bindActionSubmit();
     initParticles();
     initTipsCard();
     bindFogToggle();  // #fog-of-war-main-v1: 绑定战争迷雾开关
@@ -5114,6 +5115,254 @@
     const r = SAC.acceptToFirstEmpty(slot, text, adviceKey);
     handleAcceptResult(r);
   }
+  /**
+   * v20260619d 工单#action-submit-v1
+   * 绑定行动提交按钮事件
+   */
+  function bindActionSubmit() {
+    const btnSubmit = document.getElementById('btn-submit-actions');
+    if (!btnSubmit) return;
+
+    btnSubmit.addEventListener('click', function() {
+      handleActionSubmit();
+    });
+
+    // 页面加载时检查是否已提交
+    checkSubmissionStatus();
+  }
+
+  /**
+   * v20260619d 工单#action-submit-v1
+   * 处理行动提交
+   */
+  function handleActionSubmit() {
+    // 验证三令
+    const validation = validateActions();
+    if (!validation.valid) {
+      showToast(validation.message, 'error');
+      return;
+    }
+
+    // 收集行动数据
+    const actionData = collectActionData();
+
+    // 保存到localStorage
+    const currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    const storageKey = `action_submission_r${currentRound}`;
+    localStorage.setItem(storageKey, JSON.stringify(actionData));
+
+    // 锁定界面
+    lockActionInterface();
+
+    // 显示成功提示
+    showToast('行动已提交！等待GM结算', 'success');
+  }
+
+  /**
+   * v20260619d 工单#action-submit-v1
+   * 验证行动是否完整
+   */
+  function validateActions() {
+    // 验证武令
+    const wuSelected = document.querySelector('input[name="wu-ling"]:checked');
+    if (!wuSelected) {
+      return { valid: false, message: '请选择武令（军事行动）' };
+    }
+
+    // 如果选了自拟，检查是否填写
+    if (wuSelected.value === 'custom') {
+      const wuCustom = document.getElementById('wu-custom-input');
+      if (!wuCustom || !wuCustom.value.trim()) {
+        return { valid: false, message: '请填写自拟武令内容' };
+      }
+      if (wuCustom.value.length > 30) {
+        return { valid: false, message: '武令自拟内容不能超过30字' };
+      }
+    }
+
+    // 验证文令
+    const wenSelected = document.querySelector('input[name="wen-ling"]:checked');
+    if (!wenSelected) {
+      return { valid: false, message: '请选择文令（内政建设）' };
+    }
+
+    if (wenSelected.value === 'custom') {
+      const wenCustom = document.getElementById('wen-custom-input');
+      if (!wenCustom || !wenCustom.value.trim()) {
+        return { valid: false, message: '请填写自拟文令内容' };
+      }
+      if (wenCustom.value.length > 30) {
+        return { valid: false, message: '文令自拟内容不能超过30字' };
+      }
+    }
+
+    // 验证策令
+    const ceSelected = document.querySelector('input[name="ce-ling"]:checked');
+    if (!ceSelected) {
+      return { valid: false, message: '请选择策令（奇谋变数）' };
+    }
+
+    // 如果选了机遇，检查是否选择具体机遇
+    if (ceSelected.value === 'opp') {
+      const oppSelected = document.querySelector('input[name="ce-opp"]:checked');
+      if (!oppSelected) {
+        return { valid: false, message: '请选择具体的公共机遇' };
+      }
+    }
+
+    if (ceSelected.value === 'custom') {
+      const ceCustom = document.getElementById('ce-custom-input');
+      if (!ceCustom || !ceCustom.value.trim()) {
+        return { valid: false, message: '请填写自拟策令内容' };
+      }
+      if (ceCustom.value.length > 30) {
+        return { valid: false, message: '策令自拟内容不能超过30字' };
+      }
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * v20260619d 工单#action-submit-v1
+   * 收集行动数据
+   */
+  function collectActionData() {
+    const data = {
+      wu: null,
+      wen: null,
+      ce: null,
+      zero: ''
+    };
+
+    // 收集武令
+    const wuSelected = document.querySelector('input[name="wu-ling"]:checked');
+    if (wuSelected) {
+      if (wuSelected.value === 'custom') {
+        data.wu = {
+          type: 'custom',
+          content: document.getElementById('wu-custom-input').value.trim()
+        };
+      } else {
+        data.wu = {
+          type: 'option',
+          option: wuSelected.value.toUpperCase()
+        };
+      }
+    }
+
+    // 收集文令
+    const wenSelected = document.querySelector('input[name="wen-ling"]:checked');
+    if (wenSelected) {
+      if (wenSelected.value === 'custom') {
+        data.wen = {
+          type: 'custom',
+          content: document.getElementById('wen-custom-input').value.trim()
+        };
+      } else {
+        data.wen = {
+          type: 'option',
+          option: wenSelected.value.toUpperCase()
+        };
+      }
+    }
+
+    // 收集策令
+    const ceSelected = document.querySelector('input[name="ce-ling"]:checked');
+    if (ceSelected) {
+      if (ceSelected.value === 'custom') {
+        data.ce = {
+          type: 'custom',
+          content: document.getElementById('ce-custom-input').value.trim()
+        };
+      } else if (ceSelected.value === 'opp') {
+        const oppSelected = document.querySelector('input[name="ce-opp"]:checked');
+        data.ce = {
+          type: 'opportunity',
+          opportunityId: oppSelected ? oppSelected.value : null
+        };
+      } else {
+        data.ce = {
+          type: 'option',
+          option: ceSelected.value.toUpperCase()
+        };
+      }
+    }
+
+    // 收集零消耗
+    const zeroInput = document.getElementById('zero-actions-input');
+    if (zeroInput) {
+      data.zero = zeroInput.value.trim();
+    }
+
+    return data;
+  }
+
+  /**
+   * v20260619d 工单#action-submit-v1
+   * 锁定行动界面
+   */
+  function lockActionInterface() {
+    // 禁用所有单选框
+    document.querySelectorAll('input[name="wu-ling"], input[name="wen-ling"], input[name="ce-ling"], input[name="ce-opp"]').forEach(input => {
+      input.disabled = true;
+    });
+
+    // 禁用所有输入框
+    document.querySelectorAll('.ling-custom-input, #zero-actions-input').forEach(input => {
+      input.disabled = true;
+    });
+
+    // 禁用提交按钮
+    const btnSubmit = document.getElementById('btn-submit-actions');
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = '已提交';
+    }
+
+    // 隐藏警告，显示成功
+    const warning = document.getElementById('submit-warning');
+    const success = document.getElementById('submit-success');
+    if (warning) warning.classList.add('hidden');
+    if (success) success.classList.remove('hidden');
+  }
+
+  /**
+   * v20260619d 工单#action-submit-v1
+   * 检查提交状态（页面加载时）
+   */
+  function checkSubmissionStatus() {
+    const currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    const storageKey = `action_submission_r${currentRound}`;
+    const saved = localStorage.getItem(storageKey);
+
+    if (saved) {
+      // 已提交过，锁定界面
+      lockActionInterface();
+    }
+  }
+
+  /**
+   * Toast提示函数（如果不存在则添加）
+   */
+  function showToast(message, type) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.className = 'toast';
+    if (type === 'error') {
+      toast.style.background = 'rgba(244,67,54,.95)';
+    } else if (type === 'success') {
+      toast.style.background = 'rgba(76,175,80,.95)';
+    }
+    toast.classList.remove('hidden');
+
+    setTimeout(() => {
+      toast.classList.add('hidden');
+    }, 3000);
+  }
+
 
   /* ─────────────────────────────────────────────
      启动
