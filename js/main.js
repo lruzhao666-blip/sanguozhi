@@ -80,6 +80,62 @@
     ];
   }
 
+  /**
+   * v20260619a 工单#decision-ref-v1
+   * 渲染决策参考区
+   */
+  function renderDecisionRef(rd) {
+    if (!rd || !rd.rawContent) return;
+
+    // 解析威望
+    const prestige = window.SGParser && window.SGParser.parsePrestige
+      ? window.SGParser.parsePrestige(rd.rawContent)
+      : null;
+
+    // 解析先手权
+    const firstMover = window.SGParser && window.SGParser.parseFirstMover
+      ? window.SGParser.parseFirstMover(rd.rawContent)
+      : '';
+
+    // 渲染威望排行
+    if (prestige) {
+      const maxScore = Math.max(...prestige.players.map(p => p.total), 1);
+      prestige.players.forEach((p, i) => {
+        const valEl = document.getElementById(`prestige-val-${i}`);
+        const barEl = document.getElementById(`prestige-bar-${i}`);
+        if (valEl) valEl.textContent = p.total || '—';
+        if (barEl) {
+          const percent = maxScore > 0 ? Math.round((p.total / maxScore) * 100) : 0;
+          barEl.style.width = percent + '%';
+        }
+      });
+
+      // NPC最高
+      const npcNameEl = document.getElementById('npc-highest-name');
+      const npcScoreEl = document.getElementById('npc-highest-score');
+      if (npcNameEl && prestige.npcHighest.name) {
+        npcNameEl.textContent = prestige.npcHighest.name;
+      }
+      if (npcScoreEl && prestige.npcHighest.score) {
+        npcScoreEl.textContent = prestige.npcHighest.score;
+      }
+    }
+
+    // 渲染先手权
+    if (firstMover) {
+      const firstMoverEl = document.getElementById('first-mover-name');
+      if (firstMoverEl) {
+        firstMoverEl.textContent = firstMover + '（威望最低优先）';
+      }
+    }
+
+    // 目标进度暂时留空（下一个工单处理）
+    const goalsEl = document.getElementById('goals-content');
+    if (goalsEl) {
+      goalsEl.innerHTML = '<span style="color: var(--text-dim);">目标系统开发中...</span>';
+    }
+  }
+
   // ══════════════════════════════════════════
   //  初始化
   // ══════════════════════════════════════════
@@ -847,6 +903,9 @@
       renderRoundBar(latest);
       renderDigest(latest);
       renderPlayerCards();
+
+      // v20260619a 工单#decision-ref-v1: 渲染决策参考区
+      renderDecisionRef(latest);
 
       /* [legacy v1]
       renderMap();
