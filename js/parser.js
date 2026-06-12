@@ -58,6 +58,76 @@ window.SGParser = (function () {
   const VALID_STATUS = ['健康', '疲劳', '受伤', '患病', '阵亡'];
 
   // ─────────────────────────────────────────
+  //  解析行动令段（M-30 规则书格式）
+  // ─────────────────────────────────────────
+  function _parseActionsBlock(text) {
+    const result = {
+      firstMove: null,
+      opportunities: [],
+      playerActions: {}
+    };
+
+    if (!text) return result;
+
+    // Step 1: 提取 🎯 行动令段
+    const actionsMatch = text.match(/🎯\s*行动令([\s\S]*?)(?=📋|$)/);
+    if (!actionsMatch) return result;
+
+    const actionsText = actionsMatch[1];
+
+    // Step 2: 提取先手权
+    const firstMoveMatch = actionsText.match(/本回合先手[:：]\s*([甲乙丙])/);
+    if (firstMoveMatch) {
+      result.firstMove = firstMoveMatch[1];
+    }
+
+    // Step 3: 提取公共机遇
+    const oppMatch = actionsText.match(/⚔\s*公共机遇[\s\S]*?(?=---)/);
+    if (oppMatch) {
+      const oppText = oppMatch[0];
+      // 匹配每条机遇：机遇1 · 标题 — 描述(类型·预估+N威望)
+      const oppRe = /机遇(\d+)\s*·\s*([^—]+)\s*—\s*([^(]+)\(([⚔🤝])([^·]+)·预估\+(\d+)威望\)/g;
+      let m;
+      while ((m = oppRe.exec(oppText)) !== null) {
+        result.opportunities.push({
+          id: parseInt(m[1]),
+          title: m[2].trim(),
+          desc: m[3].trim(),
+          type: m[4] === '⚔' ? 'compete' : 'cooperate',
+          prestige: parseInt(m[6])
+        });
+      }
+    }
+
+    // Step 4: 提取每个玩家的三令选项
+    const playerSections = actionsText.split(/---\s*/);
+    playerSections.forEach(section => {
+      // 匹配玩家名：城主甲:(威望:45)
+      const playerMatch = section.match(/城主([甲乙丙])/);
+      if (!playerMatch) return;
+
+      const slot = playerMatch[1];
+      result.playerActions[slot] = { wu: {}, wen: {}, ce: {} };
+
+      // 匹配三令：武令|A.行动名:描述(风险·+N威望)
+      const actionRe = /(武令|文令|策令)\|([AB])\.([^:]+):([^(]+)\(([^·]+)·\+([^)]+)威望\)/g;
+      let m;
+      while ((m = actionRe.exec(section)) !== null) {
+        const lingType = m[1] === '武令' ? 'wu' : m[1] === '文令' ? 'wen' : 'ce';
+        const option = m[2].toLowerCase(); // 'a' | 'b'
+        result.playerActions[slot][lingType][option] = {
+          name: m[3].trim(),
+          desc: m[4].trim(),
+          risk: m[5].trim(),
+          prestige: m[6].trim()
+        };
+      }
+    });
+
+    return result;
+  }
+
+  // ─────────────────────────────────────────
   //  主入口：格式探针 → 路由到对应解析器
   // ─────────────────────────────────────────
   function parse(rawText) {
@@ -97,6 +167,12 @@ window.SGParser = (function () {
       _parseLegacy(storyZone, result);
     }
 
+    // ── 新增：解析行动令段 ──
+    const actionsBlock = _parseActionsBlock(storyZone);
+    result.firstMove = actionsBlock.firstMove;
+    result.opportunities = actionsBlock.opportunities;
+    result.playerActions = actionsBlock.playerActions;
+
     return result;
   }
 
@@ -126,6 +202,10 @@ window.SGParser = (function () {
       worldInherit:  false,   // #sanguo-inherit-batch2-v1 [世界] 同上
       // #sanguo-inherit-batch2-v1 玩家段 城池/武将 继承标记,
       // 由 _parsePlayerBlock 写入 player 对象内部,_empty 无需占位
+      // ── 新增字段 ──
+      firstMove: null,           // 先手权
+      opportunities: [],         // 公共机遇
+      playerActions: {}          // 三令选项 { '甲': { wu: {a,b}, wen: {a,b}, ce: {a,b} } }
     };
   }
 
