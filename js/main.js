@@ -80,68 +80,6 @@
     ];
   }
 
-  /**
-   * v20260619a 工单#decision-ref-v1
-   * 渲染决策参考区
-   */
-  function renderDecisionRef(rd) {
-    if (!rd || !rd.rawContent) return;
-
-    // 解析威望
-    const prestige = window.SGParser && window.SGParser.parsePrestige
-      ? window.SGParser.parsePrestige(rd.rawContent)
-      : null;
-
-    // 解析先手权
-    const firstMover = window.SGParser && window.SGParser.parseFirstMover
-      ? window.SGParser.parseFirstMover(rd.rawContent)
-      : '';
-
-    // v20260619b 工单#opportunities-panel-v1: 渲染公共机遇
-    renderOpportunities(rd);
-
-    // v20260619c 工单#sanling-options-v1: 渲染三令选项
-    renderActionOptions(rd);
-
-    // 渲染威望排行
-    if (prestige) {
-      const maxScore = Math.max(...prestige.players.map(p => p.total), 1);
-      prestige.players.forEach((p, i) => {
-        const valEl = document.getElementById(`prestige-val-${i}`);
-        const barEl = document.getElementById(`prestige-bar-${i}`);
-        if (valEl) valEl.textContent = p.total || '—';
-        if (barEl) {
-          const percent = maxScore > 0 ? Math.round((p.total / maxScore) * 100) : 0;
-          barEl.style.width = percent + '%';
-        }
-      });
-
-      // NPC最高
-      const npcNameEl = document.getElementById('npc-highest-name');
-      const npcScoreEl = document.getElementById('npc-highest-score');
-      if (npcNameEl && prestige.npcHighest.name) {
-        npcNameEl.textContent = prestige.npcHighest.name;
-      }
-      if (npcScoreEl && prestige.npcHighest.score) {
-        npcScoreEl.textContent = prestige.npcHighest.score;
-      }
-    }
-
-    // 渲染先手权
-    if (firstMover) {
-      const firstMoverEl = document.getElementById('first-mover-name');
-      if (firstMoverEl) {
-        firstMoverEl.textContent = firstMover + '（威望最低优先）';
-      }
-    }
-
-    // 目标进度暂时留空（下一个工单处理）
-    const goalsEl = document.getElementById('goals-content');
-    if (goalsEl) {
-      goalsEl.innerHTML = '<span style="color: var(--text-dim);">目标系统开发中...</span>';
-    }
-  }
-
   // ══════════════════════════════════════════
   //  初始化
   // ══════════════════════════════════════════
@@ -896,6 +834,236 @@
 
   // ══════════════════════════════════════════
   //  渲染总入口
+
+  /**
+   * v20260619a 工单#decision-ref-v1
+   * 渲染决策参考区
+   */
+  function renderDecisionRef(rd) {
+    if (!rd || !rd.raw_content) return;
+
+    const prestige = window.SGParser && window.SGParser.parsePrestige
+      ? window.SGParser.parsePrestige(rd.raw_content)
+      : null;
+
+    const firstMover = window.SGParser && window.SGParser.parseFirstMover
+      ? window.SGParser.parseFirstMover(rd.raw_content)
+      : '';
+
+    if (prestige) {
+      const maxScore = Math.max(...prestige.players.map(p => p.total), 1);
+      prestige.players.forEach((p, i) => {
+        const valEl = document.getElementById(`prestige-val-${i}`);
+        const barEl = document.getElementById(`prestige-bar-${i}`);
+        if (valEl) valEl.textContent = p.total || '—';
+        if (barEl) {
+          const percent = maxScore > 0 ? Math.round((p.total / maxScore) * 100) : 0;
+          barEl.style.width = percent + '%';
+        }
+      });
+
+      const npcNameEl = document.getElementById('npc-highest-name');
+      const npcScoreEl = document.getElementById('npc-highest-score');
+      if (npcNameEl && prestige.npcHighest.name) {
+        npcNameEl.textContent = prestige.npcHighest.name;
+      }
+      if (npcScoreEl && prestige.npcHighest.score) {
+        npcScoreEl.textContent = prestige.npcHighest.score;
+      }
+    }
+
+    if (firstMover) {
+      const firstMoverEl = document.getElementById('first-mover-name');
+      if (firstMoverEl) {
+        firstMoverEl.textContent = firstMover + '（威望最低优先）';
+      }
+    }
+
+    const goalsEl = document.getElementById('goals-content');
+    if (goalsEl) {
+      goalsEl.innerHTML = '<span style="color: var(--text-dim);">目标系统开发中...</span>';
+    }
+  }
+
+  /**
+   * v20260619b 工单#opportunities-panel-v1
+   * 渲染公共机遇面板
+   */
+  function renderOpportunities(rd) {
+    const oppBody = document.getElementById('opp-body');
+    if (!oppBody) return;
+
+    if (!rd || !rd.raw_content) {
+      oppBody.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
+      return;
+    }
+
+    const opportunities = window.SGParser && window.SGParser.parseOpportunities
+      ? window.SGParser.parseOpportunities(rd.raw_content)
+      : [];
+
+    if (opportunities.length === 0) {
+      oppBody.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
+      return;
+    }
+
+    let html = '';
+    opportunities.forEach(opp => {
+      const typeBadgeClass = opp.type === 'compete' ? 'compete' : 'cooperate';
+      const typeBadgeText = opp.type === 'compete' ? '争夺' : '协力';
+
+      html += `
+        <div class="opp-card" data-opp-id="${opp.id}">
+          <div class="opp-card-header">
+            <span class="opp-card-title">${escapeHtml(opp.title)}</span>
+            <span class="opp-type-badge ${typeBadgeClass}">${typeBadgeText}</span>
+          </div>
+          <div class="opp-card-desc">${escapeHtml(opp.desc)}</div>
+          <div class="opp-card-footer">
+            <span class="opp-prestige">预估 +${opp.prestige} 威望</span>
+          </div>
+        </div>
+      `;
+    });
+
+    oppBody.innerHTML = html;
+
+    document.querySelectorAll('.opp-card').forEach(card => {
+      card.addEventListener('click', function() {
+        const oppId = this.getAttribute('data-opp-id');
+        selectOpportunityInCeLing(oppId);
+      });
+    });
+  }
+
+  /**
+   * v20260619b 工单#opportunities-panel-v1
+   * 点击机遇卡后，自动在策令区选中该机遇
+   */
+  function selectOpportunityInCeLing(oppId) {
+    const ceOppRadio = document.querySelector('input[name="ce-ling"][value="opp"]');
+    if (ceOppRadio) {
+      ceOppRadio.checked = true;
+      ceOppRadio.disabled = false;
+    }
+
+    const oppCheckbox = document.querySelector(`input[name="ce-opp"][value="${oppId}"]`);
+    if (oppCheckbox) {
+      oppCheckbox.checked = true;
+      oppCheckbox.disabled = false;
+    }
+
+    const ceLingCard = document.querySelector('.ce-ling');
+    if (ceLingCard) {
+      ceLingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  /**
+   * v20260619c 工单#sanling-options-v1
+   * 渲染三令选项
+   */
+  function renderActionOptions(rd) {
+    if (!rd || !rd.raw_content) return;
+
+    const options = window.SGParser && window.SGParser.parseActionOptions
+      ? window.SGParser.parseActionOptions(rd.raw_content)
+      : { wu: [], wen: [], ce: [] };
+
+    renderLingOptions('wu', options.wu);
+    renderLingOptions('wen', options.wen);
+    renderLingOptions('ce', options.ce);
+
+    bindCustomInputEvents();
+  }
+
+  /**
+   * v20260619c 工单#sanling-options-v1
+   * 渲染单个令的选项
+   */
+  function renderLingOptions(type, options) {
+    if (options.length === 0) return;
+
+    options.forEach(opt => {
+      const label = opt.label.toLowerCase();
+
+      const nameEl = document.getElementById(`${type}-${label}-name`);
+      if (nameEl) nameEl.textContent = opt.name;
+
+      const descEl = document.getElementById(`${type}-${label}-desc`);
+      if (descEl) descEl.textContent = opt.desc;
+
+      const riskEl = document.getElementById(`${type}-${label}-risk`);
+      if (riskEl) {
+        riskEl.textContent = opt.risk;
+        riskEl.classList.remove('stable', 'medium', 'risky');
+        if (opt.risk === '稳') {
+          riskEl.classList.add('stable');
+        } else if (opt.risk === '中') {
+          riskEl.classList.add('medium');
+        } else if (opt.risk === '险') {
+          riskEl.classList.add('risky');
+        }
+      }
+
+      const prestigeEl = document.getElementById(`${type}-${label}-prestige`);
+      if (prestigeEl) prestigeEl.textContent = `+${opt.prestige} 威望`;
+    });
+  }
+
+  /**
+   * v20260619c 工单#sanling-options-v1
+   * 绑定自拟输入框事件
+   */
+  function bindCustomInputEvents() {
+    bindCustomInput('wu');
+    bindCustomInput('wen');
+    bindCustomInput('ce');
+  }
+
+  /**
+   * v20260619c 工单#sanling-options-v1
+   * 绑定单个令的自拟输入框
+   */
+  function bindCustomInput(type) {
+    const customRadio = document.querySelector(`input[name="${type}-ling"][value="custom"]`);
+    const customInput = document.getElementById(`${type}-custom-input`);
+    const customCount = document.getElementById(`${type}-custom-count`);
+
+    if (!customRadio || !customInput || !customCount) return;
+
+    document.querySelectorAll(`input[name="${type}-ling"]`).forEach(radio => {
+      radio.addEventListener('change', function() {
+        if (this.value === 'custom') {
+          customInput.disabled = false;
+          customInput.focus();
+        } else {
+          customInput.disabled = true;
+        }
+      });
+    });
+
+    customInput.addEventListener('input', function() {
+      const length = this.value.length;
+      customCount.textContent = length;
+
+      if (length > 30) {
+        customCount.style.color = 'var(--red-bright)';
+      } else {
+        customCount.style.color = 'var(--text-dim)';
+      }
+    });
+  }
+
+  /**
+   * HTML转义工具函数
+   */
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   // ══════════════════════════════════════════
   function renderAll() {
     const hasData = state.rounds.length > 0;
@@ -912,6 +1080,8 @@
 
       // v20260619a 工单#decision-ref-v1: 渲染决策参考区
       renderDecisionRef(latest);
+      renderOpportunities(latest);
+      renderActionOptions(latest);
 
       /* [legacy v1]
       renderMap();
@@ -4943,216 +5113,6 @@
 
     const r = SAC.acceptToFirstEmpty(slot, text, adviceKey);
     handleAcceptResult(r);
-  }
-
-  /**
-   * v20260619b 工单#opportunities-panel-v1
-   * 渲染公共机遇面板
-   */
-  function renderOpportunities(rd) {
-    const oppBody = document.getElementById('opp-body');
-    if (!oppBody) return;
-
-    if (!rd || !rd.rawContent) {
-      oppBody.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
-      return;
-    }
-
-    // 解析机遇
-    const opportunities = window.SGParser && window.SGParser.parseOpportunities
-      ? window.SGParser.parseOpportunities(rd.rawContent)
-      : [];
-
-    if (opportunities.length === 0) {
-      oppBody.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
-      return;
-    }
-
-    // 渲染机遇卡片
-    let html = '';
-    opportunities.forEach(opp => {
-      const typeBadgeClass = opp.type === 'compete' ? 'compete' : 'cooperate';
-      const typeBadgeText = opp.type === 'compete' ? '争夺' : '协力';
-
-      html += `
-        <div class="opp-card" data-opp-id="${opp.id}">
-          <div class="opp-card-header">
-            <span class="opp-card-title">${escapeHtml(opp.title)}</span>
-            <span class="opp-type-badge ${typeBadgeClass}">${typeBadgeText}</span>
-          </div>
-          <div class="opp-card-desc">${escapeHtml(opp.desc)}</div>
-          <div class="opp-card-footer">
-            <span class="opp-prestige">预估 +${opp.prestige} 威望</span>
-          </div>
-        </div>
-      `;
-    });
-
-    oppBody.innerHTML = html;
-
-    // 绑定点击事件（点击机遇卡 → 自动跳到策令区并选中）
-    document.querySelectorAll('.opp-card').forEach(card => {
-      card.addEventListener('click', function() {
-        const oppId = this.getAttribute('data-opp-id');
-        selectOpportunityInCeLing(oppId);
-      });
-    });
-  }
-
-  /**
-   * v20260619b 工单#opportunities-panel-v1
-   * 点击机遇卡后，自动在策令区选中该机遇
-   */
-  function selectOpportunityInCeLing(oppId) {
-    // 选中策令的"改选机遇"单选框
-    const ceOppRadio = document.querySelector('input[name="ce-ling"][value="opp"]');
-    if (ceOppRadio) {
-      ceOppRadio.checked = true;
-      ceOppRadio.disabled = false;
-    }
-
-    // 选中对应的机遇checkbox
-    const oppCheckbox = document.querySelector(`input[name="ce-opp"][value="${oppId}"]`);
-    if (oppCheckbox) {
-      oppCheckbox.checked = true;
-      oppCheckbox.disabled = false;
-    }
-
-    // 平滑滚动到策令区
-    const ceLingCard = document.querySelector('.ce-ling');
-    if (ceLingCard) {
-      ceLingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }
-
-  /**
-   * HTML转义工具函数
-   */
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  /**
-   * v20260619c 工单#sanling-options-v1
-   * 渲染三令选项
-   */
-  function renderActionOptions(rd) {
-    if (!rd || !rd.raw_content) return;
-
-    // 解析选项
-    const options = window.SGParser && window.SGParser.parseActionOptions
-      ? window.SGParser.parseActionOptions(rd.raw_content)
-      : { wu: [], wen: [], ce: [] };
-
-    // 渲染武令
-    renderLingOptions('wu', options.wu);
-
-    // 渲染文令
-    renderLingOptions('wen', options.wen);
-
-    // 渲染策令
-    renderLingOptions('ce', options.ce);
-
-    // 绑定自拟输入框事件
-    bindCustomInputEvents();
-  }
-
-  /**
-   * v20260619c 工单#sanling-options-v1
-   * 渲染单个令的选项
-   */
-  function renderLingOptions(type, options) {
-    if (options.length === 0) return;
-
-    options.forEach(opt => {
-      const label = opt.label.toLowerCase(); // 'A' -> 'a'
-
-      // 更新选项名称
-      const nameEl = document.getElementById(`${type}-${label}-name`);
-      if (nameEl) {
-        nameEl.textContent = opt.name;
-      }
-
-      // 更新描述
-      const descEl = document.getElementById(`${type}-${label}-desc`);
-      if (descEl) {
-        descEl.textContent = opt.desc;
-      }
-
-      // 更新风险标签
-      const riskEl = document.getElementById(`${type}-${label}-risk`);
-      if (riskEl) {
-        riskEl.textContent = opt.risk;
-        // 移除旧的风险类
-        riskEl.classList.remove('stable', 'medium', 'risky');
-        // 添加新的风险类
-        if (opt.risk === '稳') {
-          riskEl.classList.add('stable');
-        } else if (opt.risk === '中') {
-          riskEl.classList.add('medium');
-        } else if (opt.risk === '险') {
-          riskEl.classList.add('risky');
-        }
-      }
-
-      // 更新威望
-      const prestigeEl = document.getElementById(`${type}-${label}-prestige`);
-      if (prestigeEl) {
-        prestigeEl.textContent = `+${opt.prestige} 威望`;
-      }
-    });
-  }
-
-  /**
-   * v20260619c 工单#sanling-options-v1
-   * 绑定自拟输入框事件
-   */
-  function bindCustomInputEvents() {
-    // 武令自拟
-    bindCustomInput('wu');
-    // 文令自拟
-    bindCustomInput('wen');
-    // 策令自拟
-    bindCustomInput('ce');
-  }
-
-  /**
-   * v20260619c 工单#sanling-options-v1
-   * 绑定单个令的自拟输入框
-   */
-  function bindCustomInput(type) {
-    const customRadio = document.querySelector(`input[name="${type}-ling"][value="custom"]`);
-    const customInput = document.getElementById(`${type}-custom-input`);
-    const customCount = document.getElementById(`${type}-custom-count`);
-
-    if (!customRadio || !customInput || !customCount) return;
-
-    // 监听单选框变化
-    document.querySelectorAll(`input[name="${type}-ling"]`).forEach(radio => {
-      radio.addEventListener('change', function() {
-        if (this.value === 'custom') {
-          customInput.disabled = false;
-          customInput.focus();
-        } else {
-          customInput.disabled = true;
-        }
-      });
-    });
-
-    // 监听输入框输入
-    customInput.addEventListener('input', function() {
-      const length = this.value.length;
-      customCount.textContent = length;
-
-      // 超过30字标红
-      if (length > 30) {
-        customCount.style.color = 'var(--red-bright)';
-      } else {
-        customCount.style.color = 'var(--text-dim)';
-      }
-    });
   }
 
   /* ─────────────────────────────────────────────
