@@ -136,7 +136,7 @@
 
     inner.innerHTML = `
       <div class="rl-icon">⚔️</div>
-      <div class="rl-title">密报阁</div>
+      <div class="rl-title">身份验证</div>
       <div class="rl-sub">请选择身份并输入口令</div>
       <div class="rl-role-group">${roleBtns}</div>
       <input type="password" class="rl-input" id="rl-pwd" placeholder="${placeholder}" autocomplete="off" />
