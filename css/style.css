@@ -57,7 +57,7 @@ body {
   background: var(--black-deep);
   color: var(--text-main);
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -113,37 +113,44 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .gm-nav-btn { color: rgba(220,100,80,.7) !important; }
 .gm-nav-btn.active { border-bottom-color: var(--red-bright) !important; color: var(--red-bright) !important; }
 
-/* ══ MAIN CONTENT ══ */
+/* ══ MAIN CONTENT - 独立滚动容器 ══ */
 #main-content {
-  position: relative;
-  min-height: calc(100vh - 110px);
+  position: fixed;
+  top: 110px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
 }
 
-/* ══ TAB ══ */
+/* ══ TAB - 每个Tab独立滚动 ══ */
 .tab-panel {
   display: none;
-  min-height: calc(100vh - 110px);
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+
 .tab-panel.active {
   display: block;
 }
 
-/* 战局总览容器 - 保持原有样式 */
-#tab-arena .arena-wrap {
+/* 战局总览容器 */
+.arena-wrap {
   max-width: 1360px;
   margin: 0 auto;
   padding: 16px 16px 48px;
 }
 
-/* 行动页容器 - 保持原有样式 */
-#tab-action .actions-page {
+/* 行动页容器 */
+.actions-page {
   max-width: 1360px;
   margin: 0 auto;
   padding: 16px 16px 48px;
 }
 
-/* GM录入页容器 - 保持原有样式 */
-#tab-gm .gm-page {
+/* GM录入页容器 */
+.gm-page {
   max-width: 1360px;
   margin: 0 auto;
   padding: 16px 16px 48px;
@@ -157,12 +164,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
   max-width: 1360px; margin: 0 auto;
   padding: 16px 16px 48px;
   display: flex; flex-direction: column; gap: 14px;
-}
-
-@media (max-width: 720px) {
-  .arena-wrap {
-    padding: 12px 10px 40px;
-  }
 }
 
 /* 空状态 */
@@ -16148,16 +16149,18 @@ body.is-viewer-mode #diag-toast {
 /* 移动端适配 */
 @media (max-width: 720px) {
   #main-content {
-    min-height: calc(100vh - 95px);
+    top: 95px;
   }
 
-  .tab-panel {
-    min-height: calc(100vh - 95px);
+  .arena-wrap {
+    padding: 12px 10px 40px;
   }
 
-  #tab-arena .arena-wrap,
-  #tab-action .actions-page,
-  #tab-gm .gm-page {
+  .actions-page {
+    padding: 12px 10px 40px;
+  }
+
+  .gm-page {
     padding: 12px 10px 40px;
   }
 }
