@@ -2289,18 +2289,16 @@ function parseFirstMover(text) {
 }
 
 // 导出函数（挂载到全局）
-// ── #parser-expose-fix-v1 START ──
-// 原代码会用 IIFE 外的函数覆盖 IIFE 内的同名挂载,导致:
-//   - parseOpportunities 被 IIFE 外的版本覆盖(后者正则不识别带 variation selector 的 ⚔️)
-//   - parseActionOptions 被 IIFE 外的版本覆盖(返回结构不同,破坏 renderActionOptions)
-//   - parseFirstMover 被覆盖(实际格式宽松,巧合能跑,但语义不一致)
-// 新策略:IIFE 外的 4 个函数挂到 SGAction 命名空间,
-//        IIFE 内的版本保留在 SGParser 上,各取所需。
+// ── #parser-expose-fix-v1-step2 START ──
+// 上轮把 4 个函数挂在 window.SGAction,但 main.js 末尾的
+// window.SGAction = { renderSettlement, ... } 是整体赋值覆盖,
+// 会把这里的 4 个 parse 函数抹掉。改挂到独立命名空间 SGParseV2,
+// 该名字未被任何文件占用,安全。
 if (typeof window !== 'undefined') {
-  window.SGAction = window.SGAction || {};
-  window.SGAction.parseSettlement       = parseSettlement;
-  window.SGAction.parseOpportunitiesV2  = parseOpportunities;
-  window.SGAction.parseActionOptionsV2  = parseActionOptions;
-  window.SGAction.parseFirstMoverV2     = parseFirstMover;
+  window.SGParseV2 = window.SGParseV2 || {};
+  window.SGParseV2.parseSettlement       = parseSettlement;
+  window.SGParseV2.parseOpportunitiesV2  = parseOpportunities;
+  window.SGParseV2.parseActionOptionsV2  = parseActionOptions;
+  window.SGParseV2.parseFirstMoverV2     = parseFirstMover;
 }
-// ── END #parser-expose-fix-v1 ──
+// ── END #parser-expose-fix-v1-step2 ──

@@ -1443,14 +1443,14 @@
       var actionText = window.SGAction.extractSection(rawText, '🎯 行动令', '====');
       var firstMoverText = window.SGAction.extractSection(rawText, '本回合先手:', '\n');
 
-      // ── #parser-expose-fix-v1 START ──
-      // 这四个函数走 IIFE 外的实现(供 SGAction.renderActionPanel 用),
-      // 改读 SGAction 命名空间,与 SGParser 命名空间错开。
-      var settlement    = window.SGAction.parseSettlement(settlementText);
-      var opportunities = window.SGAction.parseOpportunitiesV2(oppText);
-      var actions       = window.SGAction.parseActionOptionsV2(actionText);
-      var firstMover    = window.SGAction.parseFirstMoverV2(firstMoverText);
-      // ── END #parser-expose-fix-v1 ──
+      // ── #parser-expose-fix-v1-step2 START ──
+      // 改读 SGParseV2 命名空间,避免被 main.js 末尾 window.SGAction 整体赋值抹掉。
+      // 实现仍是 parser.js IIFE 外的 parseSettlement/Opportunities/ActionOptions/FirstMover。
+      var settlement    = window.SGParseV2.parseSettlement(settlementText);
+      var opportunities = window.SGParseV2.parseOpportunitiesV2(oppText);
+      var actions       = window.SGParseV2.parseActionOptionsV2(actionText);
+      var firstMover    = window.SGParseV2.parseFirstMoverV2(firstMoverText);
+      // ── END #parser-expose-fix-v1-step2 ──
 
       // 渲染
       window.SGAction.renderSettlement(settlement);
