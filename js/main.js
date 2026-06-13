@@ -1443,10 +1443,14 @@
       var actionText = window.SGAction.extractSection(rawText, '🎯 行动令', '====');
       var firstMoverText = window.SGAction.extractSection(rawText, '本回合先手:', '\n');
 
-      var settlement = window.SGParser.parseSettlement(settlementText);
-      var opportunities = window.SGParser.parseOpportunities(oppText);
-      var actions = window.SGParser.parseActionOptions(actionText);
-      var firstMover = window.SGParser.parseFirstMover(firstMoverText);
+      // ── #parser-expose-fix-v1 START ──
+      // 这四个函数走 IIFE 外的实现(供 SGAction.renderActionPanel 用),
+      // 改读 SGAction 命名空间,与 SGParser 命名空间错开。
+      var settlement    = window.SGAction.parseSettlement(settlementText);
+      var opportunities = window.SGAction.parseOpportunitiesV2(oppText);
+      var actions       = window.SGAction.parseActionOptionsV2(actionText);
+      var firstMover    = window.SGAction.parseFirstMoverV2(firstMoverText);
+      // ── END #parser-expose-fix-v1 ──
 
       // 渲染
       window.SGAction.renderSettlement(settlement);

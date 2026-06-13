@@ -2094,7 +2094,17 @@ if (/^产出△/.test(line)) {
   window.SGParser.parseOpportunities = parseOpportunities;
   window.SGParser.parseActionOptions = parseActionOptions;
 
-  return { parse, summarize, formatTroops, TROOP_TYPES };
+    // ── #parser-expose-fix-v1 START ──
+    // 修复:原 return 语句会覆盖 window.SGParser,把上面 4 个挂载抹掉。
+    // 新策略:把 4 个函数纳入 return 对象,让 IIFE 返回值同时包含它们。
+    return {
+      parse, summarize, formatTroops, TROOP_TYPES,
+      parsePrestige,
+      parseFirstMover,
+      parseOpportunities,
+      parseActionOptions,
+    };
+    // ── END #parser-expose-fix-v1 ──
 })();
 
 // ═══════════════════════════════════════════════════════════
@@ -2279,10 +2289,18 @@ function parseFirstMover(text) {
 }
 
 // 导出函数（挂载到全局）
+// ── #parser-expose-fix-v1 START ──
+// 原代码会用 IIFE 外的函数覆盖 IIFE 内的同名挂载,导致:
+//   - parseOpportunities 被 IIFE 外的版本覆盖(后者正则不识别带 variation selector 的 ⚔️)
+//   - parseActionOptions 被 IIFE 外的版本覆盖(返回结构不同,破坏 renderActionOptions)
+//   - parseFirstMover 被覆盖(实际格式宽松,巧合能跑,但语义不一致)
+// 新策略:IIFE 外的 4 个函数挂到 SGAction 命名空间,
+//        IIFE 内的版本保留在 SGParser 上,各取所需。
 if (typeof window !== 'undefined') {
-  window.SGParser = window.SGParser || {};
-  window.SGParser.parseSettlement = parseSettlement;
-  window.SGParser.parseOpportunities = parseOpportunities;
-  window.SGParser.parseActionOptions = parseActionOptions;
-  window.SGParser.parseFirstMover = parseFirstMover;
+  window.SGAction = window.SGAction || {};
+  window.SGAction.parseSettlement       = parseSettlement;
+  window.SGAction.parseOpportunitiesV2  = parseOpportunities;
+  window.SGAction.parseActionOptionsV2  = parseActionOptions;
+  window.SGAction.parseFirstMoverV2     = parseFirstMover;
 }
+// ── END #parser-expose-fix-v1 ──
