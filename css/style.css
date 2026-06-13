@@ -150,7 +150,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .gm-page {
   max-width: 1360px;
   margin: 0 auto;
-  padding: 16px 16px 48px;
+  padding: 16px 16px 80px;
 }
 .hidden { display: none !important; }
 
@@ -159,7 +159,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 ══════════════════════════════════════════ */
 .arena-wrap {
   max-width: 1360px; margin: 0 auto;
-  padding: 16px 16px 48px;
+  padding: 16px 16px 80px;
   display: flex; flex-direction: column; gap: 14px;
 }
 
@@ -16145,10 +16145,6 @@ body.is-viewer-mode #diag-toast {
 
 /* 移动端适配 */
 @media (max-width: 720px) {
-  #main-content {
-    top: 95px;
-  }
-
   .arena-wrap {
     padding: 12px 10px 40px;
   }
@@ -17407,6 +17403,19 @@ body.is-viewer-mode #diag-toast {
 /* ── 任务 2:行动 Tab 底部留白,避免 diag-badge 遮挡提交按钮 ── */
 .actions-page-v2 {
   padding-bottom: 80px !important;
+}
+
+/* ── 任务 2.1:移动端安全区适配（工单#layout-unify-safearea-A1）── */
+@media (max-width: 720px) {
+  .arena-wrap {
+    padding-bottom: max(80px, calc(env(safe-area-inset-bottom) + 60px)) !important;
+  }
+  .actions-page-v2 {
+    padding-bottom: max(80px, calc(env(safe-area-inset-bottom) + 60px)) !important;
+  }
+  .gm-page {
+    padding-bottom: max(80px, calc(env(safe-area-inset-bottom) + 60px)) !important;
+  }
 }
 
 /* ── 任务 3 配套:Tab 切换时禁用 smooth scroll(避免恢复 scrollTop 时抖动)── */
