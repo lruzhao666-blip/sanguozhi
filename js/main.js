@@ -774,12 +774,39 @@
     );
   }
 
+  // ── #layout-fix-mobile-v1-step2 · Tab 切换 scrollTop 记忆 ──
+  // 每个 Tab 独立记忆滚动位置，切回时恢复，避免共享 body scrollTop 串台
+  const _tabScrollMemory = Object.create(null);
+  let _currentTab = null;
+
   function switchTab(name) {
+    // 1. 切走之前，记下当前 Tab 的 scrollTop
+    if (_currentTab && _currentTab !== name) {
+      _tabScrollMemory[_currentTab] =
+        window.scrollY || document.documentElement.scrollTop || 0;
+    }
+
+    // 2. 原有切换逻辑（保持不变）
     document.querySelectorAll('.nav-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.tab === name));
     document.querySelectorAll('.tab-panel').forEach(p =>
       p.classList.toggle('active', p.id === `tab-${name}`));
+
+    // 3. 恢复目标 Tab 的 scrollTop（无记忆则回到顶部）
+    //    临时关闭 smooth scroll 防抖动，rAF 等下一帧 DOM 渲染完再 scroll
+    const targetY = _tabScrollMemory[name] || 0;
+    document.documentElement.classList.add('tab-switching');
+    requestAnimationFrame(() => {
+      window.scrollTo(0, targetY);
+      // 双 rAF 确保 scroll 已生效再恢复 smooth scroll
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('tab-switching');
+      });
+    });
+
+    _currentTab = name;
   }
+  // ── END #layout-fix-mobile-v1-step2 ──
 
   // ══════════════════════════════════════════
   //  GM 面板
