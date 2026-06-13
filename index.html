@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260613clean" />
+  <link rel="stylesheet" href="css/style.css?v=20260614action" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -304,6 +304,17 @@
 
   <div class="actions-page-v2">
 
+    <!-- ══ 上回合结算 ══ -->
+    <div class="info-block settlement-block" style="display:none;">
+      <div class="ib-header">
+        <span class="ib-icon">📋</span>
+        <span class="ib-title">上回合结算</span>
+      </div>
+      <div class="ib-body">
+        <!-- 由 JS 动态渲染 -->
+      </div>
+    </div>
+
     <!-- ══ 决策参考 v2 ══ -->
     <div class="decision-ref-v2" id="decision-ref">
       <div class="dr-v2-header">
@@ -425,6 +436,16 @@
       </div>
     </div>
 
+    <!-- ══ GM 一键复制 ══ -->
+    <div class="gm-copy-bar" id="gm-copy-bar" style="display:none;">
+      <button class="gm-copy-btn" onclick="window.SGAction && window.SGAction.copyAllActions()">
+        📋 一键复制全部行动
+      </button>
+      <span class="gm-copy-hint">复制后粘贴给 AI 主持人</span>
+      <span class="gm-copy-success" style="display:none;">✓ 已复制到剪贴板</span>
+    </div>
+
+
   </div>
 </section>
 
@@ -491,14 +512,14 @@
 
 
 
-<script src="js/parser.js?v=20260613boundary"></script>
+<script src="js/parser.js?v=20260614action"></script>
 <script src="js/map.js?v=20261111a"></script>
 <script src="js/generals-tooltip.js?v=v20260601a"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/generals-organize.js?v=20260608a"></script>
 
 <script src="js/generals-organize-ui.js?v=20260608r"></script>
-<script src="js/main.js?v=20260613safearea"></script>
+<script src="js/main.js?v=20260614action"></script>
 <script src="js/role-login.js?v=v20260601a"></script>
 </body>
 </html>

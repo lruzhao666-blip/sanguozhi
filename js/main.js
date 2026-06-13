@@ -1407,6 +1407,42 @@
         renderActionsPanel(lastRound.parsed);
       }
     }
+
+    // #action-panel-step2 渲染行动板块
+    if (typeof window.SGParser !== 'undefined' && state.rounds.length > 0) {
+      var latest = state.rounds[state.rounds.length - 1];
+      var rawText = latest.raw || '';
+
+      // 解析数据
+      var settlementText = extractSection(rawText, '📋 结算', '---');
+      var oppText = extractSection(rawText, '公共机遇池', '═══');
+      var actionText = extractSection(rawText, '🎯 行动令', '====');
+      var firstMoverText = extractSection(rawText, '本回合先手:', '\n');
+
+      var settlement = window.SGParser.parseSettlement(settlementText);
+      var opportunities = window.SGParser.parseOpportunities(oppText);
+      var actions = window.SGParser.parseActionOptions(actionText);
+      var firstMover = window.SGParser.parseFirstMover(firstMoverText);
+
+      // 渲染
+      window.SGAction.renderSettlement(settlement);
+      window.SGAction.renderOpportunities(opportunities);
+      window.SGAction.renderActionPanel(actions);
+
+      // 更新先手显示
+      if (firstMover) {
+        var fmNameEl = document.getElementById('first-mover-name');
+        if (fmNameEl) {
+          fmNameEl.textContent = firstMover;
+        }
+      }
+
+      // 显示 GM 复制按钮
+      var gmCopyBar = document.getElementById('gm-copy-bar');
+      if (gmCopyBar) {
+        gmCopyBar.style.display = isGMMode() ? 'flex' : 'none';
+      }
+    }
   }
 
 // ─────────────────────────────────────────
@@ -6148,5 +6184,412 @@ function showActionsEmptyHint() {
   setTimeout(_checkAndRender, 500);
   setTimeout(_checkAndRender, 1500);
   setTimeout(_checkAndRender, 3000);
+
+  // ═══════════════════════════════════════════════════════════
+  // #action-panel-step2 行动板块渲染
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 渲染上回合结算板块
+   */
+  function renderSettlement(settlementData) {
+    var block = document.querySelector('.settlement-block');
+    if (!block) return;
+
+    if (!settlementData || (!settlementData.players[0] && !settlementData.players[1] && !settlementData.players[2])) {
+      block.style.display = 'none';
+      return;
+    }
+
+    block.style.display = 'block';
+    var body = block.querySelector('.ib-body');
+    body.innerHTML = '';
+
+    var slotNames = ['甲', '乙', '丙'];
+    for (var i = 0; i < 3; i++) {
+      var pdata = settlementData.players[i];
+      if (!pdata) continue;
+
+      var playerName = state.players[i] ? state.players[i].name : slotNames[i];
+
+      var playerDiv = document.createElement('div');
+      playerDiv.className = 'settlement-player';
+      playerDiv.setAttribute('data-slot', i);
+
+      playerDiv.innerHTML = '<div class="settlement-player-head">' + slotNames[i] + ' · ' + escapeHtml(playerName) + '</div>' +
+        '<div class="settlement-ling">主令：<strong>' + escapeHtml(pdata.main) + '</strong></div>' +
+        '<div class="settlement-ling">副令：<strong>' + escapeHtml(pdata.sub) + '</strong></div>' +
+        '<div class="settlement-ling">应变令：<strong>' + escapeHtml(pdata.react) + '</strong></div>';
+
+      body.appendChild(playerDiv);
+    }
+
+    // 机遇结算
+    if (settlementData.opportunities && settlementData.opportunities.length > 0) {
+      for (var j = 0; j < settlementData.opportunities.length; j++) {
+        var opp = settlementData.opportunities[j];
+        var oppDiv = document.createElement('div');
+        oppDiv.className = 'settlement-opp';
+        oppDiv.innerHTML = '机遇' + opp.id + '·<strong>' + escapeHtml(opp.title) + '</strong>：' + escapeHtml(opp.result);
+        body.appendChild(oppDiv);
+      }
+    }
+  }
+
+  /**
+   * 渲染公共机遇池
+   */
+  function renderOpportunities(opportunities) {
+    var panel = document.getElementById('opportunities-panel');
+    if (!panel) return;
+
+    var body = document.getElementById('opp-body');
+    if (!body) return;
+
+    if (!opportunities || opportunities.length === 0) {
+      body.innerHTML = '<div class="opp-v2-empty">' +
+        '<div class="opp-empty-deco"></div>' +
+        '<span class="opp-empty-text">暂无公共机遇</span>' +
+        '<span class="opp-empty-hint">关注下回合战局动态发布</span>' +
+        '</div>';
+      return;
+    }
+
+    body.innerHTML = '';
+    for (var i = 0; i < opportunities.length; i++) {
+      var opp = opportunities[i];
+      var card = document.createElement('div');
+      card.className = 'opp-v2-card';
+      card.innerHTML = '<div class="opp-v2-card-head">' +
+        '<span class="opp-type">' + opp.emoji + '</span>' +
+        '<span class="opp-title">' + escapeHtml(opp.title) + '</span>' +
+        '</div>' +
+        '<div class="opp-desc">' + escapeHtml(opp.desc) + '</div>' +
+        '<div class="opp-prestige">预估 +' + opp.prestige + ' 威望</div>';
+      body.appendChild(card);
+    }
+  }
+
+  /**
+   * 渲染行动指令三栏
+   */
+  function renderActionPanel(actionsData) {
+    var cols = document.getElementById('aci-cols');
+    if (!cols) return;
+
+    if (!actionsData) {
+      cols.innerHTML = '<div class="aci-empty-init">等待 GM 发布回合数据…</div>';
+      return;
+    }
+
+    cols.innerHTML = '';
+    var slotNames = ['甲', '乙', '丙'];
+    var userSlot = getUserSlot();
+    var isGM = isGMMode();
+
+    for (var i = 0; i < 3; i++) {
+      var data = actionsData[i];
+      var isSelf = (i === userSlot);
+      var canInteract = isSelf || isGM;
+
+      var col = document.createElement('div');
+      col.className = 'aci-col';
+      col.setAttribute('data-slot', i);
+      col.setAttribute('data-self', isSelf ? '1' : '0');
+      col.setAttribute('data-gm', isGM ? '1' : '0');
+
+      // 栏头
+      col.innerHTML = '<div class="aci-col-head">' +
+        '<span class="aci-col-slot">' + slotNames[i] + '</span>' +
+        '<span class="aci-col-divider">·</span>' +
+        '<span class="aci-col-name">' + escapeHtml(data.name || slotNames[i]) + '</span>' +
+        (isSelf ? '<span class="aci-col-badge" data-kind="self">我</span>' : '') +
+        '</div>';
+
+      // 栏内容
+      var body = document.createElement('div');
+      body.className = 'aci-col-body';
+
+      // 主令
+      body.appendChild(renderLing('主令', '⚔️', '3选1', data.main, 'main-' + i, canInteract, 40));
+
+      // 副令
+      body.appendChild(renderLing('副令', '📜', '2选1', data.sub, 'sub-' + i, canInteract, 30));
+
+      // 应变令
+      body.appendChild(renderLing('应变令', '🎯', '2选1或选机遇', data.react, 'react-' + i, canInteract, 30));
+
+      // 零消耗
+      if (canInteract) {
+        var zeroDiv = document.createElement('div');
+        zeroDiv.className = 'aci-zero';
+        zeroDiv.innerHTML = '<div class="aci-zero-head">' +
+          '<span class="aci-ling-icon">📝</span>' +
+          '<span class="aci-zero-title">零消耗</span>' +
+          '<span class="aci-zero-sub">不占令，逗号分隔多条</span>' +
+          '</div>' +
+          '<textarea class="aci-zero-textarea" data-slot="' + i + '" placeholder="例如：派赵云驻守小沛，关羽移驻平原..."></textarea>';
+        body.appendChild(zeroDiv);
+      }
+
+      col.appendChild(body);
+      cols.appendChild(col);
+    }
+
+    // 绑定选项点击事件
+    attachOptionEvents();
+  }
+
+  /**
+   * 渲染单条令组
+   */
+  function renderLing(title, icon, sub, options, groupName, canInteract, maxLength) {
+    var ling = document.createElement('div');
+    ling.className = 'aci-ling';
+
+    ling.innerHTML = '<div class="aci-ling-head">' +
+      '<span class="aci-ling-icon">' + icon + '</span>' +
+      '<span class="aci-ling-title">' + title + '</span>' +
+      '<span class="aci-ling-sub">' + sub + '</span>' +
+      '</div>';
+
+    if (!options || options.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'aci-empty-opt';
+      empty.textContent = '等待 GM 发布选项...';
+      ling.appendChild(empty);
+      return ling;
+    }
+
+    for (var i = 0; i < options.length; i++) {
+      var opt = options[i];
+      var label = document.createElement('label');
+      label.className = 'aci-opt';
+      label.setAttribute('data-checked', '0');
+      if (!canInteract) {
+        label.style.cursor = 'default';
+        label.style.opacity = '0.6';
+      }
+
+      var radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = groupName;
+      radio.className = 'aci-opt-radio';
+      radio.disabled = !canInteract;
+      label.appendChild(radio);
+
+      var head = document.createElement('div');
+      head.className = 'aci-opt-head';
+      head.innerHTML = '<span class="aci-opt-label">' + opt.label + '.</span>' +
+        '<span class="aci-opt-name">' + escapeHtml(opt.title) + '</span>';
+      label.appendChild(head);
+
+      var desc = document.createElement('div');
+      desc.className = 'aci-opt-desc';
+      desc.textContent = opt.desc;
+      label.appendChild(desc);
+
+      if (opt.prestige > 0 || opt.risk) {
+        var foot = document.createElement('div');
+        foot.className = 'aci-opt-foot';
+        if (opt.risk) {
+          foot.innerHTML += '<span class="aci-opt-risk" data-risk="' + opt.risk + '">' + opt.risk + '</span>';
+        }
+        if (opt.prestige > 0) {
+          foot.innerHTML += '<span class="aci-opt-prestige">预估 +' + opt.prestige + ' 威望</span>';
+        }
+        label.appendChild(foot);
+      }
+
+      // 自拟输入框
+      if (opt.isCustom && canInteract) {
+        var customWrap = document.createElement('div');
+        customWrap.className = 'aci-custom-wrap';
+        customWrap.innerHTML = '<input type="text" class="aci-custom-input" placeholder="输入自定义内容..." maxlength="' + maxLength + '">' +
+          '<div class="aci-custom-counter"><span class="char-count">0</span> / ' + maxLength + '</div>';
+        label.appendChild(customWrap);
+      }
+
+      ling.appendChild(label);
+    }
+
+    return ling;
+  }
+
+  /**
+   * 绑定选项点击事件
+   */
+  function attachOptionEvents() {
+    var opts = document.querySelectorAll('.aci-opt');
+    for (var i = 0; i < opts.length; i++) {
+      opts[i].addEventListener('click', function() {
+        if (this.style.cursor === 'default') return;
+
+        var radio = this.querySelector('.aci-opt-radio');
+        if (!radio || radio.disabled) return;
+
+        radio.checked = true;
+
+        // 清除同组其他选中
+        var groupName = radio.name;
+        var allInGroup = document.querySelectorAll('input[name="' + groupName + '"]');
+        for (var j = 0; j < allInGroup.length; j++) {
+          var parentLabel = allInGroup[j].closest('.aci-opt');
+          if (parentLabel) {
+            parentLabel.setAttribute('data-checked', allInGroup[j].checked ? '1' : '0');
+          }
+        }
+      });
+    }
+
+    // 自拟输入框字数统计
+    var customInputs = document.querySelectorAll('.aci-custom-input');
+    for (var k = 0; k < customInputs.length; k++) {
+      customInputs[k].addEventListener('input', function() {
+        var counter = this.parentNode.querySelector('.char-count');
+        if (counter) {
+          counter.textContent = this.value.length;
+        }
+      });
+    }
+  }
+
+  /**
+   * GM 一键复制全部行动
+   */
+  function copyAllActions() {
+    var result = [];
+    var slotNames = ['甲', '乙', '丙'];
+
+    for (var i = 0; i < 3; i++) {
+      var playerName = state.players[i] ? state.players[i].name : slotNames[i];
+      var main = getSelectedOption('main-' + i);
+      var sub = getSelectedOption('sub-' + i);
+      var react = getSelectedOption('react-' + i);
+      var zero = document.querySelector('.aci-zero-textarea[data-slot="' + i + '"]');
+      var zeroText = zero ? zero.value.trim() : '';
+
+      result.push('【' + slotNames[i] + ' · ' + playerName + '】');
+      result.push('主令：' + (main || '未选择'));
+      result.push('副令：' + (sub || '未选择'));
+      result.push('应变令：' + (react || '未选择'));
+      if (zeroText) {
+        result.push('零消耗：' + zeroText);
+      }
+      result.push('');
+    }
+
+    var text = result.join('\n');
+    copyToClipboard(text);
+
+    var successEl = document.querySelector('.gm-copy-success');
+    if (successEl) {
+      successEl.style.display = 'block';
+      setTimeout(function() {
+        successEl.style.display = 'none';
+      }, 3000);
+    }
+  }
+
+  /**
+   * 获取选中的选项文本
+   */
+  function getSelectedOption(groupName) {
+    var radio = document.querySelector('input[name="' + groupName + '"]:checked');
+    if (!radio) return null;
+
+    var label = radio.closest('.aci-opt');
+    if (!label) return null;
+
+    var optLabel = label.querySelector('.aci-opt-label');
+    var optName = label.querySelector('.aci-opt-name');
+    var customInput = label.querySelector('.aci-custom-input');
+
+    var result = optLabel ? optLabel.textContent : '';
+    if (customInput && customInput.value.trim()) {
+      result += customInput.value.trim();
+    } else if (optName) {
+      result += optName.textContent;
+    }
+
+    return result;
+  }
+
+  /**
+   * 复制到剪贴板
+   */
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(function(e) {
+        console.error('复制失败:', e);
+      });
+    } else {
+      var textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+  }
+
+  /**
+   * 获取用户槽位
+   */
+  function getUserSlot() {
+    var role = localStorage.getItem('sg_role');
+    if (role === 'player-0') return 0;
+    if (role === 'player-1') return 1;
+    if (role === 'player-2') return 2;
+    return -1;
+  }
+
+  /**
+   * 是否 GM 模式
+   */
+  function isGMMode() {
+    var url = window.location.href;
+    return url.indexOf('gm=') !== -1;
+  }
+
+  /**
+   * HTML 转义
+   */
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  /**
+   * 从原始文本中提取指定段落
+   */
+  function extractSection(text, startMarker, endMarker) {
+    if (!text) return '';
+    var startIdx = text.indexOf(startMarker);
+    if (startIdx === -1) return '';
+    startIdx += startMarker.length;
+
+    var endIdx = text.indexOf(endMarker, startIdx);
+    if (endIdx === -1) {
+      return text.substring(startIdx).trim();
+    }
+    return text.substring(startIdx, endIdx).trim();
+  }
+
+  // 暴露给全局
+  window.SGAction = {
+    renderSettlement: renderSettlement,
+    renderOpportunities: renderOpportunities,
+    renderActionPanel: renderActionPanel,
+    copyAllActions: copyAllActions
+  };
+
 })();
 /* ╚══ END v20260613aci3v2 工单#action-panel-3col-v2 ═══════════════ */
