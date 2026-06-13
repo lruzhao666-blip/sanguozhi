@@ -1172,6 +1172,48 @@
       goalsEl.innerHTML = '<span style="color: var(--text-dim);">目标系统开发中...</span>';
     }
   }
+  /**
+   * v20260615 工单#world-state-indicator-v1
+   * 渲染世界状态指示器
+   */
+  function renderWorldState(rd) {
+    const container = document.getElementById('world-state-indicator');
+    if (!container) return;
+    const rawText = (rd && (rd.rawContent || (rd.parsed && rd.parsed.rawDigest))) || '';
+    if (!rawText) {
+      container.style.display = 'none';
+      return;
+    }
+    // 解析 [世界状态] 段
+    // 格式：Lv{1-4}-{名称} | 距终局:{未触发/还剩N回合}
+    const worldStateMatch = rawText.match(/\[世界状态\]\s*\n\s*Lv(\d)-([^\|]+)\s*\|\s*距终局[:：]\s*(.+)/);
+    if (worldStateMatch) {
+      const level = worldStateMatch[1]; // "1" / "2" / "3" / "4"
+      const name = worldStateMatch[2].trim(); // "割据期" / "兼并期" 等
+      const endgame = worldStateMatch[3].trim(); // "未触发" / "还剩15回合"
+      // 更新等级
+      const levelEl = document.getElementById('wsi-level');
+      if (levelEl) {
+        levelEl.textContent = `Lv${level} ${name}`;
+      }
+      // 更新终局
+      const endgameEl = document.getElementById('wsi-endgame');
+      if (endgameEl) {
+        endgameEl.textContent = endgame;
+      }
+      // 更新机遇池（根据等级决定）
+      const oppCountMap = { '1': 2, '2': 3, '3': '3-4', '4': 4 };
+      const oppCount = oppCountMap[level] || '—';
+      const oppsEl = document.getElementById('wsi-opps');
+      if (oppsEl) {
+        oppsEl.textContent = `${oppCount}条/回合`;
+      }
+      container.style.display = 'block';
+    } else {
+      // 解析失败，隐藏
+      container.style.display = 'none';
+    }
+  }
 
   /**
    * v20260619b 工单#opportunities-panel-v1
@@ -1401,6 +1443,7 @@
       renderPlayerCards();
 
       // v20260619a 工单#decision-ref-v1: 渲染决策参考区
+      renderWorldState(latest);
       renderDecisionRef(latest);
       renderOpportunities(latest);
       renderActionOptions(latest);
