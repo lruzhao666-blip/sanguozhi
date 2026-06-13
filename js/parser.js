@@ -71,7 +71,7 @@ window.SGParser = (function () {
 
     // Step 1: 提取 🎯 行动令段
     // 结束符放宽：═══(三个或更多全角=) / ════(任意长全角=横线) / 36 个半角= / 📋 / 文末
-    const actionsMatch = text.match(/🎯\s*行动令([\s\S]*?)(?=═{3,}|={20,}|📋|$)/);
+    const actionsMatch = text.match(/🎯\s*行动令([\s\S]*?)(?=={20,}|📋|$)/);
     if (!actionsMatch) return result;
 
     const actionsText = actionsMatch[1];
@@ -85,7 +85,7 @@ window.SGParser = (function () {
 
     // Step 3: 提取公共机遇
     // 结束符放宽：═══ / 36 个 = / 📋 / 文末
-    const oppMatch = actionsText.match(/⚔\s*公共机遇[\s\S]*?(?=═{3,}|={20,}|📋|$)/);
+    const oppMatch = actionsText.match(/⚔\s*公共机遇[\s\S]*?(?=═{3,}|={20,}|^[^\s]*\s*\[([甲乙丙])\]|$)/m);
     if (oppMatch) {
       const oppText = oppMatch[0];
       // 匹配每条机遇：机遇N · 标题 — 描述(⚔争夺·预估+N威望) 或 (🤝协力·预估+N威望)
