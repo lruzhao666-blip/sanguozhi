@@ -662,6 +662,11 @@
             })(),
             // [world-3] world 兜底
             world: (reparsed && Array.isArray(reparsed.world)) ? reparsed.world : [],
+            // [action-pass-v1] 透传行动字段:parser 解析后未存入独立 Supabase 列,
+            // 从 reparsed(对 raw_content 的临时解析结果)直接拷贝。
+            playerActions: (reparsed && reparsed.playerActions) || {},
+            opportunities: (reparsed && Array.isArray(reparsed.opportunities)) ? reparsed.opportunities : [],
+            firstMove:     (reparsed && reparsed.firstMove) || null,
           };
         })(),
         rawContent: row.raw_content || '',
