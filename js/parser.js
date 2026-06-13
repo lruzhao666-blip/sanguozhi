@@ -90,14 +90,15 @@ window.SGParser = (function () {
       const oppText = oppMatch[0];
       // 匹配每条机遇：机遇N · 标题 — 描述(⚔争夺·预估+N威望) 或 (🤝协力·预估+N威望)
       // 改动：emoji 后允许紧跟"争夺/协力"二字
-      const oppRe = /机遇(\d+)\s*·\s*([^—]+?)\s*—\s*([^(（]+?)\s*[（(]([⚔🤝])(?:争夺|协力)\s*·\s*预估\+(\d+)\s*威望[）)]/g;
+      const oppRe = /机遇(\d+)\s*·\s*([^—]+?)\s*—\s*([^(（]+?)\s*[（(](🏆|⚔|🤝|🎲)(?:史诗|争夺|协力|赌博)?\s*·\s*(?:预估)?\s*\+?(\d+)\s*威望[）)]/g;
       let m;
       while ((m = oppRe.exec(oppText)) !== null) {
         result.opportunities.push({
           id: parseInt(m[1]),
           title: m[2].trim(),
           desc: m[3].trim(),
-          type: m[4] === '⚔' ? 'compete' : 'cooperate',
+          emoji: m[4],
+          type: (m[4] === '🏆' ? 'epic' : (m[4] === '⚔' ? 'compete' : (m[4] === '🤝' ? 'cooperate' : 'gamble'))),
           prestige: parseInt(m[5])
         });
       }
@@ -118,10 +119,10 @@ window.SGParser = (function () {
 
       // 匹配三令：武令|A.行动名:描述(风险·+N威望) 或 (风险·+N~M威望)
       // 改动：威望段允许 +N 或 +N~M 单符号写法
-      const actionRe = /(武令|文令|策令)\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/g;
+      const actionRe = /(主令|副令|应变令|武令|文令|策令)\s*[|｜]\s*([ABC])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/g;
       let m;
       while ((m = actionRe.exec(section)) !== null) {
-        const lingType = m[1] === '武令' ? 'wu' : m[1] === '文令' ? 'wen' : 'ce';
+        const lingType = (m[1] === '主令' || m[1] === '武令') ? 'wu' : (m[1] === '副令' || m[1] === '文令') ? 'wen' : 'ce';
         const option = m[2].toLowerCase(); // 'a' | 'b'
         result.playerActions[slot][lingType][option] = {
           name: m[3].trim(),
