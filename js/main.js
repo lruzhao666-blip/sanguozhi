@@ -1280,9 +1280,17 @@
       ? window.SGParser.parseActionOptions(_rawText)
       : { wu: [], wen: [], ce: [] };
 
-    renderLingOptions('wu', options.wu);
-    renderLingOptions('wen', options.wen);
-    renderLingOptions('ce', options.ce);
+    // ── #decision-ref-bugfix-v1-step2 START ──
+    // 防御：parser 两份 parseActionOptions 返回结构不一致，
+    // 当 options 不含 wu/wen/ce 字段时，renderLingOptions 内部已用 Array.isArray 守卫，
+    // 此处再加一层 safe 解构，确保不会向 renderLingOptions 传入 undefined 之外的非数组值。
+    const _safeWu  = Array.isArray(options && options.wu)  ? options.wu  : [];
+    const _safeWen = Array.isArray(options && options.wen) ? options.wen : [];
+    const _safeCe  = Array.isArray(options && options.ce)  ? options.ce  : [];
+    renderLingOptions('wu',  _safeWu);
+    renderLingOptions('wen', _safeWen);
+    renderLingOptions('ce',  _safeCe);
+    // ── END #decision-ref-bugfix-v1-step2 ──
 
     bindCustomInputEvents();
   }
@@ -1292,7 +1300,11 @@
    * 渲染单个令的选项
    */
   function renderLingOptions(type, options) {
-    if (options.length === 0) return;
+    // ── #decision-ref-bugfix-v1-step2 START ──
+    // 防御：parser 两份 parseActionOptions 实现冲突时，
+    // options 可能为 undefined 或非数组，直接退出避免 TypeError。
+    if (!Array.isArray(options) || options.length === 0) return;
+    // ── END #decision-ref-bugfix-v1-step2 ──
 
     options.forEach(opt => {
       const label = opt.label.toLowerCase();
