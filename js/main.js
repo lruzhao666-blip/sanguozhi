@@ -1175,13 +1175,13 @@
       const typeBadgeText = opp.type === 'compete' ? '争夺' : '协力';
 
       html += `
-        <div class="opp-card" data-opp-id="${opp.id}">
-          <div class="opp-card-header">
-            <span class="opp-card-title">${escapeHtml(opp.title)}</span>
+        <div class="opp-v2-card" data-opp-id="${opp.id}">
+          <div class="opp-v2-card-header">
+            <span class="opp-v2-card-title">机遇${opp.id} · ${escapeHtml(opp.title)}</span>
             <span class="opp-type-badge ${typeBadgeClass}">${typeBadgeText}</span>
           </div>
-          <div class="opp-card-desc">${escapeHtml(opp.desc)}</div>
-          <div class="opp-card-footer">
+          <div class="opp-v2-card-desc">${escapeHtml(opp.desc)}</div>
+          <div class="opp-v2-card-footer">
             <span class="opp-prestige">预估 +${opp.prestige} 威望</span>
           </div>
         </div>
@@ -1190,10 +1190,25 @@
 
     oppBody.innerHTML = html;
 
-    document.querySelectorAll('.opp-card').forEach(card => {
+    // 绑定机遇卡片点击事件
+    document.querySelectorAll('.opp-v2-card').forEach(card => {
       card.addEventListener('click', function() {
         const oppId = this.getAttribute('data-opp-id');
+
+        // 移除其他卡片的选中态
+        document.querySelectorAll('.opp-v2-card').forEach(c => c.classList.remove('selected'));
+
+        // 标记当前卡片为选中
+        this.classList.add('selected');
+
+        // 联动策令区
         selectOpportunityInCeLing(oppId);
+
+        // 滚动到策令区
+        const ceLingCard = document.querySelector('.ce-ling');
+        if (ceLingCard) {
+          ceLingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       });
     });
   }
