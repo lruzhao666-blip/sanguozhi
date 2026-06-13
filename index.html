@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260613flow" />
+  <link rel="stylesheet" href="css/style.css?v=20260613aci3v2" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -314,313 +314,103 @@
      TAB 3：行动
 ══════════════════════════════════════════ -->
 <section id="tab-action" class="tab-panel">
-<!-- ══════════════════════════════════════════
-     三令提交界面 v4.0
-     ══════════════════════════════════════════ -->
 
-<div class="actions-page">
+  <div class="actions-page-v2">
 
-  <!-- ══ 0. 决策参考区（新增 v4.0）══ -->
-  <div class="decision-ref" id="decision-ref">
-    <div class="dr-header">
-      <span class="dr-icon">📊</span>
-      <span class="dr-title">决策参考</span>
-    </div>
-    <div class="dr-grid">
-      <!-- 威望排行 -->
-      <div class="dr-card">
-        <div class="dr-card-title">🏆 威望排行</div>
-        <div class="dr-card-content" id="prestige-rank-content">
-          <div class="prestige-bar">
-            <span class="pb-label">甲</span>
-            <span class="pb-value" id="prestige-val-0">—</span>
-            <div class="pb-bar"><div class="pb-fill" id="prestige-bar-0" style="width: 0%"></div></div>
+    <!-- ══ 决策参考区(保留原结构,id 不变,由旧逻辑维护) ══ -->
+    <div class="decision-ref" id="decision-ref">
+      <div class="dr-header">
+        <span class="dr-icon">📊</span>
+        <span class="dr-title">决策参考</span>
+      </div>
+      <div class="dr-grid">
+        <div class="dr-card">
+          <div class="dr-card-title">🏆 威望排行</div>
+          <div class="dr-card-content" id="prestige-rank-content">
+            <div class="prestige-bar">
+              <span class="pb-label">甲</span>
+              <span class="pb-value" id="prestige-val-0">—</span>
+              <div class="pb-bar"><div class="pb-fill" id="prestige-bar-0" style="width: 0%"></div></div>
+            </div>
+            <div class="prestige-bar">
+              <span class="pb-label">乙</span>
+              <span class="pb-value" id="prestige-val-1">—</span>
+              <div class="pb-bar"><div class="pb-fill" id="prestige-bar-1" style="width: 0%"></div></div>
+            </div>
+            <div class="prestige-bar">
+              <span class="pb-label">丙</span>
+              <span class="pb-value" id="prestige-val-2">—</span>
+              <div class="pb-bar"><div class="pb-fill" id="prestige-bar-2" style="width: 0%"></div></div>
+            </div>
+            <div class="npc-highest" id="npc-highest" style="margin-top: 8px; font-size: .78rem; color: var(--text-dim);">
+              NPC最高:<span id="npc-highest-name">—</span> <span id="npc-highest-score" style="color: var(--red-bright);">—</span>
+            </div>
           </div>
-          <div class="prestige-bar">
-            <span class="pb-label">乙</span>
-            <span class="pb-value" id="prestige-val-1">—</span>
-            <div class="pb-bar"><div class="pb-fill" id="prestige-bar-1" style="width: 0%"></div></div>
+        </div>
+        <div class="dr-card">
+          <div class="dr-card-title">⚔️ 本回合先手</div>
+          <div class="dr-card-content" id="first-mover-content">
+            <span class="first-mover">
+              <span>👑</span>
+              <span id="first-mover-name">等待GM数据</span>
+            </span>
           </div>
-          <div class="prestige-bar">
-            <span class="pb-label">丙</span>
-            <span class="pb-value" id="prestige-val-2">—</span>
-            <div class="pb-bar"><div class="pb-fill" id="prestige-bar-2" style="width: 0%"></div></div>
-          </div>
-          <div class="npc-highest" id="npc-highest" style="margin-top: 8px; font-size: .78rem; color: var(--text-dim);">
-            NPC最高：<span id="npc-highest-name">—</span> <span id="npc-highest-score" style="color: var(--red-bright);">—</span>
+        </div>
+        <div class="dr-card">
+          <div class="dr-card-title">🎯 本幕目标进度</div>
+          <div class="dr-card-content" id="goals-content" style="font-size: .82rem; line-height: 1.6; color: var(--text-dim);">
+            等待GM公布目标...
           </div>
         </div>
       </div>
-
-      <!-- 先手权 -->
-      <div class="dr-card">
-        <div class="dr-card-title">⚔️ 本回合先手</div>
-        <div class="dr-card-content" id="first-mover-content">
-          <span class="first-mover">
-            <span>👑</span>
-            <span id="first-mover-name">等待GM数据</span>
-          </span>
-        </div>
-      </div>
-
-      <!-- 本幕目标 -->
-      <div class="dr-card">
-        <div class="dr-card-title">🎯 本幕目标进度</div>
-        <div class="dr-card-content" id="goals-content" style="font-size: .82rem; line-height: 1.6; color: var(--text-dim);">
-          等待GM公布目标...
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- ══ 1. 公共机遇面板 ══ -->
-  <div class="opportunities-panel" id="opportunities-panel">
-    <div class="opp-header">
-      <span class="opp-icon">⚔️</span>
-      <span class="opp-title">公共机遇</span>
-      <span class="opp-subtitle">（选则占用策令）</span>
-    </div>
-    <div class="opp-body" id="opp-body">
-      <!-- 机遇卡片由 main.js 动态渲染 -->
-      <div class="opp-empty">本回合无公共机遇</div>
-    </div>
-  </div>
-
-  <!-- ══ 2. 三令提交区 ══ -->
-  <div class="sanling-panel" id="sanling-panel">
-
-    <!-- ── 武令 ── -->
-    <div class="ling-card wu-ling">
-      <div class="ling-header">
-        <span class="ling-icon">⚔️</span>
-        <span class="ling-title">武令</span>
-        <span class="ling-subtitle">（军事行动）</span>
+    <!-- ══ 公共机遇 ══ -->
+    <div class="opportunities-panel" id="opportunities-panel">
+      <div class="opp-header">
+        <span class="opp-icon">⚔️</span>
+        <span class="opp-title">公共机遇</span>
+        <span class="opp-subtitle">(选则占用策令)</span>
       </div>
-      <div class="ling-body" id="wu-ling-body">
-
-        <!-- 选项 A -->
-        <label class="ling-option" id="wu-option-a">
-          <input type="radio" name="wu-ling" value="a" class="ling-radio">
-          <div class="ling-option-content">
-            <div class="ling-option-head">
-              <span class="ling-option-label">A.</span>
-              <span class="ling-option-name" id="wu-a-name">等待 GM 给出选项</span>
-            </div>
-            <div class="ling-option-desc" id="wu-a-desc">—</div>
-            <div class="ling-option-foot">
-              <span class="ling-risk-tag" id="wu-a-risk">—</span>
-              <span class="ling-prestige" id="wu-a-prestige">预估 +? 威望</span>
-            </div>
-          </div>
-        </label>
-
-        <!-- 选项 B -->
-        <label class="ling-option" id="wu-option-b">
-          <input type="radio" name="wu-ling" value="b" class="ling-radio">
-          <div class="ling-option-content">
-            <div class="ling-option-head">
-              <span class="ling-option-label">B.</span>
-              <span class="ling-option-name" id="wu-b-name">等待 GM 给出选项</span>
-            </div>
-            <div class="ling-option-desc" id="wu-b-desc">—</div>
-            <div class="ling-option-foot">
-              <span class="ling-risk-tag" id="wu-b-risk">—</span>
-              <span class="ling-prestige" id="wu-b-prestige">预估 +? 威望</span>
-            </div>
-          </div>
-        </label>
-
-        <!-- 自拟 -->
-        <label class="ling-option ling-option-custom">
-          <input type="radio" name="wu-ling" value="custom" class="ling-radio">
-          <div class="ling-option-content">
-            <div class="ling-option-head">
-              <span class="ling-option-label">自拟：</span>
-            </div>
-            <input type="text" class="ling-custom-input" id="wu-custom-input" placeholder="输入自拟武令（≤30字）" maxlength="30" disabled>
-            <div class="ling-custom-counter">
-              <span id="wu-custom-count">0</span>/30
-            </div>
-          </div>
-        </label>
-
+      <div class="opp-body" id="opp-body">
+        <div class="opp-empty">本回合无公共机遇</div>
       </div>
     </div>
 
-    <!-- ── 文令 ── -->
-    <div class="ling-card wen-ling">
-      <div class="ling-header">
-        <span class="ling-icon">📜</span>
-        <span class="ling-title">文令</span>
-        <span class="ling-subtitle">（内政建设）</span>
+    <!-- ══ 行动指令三栏 ══ -->
+    <div class="aci-block" id="aci-block">
+      <div class="aci-header">
+        <span class="aci-icon">指令</span>
+        <span class="aci-title">行动指令</span>
+        <span class="aci-mode-tag" id="aci-mode-tag"></span>
       </div>
-      <div class="ling-body" id="wen-ling-body">
 
-        <!-- 选项 A -->
-        <label class="ling-option" id="wen-option-a">
-          <input type="radio" name="wen-ling" value="a" class="ling-radio">
-          <div class="ling-option-content">
-            <div class="ling-option-head">
-              <span class="ling-option-label">A.</span>
-              <span class="ling-option-name" id="wen-a-name">等待 GM 给出选项</span>
-            </div>
-            <div class="ling-option-desc" id="wen-a-desc">—</div>
-            <div class="ling-option-foot">
-              <span class="ling-risk-tag" id="wen-a-risk">—</span>
-              <span class="ling-prestige" id="wen-a-prestige">预估 +? 威望</span>
-            </div>
-          </div>
-        </label>
+      <div class="aci-mobile-tabs" id="aci-mobile-tabs">
+        <button class="aci-mtab" data-slot="0">甲</button>
+        <button class="aci-mtab" data-slot="1">乙</button>
+        <button class="aci-mtab" data-slot="2">丙</button>
+      </div>
 
-        <!-- 选项 B -->
-        <label class="ling-option" id="wen-option-b">
-          <input type="radio" name="wen-ling" value="b" class="ling-radio">
-          <div class="ling-option-content">
-            <div class="ling-option-head">
-              <span class="ling-option-label">B.</span>
-              <span class="ling-option-name" id="wen-b-name">等待 GM 给出选项</span>
-            </div>
-            <div class="ling-option-desc" id="wen-b-desc">—</div>
-            <div class="ling-option-foot">
-              <span class="ling-risk-tag" id="wen-b-risk">—</span>
-              <span class="ling-prestige" id="wen-b-prestige">预估 +? 威望</span>
-            </div>
-          </div>
-        </label>
-
-        <!-- 自拟 -->
-        <label class="ling-option ling-option-custom">
-          <input type="radio" name="wen-ling" value="custom" class="ling-radio">
-          <div class="ling-option-content">
-            <div class="ling-option-head">
-              <span class="ling-option-label">自拟：</span>
-            </div>
-            <input type="text" class="ling-custom-input" id="wen-custom-input" placeholder="输入自拟文令（≤30字）" maxlength="30" disabled>
-            <div class="ling-custom-counter">
-              <span id="wen-custom-count">0</span>/30
-            </div>
-          </div>
-        </label>
-
+      <div class="aci-cols" id="aci-cols">
+        <!-- 三栏由 renderActionPanelV2 渲染 -->
+        <div class="aci-empty-init">等待 GM 发布回合数据…</div>
       </div>
     </div>
 
-    <!-- ── 策令 ── -->
-    <div class="ling-card ce-ling">
-      <div class="ling-header">
-        <span class="ling-icon">🎯</span>
-        <span class="ling-title">策令</span>
-        <span class="ling-subtitle">（奇谋变数）</span>
+    <!-- ══ 提交栏 ══ -->
+    <div class="aci-submit-bar">
+      <button id="btn-submit-actions" class="aci-submit-btn">
+        提交本回合行动
+      </button>
+      <div class="aci-submit-meta" id="submit-warning">
+        ⚠️ 提交后三家同时公开,不可修改
       </div>
-      <div class="ling-body" id="ce-ling-body">
-
-        <!-- 选项 A -->
-        <label class="ling-option" id="ce-option-a">
-          <input type="radio" name="ce-ling" value="a" class="ling-radio">
-          <div class="ling-option-content">
-            <div class="ling-option-head">
-              <span class="ling-option-label">A.</span>
-              <span class="ling-option-name" id="ce-a-name">等待 GM 给出选项</span>
-            </div>
-            <div class="ling-option-desc" id="ce-a-desc">—</div>
-            <div class="ling-option-foot">
-              <span class="ling-risk-tag" id="ce-a-risk">—</span>
-              <span class="ling-prestige" id="ce-a-prestige">预估 +? 威望</span>
-            </div>
-          </div>
-        </label>
-
-        <!-- 选项 B -->
-        <label class="ling-option" id="ce-option-b">
-          <input type="radio" name="ce-ling" value="b" class="ling-radio">
-          <div class="ling-option-content">
-            <div class="ling-option-head">
-              <span class="ling-option-label">B.</span>
-              <span class="ling-option-name" id="ce-b-name">等待 GM 给出选项</span>
-            </div>
-            <div class="ling-option-desc" id="ce-b-desc">—</div>
-            <div class="ling-option-foot">
-              <span class="ling-risk-tag" id="ce-b-risk">—</span>
-              <span class="ling-prestige" id="ce-b-prestige">预估 +? 威望</span>
-            </div>
-          </div>
-        </label>
-
-        <!-- 改选机遇 -->
-        <div class="ling-opportunity-select" id="ce-opp-select">
-          <label class="ling-option ling-option-opp">
-            <input type="radio" name="ce-ling" value="opp" class="ling-radio" disabled>
-            <div class="ling-option-content">
-              <div class="ling-option-head">
-                <span class="ling-option-label">改选机遇：</span>
-              </div>
-              <div class="ling-opp-list" id="ce-opp-list">
-                <label class="ling-opp-item">
-                  <input type="radio" name="ce-opp" value="1" disabled>
-                  <span>机遇 1</span>
-                </label>
-                <label class="ling-opp-item">
-                  <input type="radio" name="ce-opp" value="2" disabled>
-                  <span>机遇 2</span>
-                </label>
-              </div>
-            </div>
-          </label>
-        </div>
-
-        <!-- 自拟 -->
-        <label class="ling-option ling-option-custom">
-          <input type="radio" name="ce-ling" value="custom" class="ling-radio">
-          <div class="ling-option-content">
-            <div class="ling-option-head">
-              <span class="ling-option-label">自拟：</span>
-            </div>
-            <input type="text" class="ling-custom-input" id="ce-custom-input" placeholder="输入自拟策令（≤30字）" maxlength="30" disabled>
-            <div class="ling-custom-counter">
-              <span id="ce-custom-count">0</span>/30
-            </div>
-          </div>
-        </label>
-
+      <div class="aci-submit-success hidden" id="submit-success">
+        ✅ 已提交,等待其他玩家和GM结算
       </div>
     </div>
 
   </div>
-
-  <!-- ══ 3. 零消耗行动区 ══ -->
-  <div class="zero-actions-panel">
-    <div class="zero-header">
-      <span class="zero-icon">💬</span>
-      <span class="zero-title">零消耗行动</span>
-      <span class="zero-subtitle">（不占令，不限数量）</span>
-    </div>
-    <div class="zero-body">
-      <textarea
-        id="zero-actions-input"
-        class="zero-textarea"
-        placeholder="示例：派张辽驻守合肥, 派遣使者向袁绍致意, 安抚下邳民心"
-        rows="3"
-      ></textarea>
-      <div class="zero-hint">
-        💡 零消耗行动：派将驻城 / 换太守 / 安抚 / 收发书信 / 外交回应 / 调停
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ 4. 提交按钮 ══ -->
-  <div class="actions-submit">
-    <button id="btn-submit-actions" class="btn-submit-actions">
-      提交本回合行动
-    </button>
-    <div class="submit-warning" id="submit-warning">
-      ⚠️ 提交后三家同时公开，不可修改
-    </div>
-    <div class="submit-success hidden" id="submit-success">
-      ✅ 已提交，等待其他玩家和GM结算
-    </div>
-  </div>
-
-</div>
 </section>
 
 <!-- ══════════════════════════════════════════
@@ -779,7 +569,7 @@
 <script src="js/generals-organize.js?v=20260608a"></script>
 
 <script src="js/generals-organize-ui.js?v=20260608r"></script>
-<script src="js/main.js?v=20260619e"></script>
+<script src="js/main.js?v=20260613aci3v2"></script>
 <script src="js/achievement-sync.js?v=20261105a"></script>
 <script src="js/role-login.js?v=v20260601a"></script>
 <script src="js/secret-bureau.js?v=v20260601b"></script>

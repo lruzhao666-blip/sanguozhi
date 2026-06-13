@@ -5726,3 +5726,386 @@ function showActionsEmptyHint() {
     }
   });
 })();
+
+/* ════════════════════════════════════════════════════════════
+   v20260613aci3v2 工单#action-panel-3col-v2
+   行动 Tab 三栏视图渲染器 renderActionPanelV2
+   ──────────────────────────────────────────────────────────── */
+(function(){
+  'use strict';
+
+  const SLOT_NAMES = ['甲', '乙', '丙'];
+  const LING_TYPES = [
+    { key: 'wu',  icon: '⚔️', title: '武令', sub: '(军事行动)' },
+    { key: 'wen', icon: '📜', title: '文令', sub: '(内政建设)' },
+    { key: 'ce',  icon: '🎯', title: '策令', sub: '(奇谋变数)' },
+  ];
+
+  // 当前 UI 选择状态(每个 slot 独立)
+  const uiState = {
+    0: { wu: null, wen: null, ce: null, customWu: '', customWen: '', customCe: '', zero: '' },
+    1: { wu: null, wen: null, ce: null, customWu: '', customWen: '', customCe: '', zero: '' },
+    2: { wu: null, wen: null, ce: null, customWu: '', customWen: '', customCe: '', zero: '' },
+  };
+
+  function _esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function _isGM() {
+    try {
+      const u = new URL(window.location.href);
+      return u.searchParams.get('gm') === '0727';
+    } catch(e) { return false; }
+  }
+
+  function _currentSlot() {
+    try {
+      const r = window.SGRole && window.SGRole.get && window.SGRole.get();
+      const idx = SLOT_NAMES.indexOf(r);
+      return idx >= 0 ? idx : null;
+    } catch(e) { return null; }
+  }
+
+  function _normalizeRisk(r) {
+    if (!r) return '';
+    const t = String(r).trim();
+    if (/稳/.test(t)) return '稳';
+    if (/中/.test(t)) return '中';
+    if (/险/.test(t)) return '险';
+    return t;
+  }
+
+  function _getPlayerActions(parsed, slotKey) {
+    const pa = parsed && parsed.playerActions;
+    if (!pa) return null;
+    return pa[slotKey] || null;
+  }
+
+  function _renderOption(slotIdx, lingKey, optKey, opt, editable) {
+    const checked = uiState[slotIdx][lingKey] === optKey;
+    const name = opt ? (opt.name || '') : '—';
+    const desc = opt ? (opt.desc || '') : '';
+    const risk = opt ? _normalizeRisk(opt.risk) : '';
+    const prestige = opt ? (opt.prestige || '') : '';
+
+    return `
+      <label class="aci-opt" data-checked="${checked ? '1' : '0'}" data-opt="${optKey}" data-ling="${lingKey}" data-slot="${slotIdx}">
+        <input type="radio" class="aci-opt-radio" name="aci-${slotIdx}-${lingKey}" value="${optKey}" ${checked ? 'checked' : ''} ${editable ? '' : 'disabled'}>
+        <div class="aci-opt-head">
+          <span class="aci-opt-label">${optKey.toUpperCase()}.</span>
+          <span class="aci-opt-name">${_esc(name)}</span>
+        </div>
+        ${desc ? `<div class="aci-opt-desc">${_esc(desc)}</div>` : ''}
+        <div class="aci-opt-foot">
+          ${risk ? `<span class="aci-opt-risk" data-risk="${risk}">${risk}</span>` : ''}
+          ${prestige ? `<span class="aci-opt-prestige">+${_esc(prestige)} 威望</span>` : ''}
+        </div>
+      </label>
+    `;
+  }
+
+  function _renderCustomOption(slotIdx, lingKey, editable) {
+    const checked = uiState[slotIdx][lingKey] === 'custom';
+    const customKey = 'custom' + lingKey.charAt(0).toUpperCase() + lingKey.slice(1);
+    const val = uiState[slotIdx][customKey] || '';
+    const placeholderMap = { wu: '输入自拟武令(≤30字)', wen: '输入自拟文令(≤30字)', ce: '输入自拟策令(≤30字)' };
+    const disabledAttr = (!checked || !editable) ? 'disabled' : '';
+
+    return `
+      <label class="aci-opt aci-opt-custom" data-checked="${checked ? '1' : '0'}" data-opt="custom" data-ling="${lingKey}" data-slot="${slotIdx}">
+        <input type="radio" class="aci-opt-radio" name="aci-${slotIdx}-${lingKey}" value="custom" ${checked ? 'checked' : ''} ${editable ? '' : 'disabled'}>
+        <div class="aci-opt-head">
+          <span class="aci-opt-label">自拟</span>
+        </div>
+        <div class="aci-custom-wrap">
+          <input type="text" class="aci-custom-input"
+                 data-slot="${slotIdx}" data-ling="${lingKey}"
+                 maxlength="30"
+                 placeholder="${placeholderMap[lingKey] || '输入自拟内容'}"
+                 value="${_esc(val)}"
+                 ${disabledAttr}>
+          <div class="aci-custom-counter"><span class="aci-cnt">${val.length}</span>/30</div>
+        </div>
+      </label>
+    `;
+  }
+
+  function _renderLingGroup(slotIdx, lingType, actions, editable) {
+    const a = actions ? actions.a : null;
+    const b = actions ? actions.b : null;
+    const noOpt = (!a && !b);
+    return `
+      <div class="aci-ling">
+        <div class="aci-ling-head">
+          <span class="aci-ling-icon">${lingType.icon}</span>
+          <span class="aci-ling-title">${lingType.title}</span>
+          <span class="aci-ling-sub">${lingType.sub}</span>
+        </div>
+        ${noOpt
+          ? `<div class="aci-empty-opt">等待 GM 给出选项</div>`
+          : `${_renderOption(slotIdx, lingType.key, 'a', a, editable)}
+             ${_renderOption(slotIdx, lingType.key, 'b', b, editable)}
+             ${_renderCustomOption(slotIdx, lingType.key, editable)}`
+        }
+      </div>
+    `;
+  }
+
+  function _renderZero(slotIdx, editable) {
+    const val = uiState[slotIdx].zero || '';
+    return `
+      <div class="aci-zero">
+        <div class="aci-zero-head">
+          <span class="aci-zero-title">💬 零消耗行动</span>
+          <span class="aci-zero-sub">(不占令,不限数量)</span>
+        </div>
+        <textarea class="aci-zero-textarea" data-slot="${slotIdx}" rows="3"
+                  placeholder="示例:派张辽驻守合肥,派遣使者向袁绍致意,安抚下邳民心"
+                  ${editable ? '' : 'disabled'}>${_esc(val)}</textarea>
+      </div>
+    `;
+  }
+
+  function _renderCol(slotIdx, parsed, mySlot, isGM) {
+    const slotKey = SLOT_NAMES[slotIdx];
+    const editable = isGM || (mySlot === slotIdx);
+    const isSelf = (mySlot === slotIdx);
+
+    const player = (parsed && parsed.players || []).find(p => p.slot === slotKey);
+    const name = player ? (player.name || slotKey) : slotKey;
+
+    const actions = _getPlayerActions(parsed, slotKey);
+
+    let badgeKind = 'other', badgeText = '旁观';
+    if (isGM) { badgeKind = 'gm'; badgeText = 'GM · ' + slotKey; }
+    else if (isSelf) { badgeKind = 'self'; badgeText = '参战'; }
+
+    const lingHTML = LING_TYPES.map(lt => {
+      const ling = actions ? actions[lt.key] : null;
+      return _renderLingGroup(slotIdx, lt, ling, editable);
+    }).join('');
+
+    const zeroHTML = editable ? _renderZero(slotIdx, editable) : '';
+
+    return `
+      <div class="aci-col" data-slot="${slotIdx}" data-self="${isSelf ? 1 : 0}" data-gm="${isGM ? 1 : 0}">
+        <div class="aci-col-head">
+          <span class="aci-col-slot">${slotKey}</span>
+          <span class="aci-col-divider">·</span>
+          <span class="aci-col-name">${_esc(name)}</span>
+          <span class="aci-col-badge" data-kind="${badgeKind}">${badgeText}</span>
+        </div>
+        <div class="aci-col-body">
+          ${lingHTML}
+          ${zeroHTML}
+        </div>
+      </div>
+    `;
+  }
+
+  function _bindEvents(rootEl) {
+    if (!rootEl || rootEl._aciBound) return;
+    rootEl._aciBound = true;
+
+    rootEl.addEventListener('click', (e) => {
+      const opt = e.target.closest('.aci-opt');
+      if (!opt) return;
+      const col = opt.closest('.aci-col');
+      if (!col) return;
+      const isSelfCol = col.getAttribute('data-self') === '1';
+      const isGMMode  = col.getAttribute('data-gm')   === '1';
+      if (!isSelfCol && !isGMMode) return;
+
+      const slotIdx = parseInt(col.getAttribute('data-slot'));
+      const ling = opt.getAttribute('data-ling');
+      const optKey = opt.getAttribute('data-opt');
+      uiState[slotIdx][ling] = optKey;
+
+      _refreshCol(rootEl, slotIdx);
+    });
+
+    rootEl.addEventListener('input', (e) => {
+      const t = e.target;
+      if (t.matches('.aci-custom-input')) {
+        const slotIdx = parseInt(t.getAttribute('data-slot'));
+        const ling = t.getAttribute('data-ling');
+        const customKey = 'custom' + ling.charAt(0).toUpperCase() + ling.slice(1);
+        uiState[slotIdx][customKey] = t.value;
+        const cnt = t.parentNode.querySelector('.aci-cnt');
+        if (cnt) cnt.textContent = t.value.length;
+      } else if (t.matches('.aci-zero-textarea')) {
+        const slotIdx = parseInt(t.getAttribute('data-slot'));
+        uiState[slotIdx].zero = t.value;
+      }
+    });
+  }
+
+  function _refreshCol(rootEl, slotIdx) {
+    const parsed = window._aciLastParsed || null;
+    const mySlot = _currentSlot();
+    const isGM = _isGM();
+    const newHTML = _renderCol(slotIdx, parsed, mySlot, isGM);
+    const oldCol = rootEl.querySelector(`.aci-col[data-slot="${slotIdx}"]`);
+    if (oldCol) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = newHTML;
+      const newCol = tmp.firstElementChild;
+      // 保留之前 active 状态(移动端 tab)
+      if (oldCol.classList.contains('aci-col-active')) {
+        newCol.classList.add('aci-col-active');
+      }
+      oldCol.replaceWith(newCol);
+    }
+  }
+
+  function _bindMobileTabs(blockEl) {
+    if (!blockEl || blockEl._aciTabBound) return;
+    blockEl._aciTabBound = true;
+
+    function activate(slotIdx) {
+      blockEl.querySelectorAll('.aci-mtab').forEach(t =>
+        t.classList.toggle('active', parseInt(t.getAttribute('data-slot')) === slotIdx));
+      blockEl.querySelectorAll('.aci-col').forEach(c =>
+        c.classList.toggle('aci-col-active', parseInt(c.getAttribute('data-slot')) === slotIdx));
+    }
+
+    blockEl.addEventListener('click', (e) => {
+      const t = e.target.closest('.aci-mtab');
+      if (!t) return;
+      activate(parseInt(t.getAttribute('data-slot')));
+    });
+  }
+
+  function _renderOpportunities(parsed) {
+    const oppBody = document.getElementById('opp-body');
+    if (!oppBody) return;
+    const opps = (parsed && parsed.opportunities) || [];
+    if (!opps.length) {
+      oppBody.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
+      return;
+    }
+    oppBody.innerHTML = opps.map(o => {
+      const typeText = o.type === 'compete' ? '⚔ 争夺' : '🤝 协力';
+      return `
+        <div class="opp-card" data-type="${o.type || 'compete'}">
+          <div class="opp-card-header">
+            <div class="opp-card-title">机遇${_esc(o.id)} · ${_esc(o.title)}</div>
+            <span class="opp-type-badge ${o.type || 'compete'}">${typeText}</span>
+          </div>
+          <div class="opp-card-desc">${_esc(o.desc || '')}</div>
+          <div class="opp-card-footer">
+            <span class="opp-prestige">预估 +${_esc(o.prestige)} 威望</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function _renderFirstMover(parsed) {
+    const el = document.getElementById('first-mover-name');
+    if (!el) return;
+    const fm = (parsed && parsed.firstMove) || '';
+    el.textContent = fm || '等待GM数据';
+  }
+
+  function renderActionPanelV2(parsed) {
+    try {
+      console.log('[ACI v2] render with playerActions:', parsed && parsed.playerActions);
+      window._aciLastParsed = parsed || null;
+
+      _renderOpportunities(parsed);
+      _renderFirstMover(parsed);
+
+      const colsEl = document.getElementById('aci-cols');
+      const blockEl = document.getElementById('aci-block');
+      const modeTag = document.getElementById('aci-mode-tag');
+      if (!colsEl) {
+        console.warn('[ACI v2] #aci-cols not found, skip render');
+        return;
+      }
+
+      const mySlot = _currentSlot();
+      const isGM = _isGM();
+
+      if (modeTag) {
+        if (isGM) {
+          modeTag.textContent = 'GM 视角 · 三栏可代提交';
+          modeTag.setAttribute('data-mode', 'gm');
+        } else if (mySlot != null) {
+          modeTag.textContent = '玩家 · ' + SLOT_NAMES[mySlot];
+          modeTag.setAttribute('data-mode', 'player');
+        } else {
+          modeTag.textContent = '旁观模式 · 未登录';
+          modeTag.setAttribute('data-mode', 'guest');
+        }
+      }
+      if (blockEl) {
+        blockEl.setAttribute('data-gm', isGM ? '1' : '0');
+      }
+
+      const html = [0, 1, 2].map(slotIdx => _renderCol(slotIdx, parsed, mySlot, isGM)).join('');
+      colsEl.innerHTML = html;
+
+      _bindEvents(colsEl);
+      if (blockEl) _bindMobileTabs(blockEl);
+
+      // 移动端默认激活自己栏
+      if (window.matchMedia && window.matchMedia('(max-width: 640px)').matches && !isGM) {
+        const defaultSlot = mySlot != null ? mySlot : 0;
+        colsEl.querySelectorAll('.aci-col').forEach(c =>
+          c.classList.toggle('aci-col-active', parseInt(c.getAttribute('data-slot')) === defaultSlot));
+        if (blockEl) {
+          blockEl.querySelectorAll('.aci-mtab').forEach(t => {
+            const tabSlot = parseInt(t.getAttribute('data-slot'));
+            t.classList.toggle('active', tabSlot === defaultSlot);
+            t.removeAttribute('data-self');
+            if (mySlot != null && tabSlot === mySlot) t.setAttribute('data-self', '1');
+          });
+        }
+      }
+    } catch (e) {
+      console.error('[ACI v2] render failed:', e);
+    }
+  }
+
+  // 暴露到 window
+  window.renderActionPanelV2 = renderActionPanelV2;
+
+  // 监听身份变化,重新渲染
+  window.addEventListener('sg-role-changed', () => {
+    if (window._aciLastParsed) renderActionPanelV2(window._aciLastParsed);
+  });
+
+  // ── 自动渲染挂钩:监听 SGState 变化 ──
+  // 由于 main.js 主 IIFE 的 renderAll 函数我们无法直接修改其内部,
+  // 此处用 MutationObserver / 定时器双保险:每 1s 检查 SGState.rounds 是否变化,
+  // 变化时调用 renderActionPanelV2。这是无侵入式接入,不依赖 main.js 内部修改。
+  let _lastRoundCount = -1;
+  let _lastRoundNum = -1;
+  function _checkAndRender() {
+    try {
+      const st = window.SGState;
+      if (!st || !Array.isArray(st.rounds)) return;
+      const cnt = st.rounds.length;
+      const latest = cnt > 0 ? st.rounds[cnt - 1] : null;
+      const rn = latest ? latest.round : -1;
+      if (cnt !== _lastRoundCount || rn !== _lastRoundNum) {
+        _lastRoundCount = cnt;
+        _lastRoundNum = rn;
+        if (latest && latest.parsed) {
+          renderActionPanelV2(latest.parsed);
+        }
+      }
+    } catch (e) {}
+  }
+  // 启动轮询
+  setInterval(_checkAndRender, 1000);
+  // 页面首次加载延迟一次,确保 SGState 已初始化
+  setTimeout(_checkAndRender, 500);
+  setTimeout(_checkAndRender, 1500);
+  setTimeout(_checkAndRender, 3000);
+})();
+/* ╚══ END v20260613aci3v2 工单#action-panel-3col-v2 ═══════════════ */
