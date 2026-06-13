@@ -774,12 +774,33 @@
     );
   }
 
+  // ── #layout-fix-mobile-v2 · Tab 切换 scrollTop 记忆 ──
+  const _tabScrollMemory = Object.create(null);
+  let _currentTab = null;
+
   function switchTab(name) {
+    if (_currentTab && _currentTab !== name) {
+      _tabScrollMemory[_currentTab] =
+        window.scrollY || document.documentElement.scrollTop || 0;
+    }
+
     document.querySelectorAll('.nav-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.tab === name));
     document.querySelectorAll('.tab-panel').forEach(p =>
       p.classList.toggle('active', p.id === `tab-${name}`));
+
+    const targetY = _tabScrollMemory[name] || 0;
+    document.documentElement.classList.add('tab-switching');
+    requestAnimationFrame(() => {
+      window.scrollTo(0, targetY);
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('tab-switching');
+      });
+    });
+
+    _currentTab = name;
   }
+  // ── END #layout-fix-mobile-v2 ──
 
   // ══════════════════════════════════════════
   //  GM 面板
