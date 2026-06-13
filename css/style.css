@@ -15063,3 +15063,107 @@ html.tab-switching {
 }
 
 /* ╚══ END v20260613layoutfix2 ═════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   #action-panel-step2 上回合结算 + GM 复制按钮样式
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── 上回合结算板块 ─── */
+.settlement-block .ib-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.settlement-player {
+  padding: 10px 14px;
+  background: rgba(0,0,0,.28);
+  border-radius: var(--r);
+  border-left: 3px solid rgba(212,168,67,.32);
+}
+.settlement-player[data-slot="0"] { border-left-color: rgba(231,76,60,.5); }
+.settlement-player[data-slot="1"] { border-left-color: rgba(61,190,108,.5); }
+.settlement-player[data-slot="2"] { border-left-color: rgba(52,152,219,.5); }
+.settlement-player-head {
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  margin-bottom: 6px;
+  letter-spacing: .06em;
+}
+.settlement-ling {
+  font-family: var(--font-serif);
+  font-size: .76rem;
+  color: var(--text-sub);
+  line-height: 1.7;
+  margin-bottom: 3px;
+}
+.settlement-ling strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+.settlement-prestige {
+  color: var(--gold-light);
+  font-weight: 700;
+}
+.settlement-opp {
+  padding: 10px 14px;
+  background: rgba(0,0,0,.22);
+  border-radius: var(--r);
+  border-left: 3px solid rgba(120,108,90,.32);
+  font-family: var(--font-serif);
+  font-size: .76rem;
+  color: var(--text-sub);
+  line-height: 1.7;
+}
+.settlement-opp strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* ─── GM 一键复制按钮 ─── */
+.gm-copy-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(80,15,8,.4);
+  border: 1px solid rgba(231,76,60,.5);
+  border-radius: var(--rl);
+  box-shadow: 0 2px 18px rgba(0,0,0,.45);
+}
+.gm-copy-btn {
+  font-family: var(--font-serif);
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  background: linear-gradient(135deg, rgba(80,15,8,.6), rgba(120,25,15,.4));
+  border: 1px solid rgba(231,76,60,.5);
+  border-radius: var(--r);
+  padding: 9px 28px;
+  cursor: pointer;
+  letter-spacing: .12em;
+  transition: all .2s;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
+.gm-copy-btn:hover {
+  background: linear-gradient(135deg, rgba(120,25,15,.7), rgba(180,35,20,.5));
+  border-color: var(--gold);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(231,76,60,.3);
+}
+.gm-copy-hint {
+  font-family: var(--font-serif);
+  font-size: .7rem;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+}
+.gm-copy-success {
+  font-family: var(--font-serif);
+  font-size: .8rem;
+  color: #7ddd7d;
+  font-weight: 600;
+}
+
+/* ╚══ END #action-panel-step2 ═══════════════════════════════ */
