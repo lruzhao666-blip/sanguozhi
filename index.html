@@ -317,63 +317,91 @@
 
   <div class="actions-page-v2">
 
-    <!-- ══ 决策参考区(保留原结构,id 不变,由旧逻辑维护) ══ -->
-    <div class="decision-ref" id="decision-ref">
-      <div class="dr-header">
-        <span class="dr-icon">📊</span>
-        <span class="dr-title">决策参考</span>
+    <!-- ══ 决策参考 v2 ══ -->
+    <div class="decision-ref-v2" id="decision-ref">
+      <div class="dr-v2-header">
+        <span class="dr-v2-label">决策</span>
+        <span class="dr-v2-title">决策参考</span>
       </div>
-      <div class="dr-grid">
-        <div class="dr-card">
-          <div class="dr-card-title">🏆 威望排行</div>
-          <div class="dr-card-content" id="prestige-rank-content">
-            <div class="prestige-bar">
-              <span class="pb-label">甲</span>
-              <span class="pb-value" id="prestige-val-0">—</span>
-              <div class="pb-bar"><div class="pb-fill" id="prestige-bar-0" style="width: 0%"></div></div>
+      <div class="dr-v2-grid">
+
+        <!-- 威望排行卡 -->
+        <div class="dr-v2-card">
+          <div class="dr-v2-card-header">
+            <span class="drc-label">威望</span>
+            <span class="drc-title">威望排行</span>
+          </div>
+          <div class="dr-v2-card-body" id="prestige-rank-content">
+            <div class="prestige-bar-v2">
+              <span class="pb-v2-badge p0-badge">甲</span>
+              <div class="pb-v2-track">
+                <div class="pb-v2-fill" id="prestige-bar-0" style="width: 0%"></div>
+              </div>
+              <span class="pb-v2-value" id="prestige-val-0">—</span>
             </div>
-            <div class="prestige-bar">
-              <span class="pb-label">乙</span>
-              <span class="pb-value" id="prestige-val-1">—</span>
-              <div class="pb-bar"><div class="pb-fill" id="prestige-bar-1" style="width: 0%"></div></div>
+            <div class="prestige-bar-v2">
+              <span class="pb-v2-badge p1-badge">乙</span>
+              <div class="pb-v2-track">
+                <div class="pb-v2-fill" id="prestige-bar-1" style="width: 0%"></div>
+              </div>
+              <span class="pb-v2-value" id="prestige-val-1">—</span>
             </div>
-            <div class="prestige-bar">
-              <span class="pb-label">丙</span>
-              <span class="pb-value" id="prestige-val-2">—</span>
-              <div class="pb-bar"><div class="pb-fill" id="prestige-bar-2" style="width: 0%"></div></div>
+            <div class="prestige-bar-v2">
+              <span class="pb-v2-badge p2-badge">丙</span>
+              <div class="pb-v2-track">
+                <div class="pb-v2-fill" id="prestige-bar-2" style="width: 0%"></div>
+              </div>
+              <span class="pb-v2-value" id="prestige-val-2">—</span>
             </div>
-            <div class="npc-highest" id="npc-highest" style="margin-top: 8px; font-size: .78rem; color: var(--text-dim);">
-              NPC最高:<span id="npc-highest-name">—</span> <span id="npc-highest-score" style="color: var(--red-bright);">—</span>
+            <div class="npc-highest-v2" id="npc-highest">
+              <span class="npc-label">NPC最高</span>
+              <span class="npc-name" id="npc-highest-name">—</span>
+              <span class="npc-score" id="npc-highest-score">—</span>
             </div>
           </div>
         </div>
-        <div class="dr-card">
-          <div class="dr-card-title">⚔️ 本回合先手</div>
-          <div class="dr-card-content" id="first-mover-content">
-            <span class="first-mover">
-              <span>👑</span>
-              <span id="first-mover-name">等待GM数据</span>
-            </span>
+
+        <!-- 先手权卡 -->
+        <div class="dr-v2-card">
+          <div class="dr-v2-card-header">
+            <span class="drc-label">先手</span>
+            <span class="drc-title">本回合先手</span>
+          </div>
+          <div class="dr-v2-card-body" id="first-mover-content">
+            <div class="first-mover-v2">
+              <span class="fm-crown">👑</span>
+              <span class="fm-name" id="first-mover-name">等待GM数据</span>
+            </div>
           </div>
         </div>
-        <div class="dr-card">
-          <div class="dr-card-title">🎯 本幕目标进度</div>
-          <div class="dr-card-content" id="goals-content" style="font-size: .82rem; line-height: 1.6; color: var(--text-dim);">
-            等待GM公布目标...
+
+        <!-- 目标进度卡 -->
+        <div class="dr-v2-card">
+          <div class="dr-v2-card-header">
+            <span class="drc-label">目标</span>
+            <span class="drc-title">本幕目标进度</span>
+          </div>
+          <div class="dr-v2-card-body" id="goals-content">
+            <span class="goals-placeholder">等待GM公布目标...</span>
           </div>
         </div>
+
       </div>
     </div>
 
-    <!-- ══ 公共机遇 ══ -->
-    <div class="opportunities-panel" id="opportunities-panel">
-      <div class="opp-header">
-        <span class="opp-icon">⚔️</span>
-        <span class="opp-title">公共机遇</span>
-        <span class="opp-subtitle">(选则占用策令)</span>
+    <!-- ══ 公共机遇 v2 ══ -->
+    <div class="opportunities-panel-v2" id="opportunities-panel">
+      <div class="opp-v2-header">
+        <span class="opp-v2-label">机遇</span>
+        <span class="opp-v2-title">公共机遇</span>
+        <span class="opp-v2-hint">选则占用策令</span>
       </div>
-      <div class="opp-body" id="opp-body">
-        <div class="opp-empty">本回合无公共机遇</div>
+      <div class="opp-v2-body" id="opp-body">
+        <div class="opp-v2-empty">
+          <div class="opp-empty-deco"></div>
+          <span class="opp-empty-text">暂无公共机遇</span>
+          <span class="opp-empty-hint">关注下回合战局动态发布</span>
+        </div>
       </div>
     </div>
 
