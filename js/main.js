@@ -1123,14 +1123,19 @@
    * 渲染决策参考区
    */
   function renderDecisionRef(rd) {
-    if (!rd || !rd.raw_content) return;
+    // ── #decision-ref-bugfix-v1 START ──
+    // 修复:原代码用 rd.raw_content,但 rowToRound 输出字段是 rd.rawContent。
+    // 兼容兜底:rawContent 缺失时回退到 parsed.rawDigest。
+    const _rawText = (rd && (rd.rawContent || (rd.parsed && rd.parsed.rawDigest))) || '';
+    if (!_rawText) return;
+    // ── END #decision-ref-bugfix-v1 ──
 
     const prestige = window.SGParser && window.SGParser.parsePrestige
-      ? window.SGParser.parsePrestige(rd.raw_content)
+      ? window.SGParser.parsePrestige(_rawText)
       : null;
 
     const firstMover = window.SGParser && window.SGParser.parseFirstMover
-      ? window.SGParser.parseFirstMover(rd.raw_content)
+      ? window.SGParser.parseFirstMover(_rawText)
       : '';
 
     if (prestige) {
@@ -1176,13 +1181,17 @@
     const oppBody = document.getElementById('opp-body');
     if (!oppBody) return;
 
-    if (!rd || !rd.raw_content) {
+    // ── #decision-ref-bugfix-v1 START ──
+    // 修复:原代码用 rd.raw_content,但实际字段是 rd.rawContent。
+    const _rawText = (rd && (rd.rawContent || (rd.parsed && rd.parsed.rawDigest))) || '';
+    if (!_rawText) {
       oppBody.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
       return;
     }
+    // ── END #decision-ref-bugfix-v1 ──
 
     const opportunities = window.SGParser && window.SGParser.parseOpportunities
-      ? window.SGParser.parseOpportunities(rd.raw_content)
+      ? window.SGParser.parseOpportunities(_rawText)
       : [];
 
     if (opportunities.length === 0) {
@@ -1262,10 +1271,13 @@
    * 渲染三令选项
    */
   function renderActionOptions(rd) {
-    if (!rd || !rd.raw_content) return;
+    // ── #decision-ref-bugfix-v1 START ──
+    const _rawText = (rd && (rd.rawContent || (rd.parsed && rd.parsed.rawDigest))) || '';
+    if (!_rawText) return;
+    // ── END #decision-ref-bugfix-v1 ──
 
     const options = window.SGParser && window.SGParser.parseActionOptions
-      ? window.SGParser.parseActionOptions(rd.raw_content)
+      ? window.SGParser.parseActionOptions(_rawText)
       : { wu: [], wen: [], ce: [] };
 
     renderLingOptions('wu', options.wu);
