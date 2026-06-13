@@ -2095,3 +2095,193 @@ if (/^产出△/.test(line)) {
 
   return { parse, summarize, formatTroops, TROOP_TYPES };
 })();
+
+// ═══════════════════════════════════════════════════════════
+// #action-panel-step1 行动板块数据解析
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 解析上回合结算段
+ * 格式示例：
+ * 📋 结算
+ * 甲:主令(选A·攻城南皮·+12威望) 副令(选A·招贤·+1威望) 应变令(选机遇1·+10威望)
+ * 乙:主令(选B·募兵·+0威望) 副令(选A·互市·+0威望) 应变令(放弃·+0威望)
+ * 丙:主令(选C·自拟援救徐州·+2威望) 副令(选B·自拟·+1威望) 应变令(选机遇2·流拍)
+ * 机遇1·关羽归附:甲得(距离最近)
+ * 机遇2·夺取庐江:流拍(无人选)
+ */
+function parseSettlement(text) {
+  var settlement = {
+    players: { 0: null, 1: null, 2: null },
+    opportunities: []
+  };
+
+  if (!text) return settlement;
+
+  var lines = text.split('\n');
+  var slotMap = { '甲': 0, '乙': 1, '丙': 2 };
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+
+    // 解析玩家结算
+    var playerMatch = line.match(/^([甲乙丙]):(.+)$/);
+    if (playerMatch) {
+      var slot = slotMap[playerMatch[1]];
+      var content = playerMatch[2];
+
+      var mainMatch = content.match(/主令\(([^)]+)\)/);
+      var subMatch = content.match(/副令\(([^)]+)\)/);
+      var reactMatch = content.match(/应变令\(([^)]+)\)/);
+
+      settlement.players[slot] = {
+        main: mainMatch ? mainMatch[1] : '',
+        sub: subMatch ? subMatch[1] : '',
+        react: reactMatch ? reactMatch[1] : ''
+      };
+    }
+
+    // 解析机遇结算
+    var oppMatch = line.match(/^机遇(\d+)·([^:]+):(.+)$/);
+    if (oppMatch) {
+      settlement.opportunities.push({
+        id: parseInt(oppMatch[1]),
+        title: oppMatch[2],
+        result: oppMatch[3]
+      });
+    }
+  }
+
+  return settlement;
+}
+
+/**
+ * 解析公共机遇池
+ * 格式示例：
+ * 公共机遇池(选则占用应变令):
+ * 机遇1 · 招降关羽 · 🏆 — 关云长困下邳,需魅≥8武将+声望≥中,可说降(预估+12威望)
+ * 机遇2 · 夺取庐江 · ⚔️ — 庐江太守战败出逃,距最近者零损接管(预估+5威望)
+ * 机遇3 · 联合讨董 · 🤝 — 董卓暴政,需≥2家共同出兵讨伐(预估每人+5威望)
+ */
+function parseOpportunities(text) {
+  var opportunities = [];
+  if (!text) return opportunities;
+
+  var lines = text.split('\n');
+  var emojiMap = { '🏆': 'epic', '⚔️': 'compete', '🤝': 'coop', '🎲': 'gamble' };
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line || line.indexOf('机遇') !== 0) continue;
+
+    var match = line.match(/^机遇(\d+)\s*·\s*([^·]+)\s*·\s*([🏆⚔️🤝🎲])\s*—\s*(.+)\(预估\+?(\d+)威望\)$/);
+    if (match) {
+      opportunities.push({
+        id: parseInt(match[1]),
+        title: match[2].trim(),
+        type: emojiMap[match[3]] || 'compete',
+        emoji: match[3],
+        desc: match[4].trim(),
+        prestige: parseInt(match[5])
+      });
+    }
+  }
+
+  return opportunities;
+}
+
+/**
+ * 解析行动令选项
+ * 格式示例：
+ * {玩家名号} [甲]:(威望:{N})
+ *
+ * 主令|A.攻城南皮:{≤35字}(稳·预估+6威望)
+ * 主令|B.募兵强军:{≤35字}(稳·预估+0威望)
+ * 主令|C.自拟行动:{≤35字}(中·预估+N威望)
+ *
+ * 副令|A.招贤访士:{≤30字}(中·预估+1威望)
+ * 副令|B.自拟行动:{≤30字}
+ *
+ * 应变令|A.选机遇1:{≤30字}(险·预估+12威望)
+ * 应变令|B.自拟策略:{≤30字}
+ */
+function parseActionOptions(text) {
+  var actions = {
+    0: { name: '', prestige: 0, main: [], sub: [], react: [] },
+    1: { name: '', prestige: 0, main: [], sub: [], react: [] },
+    2: { name: '', prestige: 0, main: [], sub: [], react: [] }
+  };
+
+  if (!text) return actions;
+
+  var lines = text.split('\n');
+  var currentSlot = -1;
+  var slotMap = { '[甲]': 0, '[乙]': 1, '[丙]': 2 };
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+
+    // 检测玩家槽位头
+    for (var key in slotMap) {
+      if (line.indexOf(key) !== -1) {
+        currentSlot = slotMap[key];
+        var nameMatch = line.match(/^([^\[]+)\s*\[/);
+        if (nameMatch) {
+          actions[currentSlot].name = nameMatch[1].trim();
+        }
+        var prestigeMatch = line.match(/威望:(\d+)/);
+        if (prestigeMatch) {
+          actions[currentSlot].prestige = parseInt(prestigeMatch[1]);
+        }
+        break;
+      }
+    }
+
+    if (currentSlot === -1) continue;
+
+    // 解析选项：主令|A.标题:描述(风险·预估+N威望)
+    var optMatch = line.match(/^(主令|副令|应变令)\|([A-C])\.(([^:]+)):([^(]+)(?:\(([^·)]+)·预估\+(\d+)威望\))?/);
+    if (optMatch) {
+      var lingType = optMatch[1];
+      var option = {
+        label: optMatch[2],
+        title: optMatch[3].trim(),
+        desc: optMatch[5].trim(),
+        risk: optMatch[6] ? optMatch[6].trim() : '稳',
+        prestige: optMatch[7] ? parseInt(optMatch[7]) : 0,
+        isCustom: optMatch[3].indexOf('自拟') !== -1
+      };
+
+      if (lingType === '主令') {
+        actions[currentSlot].main.push(option);
+      } else if (lingType === '副令') {
+        actions[currentSlot].sub.push(option);
+      } else if (lingType === '应变令') {
+        actions[currentSlot].react.push(option);
+      }
+    }
+  }
+
+  return actions;
+}
+
+/**
+ * 解析先手权
+ * 格式：本回合先手:{威望最低玩家名}
+ */
+function parseFirstMover(text) {
+  if (!text) return null;
+  var match = text.match(/本回合先手:([^\s]+)/);
+  return match ? match[1].trim() : null;
+}
+
+// 导出函数（挂载到全局）
+if (typeof window !== 'undefined') {
+  window.SGParser = window.SGParser || {};
+  window.SGParser.parseSettlement = parseSettlement;
+  window.SGParser.parseOpportunities = parseOpportunities;
+  window.SGParser.parseActionOptions = parseActionOptions;
+  window.SGParser.parseFirstMover = parseFirstMover;
+}
