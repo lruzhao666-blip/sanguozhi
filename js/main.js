@@ -1409,15 +1409,15 @@
     }
 
     // #action-panel-step2 渲染行动板块
-    if (typeof window.SGParser !== 'undefined' && state.rounds.length > 0) {
+    if (typeof window.SGParser !== 'undefined' && state.rounds.length > 0 && window.SGAction && typeof window.SGAction.extractSection === 'function') {
       var latest = state.rounds[state.rounds.length - 1];
       var rawText = latest.raw || '';
 
       // 解析数据
-      var settlementText = extractSection(rawText, '📋 结算', '---');
-      var oppText = extractSection(rawText, '公共机遇池', '═══');
-      var actionText = extractSection(rawText, '🎯 行动令', '====');
-      var firstMoverText = extractSection(rawText, '本回合先手:', '\n');
+      var settlementText = window.SGAction.extractSection(rawText, '📋 结算', '---');
+      var oppText = window.SGAction.extractSection(rawText, '公共机遇池', '═══');
+      var actionText = window.SGAction.extractSection(rawText, '🎯 行动令', '====');
+      var firstMoverText = window.SGAction.extractSection(rawText, '本回合先手:', '\n');
 
       var settlement = window.SGParser.parseSettlement(settlementText);
       var opportunities = window.SGParser.parseOpportunities(oppText);
@@ -1440,7 +1440,7 @@
       // 显示 GM 复制按钮
       var gmCopyBar = document.getElementById('gm-copy-bar');
       if (gmCopyBar) {
-        gmCopyBar.style.display = isGMMode() ? 'flex' : 'none';
+        gmCopyBar.style.display = ((window.SGAction && window.SGAction.isGMMode) ? window.SGAction.isGMMode() : false) ? 'flex' : 'none';
       }
     }
   }
@@ -6589,6 +6589,8 @@ function showActionsEmptyHint() {
     renderOpportunities: renderOpportunities,
     renderActionPanel: renderActionPanel,
     copyAllActions: copyAllActions
+    ,extractSection: extractSection
+    ,isGMMode: isGMMode
   };
 
 })();
