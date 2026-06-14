@@ -82,233 +82,6 @@
 
   // ══════════════════════════════════════════
   //  初始化
-  // ══════════════════════════════════════════
-  /**
-   * v20260619d 工单#action-submit-v1
-   * 绑定行动提交按钮事件
-   */
-  function bindActionSubmit() {
-    const btnSubmit = document.getElementById('btn-submit-actions');
-    if (!btnSubmit) return;
-
-    btnSubmit.addEventListener('click', function() {
-      handleActionSubmit();
-    });
-
-    // 页面加载时检查是否已提交
-    checkSubmissionStatus();
-  }
-
-  /**
-   * v20260619d 工单#action-submit-v1
-   * 处理行动提交
-   */
-  function handleActionSubmit() {
-    // 验证三令
-    const validation = validateActions();
-    if (!validation.valid) {
-      showToast(validation.message, 'error');
-      return;
-    }
-
-    // 收集行动数据
-    const actionData = collectActionData();
-
-    // 保存到localStorage
-    const currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
-    const storageKey = `action_submission_r${currentRound}`;
-    localStorage.setItem(storageKey, JSON.stringify(actionData));
-
-    // 锁定界面
-    lockActionInterface();
-
-    // 显示成功提示
-    showToast('行动已提交！等待GM结算', 'success');
-  }
-
-  /**
-   * v20260619d 工单#action-submit-v1
-   * 验证行动是否完整
-   */
-  function validateActions() {
-    // 验证武令
-    const wuSelected = document.querySelector('input[name="wu-ling"]:checked');
-    if (!wuSelected) {
-      return { valid: false, message: '请选择武令（军事行动）' };
-    }
-
-    // 如果选了自拟，检查是否填写
-    if (wuSelected.value === 'custom') {
-      const wuCustom = document.getElementById('wu-custom-input');
-      if (!wuCustom || !wuCustom.value.trim()) {
-        return { valid: false, message: '请填写自拟武令内容' };
-      }
-      if (wuCustom.value.length > 30) {
-        return { valid: false, message: '武令自拟内容不能超过30字' };
-      }
-    }
-
-    // 验证文令
-    const wenSelected = document.querySelector('input[name="wen-ling"]:checked');
-    if (!wenSelected) {
-      return { valid: false, message: '请选择文令（内政建设）' };
-    }
-
-    if (wenSelected.value === 'custom') {
-      const wenCustom = document.getElementById('wen-custom-input');
-      if (!wenCustom || !wenCustom.value.trim()) {
-        return { valid: false, message: '请填写自拟文令内容' };
-      }
-      if (wenCustom.value.length > 30) {
-        return { valid: false, message: '文令自拟内容不能超过30字' };
-      }
-    }
-
-    // 验证策令
-    const ceSelected = document.querySelector('input[name="ce-ling"]:checked');
-    if (!ceSelected) {
-      return { valid: false, message: '请选择策令（奇谋变数）' };
-    }
-
-    // 如果选了机遇，检查是否选择具体机遇
-    if (ceSelected.value === 'opp') {
-      const oppSelected = document.querySelector('input[name="ce-opp"]:checked');
-      if (!oppSelected) {
-        return { valid: false, message: '请选择具体的公共机遇' };
-      }
-    }
-
-    if (ceSelected.value === 'custom') {
-      const ceCustom = document.getElementById('ce-custom-input');
-      if (!ceCustom || !ceCustom.value.trim()) {
-        return { valid: false, message: '请填写自拟策令内容' };
-      }
-      if (ceCustom.value.length > 30) {
-        return { valid: false, message: '策令自拟内容不能超过30字' };
-      }
-    }
-
-    return { valid: true };
-  }
-
-  /**
-   * v20260619d 工单#action-submit-v1
-   * 收集行动数据
-   */
-  function collectActionData() {
-    const data = {
-      wu: null,
-      wen: null,
-      ce: null,
-      zero: ''
-    };
-
-    // 收集武令
-    const wuSelected = document.querySelector('input[name="wu-ling"]:checked');
-    if (wuSelected) {
-      if (wuSelected.value === 'custom') {
-        data.wu = {
-          type: 'custom',
-          content: document.getElementById('wu-custom-input').value.trim()
-        };
-      } else {
-        data.wu = {
-          type: 'option',
-          option: wuSelected.value.toUpperCase()
-        };
-      }
-    }
-
-    // 收集文令
-    const wenSelected = document.querySelector('input[name="wen-ling"]:checked');
-    if (wenSelected) {
-      if (wenSelected.value === 'custom') {
-        data.wen = {
-          type: 'custom',
-          content: document.getElementById('wen-custom-input').value.trim()
-        };
-      } else {
-        data.wen = {
-          type: 'option',
-          option: wenSelected.value.toUpperCase()
-        };
-      }
-    }
-
-    // 收集策令
-    const ceSelected = document.querySelector('input[name="ce-ling"]:checked');
-    if (ceSelected) {
-      if (ceSelected.value === 'custom') {
-        data.ce = {
-          type: 'custom',
-          content: document.getElementById('ce-custom-input').value.trim()
-        };
-      } else if (ceSelected.value === 'opp') {
-        const oppSelected = document.querySelector('input[name="ce-opp"]:checked');
-        data.ce = {
-          type: 'opportunity',
-          opportunityId: oppSelected ? oppSelected.value : null
-        };
-      } else {
-        data.ce = {
-          type: 'option',
-          option: ceSelected.value.toUpperCase()
-        };
-      }
-    }
-
-    // 收集零消耗
-    const zeroInput = document.getElementById('zero-actions-input');
-    if (zeroInput) {
-      data.zero = zeroInput.value.trim();
-    }
-
-    return data;
-  }
-
-  /**
-   * v20260619d 工单#action-submit-v1
-   * 锁定行动界面
-   */
-  function lockActionInterface() {
-    // 禁用所有单选框
-    document.querySelectorAll('input[name="wu-ling"], input[name="wen-ling"], input[name="ce-ling"], input[name="ce-opp"]').forEach(input => {
-      input.disabled = true;
-    });
-
-    // 禁用所有输入框
-    document.querySelectorAll('.ling-custom-input, #zero-actions-input').forEach(input => {
-      input.disabled = true;
-    });
-
-    // 禁用提交按钮
-    const btnSubmit = document.getElementById('btn-submit-actions');
-    if (btnSubmit) {
-      btnSubmit.disabled = true;
-      btnSubmit.textContent = '已提交';
-    }
-
-    // 隐藏警告，显示成功
-    const warning = document.getElementById('submit-warning');
-    const success = document.getElementById('submit-success');
-    if (warning) warning.classList.add('hidden');
-    if (success) success.classList.remove('hidden');
-  }
-
-  /**
-   * v20260619d 工单#action-submit-v1
-   * 检查提交状态（页面加载时）
-   */
-  function checkSubmissionStatus() {
-    const currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
-    const storageKey = `action_submission_r${currentRound}`;
-    const saved = localStorage.getItem(storageKey);
-
-    if (saved) {
-      // 已提交过，锁定界面
-      lockActionInterface();
-    }
-  }
 
   /**
    * Toast提示函数（如果不存在则添加）
@@ -341,13 +114,8 @@
     initTipsCard();
     bindFogToggle();
     loadFromCloud();
+    bindActionTab();
 
-    // 延迟绑定行动提交，确保函数已加载
-    setTimeout(function() {
-      if (typeof bindActionSubmit === 'function') {
-        bindActionSubmit();
-      }
-    }, 200);
   }
 
   // #fog-of-war-main-v1: 战争迷雾开关逻辑
@@ -1119,265 +887,6 @@
   //  渲染总入口
 
   /**
-   * v20260619a 工单#decision-ref-v1
-   * 渲染决策参考区
-   */
-  function renderDecisionRef(rd) {
-    // ── #decision-ref-bugfix-v1 START ──
-    // 修复:原代码用 rd.raw_content,但 rowToRound 输出字段是 rd.rawContent。
-    // 兼容兜底:rawContent 缺失时回退到 parsed.rawDigest。
-    const _rawText = (rd && (rd.rawContent || (rd.parsed && rd.parsed.rawDigest))) || '';
-    if (!_rawText) return;
-    // ── END #decision-ref-bugfix-v1 ──
-
-    const prestige = window.SGParser && window.SGParser.parsePrestige
-      ? window.SGParser.parsePrestige(_rawText)
-      : null;
-
-    const firstMover = window.SGParser && window.SGParser.parseFirstMover
-      ? window.SGParser.parseFirstMover(_rawText)
-      : '';
-
-    if (prestige) {
-      const maxScore = Math.max(...prestige.players.map(p => p.total), 1);
-      prestige.players.forEach((p, i) => {
-        const valEl = document.getElementById(`prestige-val-${i}`);
-        const barEl = document.getElementById(`prestige-bar-${i}`);
-        if (valEl) valEl.textContent = p.total || '—';
-        if (barEl) {
-          const percent = maxScore > 0 ? Math.round((p.total / maxScore) * 100) : 0;
-          barEl.style.width = percent + '%';
-        }
-      });
-
-      const npcNameEl = document.getElementById('npc-highest-name');
-      const npcScoreEl = document.getElementById('npc-highest-score');
-      if (npcNameEl && prestige.npcHighest.name) {
-        npcNameEl.textContent = prestige.npcHighest.name;
-      }
-      if (npcScoreEl && prestige.npcHighest.score) {
-        npcScoreEl.textContent = prestige.npcHighest.score;
-      }
-    }
-
-    if (firstMover) {
-      const firstMoverEl = document.getElementById('first-mover-name');
-      if (firstMoverEl) {
-        firstMoverEl.textContent = firstMover + '（威望最低优先）';
-      }
-    }
-
-    const goalsEl = document.getElementById('goals-content');
-    if (goalsEl) {
-      goalsEl.innerHTML = '<span style="color: var(--text-dim);">目标系统开发中...</span>';
-    }
-  }
-
-  /**
-   * v20260619b 工单#opportunities-panel-v1
-   * 渲染公共机遇面板
-   */
-  function renderOpportunities(rd) {
-    const oppBody = document.getElementById('opp-body');
-    if (!oppBody) return;
-
-    // ── #decision-ref-bugfix-v1 START ──
-    // 修复:原代码用 rd.raw_content,但实际字段是 rd.rawContent。
-    const _rawText = (rd && (rd.rawContent || (rd.parsed && rd.parsed.rawDigest))) || '';
-    if (!_rawText) {
-      oppBody.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
-      return;
-    }
-    // ── END #decision-ref-bugfix-v1 ──
-
-    const opportunities = window.SGParser && window.SGParser.parseOpportunities
-      ? window.SGParser.parseOpportunities(_rawText)
-      : [];
-
-    if (opportunities.length === 0) {
-      oppBody.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
-      return;
-    }
-
-    let html = '';
-    opportunities.forEach(opp => {
-      const typeBadgeClass = opp.type === 'compete' ? 'compete' : 'cooperate';
-      const typeBadgeText = opp.type === 'compete' ? '争夺' : '协力';
-
-      html += `
-        <div class="opp-v2-card" data-opp-id="${opp.id}">
-          <div class="opp-v2-card-header">
-            <span class="opp-v2-card-title">机遇${opp.id} · ${escapeHtml(opp.title)}</span>
-            <span class="opp-type-badge ${typeBadgeClass}">${typeBadgeText}</span>
-          </div>
-          <div class="opp-v2-card-desc">${escapeHtml(opp.desc)}</div>
-          <div class="opp-v2-card-footer">
-            <span class="opp-prestige">预估 +${opp.prestige} 威望</span>
-          </div>
-        </div>
-      `;
-    });
-
-    oppBody.innerHTML = html;
-
-    // 绑定机遇卡片点击事件
-    document.querySelectorAll('.opp-v2-card').forEach(card => {
-      card.addEventListener('click', function() {
-        const oppId = this.getAttribute('data-opp-id');
-
-        // 移除其他卡片的选中态
-        document.querySelectorAll('.opp-v2-card').forEach(c => c.classList.remove('selected'));
-
-        // 标记当前卡片为选中
-        this.classList.add('selected');
-
-        // 联动策令区
-        selectOpportunityInCeLing(oppId);
-
-        // 滚动到策令区
-        const ceLingCard = document.querySelector('.ce-ling');
-        if (ceLingCard) {
-          ceLingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      });
-    });
-  }
-
-  /**
-   * v20260619b 工单#opportunities-panel-v1
-   * 点击机遇卡后，自动在策令区选中该机遇
-   */
-  function selectOpportunityInCeLing(oppId) {
-    const ceOppRadio = document.querySelector('input[name="ce-ling"][value="opp"]');
-    if (ceOppRadio) {
-      ceOppRadio.checked = true;
-      ceOppRadio.disabled = false;
-    }
-
-    const oppCheckbox = document.querySelector(`input[name="ce-opp"][value="${oppId}"]`);
-    if (oppCheckbox) {
-      oppCheckbox.checked = true;
-      oppCheckbox.disabled = false;
-    }
-
-    const ceLingCard = document.querySelector('.ce-ling');
-    if (ceLingCard) {
-      ceLingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }
-
-  /**
-   * v20260619c 工单#sanling-options-v1
-   * 渲染三令选项
-   */
-  function renderActionOptions(rd) {
-    // ── #decision-ref-bugfix-v1 START ──
-    const _rawText = (rd && (rd.rawContent || (rd.parsed && rd.parsed.rawDigest))) || '';
-    if (!_rawText) return;
-    // ── END #decision-ref-bugfix-v1 ──
-
-    const options = window.SGParser && window.SGParser.parseActionOptions
-      ? window.SGParser.parseActionOptions(_rawText)
-      : { wu: [], wen: [], ce: [] };
-
-    // ── #decision-ref-bugfix-v1-step2 START ──
-    // 防御：parser 两份 parseActionOptions 返回结构不一致，
-    // 当 options 不含 wu/wen/ce 字段时，renderLingOptions 内部已用 Array.isArray 守卫，
-    // 此处再加一层 safe 解构，确保不会向 renderLingOptions 传入 undefined 之外的非数组值。
-    const _safeWu  = Array.isArray(options && options.wu)  ? options.wu  : [];
-    const _safeWen = Array.isArray(options && options.wen) ? options.wen : [];
-    const _safeCe  = Array.isArray(options && options.ce)  ? options.ce  : [];
-    renderLingOptions('wu',  _safeWu);
-    renderLingOptions('wen', _safeWen);
-    renderLingOptions('ce',  _safeCe);
-    // ── END #decision-ref-bugfix-v1-step2 ──
-
-    bindCustomInputEvents();
-  }
-
-  /**
-   * v20260619c 工单#sanling-options-v1
-   * 渲染单个令的选项
-   */
-  function renderLingOptions(type, options) {
-    // ── #decision-ref-bugfix-v1-step2 START ──
-    // 防御：parser 两份 parseActionOptions 实现冲突时，
-    // options 可能为 undefined 或非数组，直接退出避免 TypeError。
-    if (!Array.isArray(options) || options.length === 0) return;
-    // ── END #decision-ref-bugfix-v1-step2 ──
-
-    options.forEach(opt => {
-      const label = opt.label.toLowerCase();
-
-      const nameEl = document.getElementById(`${type}-${label}-name`);
-      if (nameEl) nameEl.textContent = opt.name;
-
-      const descEl = document.getElementById(`${type}-${label}-desc`);
-      if (descEl) descEl.textContent = opt.desc;
-
-      const riskEl = document.getElementById(`${type}-${label}-risk`);
-      if (riskEl) {
-        riskEl.textContent = opt.risk;
-        riskEl.classList.remove('stable', 'medium', 'risky');
-        if (opt.risk === '稳') {
-          riskEl.classList.add('stable');
-        } else if (opt.risk === '中') {
-          riskEl.classList.add('medium');
-        } else if (opt.risk === '险') {
-          riskEl.classList.add('risky');
-        }
-      }
-
-      const prestigeEl = document.getElementById(`${type}-${label}-prestige`);
-      if (prestigeEl) prestigeEl.textContent = `+${opt.prestige} 威望`;
-    });
-  }
-
-  /**
-   * v20260619c 工单#sanling-options-v1
-   * 绑定自拟输入框事件
-   */
-  function bindCustomInputEvents() {
-    bindCustomInput('wu');
-    bindCustomInput('wen');
-    bindCustomInput('ce');
-  }
-
-  /**
-   * v20260619c 工单#sanling-options-v1
-   * 绑定单个令的自拟输入框
-   */
-  function bindCustomInput(type) {
-    const customRadio = document.querySelector(`input[name="${type}-ling"][value="custom"]`);
-    const customInput = document.getElementById(`${type}-custom-input`);
-    const customCount = document.getElementById(`${type}-custom-count`);
-
-    if (!customRadio || !customInput || !customCount) return;
-
-    document.querySelectorAll(`input[name="${type}-ling"]`).forEach(radio => {
-      radio.addEventListener('change', function() {
-        if (this.value === 'custom') {
-          customInput.disabled = false;
-          customInput.focus();
-        } else {
-          customInput.disabled = true;
-        }
-      });
-    });
-
-    customInput.addEventListener('input', function() {
-      const length = this.value.length;
-      customCount.textContent = length;
-
-      if (length > 30) {
-        customCount.style.color = 'var(--red-bright)';
-      } else {
-        customCount.style.color = 'var(--text-dim)';
-      }
-    });
-  }
-
-  /**
    * HTML转义工具函数
    */
   function escapeHtml(text) {
@@ -1387,6 +896,531 @@
   }
 
   // ══════════════════════════════════════════
+
+  // ══════════════════════════════════════════
+  //  行动 Tab 模块 v2
+  //  工单 #action-tab-logic-v2b
+  //  职责：渲染决策参考 + 公共机遇 + 三令选项 + 提交 + 公开 + GM复制
+  // ══════════════════════════════════════════
+
+  const ACTION_SUPA_URL = 'https://smiifcbmmtolimtaxpip.supabase.co/rest/v1/action_submissions';
+  const SLOT_NAMES = ['甲', '乙', '丙'];
+  const LING_LABELS = { wu: '主令', wen: '副令', ce: '应变令' };
+
+  // ── 获取当前登录身份的 slot index ──
+  function _getMySlot() {
+    const role = localStorage.getItem('sg_role');
+    if (role === '甲') return 0;
+    if (role === '乙') return 1;
+    if (role === '丙') return 2;
+    return -1;
+  }
+
+  // ── 判断是否 GM 模式 ──
+  function _isGM() {
+    return document.body.classList.contains('is-gm-mode');
+  }
+
+  // ── 绑定行动 tab 交互 ──
+  function bindActionTab() {
+    // 玩家 tab 切换
+    const tabs = document.querySelectorAll('.cmd-ptab');
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const slot = parseInt(btn.dataset.slot);
+        tabs.forEach(b => b.classList.toggle('active', b === btn));
+        for (let i = 0; i < 3; i++) {
+          const panel = document.getElementById('cmd-slot-' + i);
+          if (panel) panel.classList.toggle('hidden', i !== slot);
+        }
+      });
+    });
+
+    // 提交按钮
+    const submitBtn = document.getElementById('btn-action-submit');
+    if (submitBtn) {
+      submitBtn.addEventListener('click', onActionSubmit);
+    }
+
+    // GM 一键复制
+    const copyBtn = document.getElementById('btn-gm-copy-actions');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', onGMCopyActions);
+    }
+  }
+
+  // ── 行动 tab 总渲染入口 ──
+  async function renderActionTab(rd) {
+    if (!rd || !rd.parsed) return;
+    const parsed = rd.parsed;
+
+    renderRefBar(parsed);
+    renderOppPanel(parsed);
+    renderCmdPanels(parsed);
+    await checkAndRenderSubmissions(rd.round || parsed.round);
+  }
+
+  // ── 渲染决策参考栏 ──
+  function renderRefBar(parsed) {
+    // 威望
+    if (parsed.prestige && parsed.prestige.players.length) {
+      const maxScore = Math.max(...parsed.prestige.players.map(p => p.total), 1);
+      parsed.prestige.players.forEach((p, i) => {
+        const valEl = document.getElementById('p-val-' + i);
+        const fillEl = document.getElementById('p-fill-' + i);
+        if (valEl) valEl.textContent = p.total;
+        if (fillEl) fillEl.style.width = Math.round((p.total / maxScore) * 100) + '%';
+      });
+      const npcNameEl = document.getElementById('ref-npc-name');
+      const npcScoreEl = document.getElementById('ref-npc-score');
+      if (npcNameEl) npcNameEl.textContent = parsed.prestige.npcHighest.name || '—';
+      if (npcScoreEl) npcScoreEl.textContent = parsed.prestige.npcHighest.score || '—';
+    }
+
+    // 先手
+    const fmEl = document.getElementById('ref-first-mover');
+    if (fmEl) fmEl.textContent = parsed.firstMove || '等待GM数据';
+
+    // 世界状态
+    const wsEl = document.getElementById('ref-world-status');
+    if (wsEl) {
+      if (parsed.worldStatus) {
+        wsEl.textContent = parsed.worldStatus.raw || (parsed.worldStatus.name + ' | ' + parsed.worldStatus.endgame);
+      } else {
+        wsEl.textContent = '等待GM数据';
+      }
+    }
+  }
+
+  // ── 渲染公共机遇池 ──
+  function renderOppPanel(parsed) {
+    const listEl = document.getElementById('action-opp-list');
+    if (!listEl) return;
+
+    const opps = parsed.opportunities || [];
+    if (!opps.length) {
+      listEl.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
+      return;
+    }
+
+    let html = '';
+    opps.forEach(opp => {
+      const typeClass = opp.type === 'compete' ? 'opp-compete' :
+                        opp.type === 'cooperate' ? 'opp-cooperate' :
+                        opp.type === 'epic' ? 'opp-epic' : 'opp-gamble';
+      const typeText = opp.type === 'compete' ? '⚔争夺' :
+                       opp.type === 'cooperate' ? '🤝协力' :
+                       opp.type === 'epic' ? '🏆史诗' : '🎲赌博';
+      html += `<div class="opp-card ${typeClass}" data-opp-id="${opp.id}">
+        <div class="opp-card-top">
+          <span class="opp-card-title">机遇${opp.id} · ${_escHtml(opp.title)}</span>
+          <span class="opp-card-type">${typeText}</span>
+        </div>
+        <div class="opp-card-desc">${_escHtml(opp.desc)}</div>
+        <div class="opp-card-prestige">预估 +${opp.prestige} 威望</div>
+      </div>`;
+    });
+    listEl.innerHTML = html;
+  }
+
+  // ── 渲染三家行动指令面板 ──
+  function renderCmdPanels(parsed) {
+    const actions = parsed.playerActions || {};
+    const mySlot = _getMySlot();
+    const isGM = _isGM();
+
+    for (let i = 0; i < 3; i++) {
+      const slotKey = SLOT_NAMES[i];
+      const panelEl = document.getElementById('cmd-slot-' + i);
+      if (!panelEl) continue;
+
+      const slotActions = actions[slotKey];
+      const isMine = (i === mySlot);
+
+      // 如果不是自己的面板且不是GM，显示等待状态
+      if (!isMine && !isGM) {
+        panelEl.innerHTML = '<div class="cmd-waiting">等待该玩家提交行动…</div>';
+        continue;
+      }
+
+      if (!slotActions) {
+        panelEl.innerHTML = '<div class="cmd-waiting">等待 GM 发布行动选项…</div>';
+        continue;
+      }
+
+      // 渲染三令选项
+      let html = '';
+      html += _renderLingSection('wu', '⚔ 主令', '军事行动', slotActions.wu, i);
+      html += _renderLingSection('wen', '🏛 副令', '内政建设', slotActions.wen, i);
+      html += _renderLingSection('ce', '🎯 应变令', '奇谋/机遇/配合', slotActions.ce, i);
+
+      // 零消耗补充栏
+      html += `<div class="cmd-zero-section">
+        <label class="cmd-zero-label">零消耗补充（可选）</label>
+        <input type="text" class="cmd-zero-input" id="cmd-zero-${i}" placeholder="额外说明，如外交意向等" maxlength="60" />
+      </div>`;
+
+      panelEl.innerHTML = html;
+    }
+
+    // 默认激活自己的 tab
+    if (mySlot >= 0) {
+      document.querySelectorAll('.cmd-ptab').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === mySlot);
+      });
+      for (let i = 0; i < 3; i++) {
+        const panel = document.getElementById('cmd-slot-' + i);
+        if (panel) panel.classList.toggle('hidden', i !== mySlot);
+      }
+    }
+
+    // 更新 tab 文字为玩家名号
+    const tabBtns = document.querySelectorAll('.cmd-ptab');
+    state.players.forEach((p, i) => {
+      if (tabBtns[i] && p.name) {
+        const isMe = (i === mySlot);
+        tabBtns[i].textContent = SLOT_NAMES[i] + (isMe ? ' · 我' : '');
+      }
+    });
+
+    // 提交按钮状态
+    const submitBtn = document.getElementById('btn-action-submit');
+    if (submitBtn) {
+      submitBtn.disabled = (mySlot < 0);
+    }
+  }
+
+  // ── 渲染单令选项区 ──
+  function _renderLingSection(type, icon, subtitle, options, slotIdx) {
+    let html = `<div class="cmd-ling-section" data-ling="${type}" data-slot="${slotIdx}">
+      <div class="ling-header"><span class="ling-icon">${icon}</span><span class="ling-sub">(${subtitle})</span></div>
+      <div class="ling-options">`;
+
+    if (!options || Object.keys(options).length === 0) {
+      html += '<div class="ling-empty">暂无选项</div>';
+    } else {
+      const keys = Object.keys(options).sort(); // a, b, c
+      keys.forEach(key => {
+        const opt = options[key];
+        const label = key.toUpperCase();
+        const riskClass = opt.risk === '稳' ? 'risk-stable' :
+                          opt.risk === '中' ? 'risk-medium' : 'risk-risky';
+        html += `<label class="ling-option-card">
+          <input type="radio" name="ling-${type}-${slotIdx}" value="${label}" class="ling-radio" />
+          <div class="ling-option-body">
+            <div class="ling-opt-top">
+              <span class="ling-opt-label">${label}.</span>
+              <span class="ling-opt-name">${_escHtml(opt.name)}</span>
+            </div>
+            <div class="ling-opt-desc">${_escHtml(opt.desc)}</div>
+            <div class="ling-opt-meta">
+              <span class="ling-opt-risk ${riskClass}">${_escHtml(opt.risk)}</span>
+              <span class="ling-opt-prestige">+${_escHtml(opt.prestige)} 威望</span>
+            </div>
+          </div>
+        </label>`;
+      });
+    }
+
+    // 自拟选项
+    html += `<label class="ling-option-card ling-custom-card">
+      <input type="radio" name="ling-${type}-${slotIdx}" value="custom" class="ling-radio" />
+      <div class="ling-option-body">
+        <div class="ling-opt-top">
+          <span class="ling-opt-label">自拟</span>
+        </div>
+        <input type="text" class="ling-custom-input" id="ling-custom-${type}-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled />
+      </div>
+    </label>`;
+
+    html += '</div></div>';
+    return html;
+  }
+
+  // ── 提交行动 ──
+  async function onActionSubmit() {
+    const mySlot = _getMySlot();
+    if (mySlot < 0) { showToast('请先登录身份'); return; }
+
+    const slotKey = SLOT_NAMES[mySlot];
+    const currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (!currentRound) { showToast('当前无回合数据'); return; }
+
+    // 收集选择
+    const wu = _getSelectedLing('wu', mySlot);
+    const wen = _getSelectedLing('wen', mySlot);
+    const ce = _getSelectedLing('ce', mySlot);
+
+    if (!wu.choice) { showToast('请选择主令'); return; }
+    if (!wen.choice) { showToast('请选择副令'); return; }
+    if (!ce.choice) { showToast('请选择应变令'); return; }
+
+    // 自拟校验
+    if (wu.choice === 'custom' && !wu.custom) { showToast('请填写自拟主令内容'); return; }
+    if (wen.choice === 'custom' && !wen.custom) { showToast('请填写自拟副令内容'); return; }
+    if (ce.choice === 'custom' && !ce.custom) { showToast('请填写自拟应变令内容'); return; }
+
+    const zeroInput = document.getElementById('cmd-zero-' + mySlot);
+    const zeroText = zeroInput ? zeroInput.value.trim() : '';
+
+    const payload = {
+      round: currentRound,
+      slot: slotKey,
+      wu_choice: wu.choice,
+      wu_custom: wu.custom || null,
+      wen_choice: wen.choice,
+      wen_custom: wen.custom || null,
+      ce_choice: ce.choice,
+      ce_custom: ce.custom || null,
+    };
+
+    const submitBtn = document.getElementById('btn-action-submit');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ 提交中…'; }
+
+    try {
+      const res = await fetchWithTimeout(ACTION_SUPA_URL, {
+        method: 'POST',
+        headers: { ...SUPA_HEADERS, 'Prefer': 'return=representation,resolution=merge-duplicates' },
+        body: JSON.stringify(payload),
+      }, 10000);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+
+      showToast('✅ 行动已提交！');
+      _lockMyPanel(mySlot);
+      await checkAndRenderSubmissions(currentRound);
+    } catch (e) {
+      console.error('[SG] 行动提交失败:', e);
+      showToast('❌ 提交失败，请重试');
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '提交本回合行动'; }
+    }
+  }
+
+  // ── 获取单令选择 ──
+  function _getSelectedLing(type, slotIdx) {
+    const selected = document.querySelector(`input[name="ling-${type}-${slotIdx}"]:checked`);
+    if (!selected) return { choice: null, custom: '' };
+    const choice = selected.value;
+    let custom = '';
+    if (choice === 'custom') {
+      const input = document.getElementById(`ling-custom-${type}-${slotIdx}`);
+      custom = input ? input.value.trim() : '';
+    }
+    return { choice, custom };
+  }
+
+  // ── 锁定自己的面板 ──
+  function _lockMyPanel(slotIdx) {
+    const panel = document.getElementById('cmd-slot-' + slotIdx);
+    if (!panel) return;
+    panel.querySelectorAll('input').forEach(el => { el.disabled = true; });
+
+    const submitBtn = document.getElementById('btn-action-submit');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '已提交'; }
+
+    const hint = document.getElementById('action-submit-hint');
+    const success = document.getElementById('action-submit-success');
+    if (hint) hint.classList.add('hidden');
+    if (success) success.classList.remove('hidden');
+  }
+
+  // ── 查询提交状态并渲染公开/GM复制 ──
+  async function checkAndRenderSubmissions(roundNum) {
+    if (!roundNum) return;
+    try {
+      const res = await fetchWithTimeout(
+        `${ACTION_SUPA_URL}?round=eq.${roundNum}&select=*`,
+        { headers: SUPA_HEADERS }, 8000
+      );
+      if (!res.ok) return;
+      const rows = await res.json();
+
+      const mySlot = _getMySlot();
+      const isGM = _isGM();
+      const submitted = {};
+      rows.forEach(r => { submitted[r.slot] = r; });
+
+      // 更新 tab 标记
+      document.querySelectorAll('.cmd-ptab').forEach((btn, i) => {
+        const slotKey = SLOT_NAMES[i];
+        const done = !!submitted[slotKey];
+        btn.classList.toggle('cmd-ptab-done', done);
+      });
+
+      // 如果自己已提交，锁定面板
+      if (mySlot >= 0 && submitted[SLOT_NAMES[mySlot]]) {
+        _lockMyPanel(mySlot);
+      }
+
+      // 检查是否三家全提交
+      const allDone = SLOT_NAMES.every(s => !!submitted[s]);
+
+      if (allDone) {
+        _renderReveal(submitted);
+        // GM 模式显示一键复制
+        if (isGM) {
+          const copyBar = document.getElementById('action-gm-copy');
+          if (copyBar) copyBar.classList.remove('hidden');
+        }
+      } else {
+        // 未全提交：非自己面板显示等待
+        if (!isGM) {
+          for (let i = 0; i < 3; i++) {
+            if (i === mySlot) continue;
+            const panel = document.getElementById('cmd-slot-' + i);
+            if (!panel) continue;
+            const slotKey = SLOT_NAMES[i];
+            if (submitted[slotKey]) {
+              panel.innerHTML = '<div class="cmd-waiting cmd-submitted-other">✅ 已提交，等待公开</div>';
+            } else {
+              panel.innerHTML = '<div class="cmd-waiting">等待该玩家提交行动…</div>';
+            }
+          }
+        }
+      }
+
+      // 启用自拟输入框联动
+      _bindCustomRadioToggle();
+
+    } catch (e) {
+      console.error('[SG] 查询提交状态失败:', e);
+    }
+  }
+
+  // ── 全员公开渲染 ──
+  function _renderReveal(submitted) {
+    const revealPanel = document.getElementById('action-reveal-panel');
+    const revealGrid = document.getElementById('reveal-grid');
+    if (!revealPanel || !revealGrid) return;
+
+    revealPanel.classList.remove('hidden');
+
+    // 同时解锁所有面板显示完整选择
+    for (let i = 0; i < 3; i++) {
+      const slotKey = SLOT_NAMES[i];
+      const sub = submitted[slotKey];
+      if (!sub) continue;
+
+      const panel = document.getElementById('cmd-slot-' + i);
+      if (panel && !panel.querySelector('.cmd-reveal-summary')) {
+        // 在面板顶部注入已选摘要
+        const summary = document.createElement('div');
+        summary.className = 'cmd-reveal-summary';
+        summary.innerHTML = `
+          <div class="reveal-item"><span class="reveal-ling">主令</span><span class="reveal-choice">${_formatChoice(sub.wu_choice, sub.wu_custom)}</span></div>
+          <div class="reveal-item"><span class="reveal-ling">副令</span><span class="reveal-choice">${_formatChoice(sub.wen_choice, sub.wen_custom)}</span></div>
+          <div class="reveal-item"><span class="reveal-ling">应变令</span><span class="reveal-choice">${_formatChoice(sub.ce_choice, sub.ce_custom)}</span></div>
+        `;
+        panel.prepend(summary);
+      }
+    }
+
+    // 渲染公开 grid
+    let gridHtml = '';
+    SLOT_NAMES.forEach((slotKey, i) => {
+      const sub = submitted[slotKey];
+      const name = state.players[i] ? state.players[i].name : slotKey;
+      gridHtml += `<div class="reveal-col reveal-col-${i}">
+        <div class="reveal-col-header">${_escHtml(name)} [${slotKey}]</div>
+        <div class="reveal-col-row"><span class="reveal-ling-label">主令</span>${_formatChoice(sub.wu_choice, sub.wu_custom)}</div>
+        <div class="reveal-col-row"><span class="reveal-ling-label">副令</span>${_formatChoice(sub.wen_choice, sub.wen_custom)}</div>
+        <div class="reveal-col-row"><span class="reveal-ling-label">应变令</span>${_formatChoice(sub.ce_choice, sub.ce_custom)}</div>
+      </div>`;
+    });
+    revealGrid.innerHTML = gridHtml;
+  }
+
+  // ── 格式化选择显示 ──
+  function _formatChoice(choice, custom) {
+    if (!choice) return '<span class="reveal-none">未选择</span>';
+    if (choice === 'custom') return '<span class="reveal-custom">自拟: ' + _escHtml(custom || '') + '</span>';
+    return '<span class="reveal-option">' + _escHtml(choice) + '</span>';
+  }
+
+  // ── GM 一键复制 ──
+  async function onGMCopyActions() {
+    const currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (!currentRound) return;
+
+    try {
+      const res = await fetchWithTimeout(
+        `${ACTION_SUPA_URL}?round=eq.${currentRound}&select=*`,
+        { headers: SUPA_HEADERS }, 8000
+      );
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const rows = await res.json();
+
+      const submitted = {};
+      rows.forEach(r => { submitted[r.slot] = r; });
+
+      // 获取当前回合的 playerActions 用于还原选项名
+      const latest = state.rounds[state.rounds.length - 1];
+      const playerActions = (latest && latest.parsed && latest.parsed.playerActions) || {};
+
+      let text = `第 ${currentRound} 回合 · 玩家行动\n\n`;
+
+      SLOT_NAMES.forEach((slotKey, i) => {
+        const sub = submitted[slotKey];
+        const name = state.players[i] ? state.players[i].name : slotKey;
+        const slotOpts = playerActions[slotKey] || {};
+
+        text += `${name} [${slotKey}]\n`;
+        text += `  主令: ${_formatChoiceText('wu', sub, slotOpts)}\n`;
+        text += `  副令: ${_formatChoiceText('wen', sub, slotOpts)}\n`;
+        text += `  应变令: ${_formatChoiceText('ce', sub, slotOpts)}\n`;
+        text += '\n';
+      });
+
+      await navigator.clipboard.writeText(text.trim());
+      const okEl = document.getElementById('gm-copy-ok');
+      if (okEl) { okEl.classList.remove('hidden'); setTimeout(() => okEl.classList.add('hidden'), 2500); }
+      showToast('📋 已复制全部行动');
+    } catch (e) {
+      showToast('❌ 复制失败: ' + e.message);
+    }
+  }
+
+  // ── 格式化选择为纯文本（供复制用）──
+  function _formatChoiceText(type, sub, slotOpts) {
+    if (!sub) return '未提交';
+    const choice = sub[type + '_choice'];
+    const custom = sub[type + '_custom'];
+    if (!choice) return '未选择';
+    if (choice === 'custom') return '自拟: ' + (custom || '');
+
+    // 还原选项名称
+    const typeOpts = slotOpts[type] || {};
+    const optKey = choice.toLowerCase();
+    if (typeOpts[optKey] && typeOpts[optKey].name) {
+      return choice + '. ' + typeOpts[optKey].name;
+    }
+    return choice;
+  }
+
+  // ── 自拟 radio 联动 ──
+  function _bindCustomRadioToggle() {
+    document.querySelectorAll('.ling-radio').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const name = this.name; // ling-wu-0
+        const parts = name.split('-'); // ['ling', 'wu', '0']
+        const type = parts[1];
+        const slot = parts[2];
+        const customInput = document.getElementById('ling-custom-' + type + '-' + slot);
+        if (customInput) {
+          customInput.disabled = (this.value !== 'custom');
+          if (this.value === 'custom') customInput.focus();
+        }
+      });
+    });
+  }
+
+  // ── HTML 转义 ──
+  function _escHtml(text) {
+    if (!text) return '';
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+  }
+
   function renderAll() {
     const hasData = state.rounds.length > 0;
     const emptyEl = document.getElementById('arena-empty');
@@ -1400,10 +1434,6 @@
       renderDigest(latest);
       renderPlayerCards();
 
-      // v20260619a 工单#decision-ref-v1: 渲染决策参考区
-      renderDecisionRef(latest);
-      renderOpportunities(latest);
-      renderActionOptions(latest);
 
       /* [legacy v1]
       renderMap();
@@ -1414,6 +1444,7 @@
       renderMap();
       renderWorld(latest);
       renderJunbao(latest);    // #battle-splitblock-fix-v1: 补回军报板块渲染调用
+      renderActionTab(latest);
       renderChangesDetail();
       renderHistorySection();
     }
@@ -1424,53 +1455,7 @@
       window.dispatchEvent(new CustomEvent('sg-rounds-updated'));
     } catch (e) { /* 兜底,不影响主流程 */ }
 
-    // ── 新增：渲染三令提交界面 ──
-    const lastRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1] : null;
-    if (lastRound && lastRound.parsed) {
-      if (typeof renderActionsPanel === 'function') {
-        renderActionsPanel(lastRound.parsed);
-      }
-    }
 
-    // #action-panel-step2 渲染行动板块
-    if (typeof window.SGParser !== 'undefined' && state.rounds.length > 0 && window.SGAction && typeof window.SGAction.extractSection === 'function') {
-      var latest = state.rounds[state.rounds.length - 1];
-      var rawText = latest.raw || '';
-
-      // 解析数据
-      var settlementText = window.SGAction.extractSection(rawText, '📋 结算', '---');
-      var oppText = window.SGAction.extractSection(rawText, '公共机遇池', '═══');
-      var actionText = window.SGAction.extractSection(rawText, '🎯 行动令', '====');
-      var firstMoverText = window.SGAction.extractSection(rawText, '本回合先手:', '\n');
-
-      // ── #parser-expose-fix-v1-step2 START ──
-      // 改读 SGParseV2 命名空间,避免被 main.js 末尾 window.SGAction 整体赋值抹掉。
-      // 实现仍是 parser.js IIFE 外的 parseSettlement/Opportunities/ActionOptions/FirstMover。
-      var settlement    = window.SGParseV2.parseSettlement(settlementText);
-      var opportunities = window.SGParseV2.parseOpportunitiesV2(oppText);
-      var actions       = window.SGParseV2.parseActionOptionsV2(actionText);
-      var firstMover    = window.SGParseV2.parseFirstMoverV2(firstMoverText);
-      // ── END #parser-expose-fix-v1-step2 ──
-
-      // 渲染
-      window.SGAction.renderSettlement(settlement);
-      window.SGAction.renderOpportunities(opportunities);
-      window.SGAction.renderActionPanel(actions);
-
-      // 更新先手显示
-      if (firstMover) {
-        var fmNameEl = document.getElementById('first-mover-name');
-        if (fmNameEl) {
-          fmNameEl.textContent = firstMover;
-        }
-      }
-
-      // 显示 GM 复制按钮
-      var gmCopyBar = document.getElementById('gm-copy-bar');
-      if (gmCopyBar) {
-        gmCopyBar.style.display = ((window.SGAction && window.SGAction.isGMMode) ? window.SGAction.isGMMode() : false) ? 'flex' : 'none';
-      }
-    }
   }
 
 // ─────────────────────────────────────────
