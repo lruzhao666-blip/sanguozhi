@@ -13387,3 +13387,195 @@ html.tab-switching {
 }
 
 /* ╚══ END v20260614 工单#action-ref-redesign-B1 ══════════════ */
+/* ════════════════════════════════════════════════════════════
+   v20260614 工单#action-opp-redesign-B2
+   行动 Tab 公共机遇池 — 对齐 info-block 暗金风格
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 外壳 ── */
+.act-opp-v2 {
+  background: rgba(10,4,4,.92);
+  border: 1px solid var(--border-red);
+  border-radius: var(--rl);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.aov-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: rgba(50,0,0,.3);
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.aov-tag {
+  font-family: var(--font-serif);
+  font-size: .58rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  background: rgba(212,168,67,.08);
+  border: 1px solid rgba(212,168,67,.22);
+  border-radius: 3px;
+  padding: 1px 7px;
+  letter-spacing: .05em;
+  line-height: 1.7;
+  flex-shrink: 0;
+}
+.aov-title {
+  font-family: var(--font-serif);
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: .09em;
+}
+.aov-hint {
+  margin-left: auto;
+  font-size: .64rem;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+}
+.aov-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+  padding: 14px 16px 16px;
+}
+
+/* ── 机遇卡片 ── */
+.aov-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 11px 14px 12px 18px;
+  background: rgba(18,10,6,.55);
+  border: 1px solid rgba(255,255,255,.04);
+  border-left: none;
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: background .2s, transform .2s;
+  cursor: pointer;
+}
+.aov-card:hover {
+  background: rgba(38,20,10,.82);
+  transform: translateX(2px);
+}
+.aov-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  transition: width .2s;
+}
+.aov-card:hover::before { width: 4px; }
+.aov-card.aov-compete::before   { background: linear-gradient(180deg, #e07060, #a03020); }
+.aov-card.aov-cooperate::before { background: linear-gradient(180deg, #60a8e0, #2070b0); }
+.aov-card.aov-epic::before      { background: linear-gradient(180deg, #e8c560, #a08030); }
+.aov-card.aov-gamble::before    { background: linear-gradient(180deg, #b070d8, #703098); }
+
+/* 卡片第一行：标题 + 类型徽章 */
+.aov-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.aov-card-title {
+  font-family: var(--font-serif);
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: .03em;
+  flex: 1;
+  min-width: 0;
+}
+.aov-type-badge {
+  font-family: var(--font-serif);
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid;
+  background: transparent;
+  white-space: nowrap;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.aov-compete .aov-type-badge   { color: #f08070; border-color: rgba(231,76,60,.5); }
+.aov-cooperate .aov-type-badge { color: #70b8f0; border-color: rgba(52,152,219,.5); }
+.aov-epic .aov-type-badge      { color: #e8c560; border-color: rgba(200,155,0,.5); }
+.aov-gamble .aov-type-badge    { color: #c888e8; border-color: rgba(160,80,200,.5); }
+
+/* 描述行 */
+.aov-card-desc {
+  font-family: var(--font-serif);
+  font-size: .78rem;
+  color: var(--text-sub);
+  line-height: 1.6;
+  letter-spacing: .02em;
+}
+
+/* 底部：威望预估 */
+.aov-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,.04);
+}
+.aov-prestige {
+  font-family: var(--font-serif);
+  font-size: .76rem;
+  font-weight: 700;
+  color: var(--gold-light);
+}
+.aov-emoji {
+  font-size: .82rem;
+  opacity: .7;
+}
+
+/* 选中态（应变令联动高亮） */
+.aov-card.aov-selected {
+  background: rgba(60,35,0,.55);
+  border-color: var(--gold);
+}
+.aov-card.aov-selected::before { width: 4px; }
+
+/* ── 空态 ── */
+.aov-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: .78rem;
+  color: var(--gold-dim);
+  letter-spacing: .18em;
+  padding: 22px 0;
+  opacity: .65;
+}
+
+/* ── 隐藏旧公共机遇面板（兜底） ── */
+.act-opp-panel {
+  display: none !important;
+}
+
+/* ── 移动端 ── */
+@media (max-width: 720px) {
+  .aov-body {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px 12px 14px;
+  }
+  .aov-header {
+    padding: 8px 12px;
+  }
+  .aov-hint {
+    font-size: .58rem;
+  }
+  .aov-card-title {
+    font-size: .82rem;
+  }
+  .aov-card-desc {
+    font-size: .74rem;
+  }
+}
+
+/* ╚══ END v20260614 工单#action-opp-redesign-B2 ══════════════ */
