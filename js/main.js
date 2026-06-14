@@ -435,6 +435,10 @@
             playerActions: (reparsed && reparsed.playerActions) || {},
             opportunities: (reparsed && Array.isArray(reparsed.opportunities)) ? reparsed.opportunities : [],
             firstMove:     (reparsed && reparsed.firstMove) || null,
+            prestige:      (reparsed && reparsed.prestige) || null,
+            worldStatus:   (reparsed && reparsed.worldStatus) || null,
+            storyParts:    (reparsed && reparsed.storyParts) || null,
+            warnings:      (reparsed && Array.isArray(reparsed.warnings)) ? reparsed.warnings : [],
           };
         })(),
         rawContent: row.raw_content || '',
@@ -998,6 +1002,8 @@
     if (!listEl) return;
 
     const opps = parsed.opportunities || [];
+    // 兜底：如果 opportunities 从 parser 直接输出的格式不同，尝试兼容
+    // parser 输出的 opp 对象必须含 id/title/desc/type/prestige 字段
     if (!opps.length) {
       listEl.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
       return;
@@ -1035,6 +1041,13 @@
       if (!panelEl) continue;
 
       const slotActions = actions[slotKey];
+      // 兜底: parser 输出的 playerActions 结构是 { '甲': { wu: {a:{},b:{}}, wen: {a:{},b:{}}, ce: {a:{},b:{}} } }
+      // 确保 slotActions 存在且包含 wu/wen/ce
+      if (slotActions && typeof slotActions === 'object') {
+        if (!slotActions.wu) slotActions.wu = {};
+        if (!slotActions.wen) slotActions.wen = {};
+        if (!slotActions.ce) slotActions.ce = {};
+      }
       const isMine = (i === mySlot);
 
       // 如果不是自己的面板且不是GM，显示等待状态

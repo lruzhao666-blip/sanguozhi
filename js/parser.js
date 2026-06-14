@@ -178,10 +178,10 @@ window.SGParser = (function () {
 
       // 匹配三令：武令|A.行动名:描述(风险·+N威望) 或 (风险·+N~M威望)
       // 改动：威望段允许 +N 或 +N~M 单符号写法
-      const actionRe = /(主令|副令|应变令|武令|文令|策令)\s*[|｜]\s*([ABC])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/g;
+      const actionRe = /(主令|副令|应变令|武令|文令|策令)\s*[|｜]\s*([A-Ca-c])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·）)]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/g;
       let m;
       while ((m = actionRe.exec(section)) !== null) {
-        const lingType = (m[1] === '主令' || m[1] === '武令') ? 'wu' : (m[1] === '副令' || m[1] === '文令') ? 'wen' : 'ce';
+        const lingType = (m[1] === '主令' || m[1] === '武令') ? 'wu' : (m[1] === '副令' || m[1] === '文令') ? 'wen' : (m[1] === '应变令' || m[1] === '策令') ? 'ce' : 'ce';
         const option = m[2].toLowerCase(); // 'a' | 'b'
         result.playerActions[slot][lingType][option] = {
           name: m[3].trim(),
