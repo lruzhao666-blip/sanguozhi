@@ -915,18 +915,7 @@
 
   // ── 绑定行动 tab 交互 ──
   function bindActionTab() {
-    // 玩家 tab 切换
-    const tabs = document.querySelectorAll('.cmd-ptab');
-    tabs.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const slot = parseInt(btn.dataset.slot);
-        tabs.forEach(b => b.classList.toggle('active', b === btn));
-        for (let i = 0; i < 3; i++) {
-          const panel = document.getElementById('cmd-slot-' + i);
-          if (panel) panel.classList.toggle('hidden', i !== slot);
-        }
-      });
-    });
+    // v20260617: 三列并排，无需 tab 切换
 
     // GM 录入台一键复制按钮
     const gmCopyBtn = document.getElementById('btn-gm-copy-all-actions');
@@ -1016,65 +1005,144 @@
 
     for (let i = 0; i < 3; i++) {
       const slotKey = SLOT_NAMES[i];
-      const panelEl = document.getElementById('cmd-slot-' + i);
+      const panelEl = document.getElementById('act-col-' + i);
       if (!panelEl) continue;
 
       const slotActions = actions[slotKey];
+      const playerName = state.players[i] ? state.players[i].name : '城主' + slotKey;
+
+      // 卡头
+      let html = `<div class="act-col-head act-col-head-${i}">
+        <span class="act-col-name">${_escHtml(playerName)}</span>
+        <span class="act-col-slot">[${slotKey}]</span>
+      </div>`;
 
       if (!slotActions) {
-        panelEl.innerHTML = '<div class="cmd-waiting">等待 GM 发布行动选项…</div>';
+        html += '<div class="act-col-body"><div class="act-waiting">等待 GM 发布行动选项…</div></div>';
+        panelEl.innerHTML = html;
         continue;
       }
 
-      // 确保 wu/wen/ce 存在
       if (!slotActions.wu) slotActions.wu = {};
       if (!slotActions.wen) slotActions.wen = {};
       if (!slotActions.ce) slotActions.ce = {};
 
-      // 渲染三令选项
-      let html = '';
-      html += _renderLingSection('wu', '⚔ 主令', '军事行动', slotActions.wu, i);
-      html += _renderLingSection('wen', '🏛 副令', '内政建设', slotActions.wen, i);
-      html += _renderCeLingSection(slotActions.ce, opps, i);
+      html += '<div class="act-col-body">';
+      html += _renderActLing('wu', '⚔ 主令', slotActions.wu, i);
+      html += _renderActLing('wen', '🏛 副令', slotActions.wen, i);
+      html += _renderActCeLing(slotActions.ce, opps, i);
 
-      // 零消耗补充栏
-      html += `<div class="cmd-zero-section">
-        <label class="cmd-zero-label">零消耗补充（可选）</label>
-        <input type="text" class="cmd-zero-input" id="cmd-zero-${i}" placeholder="额外说明，如外交意向等" maxlength="60" />
+      // 零消耗
+      html += `<div class="act-zero">
+        <label class="act-zero-label">零消耗补充（可选）</label>
+        <input type="text" class="act-zero-input" id="cmd-zero-${i}" placeholder="额外说明，如外交意向等" maxlength="60" />
       </div>`;
 
-      // 独立提交按钮
-      html += `<div class="cmd-submit-slot" id="cmd-submit-slot-${i}">
-        <button class="action-submit-btn cmd-slot-submit-btn" data-slot="${i}">
-          提交 ${slotKey} 的行动
-        </button>
-        <div class="cmd-slot-submit-hint">选择三令后提交，提交后不可修改</div>
+      // 提交 + 撤回按钮
+      html += `<div class="act-submit-area" id="act-submit-area-${i}">
+        <button class="act-submit-btn" data-slot="${i}">提交 ${slotKey} 的行动</button>
+        <div class="act-submit-hint">选择三令后提交</div>
       </div>`;
 
+      html += '</div>';
       panelEl.innerHTML = html;
 
       // 绑定提交按钮
-      const submitBtn = panelEl.querySelector('.cmd-slot-submit-btn');
+      const submitBtn = panelEl.querySelector('.act-submit-btn');
       if (submitBtn) {
         submitBtn.addEventListener('click', () => onSlotSubmit(i));
       }
     }
 
-    // 更新 tab 文字为玩家名号
-    const tabBtns = document.querySelectorAll('.cmd-ptab');
-    state.players.forEach((p, i) => {
-      if (tabBtns[i] && p.name && p.name !== '城主甲' && p.name !== '城主乙' && p.name !== '城主丙') {
-        tabBtns[i].textContent = SLOT_NAMES[i] + ' · ' + p.name;
-      }
-    });
-
-    // 绑定机遇-应变令联动
     _bindCeLingInteraction();
-    // 绑定自拟 radio 联动
     _bindCustomRadioToggle();
   }
 
-  // ── 渲染主令/副令选项区 ──
+  function _renderActLing(type, title, options, slotIdx) {
+    let html = `<div class="act-ling" data-ling="${type}" data-slot="${slotIdx}">
+      <div class="act-ling-hd"><span class="act-ling-title">${title}</span></div>
+      <div class="act-ling-opts">`;
+
+    if (!options || Object.keys(options).length === 0) {
+      html += '<div class="act-ling-empty">暂无选项</div>';
+    } else {
+      const keys = Object.keys(options).sort();
+      keys.forEach(key => {
+        const opt = options[key];
+        const label = key.toUpperCase();
+        const riskClass = opt.risk === '稳' ? 'risk-stable' : opt.risk === '中' ? 'risk-medium' : 'risk-risky';
+        html += `<label class="act-opt">
+          <input type="radio" name="ling-${type}-${slotIdx}" value="${label}" class="ling-radio" />
+          <div class="act-opt-body">
+            <div class="act-opt-top"><span class="act-opt-label">${label}.</span><span class="act-opt-name">${_escHtml(opt.name)}</span></div>
+            <div class="act-opt-desc">${_escHtml(opt.desc)}</div>
+            <div class="act-opt-meta"><span class="act-opt-risk ${riskClass}">${_escHtml(opt.risk)}</span><span class="act-opt-prestige">+${_escHtml(opt.prestige)} 威望</span></div>
+          </div>
+        </label>`;
+      });
+    }
+
+    // 自拟
+    html += `<label class="act-opt act-opt-custom">
+      <input type="radio" name="ling-${type}-${slotIdx}" value="custom" class="ling-radio" />
+      <div class="act-opt-body">
+        <div class="act-opt-top"><span class="act-opt-label">自拟</span></div>
+        <input type="text" class="ling-custom-input" id="ling-custom-${type}-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled />
+      </div>
+    </label>`;
+
+    html += '</div></div>';
+    return html;
+  }
+
+  function _renderActCeLing(ceOptions, opps, slotIdx) {
+    let html = `<div class="act-ling" data-ling="ce" data-slot="${slotIdx}">
+      <div class="act-ling-hd"><span class="act-ling-title">🎯 应变令</span></div>
+      <div class="act-ling-opts">`;
+
+    if (opps && opps.length > 0) {
+      opps.forEach(opp => {
+        const typeText = opp.type === 'compete' ? '争夺' : opp.type === 'cooperate' ? '协力' : opp.type === 'epic' ? '史诗' : '赌博';
+        html += `<label class="act-opt act-opt-opp">
+          <input type="radio" name="ling-ce-${slotIdx}" value="opp_${opp.id}" class="ling-radio ling-ce-radio" data-is-opp="1" />
+          <div class="act-opt-body">
+            <div class="act-opt-top"><span class="act-opt-label">机遇${opp.id}.</span><span class="act-opt-name">${_escHtml(opp.title)}</span></div>
+            <div class="act-opt-desc">${_escHtml(opp.desc)}</div>
+            <div class="act-opt-meta"><span class="act-opt-risk risk-medium">${typeText}</span><span class="act-opt-prestige">+${opp.prestige} 威望</span></div>
+          </div>
+        </label>`;
+      });
+      html += '<div class="act-divider"><span>— 或选择应变令 —</span></div>';
+    }
+
+    if (ceOptions && Object.keys(ceOptions).length > 0) {
+      Object.keys(ceOptions).sort().forEach(key => {
+        const opt = ceOptions[key];
+        const label = key.toUpperCase();
+        const riskClass = opt.risk === '稳' ? 'risk-stable' : opt.risk === '中' ? 'risk-medium' : 'risk-risky';
+        html += `<label class="act-opt">
+          <input type="radio" name="ling-ce-${slotIdx}" value="${label}" class="ling-radio ling-ce-radio" data-is-opp="0" />
+          <div class="act-opt-body">
+            <div class="act-opt-top"><span class="act-opt-label">${label}.</span><span class="act-opt-name">${_escHtml(opt.name)}</span></div>
+            <div class="act-opt-desc">${_escHtml(opt.desc)}</div>
+            <div class="act-opt-meta"><span class="act-opt-risk ${riskClass}">${_escHtml(opt.risk)}</span><span class="act-opt-prestige">+${_escHtml(opt.prestige)} 威望</span></div>
+          </div>
+        </label>`;
+      });
+    }
+
+    html += `<label class="act-opt act-opt-custom">
+      <input type="radio" name="ling-ce-${slotIdx}" value="custom" class="ling-radio ling-ce-radio" data-is-opp="0" />
+      <div class="act-opt-body">
+        <div class="act-opt-top"><span class="act-opt-label">自拟</span></div>
+        <input type="text" class="ling-custom-input" id="ling-custom-ce-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled />
+      </div>
+    </label>`;
+
+    html += '</div></div>';
+    return html;
+  }
+
   function _renderLingSection(type, icon, subtitle, options, slotIdx) {
     let html = `<div class="cmd-ling-section" data-ling="${type}" data-slot="${slotIdx}">
       <div class="ling-header"><span class="ling-icon">${icon}</span><span class="ling-sub">(${subtitle})</span></div>
@@ -1270,6 +1338,29 @@
     }
   }
 
+  async function onSlotWithdraw(slotIdx) {
+    const slotKey = SLOT_NAMES[slotIdx];
+    const currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (!currentRound) return;
+
+    if (!confirm('确认撤回 ' + slotKey + ' 的行动提交？')) return;
+
+    try {
+      const res = await fetchWithTimeout(
+        `${ACTION_SUPA_URL}?round=eq.${currentRound}&slot=eq.${slotKey}`,
+        { method: 'DELETE', headers: SUPA_HEADERS }, 8000
+      );
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      showToast('↩ ' + slotKey + ' 行动已撤回');
+      // 重新渲染行动面板
+      const latest = state.rounds[state.rounds.length - 1];
+      if (latest) await renderActionTab(latest);
+    } catch (e) {
+      console.error('[SG] 撤回失败:', e);
+      showToast('❌ 撤回失败，请重试');
+    }
+  }
+
   // ── 获取单令选择 ──
   function _getSelectedLing(type, slotIdx) {
     const selected = document.querySelector(`input[name="ling-${type}-${slotIdx}"]:checked`);
@@ -1284,13 +1375,20 @@
   }
 
   // ── 锁定某家面板 ──
-  function _lockSlotPanel(slotIdx) {
-    const panel = document.getElementById('cmd-slot-' + slotIdx);
+  function _lockSlotPanel(slotIdx, allRevealed) {
+    const panel = document.getElementById('act-col-' + slotIdx);
     if (!panel) return;
     panel.querySelectorAll('input').forEach(el => { el.disabled = true; });
-    const submitArea = document.getElementById('cmd-submit-slot-' + slotIdx);
+    const submitArea = document.getElementById('act-submit-area-' + slotIdx);
     if (submitArea) {
-      submitArea.innerHTML = '<div class="cmd-slot-submitted">✅ 已提交，等待其他玩家</div>';
+      if (allRevealed) {
+        submitArea.innerHTML = '<div class="act-slot-locked">✅ 已公开，不可撤回</div>';
+      } else {
+        submitArea.innerHTML = '<div class="act-slot-submitted">✅ 已提交</div>'
+          + '<button class="act-withdraw-btn" data-slot="' + slotIdx + '">↩ 撤回</button>';
+        const wBtn = submitArea.querySelector('.act-withdraw-btn');
+        if (wBtn) wBtn.addEventListener('click', () => onSlotWithdraw(slotIdx));
+      }
     }
   }
 
@@ -1316,14 +1414,14 @@
       });
 
       // 锁定已提交的面板
+      const allDone = SLOT_NAMES.every(s => !!submitted[s]);
       SLOT_NAMES.forEach((slotKey, i) => {
         if (submitted[slotKey]) {
-          _lockSlotPanel(i);
+          _lockSlotPanel(i, allDone);
         }
       });
 
       // 三家全提交 → 显示公开区 + GM复制按钮
-      const allDone = SLOT_NAMES.every(s => !!submitted[s]);
       if (allDone) {
         _renderReveal(submitted);
         // GM 录入台复制按钮亮起

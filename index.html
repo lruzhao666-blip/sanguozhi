@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260616collab" />
+  <link rel="stylesheet" href="css/style.css?v=20260617act1" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -301,89 +301,53 @@
      TAB：行动
 ══════════════════════════════════════════ -->
 <section id="tab-action" class="tab-panel">
-  <div class="action-page">
+  <div class="act-page">
 
-    <!-- ══ 决策参考区 ══ -->
-    <div class="action-ref-bar" id="action-ref-bar">
-      <div class="ref-card ref-prestige">
-        <div class="ref-card-header">
-          <span class="ref-label">威望</span>
-          <span class="ref-title">威望排行</span>
-        </div>
-        <div class="ref-card-body" id="ref-prestige-body">
+    <!-- 决策参考栏（沿用原 DOM id，JS 不需要改渲染逻辑） -->
+    <div class="act-ref-bar">
+      <div class="act-ref-card">
+        <div class="act-ref-hd"><span class="act-ref-tag">威望</span><span class="act-ref-title">威望排行</span></div>
+        <div class="act-ref-body" id="ref-prestige-body">
           <div class="prestige-row"><span class="p-badge p0-badge">甲</span><div class="p-track"><div class="p-fill" id="p-fill-0"></div></div><span class="p-val" id="p-val-0">—</span></div>
           <div class="prestige-row"><span class="p-badge p1-badge">乙</span><div class="p-track"><div class="p-fill" id="p-fill-1"></div></div><span class="p-val" id="p-val-1">—</span></div>
           <div class="prestige-row"><span class="p-badge p2-badge">丙</span><div class="p-track"><div class="p-fill" id="p-fill-2"></div></div><span class="p-val" id="p-val-2">—</span></div>
           <div class="prestige-npc"><span class="npc-label">NPC最高</span><span id="ref-npc-name">—</span><span id="ref-npc-score">—</span></div>
         </div>
       </div>
-      <div class="ref-card ref-firstmove">
-        <div class="ref-card-header">
-          <span class="ref-label">先手</span>
-          <span class="ref-title">本回合先手</span>
-        </div>
-        <div class="ref-card-body">
-          <div class="firstmove-display"><span class="fm-crown">👑</span><span id="ref-first-mover">等待GM数据</span></div>
-        </div>
+      <div class="act-ref-card">
+        <div class="act-ref-hd"><span class="act-ref-tag">先手</span><span class="act-ref-title">本回合先手</span></div>
+        <div class="act-ref-body"><div class="firstmove-display"><span class="fm-crown">👑</span><span id="ref-first-mover">等待GM数据</span></div></div>
       </div>
-      <div class="ref-card ref-world">
-        <div class="ref-card-header">
-          <span class="ref-label">世界</span>
-          <span class="ref-title">世界状态</span>
-        </div>
-        <div class="ref-card-body">
-          <span id="ref-world-status">等待GM数据</span>
-        </div>
+      <div class="act-ref-card">
+        <div class="act-ref-hd"><span class="act-ref-tag">世界</span><span class="act-ref-title">世界状态</span></div>
+        <div class="act-ref-body"><span id="ref-world-status">等待GM数据</span></div>
       </div>
     </div>
 
-    <!-- ══ 公共机遇池 ══ -->
-    <div class="action-opp-panel" id="action-opp-panel">
-      <div class="opp-header">
-        <span class="opp-label">机遇</span>
-        <span class="opp-title">公共机遇池</span>
-        <span class="opp-hint">选则占用应变令</span>
+    <!-- 公共机遇池 -->
+    <div class="act-opp-panel">
+      <div class="act-opp-hd">
+        <span class="act-opp-tag">机遇</span>
+        <span class="act-opp-title">公共机遇池</span>
+        <span class="act-opp-hint">选则占用应变令</span>
       </div>
-      <div class="opp-list" id="action-opp-list">
+      <div class="act-opp-list" id="action-opp-list">
         <div class="opp-empty">本回合无公共机遇</div>
       </div>
     </div>
 
-    <!-- ══ 行动指令区 ══ -->
-    <div class="action-cmd-panel" id="action-cmd-panel">
-      <div class="cmd-header">
-        <span class="cmd-label">指令</span>
-        <span class="cmd-title">行动指令</span>
-        <span class="cmd-status" id="cmd-status-tag"></span>
-      </div>
-
-      <!-- 玩家切换 tab -->
-      <div class="cmd-player-tabs" id="cmd-player-tabs">
-        <button class="cmd-ptab active" data-slot="0">甲</button>
-        <button class="cmd-ptab" data-slot="1">乙</button>
-        <button class="cmd-ptab" data-slot="2">丙</button>
-      </div>
-
-      <!-- 三个玩家面板（JS 控制显示/隐藏） -->
-      <div class="cmd-slot-panel" id="cmd-slot-0"></div>
-      <div class="cmd-slot-panel hidden" id="cmd-slot-1"></div>
-      <div class="cmd-slot-panel hidden" id="cmd-slot-2"></div>
+    <!-- 三列行动指令 -->
+    <div class="act-cols" id="act-cols">
+      <div class="act-col" data-slot="0" id="act-col-0"></div>
+      <div class="act-col" data-slot="1" id="act-col-1"></div>
+      <div class="act-col" data-slot="2" id="act-col-2"></div>
     </div>
 
-    <!-- ══ 提交栏（已移入各 slot 面板内，由 JS 渲染） ══ -->
-
-    <!-- ══ 全员公开区（三家全提交后显示） ══ -->
-    <div class="action-reveal-panel hidden" id="action-reveal-panel">
-      <div class="reveal-header">
-        <span class="reveal-label">公开</span>
-        <span class="reveal-title">全员行动已公开</span>
-      </div>
-      <div class="reveal-grid" id="reveal-grid">
-        <!-- JS 动态渲染三家选择结果 -->
-      </div>
+    <!-- 全员公开区 -->
+    <div class="act-reveal hidden" id="action-reveal-panel">
+      <div class="act-reveal-hd"><span class="act-reveal-tag">公开</span><span class="act-reveal-title">全员行动已公开</span></div>
+      <div class="act-reveal-grid" id="reveal-grid"></div>
     </div>
-
-
 
   </div>
 </section>
