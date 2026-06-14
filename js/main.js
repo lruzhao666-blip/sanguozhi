@@ -942,9 +942,9 @@
       const maxScore = Math.max(...parsed.prestige.players.map(p => p.total), 1);
       const SLOT_LABELS = ['甲', '乙', '丙'];
       parsed.prestige.players.forEach((p, i) => {
-        const valEl = document.getElementById('apc-val-' + i);
-        const fillEl = document.getElementById('apc-fill-' + i);
-        const nameEl = document.getElementById('apc-name-' + i);
+        const valEl = document.getElementById('arl-val-' + i);
+        const fillEl = document.getElementById('arl-fill-' + i);
+        const nameEl = document.getElementById('arl-name-' + i);
         if (valEl) valEl.textContent = p.total;
         if (fillEl) fillEl.style.width = Math.round((p.total / maxScore) * 100) + '%';
         if (nameEl) nameEl.textContent = (state.players[i] && state.players[i].name) || ('城主' + SLOT_LABELS[i]);
@@ -954,11 +954,9 @@
       if (npcNameEl) npcNameEl.textContent = parsed.prestige.npcHighest.name || '—';
       if (npcScoreEl) npcScoreEl.textContent = parsed.prestige.npcHighest.score || '—';
     }
-
     // 先手
     const fmEl = document.getElementById('ref-first-mover');
     if (fmEl) fmEl.textContent = parsed.firstMove || '等待GM数据';
-
     // 世界状态
     const wsEl = document.getElementById('ref-world-status');
     if (wsEl) {
@@ -973,45 +971,34 @@
   function renderOppPanel(parsed) {
     const listEl = document.getElementById('action-opp-list');
     if (!listEl) return;
-
     const opps = parsed.opportunities || [];
     if (!opps.length) {
-      listEl.innerHTML = '<div class="aov-empty">本回合无公共机遇</div>';
+      listEl.innerHTML = '<div class="arr-opp-empty">本回合无公共机遇</div>';
       return;
     }
-
     const TYPE_MAP = {
-      compete:   { cls: 'aov-compete',   text: '⚔ 争夺', emoji: '⚔️' },
-      cooperate: { cls: 'aov-cooperate', text: '🤝 协力', emoji: '🤝' },
-      epic:      { cls: 'aov-epic',      text: '🏆 史诗', emoji: '🏆' },
-      gamble:    { cls: 'aov-gamble',    text: '🎲 赌博', emoji: '🎲' },
+      compete:   { cls: 'opp-compete',   text: '⚔ 争夺' },
+      cooperate: { cls: 'opp-cooperate', text: '🤝 协力' },
+      epic:      { cls: 'opp-epic',      text: '🏆 史诗' },
+      gamble:    { cls: 'opp-gamble',    text: '🎲 赌博' },
     };
-
     let html = '';
     opps.forEach(opp => {
       const info = TYPE_MAP[opp.type] || TYPE_MAP.compete;
-      html += `<div class="aov-card ${info.cls}" data-opp-id="${opp.id}">
-        <div class="aov-card-top">
-          <span class="aov-card-title">机遇${opp.id} · ${_escHtml(opp.title)}</span>
-          <span class="aov-type-badge">${info.text}</span>
-        </div>
-        <div class="aov-card-desc">${_escHtml(opp.desc)}</div>
-        <div class="aov-card-foot">
-          <span class="aov-prestige">预估 +${opp.prestige} 威望</span>
-        </div>
+      html += `<div class="arr-opp-card ${info.cls}" data-opp-id="${opp.id}">
+        <div class="arr-opp-card-top"><span class="arr-opp-card-title">机遇${opp.id} · ${_escHtml(opp.title)}</span><span class="arr-opp-type">${info.text}</span></div>
+        <div class="arr-opp-card-desc">${_escHtml(opp.desc)}</div>
+        <div class="arr-opp-prestige">预估 +${opp.prestige} 威望</div>
       </div>`;
     });
     listEl.innerHTML = html;
-
-    // 绑定点击高亮（应变令联动用）
-    listEl.querySelectorAll('.aov-card').forEach(card => {
+    listEl.querySelectorAll('.arr-opp-card').forEach(card => {
       card.addEventListener('click', function () {
-        listEl.querySelectorAll('.aov-card').forEach(c => c.classList.remove('aov-selected'));
-        this.classList.add('aov-selected');
+        listEl.querySelectorAll('.arr-opp-card').forEach(c => c.classList.remove('arr-selected'));
+        this.classList.add('arr-selected');
       });
     });
   }
-
   // ── 渲染三家行动指令面板 ──
   function renderCmdPanels(parsed) {
     const actions = parsed.playerActions || {};
@@ -1025,14 +1012,10 @@
       const slotActions = actions[slotKey];
       const playerName = state.players[i] ? state.players[i].name : '城主' + slotKey;
 
-      // 卡头
-      let html = `<div class="act-col-head act-col-head-${i}">
-        <span class="act-col-name">${_escHtml(playerName)}</span>
-        <span class="act-col-slot">[${slotKey}]</span>
-      </div>`;
+      let html = `<div class="act-col-head-v3"><span class="act-col-name-v3">${_escHtml(playerName)}</span><span class="act-col-slot-v3">[${slotKey}]</span></div>`;
 
       if (!slotActions) {
-        html += '<div class="act-col-body"><div class="act-waiting">等待 GM 发布行动选项…</div></div>';
+        html += '<div class="act-col-body-v3"><div style="text-align:center;padding:28px 10px;color:var(--text-dim);font-size:.82rem;">等待 GM 发布行动选项…</div></div>';
         panelEl.innerHTML = html;
         continue;
       }
@@ -1041,262 +1024,114 @@
       if (!slotActions.wen) slotActions.wen = {};
       if (!slotActions.ce) slotActions.ce = {};
 
-      html += '<div class="act-col-body">';
-      html += _renderActLing('wu', '⚔ 主令', slotActions.wu, i);
-      html += _renderActLing('wen', '🏛 副令', slotActions.wen, i);
-      html += _renderActCeLing(slotActions.ce, opps, i);
+      html += '<div class="act-col-body-v3">';
+      html += _renderLingV3('wu', '主令', slotActions.wu, i);
+      html += _renderLingV3('wen', '副令', slotActions.wen, i);
+      html += _renderCeLingV3(slotActions.ce, opps, i);
 
       // 零消耗
-      html += `<div class="act-zero">
-        <label class="act-zero-label">零消耗补充（可选）</label>
-        <input type="text" class="act-zero-input" id="cmd-zero-${i}" placeholder="额外说明，如外交意向等" maxlength="60" />
-      </div>`;
+      html += `<div class="act-zero-v3"><label class="act-zero-label-v3">零消耗补充（可选）</label><input type="text" class="act-zero-input-v3" id="cmd-zero-${i}" placeholder="额外说明，如外交意向等" maxlength="60" /></div>`;
 
-      // 提交 + 撤回按钮
-      html += `<div class="act-submit-area" id="act-submit-area-${i}">
-        <button class="act-submit-btn" data-slot="${i}">提交 ${slotKey} 的行动</button>
-        <div class="act-submit-hint">选择三令后提交</div>
-      </div>`;
+      // 提交
+      html += `<div class="act-submit-area" id="act-submit-area-${i}"><button class="act-submit-btn-v3" data-slot="${i}">提交 ${slotKey} 的行动</button><div class="act-submit-hint-v3">选择三令后提交</div></div>`;
 
       html += '</div>';
       panelEl.innerHTML = html;
 
-      // 绑定提交按钮
-      const submitBtn = panelEl.querySelector('.act-submit-btn');
-      if (submitBtn) {
-        submitBtn.addEventListener('click', () => onSlotSubmit(i));
-      }
+      // 绑定
+      const submitBtn = panelEl.querySelector('.act-submit-btn-v3');
+      if (submitBtn) submitBtn.addEventListener('click', () => onSlotSubmit(i));
     }
 
-    _bindCeLingInteraction();
-    _bindCustomRadioToggle();
+    _bindOptClickV3();
+    _bindCustomToggleV3();
+    _bindMobTabsV3();
   }
 
-  function _renderActLing(type, title, options, slotIdx) {
-    let html = `<div class="act-ling" data-ling="${type}" data-slot="${slotIdx}">
-      <div class="act-ling-hd"><span class="act-ling-title">${title}</span></div>
-      <div class="act-ling-opts">`;
-
-    if (!options || Object.keys(options).length === 0) {
-      html += '<div class="act-ling-empty">暂无选项</div>';
-    } else {
-      const keys = Object.keys(options).sort();
-      keys.forEach(key => {
+  function _renderLingV3(type, title, options, slotIdx) {
+    let html = `<div class="act-ling-v3" data-ling="${type}" data-slot="${slotIdx}"><div class="act-ling-hd-v3"><span class="act-ling-tag">${title}</span></div><div class="act-ling-opts-v3">`;
+    if (options && Object.keys(options).length > 0) {
+      Object.keys(options).sort().forEach(key => {
         const opt = options[key];
         const label = key.toUpperCase();
         const riskClass = opt.risk === '稳' ? 'risk-stable' : opt.risk === '中' ? 'risk-medium' : 'risk-risky';
-        html += `<label class="act-opt">
-          <input type="radio" name="ling-${type}-${slotIdx}" value="${label}" class="ling-radio" />
-          <div class="act-opt-body">
-            <div class="act-opt-top"><span class="act-opt-label">${label}.</span><span class="act-opt-name">${_escHtml(opt.name)}</span></div>
-            <div class="act-opt-desc">${_escHtml(opt.desc)}</div>
-            <div class="act-opt-meta"><span class="act-opt-risk ${riskClass}">${_escHtml(opt.risk)}</span><span class="act-opt-prestige">+${_escHtml(opt.prestige)} 威望</span></div>
-          </div>
-        </label>`;
+        html += `<div class="act-opt-v3" data-name="ling-${type}-${slotIdx}" data-value="${label}"><input type="radio" name="ling-${type}-${slotIdx}" value="${label}" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3">${label}.</span><span class="act-opt-name-v3">${_escHtml(opt.name)}</span></div><div class="act-opt-desc-v3">${_escHtml(opt.desc)}</div><div class="act-opt-meta-v3"><span class="act-opt-risk-v3 ${riskClass}">${_escHtml(opt.risk)}</span><span class="act-opt-prestige-v3">+${_escHtml(opt.prestige)} 威望</span></div></div></div>`;
       });
     }
-
     // 自拟
-    html += `<label class="act-opt act-opt-custom">
-      <input type="radio" name="ling-${type}-${slotIdx}" value="custom" class="ling-radio" />
-      <div class="act-opt-body">
-        <div class="act-opt-top"><span class="act-opt-label">自拟</span></div>
-        <input type="text" class="ling-custom-input" id="ling-custom-${type}-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled />
-      </div>
-    </label>`;
-
+    html += `<div class="act-opt-v3 act-opt-custom-v3" data-name="ling-${type}-${slotIdx}" data-value="custom"><input type="radio" name="ling-${type}-${slotIdx}" value="custom" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3">自拟</span></div><input type="text" class="act-custom-input-v3" id="ling-custom-${type}-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled /></div></div>`;
     html += '</div></div>';
     return html;
   }
 
-  function _renderActCeLing(ceOptions, opps, slotIdx) {
-    let html = `<div class="act-ling" data-ling="ce" data-slot="${slotIdx}">
-      <div class="act-ling-hd"><span class="act-ling-title">🎯 应变令</span></div>
-      <div class="act-ling-opts">`;
-
+  function _renderCeLingV3(ceOptions, opps, slotIdx) {
+    let html = `<div class="act-ling-v3" data-ling="ce" data-slot="${slotIdx}"><div class="act-ling-hd-v3"><span class="act-ling-tag">应变</span></div><div class="act-ling-opts-v3">`;
     if (opps && opps.length > 0) {
       opps.forEach(opp => {
         const typeText = opp.type === 'compete' ? '争夺' : opp.type === 'cooperate' ? '协力' : opp.type === 'epic' ? '史诗' : '赌博';
-        html += `<label class="act-opt act-opt-opp">
-          <input type="radio" name="ling-ce-${slotIdx}" value="opp_${opp.id}" class="ling-radio ling-ce-radio" data-is-opp="1" />
-          <div class="act-opt-body">
-            <div class="act-opt-top"><span class="act-opt-label">机遇${opp.id}.</span><span class="act-opt-name">${_escHtml(opp.title)}</span></div>
-            <div class="act-opt-desc">${_escHtml(opp.desc)}</div>
-            <div class="act-opt-meta"><span class="act-opt-risk risk-medium">${typeText}</span><span class="act-opt-prestige">+${opp.prestige} 威望</span></div>
-          </div>
-        </label>`;
+        html += `<div class="act-opt-v3 act-opt-opp-v3" data-name="ling-ce-${slotIdx}" data-value="opp_${opp.id}"><input type="radio" name="ling-ce-${slotIdx}" value="opp_${opp.id}" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3">机遇${opp.id}.</span><span class="act-opt-name-v3">${_escHtml(opp.title)}</span></div><div class="act-opt-desc-v3">${_escHtml(opp.desc)}</div><div class="act-opt-meta-v3"><span class="act-opt-risk-v3 risk-medium">${typeText}</span><span class="act-opt-prestige-v3">+${opp.prestige} 威望</span></div></div></div>`;
       });
-      html += '<div class="act-divider"><span>— 或选择应变令 —</span></div>';
+      html += '<div class="act-divider-v3">— 或选择应变令 —</div>';
     }
-
     if (ceOptions && Object.keys(ceOptions).length > 0) {
       Object.keys(ceOptions).sort().forEach(key => {
         const opt = ceOptions[key];
         const label = key.toUpperCase();
         const riskClass = opt.risk === '稳' ? 'risk-stable' : opt.risk === '中' ? 'risk-medium' : 'risk-risky';
-        html += `<label class="act-opt">
-          <input type="radio" name="ling-ce-${slotIdx}" value="${label}" class="ling-radio ling-ce-radio" data-is-opp="0" />
-          <div class="act-opt-body">
-            <div class="act-opt-top"><span class="act-opt-label">${label}.</span><span class="act-opt-name">${_escHtml(opt.name)}</span></div>
-            <div class="act-opt-desc">${_escHtml(opt.desc)}</div>
-            <div class="act-opt-meta"><span class="act-opt-risk ${riskClass}">${_escHtml(opt.risk)}</span><span class="act-opt-prestige">+${_escHtml(opt.prestige)} 威望</span></div>
-          </div>
-        </label>`;
+        html += `<div class="act-opt-v3" data-name="ling-ce-${slotIdx}" data-value="${label}"><input type="radio" name="ling-ce-${slotIdx}" value="${label}" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3">${label}.</span><span class="act-opt-name-v3">${_escHtml(opt.name)}</span></div><div class="act-opt-desc-v3">${_escHtml(opt.desc)}</div><div class="act-opt-meta-v3"><span class="act-opt-risk-v3 ${riskClass}">${_escHtml(opt.risk)}</span><span class="act-opt-prestige-v3">+${_escHtml(opt.prestige)} 威望</span></div></div></div>`;
       });
     }
-
-    html += `<label class="act-opt act-opt-custom">
-      <input type="radio" name="ling-ce-${slotIdx}" value="custom" class="ling-radio ling-ce-radio" data-is-opp="0" />
-      <div class="act-opt-body">
-        <div class="act-opt-top"><span class="act-opt-label">自拟</span></div>
-        <input type="text" class="ling-custom-input" id="ling-custom-ce-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled />
-      </div>
-    </label>`;
-
+    html += `<div class="act-opt-v3 act-opt-custom-v3" data-name="ling-ce-${slotIdx}" data-value="custom"><input type="radio" name="ling-ce-${slotIdx}" value="custom" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3">自拟</span></div><input type="text" class="act-custom-input-v3" id="ling-custom-ce-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled /></div></div>`;
     html += '</div></div>';
     return html;
   }
 
-  function _renderLingSection(type, icon, subtitle, options, slotIdx) {
-    let html = `<div class="cmd-ling-section" data-ling="${type}" data-slot="${slotIdx}">
-      <div class="ling-header"><span class="ling-icon">${icon}</span><span class="ling-sub">(${subtitle})</span></div>
-      <div class="ling-options">`;
-
-    if (!options || Object.keys(options).length === 0) {
-      html += '<div class="ling-empty">暂无选项</div>';
-    } else {
-      const keys = Object.keys(options).sort();
-      keys.forEach(key => {
-        const opt = options[key];
-        const label = key.toUpperCase();
-        const riskClass = opt.risk === '稳' ? 'risk-stable' :
-                          opt.risk === '中' ? 'risk-medium' : 'risk-risky';
-        html += `<label class="ling-option-card">
-          <input type="radio" name="ling-${type}-${slotIdx}" value="${label}" class="ling-radio" />
-          <div class="ling-option-body">
-            <div class="ling-opt-top">
-              <span class="ling-opt-label">${label}.</span>
-              <span class="ling-opt-name">${_escHtml(opt.name)}</span>
-            </div>
-            <div class="ling-opt-desc">${_escHtml(opt.desc)}</div>
-            <div class="ling-opt-meta">
-              <span class="ling-opt-risk ${riskClass}">${_escHtml(opt.risk)}</span>
-              <span class="ling-opt-prestige">+${_escHtml(opt.prestige)} 威望</span>
-            </div>
-          </div>
-        </label>`;
-      });
-    }
-
-    // 自拟选项
-    html += `<label class="ling-option-card ling-custom-card">
-      <input type="radio" name="ling-${type}-${slotIdx}" value="custom" class="ling-radio" />
-      <div class="ling-option-body">
-        <div class="ling-opt-top"><span class="ling-opt-label">自拟</span></div>
-        <input type="text" class="ling-custom-input" id="ling-custom-${type}-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled />
-      </div>
-    </label>`;
-
-    html += '</div></div>';
-    return html;
-  }
-
-  // ── 渲染应变令区（含机遇联动）──
-  function _renderCeLingSection(ceOptions, opps, slotIdx) {
-    let html = `<div class="cmd-ling-section" data-ling="ce" data-slot="${slotIdx}">
-      <div class="ling-header"><span class="ling-icon">🎯 应变令</span><span class="ling-sub">(奇谋/机遇/配合)</span></div>
-      <div class="ling-options">`;
-
-    // 公共机遇选项（如果有机遇的话）
-    if (opps && opps.length > 0) {
-      opps.forEach(opp => {
-        const typeText = opp.type === 'compete' ? '争夺' :
-                         opp.type === 'cooperate' ? '协力' :
-                         opp.type === 'epic' ? '史诗' : '赌博';
-        html += `<label class="ling-option-card ling-opp-card">
-          <input type="radio" name="ling-ce-${slotIdx}" value="opp_${opp.id}" class="ling-radio ling-ce-radio" data-is-opp="1" />
-          <div class="ling-option-body">
-            <div class="ling-opt-top">
-              <span class="ling-opt-label">机遇${opp.id}.</span>
-              <span class="ling-opt-name">${_escHtml(opp.title)}</span>
-            </div>
-            <div class="ling-opt-desc">${_escHtml(opp.desc)}</div>
-            <div class="ling-opt-meta">
-              <span class="ling-opt-risk risk-medium">${typeText}</span>
-              <span class="ling-opt-prestige">+${opp.prestige} 威望</span>
-            </div>
-          </div>
-        </label>`;
-      });
-
-      // 分隔线
-      html += '<div class="ling-divider"><span>— 或选择以下应变令 —</span></div>';
-    }
-
-    // 常规应变令选项 A/B
-    if (ceOptions && Object.keys(ceOptions).length > 0) {
-      const keys = Object.keys(ceOptions).sort();
-      keys.forEach(key => {
-        const opt = ceOptions[key];
-        const label = key.toUpperCase();
-        const riskClass = opt.risk === '稳' ? 'risk-stable' :
-                          opt.risk === '中' ? 'risk-medium' : 'risk-risky';
-        html += `<label class="ling-option-card">
-          <input type="radio" name="ling-ce-${slotIdx}" value="${label}" class="ling-radio ling-ce-radio" data-is-opp="0" />
-          <div class="ling-option-body">
-            <div class="ling-opt-top">
-              <span class="ling-opt-label">${label}.</span>
-              <span class="ling-opt-name">${_escHtml(opt.name)}</span>
-            </div>
-            <div class="ling-opt-desc">${_escHtml(opt.desc)}</div>
-            <div class="ling-opt-meta">
-              <span class="ling-opt-risk ${riskClass}">${_escHtml(opt.risk)}</span>
-              <span class="ling-opt-prestige">+${_escHtml(opt.prestige)} 威望</span>
-            </div>
-          </div>
-        </label>`;
-      });
-    }
-
-    // 自拟选项
-    html += `<label class="ling-option-card ling-custom-card">
-      <input type="radio" name="ling-ce-${slotIdx}" value="custom" class="ling-radio ling-ce-radio" data-is-opp="0" />
-      <div class="ling-option-body">
-        <div class="ling-opt-top"><span class="ling-opt-label">自拟</span></div>
-        <input type="text" class="ling-custom-input" id="ling-custom-ce-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled />
-      </div>
-    </label>`;
-
-    html += '</div></div>';
-    return html;
-  }
-
-  // ── 机遇-应变令联动绑定 ──
-  function _bindCeLingInteraction() {
-    // 机遇卡片点击 → 自动选中对应 slot 的应变令机遇 radio
-    document.querySelectorAll('.opp-card').forEach(card => {
-      card.addEventListener('click', function() {
-        const oppId = this.dataset.oppId;
-        // 在所有三个 slot 中高亮这个机遇卡（视觉提示）
-        document.querySelectorAll('.opp-card').forEach(c => c.classList.remove('opp-selected'));
-        this.classList.add('opp-selected');
+  // 选项点击 → 高亮 + radio checked
+  function _bindOptClickV3() {
+    document.querySelectorAll('.act-opt-v3').forEach(opt => {
+      opt.addEventListener('click', function () {
+        const name = this.dataset.name;
+        // 取消同组其他选中
+        document.querySelectorAll(`.act-opt-v3[data-name="${name}"]`).forEach(o => o.classList.remove('act-opt-checked'));
+        this.classList.add('act-opt-checked');
+        const radio = this.querySelector('.act-radio-v3');
+        if (radio) radio.checked = true;
+        // 自拟联动
+        const customInput = this.querySelector('.act-custom-input-v3');
+        if (customInput) customInput.disabled = false;
+        // 禁用同组其他自拟
+        document.querySelectorAll(`.act-opt-v3[data-name="${name}"] .act-custom-input-v3`).forEach(inp => {
+          if (inp !== customInput) inp.disabled = true;
+        });
       });
     });
   }
 
-  // ── 自拟 radio 联动 ──
-  function _bindCustomRadioToggle() {
-    document.querySelectorAll('.ling-radio').forEach(radio => {
-      radio.addEventListener('change', function() {
-        const name = this.name;
-        const parts = name.split('-'); // ['ling', 'wu', '0']
-        const type = parts[1];
-        const slot = parts[2];
-        const customInput = document.getElementById('ling-custom-' + type + '-' + slot);
-        if (customInput) {
-          customInput.disabled = (this.value !== 'custom');
-          if (this.value === 'custom') customInput.focus();
-        }
+  // 自拟 focus 联动
+  function _bindCustomToggleV3() {
+    document.querySelectorAll('.act-custom-input-v3').forEach(inp => {
+      inp.addEventListener('focus', function () {
+        const opt = this.closest('.act-opt-v3');
+        if (opt) opt.click();
+      });
+    });
+  }
+
+  // 移动端 tab 切换
+  function _bindMobTabsV3() {
+    const tabs = document.querySelectorAll('.act-mob-tab');
+    const cols = document.querySelectorAll('.act-col-v3');
+    if (!tabs.length) return;
+    // 默认显示第一个
+    if (cols[0]) cols[0].classList.add('act-col-visible');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function () {
+        const slot = parseInt(this.dataset.slot);
+        tabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        cols.forEach((c, i) => {
+          c.classList.toggle('act-col-visible', i === slot);
+        });
       });
     });
   }
