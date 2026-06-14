@@ -976,28 +976,40 @@
 
     const opps = parsed.opportunities || [];
     if (!opps.length) {
-      listEl.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
+      listEl.innerHTML = '<div class="aov-empty">本回合无公共机遇</div>';
       return;
     }
 
+    const TYPE_MAP = {
+      compete:   { cls: 'aov-compete',   text: '⚔ 争夺', emoji: '⚔️' },
+      cooperate: { cls: 'aov-cooperate', text: '🤝 协力', emoji: '🤝' },
+      epic:      { cls: 'aov-epic',      text: '🏆 史诗', emoji: '🏆' },
+      gamble:    { cls: 'aov-gamble',    text: '🎲 赌博', emoji: '🎲' },
+    };
+
     let html = '';
     opps.forEach(opp => {
-      const typeClass = opp.type === 'compete' ? 'opp-compete' :
-                        opp.type === 'cooperate' ? 'opp-cooperate' :
-                        opp.type === 'epic' ? 'opp-epic' : 'opp-gamble';
-      const typeText = opp.type === 'compete' ? '争夺' :
-                       opp.type === 'cooperate' ? '协力' :
-                       opp.type === 'epic' ? '史诗' : '赌博';
-      html += `<div class="opp-card ${typeClass}" data-opp-id="${opp.id}">
-        <div class="opp-card-top">
-          <span class="opp-card-title">机遇${opp.id} · ${_escHtml(opp.title)}</span>
-          <span class="opp-card-type">${typeText}</span>
+      const info = TYPE_MAP[opp.type] || TYPE_MAP.compete;
+      html += `<div class="aov-card ${info.cls}" data-opp-id="${opp.id}">
+        <div class="aov-card-top">
+          <span class="aov-card-title">机遇${opp.id} · ${_escHtml(opp.title)}</span>
+          <span class="aov-type-badge">${info.text}</span>
         </div>
-        <div class="opp-card-desc">${_escHtml(opp.desc)}</div>
-        <div class="opp-card-prestige">预估 +${opp.prestige} 威望</div>
+        <div class="aov-card-desc">${_escHtml(opp.desc)}</div>
+        <div class="aov-card-foot">
+          <span class="aov-prestige">预估 +${opp.prestige} 威望</span>
+        </div>
       </div>`;
     });
     listEl.innerHTML = html;
+
+    // 绑定点击高亮（应变令联动用）
+    listEl.querySelectorAll('.aov-card').forEach(card => {
+      card.addEventListener('click', function () {
+        listEl.querySelectorAll('.aov-card').forEach(c => c.classList.remove('aov-selected'));
+        this.classList.add('aov-selected');
+      });
+    });
   }
 
   // ── 渲染三家行动指令面板 ──
