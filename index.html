@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260615v2a" />
+  <link rel="stylesheet" href="css/style.css?v=20260616collab" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -370,18 +370,7 @@
       <div class="cmd-slot-panel hidden" id="cmd-slot-2"></div>
     </div>
 
-    <!-- ══ 提交栏 ══ -->
-    <div class="action-submit-bar" id="action-submit-bar">
-      <button id="btn-action-submit" class="action-submit-btn" disabled>
-        提交本回合行动
-      </button>
-      <div class="action-submit-hint" id="action-submit-hint">
-        选择三令后提交，提交后不可修改
-      </div>
-      <div class="action-submit-success hidden" id="action-submit-success">
-        ✅ 已提交，等待其他玩家
-      </div>
-    </div>
+    <!-- ══ 提交栏（已移入各 slot 面板内，由 JS 渲染） ══ -->
 
     <!-- ══ 全员公开区（三家全提交后显示） ══ -->
     <div class="action-reveal-panel hidden" id="action-reveal-panel">
@@ -394,14 +383,7 @@
       </div>
     </div>
 
-    <!-- ══ GM 一键复制栏 ══ -->
-    <div class="action-gm-copy hidden" id="action-gm-copy">
-      <button class="gm-copy-btn" id="btn-gm-copy-actions">
-        📋 一键复制全部行动
-      </button>
-      <span class="gm-copy-hint">复制后粘贴给 AI 主持人</span>
-      <span class="gm-copy-ok hidden" id="gm-copy-ok">✓ 已复制</span>
-    </div>
+
 
   </div>
 </section>
@@ -440,6 +422,13 @@
         </div>
       </div>
 
+      <div class="gm-copy-actions-bar" id="gm-copy-actions-bar" style="display:none;">
+        <div class="gm-copy-actions-inner">
+          <button class="gm-copy-actions-btn" id="btn-gm-copy-all-actions">📋 一键复制全部玩家行动</button>
+          <span class="gm-copy-actions-hint">三家行动全部提交后可用，复制后粘贴给 AI 主持人</span>
+          <span class="gm-copy-actions-ok hidden" id="gm-copy-all-ok">✓ 已复制到剪贴板</span>
+        </div>
+      </div>
       <div id="parse-preview" class="parse-preview hidden">
         <div class="pp-title">🔍 解析预览</div>
         <div id="parse-result" class="pp-result"></div>
@@ -450,18 +439,14 @@
 </section>
 
 
-<!-- 身份登录浮层 -->
-<div class="role-login-overlay" id="role-login-overlay">
-  <div class="role-login-card" id="role-login-inner"></div>
-</div>
+
 </main>
 
 <footer id="site-footer">
   <span>⚔️ 三国志文字版</span>
   <span class="footer-sep">·</span>
   <span id="footer-info">尚未开局</span>
-  <span class="footer-sep">·</span>
-  <span id="role-footer-info">未登录</span>
+
 </footer>
 
 <div id="toast" class="toast hidden"></div>
@@ -476,7 +461,6 @@
 <script src="js/generals-organize.js?v=20260608a"></script>
 
 <script src="js/generals-organize-ui.js?v=20260608r"></script>
-<script src="js/main.js?v=20260615fix1"></script>
-<script src="js/role-login.js?v=v20260601a"></script>
+<script src="js/main.js?v=20260616collab"></script>
 </body>
 </html>
