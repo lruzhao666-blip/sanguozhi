@@ -940,11 +940,14 @@
     // 威望
     if (parsed.prestige && parsed.prestige.players.length) {
       const maxScore = Math.max(...parsed.prestige.players.map(p => p.total), 1);
+      const SLOT_LABELS = ['甲', '乙', '丙'];
       parsed.prestige.players.forEach((p, i) => {
-        const valEl = document.getElementById('p-val-' + i);
-        const fillEl = document.getElementById('p-fill-' + i);
+        const valEl = document.getElementById('apc-val-' + i);
+        const fillEl = document.getElementById('apc-fill-' + i);
+        const nameEl = document.getElementById('apc-name-' + i);
         if (valEl) valEl.textContent = p.total;
         if (fillEl) fillEl.style.width = Math.round((p.total / maxScore) * 100) + '%';
+        if (nameEl) nameEl.textContent = (state.players[i] && state.players[i].name) || ('城主' + SLOT_LABELS[i]);
       });
       const npcNameEl = document.getElementById('ref-npc-name');
       const npcScoreEl = document.getElementById('ref-npc-score');
@@ -966,7 +969,6 @@
       }
     }
   }
-
   // ── 渲染公共机遇池 ──
   function renderOppPanel(parsed) {
     const listEl = document.getElementById('action-opp-list');

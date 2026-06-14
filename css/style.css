@@ -13199,3 +13199,191 @@ html.tab-switching {
 }
 
 /* ╚══ END v20260617act1 ══════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20260614 工单#action-ref-redesign-B1
+   行动 Tab 决策参考区 — 方案 B（标签条+威望卡）
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 容器 ── */
+.act-ref-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+/* ── 顶部信息标签条 ── */
+.act-info-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 16px;
+  background: rgba(10,4,4,.92);
+  border: 1px solid var(--border-red);
+  border-radius: var(--rl);
+}
+.ais-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ais-label {
+  font-family: var(--font-serif);
+  font-size: .62rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  background: rgba(212,168,67,.08);
+  border: 1px solid rgba(212,168,67,.22);
+  border-radius: 3px;
+  padding: 1px 7px;
+  letter-spacing: .05em;
+  line-height: 1.7;
+  flex-shrink: 0;
+}
+.ais-value {
+  font-family: var(--font-serif);
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: .03em;
+}
+.ais-npc-score {
+  color: var(--red-bright);
+  font-weight: 700;
+}
+.ais-sep {
+  color: rgba(212,168,67,.22);
+  font-size: .7rem;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ── 威望排行卡 ── */
+.act-prestige-card {
+  background: rgba(10,4,4,.92);
+  border: 1px solid var(--border-red);
+  border-radius: var(--rl);
+  overflow: hidden;
+}
+.apc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: rgba(50,0,0,.3);
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.apc-tag {
+  font-family: var(--font-serif);
+  font-size: .58rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  background: rgba(212,168,67,.08);
+  border: 1px solid rgba(212,168,67,.22);
+  border-radius: 3px;
+  padding: 1px 7px;
+  letter-spacing: .05em;
+  line-height: 1.7;
+}
+.apc-title {
+  font-family: var(--font-serif);
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: .09em;
+}
+.apc-body {
+  display: flex;
+  gap: 16px;
+  padding: 14px 16px 16px;
+}
+.apc-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.apc-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: .68rem;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+.apc-badge-0 { background: var(--p0-color); box-shadow: 0 0 6px rgba(var(--p0-rgb),.4); }
+.apc-badge-1 { background: var(--p1-color); box-shadow: 0 0 6px rgba(var(--p1-rgb),.4); }
+.apc-badge-2 { background: var(--p2-color); box-shadow: 0 0 6px rgba(var(--p2-rgb),.4); }
+.apc-name {
+  font-family: var(--font-serif);
+  font-size: .76rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 5em;
+}
+.apc-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,.06);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 40px;
+}
+.apc-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .6s ease-out;
+}
+.apc-fill-0 { background: linear-gradient(90deg, rgba(var(--p0-rgb),.4), var(--p0-color)); }
+.apc-fill-1 { background: linear-gradient(90deg, rgba(var(--p1-rgb),.4), var(--p1-color)); }
+.apc-fill-2 { background: linear-gradient(90deg, rgba(var(--p2-rgb),.4), var(--p2-color)); }
+.apc-val {
+  font-family: var(--font-serif);
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  min-width: 24px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 移动端 ≤720px：威望改竖排 ── */
+@media (max-width: 720px) {
+  .apc-body {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px 14px;
+  }
+  .apc-row {
+    flex: none;
+  }
+  .apc-track {
+    min-width: 0;
+  }
+  .act-info-strip {
+    gap: 6px 10px;
+    padding: 8px 12px;
+  }
+  .ais-value {
+    font-size: .76rem;
+  }
+}
+
+/* ── 隐藏旧决策参考栏（兜底，防残留 DOM）── */
+.act-ref-bar {
+  display: none !important;
+}
+
+/* ╚══ END v20260614 工单#action-ref-redesign-B1 ══════════════ */
