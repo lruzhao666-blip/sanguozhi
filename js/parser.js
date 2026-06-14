@@ -130,7 +130,7 @@ window.SGParser = (function () {
 
     // Step 1: 提取 🎯 行动令段
     // 结束符放宽：═══(三个或更多全角=) / ════(任意长全角=横线) / 36 个半角= / 📋 / 文末
-    const actionsMatch = text.match(/🎯\s*行动令([\s\S]*?)(?=={20,}|📋|$)/);
+    const actionsMatch = text.match(/🎯\s*行动令([\s\S]*)$/);
     if (!actionsMatch) return result;
 
     const actionsText = actionsMatch[1];
@@ -144,12 +144,18 @@ window.SGParser = (function () {
 
     // Step 3: 提取公共机遇
     // 结束符放宽：═══ / 36 个 = / 📋 / 文末
-    const oppMatch = actionsText.match(/⚔\s*公共机遇[\s\S]*?(?=═{3,}|={20,}|^[^\s]*\s*\[([甲乙丙])\]|$)/m);
+    const oppMatch = actionsText.match(/公共机遇[池]?[\s\S]*?(?=═{3,}|={20,}|^\s*[\u4e00-\u9fa5]+\s*\[[甲乙丙]\]|$)/m);
     if (oppMatch) {
-      const oppText = oppMatch[0];
+      // 截断 oppText：只取到第一个"玩家名号 [甲/乙/丙]"行之前
+      let oppTextClean = oppMatch[0];
+      const playerStartM = oppTextClean.match(/\n\s*[\u4e00-\u9fa5]+\s*\[[甲乙丙]\]/);
+      if (playerStartM) {
+        oppTextClean = oppTextClean.slice(0, playerStartM.index);
+      }
+      const oppText = oppTextClean;
       // 匹配每条机遇：机遇N · 标题 — 描述(⚔争夺·预估+N威望) 或 (🤝协力·预估+N威望)
       // 改动：emoji 后允许紧跟"争夺/协力"二字
-      const oppRe = /机遇(\d+)\s*·\s*([^—]+?)\s*—\s*([^(（]+?)\s*[（(](🏆|⚔|🤝|🎲)(?:史诗|争夺|协力|赌博)?\s*·\s*(?:预估)?\s*\+?(\d+)\s*威望[）)]/g;
+      const oppRe = /机遇(\d+)\s*·\s*([^—]+?)\s*—\s*([^(（]+?)\s*[（(](🏆|⚔️?|🤝|🎲)(?:史诗|争夺|协力|赌博)?\s*·\s*(?:预估)?\s*\+?(\d+)\s*威望[）)]/g;
       let m;
       while ((m = oppRe.exec(oppText)) !== null) {
         result.opportunities.push({
