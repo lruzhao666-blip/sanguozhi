@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260617act3" />
+  <link rel="stylesheet" href="css/style.css?v=20260617act4" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -301,74 +301,76 @@
      TAB：行动
 ══════════════════════════════════════════ -->
 <section id="tab-action" class="tab-panel">
-  <div class="act-page">
+    <div class="act-page-v3">
 
-    <!-- 决策参考区 v2 -->
-    <div class="act-ref-v2">
-      <!-- 顶部信息标签条 -->
-      <div class="act-info-strip">
-        <div class="ais-item">
-          <span class="ais-label">先手</span>
-          <span class="ais-value" id="ref-first-mover">等待GM数据</span>
+    <!-- ═══ 决策参考区：左右分栏 ═══ -->
+    <div class="act-ref-split">
+
+      <!-- 左栏：威望排行 -->
+      <div class="act-ref-left">
+        <div class="arl-header">
+          <span class="arl-tag">威望</span>
+          <span class="arl-title">威望排行</span>
         </div>
-        <span class="ais-sep">│</span>
-        <div class="ais-item">
-          <span class="ais-label">世界</span>
-          <span class="ais-value" id="ref-world-status">等待GM数据</span>
-        </div>
-        <span class="ais-sep">│</span>
-        <div class="ais-item">
-          <span class="ais-label">NPC</span>
-          <span class="ais-value"><span id="ref-npc-name">—</span> <span id="ref-npc-score" class="ais-npc-score">—</span></span>
+        <div class="arl-body">
+          <div class="arl-row" data-slot="0">
+            <span class="arl-badge arl-badge-0">甲</span>
+            <span class="arl-name" id="arl-name-0">—</span>
+            <span class="arl-val" id="arl-val-0">—</span>
+            <div class="arl-track"><div class="arl-fill arl-fill-0" id="arl-fill-0"></div></div>
+          </div>
+          <div class="arl-row" data-slot="1">
+            <span class="arl-badge arl-badge-1">乙</span>
+            <span class="arl-name" id="arl-name-1">—</span>
+            <span class="arl-val" id="arl-val-1">—</span>
+            <div class="arl-track"><div class="arl-fill arl-fill-1" id="arl-fill-1"></div></div>
+          </div>
+          <div class="arl-row" data-slot="2">
+            <span class="arl-badge arl-badge-2">丙</span>
+            <span class="arl-name" id="arl-name-2">—</span>
+            <span class="arl-val" id="arl-val-2">—</span>
+            <div class="arl-track"><div class="arl-fill arl-fill-2" id="arl-fill-2"></div></div>
+          </div>
         </div>
       </div>
 
-      <!-- 威望排行卡 -->
-      <div class="act-prestige-card">
-        <div class="apc-header">
-          <span class="apc-tag">威望</span>
-          <span class="apc-title">威望排行</span>
+      <!-- 右栏：先手/世界/NPC + 机遇池 -->
+      <div class="act-ref-right">
+        <!-- 信息标签条 -->
+        <div class="arr-info-strip">
+          <div class="arr-item"><span class="arr-label">先手</span><span class="arr-value" id="ref-first-mover">等待GM数据</span></div>
+          <span class="arr-sep">│</span>
+          <div class="arr-item"><span class="arr-label">世界</span><span class="arr-value" id="ref-world-status">等待GM数据</span></div>
+          <span class="arr-sep">│</span>
+          <div class="arr-item"><span class="arr-label">NPC</span><span class="arr-value"><span id="ref-npc-name">—</span> <span id="ref-npc-score" class="arr-npc-score">—</span></span></div>
         </div>
-        <div class="apc-body">
-          <div class="apc-row" data-slot="0">
-            <span class="apc-badge apc-badge-0">甲</span>
-            <span class="apc-name" id="apc-name-0">—</span>
-            <div class="apc-track"><div class="apc-fill apc-fill-0" id="apc-fill-0"></div></div>
-            <span class="apc-val" id="apc-val-0">—</span>
+        <!-- 公共机遇池 -->
+        <div class="arr-opp">
+          <div class="arr-opp-header">
+            <span class="arr-opp-tag">机遇</span>
+            <span class="arr-opp-title">公共机遇池</span>
+            <span class="arr-opp-hint">选则占用应变令</span>
           </div>
-          <div class="apc-row" data-slot="1">
-            <span class="apc-badge apc-badge-1">乙</span>
-            <span class="apc-name" id="apc-name-1">—</span>
-            <div class="apc-track"><div class="apc-fill apc-fill-1" id="apc-fill-1"></div></div>
-            <span class="apc-val" id="apc-val-1">—</span>
-          </div>
-          <div class="apc-row" data-slot="2">
-            <span class="apc-badge apc-badge-2">丙</span>
-            <span class="apc-name" id="apc-name-2">—</span>
-            <div class="apc-track"><div class="apc-fill apc-fill-2" id="apc-fill-2"></div></div>
-            <span class="apc-val" id="apc-val-2">—</span>
+          <div class="arr-opp-body" id="action-opp-list">
+            <div class="arr-opp-empty">本回合无公共机遇</div>
           </div>
         </div>
       </div>
+
+    </div><!-- /act-ref-split -->
+
+    <!-- ═══ 三令行动面板 ═══ -->
+    <!-- 移动端 tab 切换栏 -->
+    <div class="act-mob-tabs" id="act-mob-tabs">
+      <button class="act-mob-tab active" data-slot="0">甲</button>
+      <button class="act-mob-tab" data-slot="1">乙</button>
+      <button class="act-mob-tab" data-slot="2">丙</button>
     </div>
 
-    <!-- 公共机遇池 v2 -->
-    <div class="act-opp-v2" id="act-opp-v2">
-      <div class="aov-header">
-        <span class="aov-tag">机遇</span>
-        <span class="aov-title">公共机遇池</span>
-        <span class="aov-hint">选则占用应变令</span>
-      </div>
-      <div class="aov-body" id="action-opp-list">
-        <div class="aov-empty">本回合无公共机遇</div>
-      </div>
-    </div>
-
-    <!-- 三列行动指令 -->
-    <div class="act-cols" id="act-cols">
-      <div class="act-col" data-slot="0" id="act-col-0"></div>
-      <div class="act-col" data-slot="1" id="act-col-1"></div>
-      <div class="act-col" data-slot="2" id="act-col-2"></div>
+    <div class="act-cols-v3" id="act-cols">
+      <div class="act-col-v3" data-slot="0" id="act-col-0"></div>
+      <div class="act-col-v3" data-slot="1" id="act-col-1"></div>
+      <div class="act-col-v3" data-slot="2" id="act-col-2"></div>
     </div>
 
     <!-- 全员公开区 -->
@@ -377,7 +379,7 @@
       <div class="act-reveal-grid" id="reveal-grid"></div>
     </div>
 
-  </div>
+  </div><!-- /act-page-v3 -->
 </section>
 
 <!-- ══════════════════════════════════════════
@@ -453,6 +455,6 @@
 <script src="js/generals-organize.js?v=20260608a"></script>
 
 <script src="js/generals-organize-ui.js?v=20260608r"></script>
-<script src="js/main.js?v=20260617fix1"></script>
+<script src="js/main.js?v=20260617fix2"></script>
 </body>
 </html>
