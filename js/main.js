@@ -913,11 +913,7 @@
 
   // ── 获取当前登录身份的 slot index ──
   function _getMySlot() {
-    const role = localStorage.getItem('sg_role');
-    if (role === '甲') return 0;
-    if (role === '乙') return 1;
-    if (role === '丙') return 2;
-    return -1;
+    return 0; // 默认甲方视角，三家行动全部公开
   }
 
   // ── 判断是否 GM 模式 ──
@@ -1048,13 +1044,6 @@
         if (!slotActions.wen) slotActions.wen = {};
         if (!slotActions.ce) slotActions.ce = {};
       }
-      const isMine = (i === mySlot);
-
-      // 如果不是自己的面板且不是GM，显示等待状态
-      if (!isMine && !isGM) {
-        panelEl.innerHTML = '<div class="cmd-waiting">等待该玩家提交行动…</div>';
-        continue;
-      }
 
       if (!slotActions) {
         panelEl.innerHTML = '<div class="cmd-waiting">等待 GM 发布行动选项…</div>';
@@ -1091,15 +1080,14 @@
     const tabBtns = document.querySelectorAll('.cmd-ptab');
     state.players.forEach((p, i) => {
       if (tabBtns[i] && p.name) {
-        const isMe = (i === mySlot);
-        tabBtns[i].textContent = SLOT_NAMES[i] + (isMe ? ' · 我' : '');
+        tabBtns[i].textContent = SLOT_NAMES[i];
       }
     });
 
     // 提交按钮状态
     const submitBtn = document.getElementById('btn-action-submit');
     if (submitBtn) {
-      submitBtn.disabled = (mySlot < 0);
+      submitBtn.disabled = false; // 始终可提交
     }
   }
 
@@ -1153,7 +1141,6 @@
   // ── 提交行动 ──
   async function onActionSubmit() {
     const mySlot = _getMySlot();
-    if (mySlot < 0) { showToast('请先登录身份'); return; }
 
     const slotKey = SLOT_NAMES[mySlot];
     const currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
