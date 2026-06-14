@@ -144,28 +144,33 @@ window.SGParser = (function () {
 
     // Step 3: 提取公共机遇
     // 结束符放宽：═══ / 36 个 = / 📋 / 文末
-    const oppMatch = actionsText.match(/公共机遇[池]?[\s\S]*?(?=═{3,}|={20,}|^\s*[\u4e00-\u9fa5]+\s*\[[甲乙丙]\]|$)/m);
+    const oppMatch = actionsText.match(/公共机遇[池]?[^:：]*[:：]?\s*\n([\s\S]*?)(?=\n\s*[\u4e00-\u9fa5]+\s*\[[甲乙丙]\]|\n\s*═|$)/);
     if (oppMatch) {
-      // 截断 oppText：只取到第一个"玩家名号 [甲/乙/丙]"行之前
-      let oppTextClean = oppMatch[0];
-      const playerStartM = oppTextClean.match(/\n\s*[\u4e00-\u9fa5]+\s*\[[甲乙丙]\]/);
-      if (playerStartM) {
-        oppTextClean = oppTextClean.slice(0, playerStartM.index);
-      }
-      const oppText = oppTextClean;
-      // 匹配每条机遇：机遇N · 标题 — 描述(⚔争夺·预估+N威望) 或 (🤝协力·预估+N威望)
-      // 改动：emoji 后允许紧跟"争夺/协力"二字
-      const oppRe = /机遇(\d+)\s*·\s*([^—]+?)\s*—\s*([^(（]+?)\s*[（(](🏆|⚔️?|🤝|🎲)(?:史诗|争夺|协力|赌博)?\s*·\s*(?:预估)?\s*\+?(\d+)\s*威望[）)]/g;
-      let m;
-      while ((m = oppRe.exec(oppText)) !== null) {
-        result.opportunities.push({
-          id: parseInt(m[1]),
-          title: m[2].trim(),
-          desc: m[3].trim(),
-          emoji: m[4],
-          type: (m[4] === '🏆' ? 'epic' : (m[4] === '⚔' ? 'compete' : (m[4] === '🤝' ? 'cooperate' : 'gamble'))),
-          prestige: parseInt(m[5])
-        });
+      const oppText = oppMatch[1] || oppMatch[0];
+      // 逐行匹配机遇，不依赖 emoji
+      // 格式：机遇1 · 流民归附 · ⚔ — 描述(⚔争夺·预估+4威望)
+      // 或：  机遇1 · 流民归附 — 描述(争夺·预估+4威望)
+      // 核心锚点：机遇N · 标题 ... — 描述 ... (类型·预估+N威望)
+      const lines = oppText.split('\n');
+      for (const line of lines) {
+        const t = line.trim();
+        if (!t) continue;
+        // 宽松正则：机遇{数字} · {标题} — {描述}({类型关键字}·预估+{N}威望)
+        const m = t.match(/^机遇(\d+)\s*·\s*(.+?)\s*[—–-]\s*(.+?)\s*[（(]\s*(?:[^\s）)]*?)?(史诗|争夺|协力|赌博)\s*·\s*(?:预估)?\s*\+?(\d+)\s*威望\s*[）)]/);
+        if (m) {
+          const typeWord = m[4];
+          const type = typeWord === '史诗' ? 'epic' :
+                       typeWord === '争夺' ? 'compete' :
+                       typeWord === '协力' ? 'cooperate' : 'gamble';
+          result.opportunities.push({
+            id: parseInt(m[1]),
+            title: m[2].trim(),
+            desc: m[3].trim(),
+            emoji: '',
+            type: type,
+            prestige: parseInt(m[5])
+          });
+        }
       }
     }
 
