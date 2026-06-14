@@ -58,6 +58,65 @@ window.SGParser = (function () {
   const VALID_STATUS = ['健康', '疲劳', '受伤', '患病', '阵亡'];
 
   // ─────────────────────────────────────────
+  //  剧情区结构化拆分
+  //  按固定标记顺序拆出五段：
+  //    1. 回合标题（第 N 回合 · 标题）
+  //    2. 📢 旁白
+  //    3. 🌍 局势
+  //    4. 🔥 风云段
+  //    5. 🎯 行动令
+  //  不在这五段里的文本归入 extra
+  // ─────────────────────────────────────────
+  function _parseStoryZone(text) {
+    const result = {
+      title: '',
+      narrator: '',
+      situation: '',
+      events: '',
+      actionOrder: '',
+      extra: '',
+    };
+    if (!text) return result;
+
+    // 提取回合标题（第一行匹配 "第 N 回合"）
+    const titleM = text.match(/^(第\s*\d+\s*回合[^\n]*)/m);
+    if (titleM) result.title = titleM[1].trim();
+
+    // 按 emoji 标记切段
+    const MARKERS = [
+      { key: 'narrator',    re: /📢\s*旁白\s*\n?/ },
+      { key: 'situation',   re: /🌍\s*局势\s*\n?/ },
+      { key: 'events',      re: /🔥\s*风云段\s*\n?/ },
+      { key: 'actionOrder', re: /🎯\s*行动令\s*\n?/ },
+    ];
+
+    // 找各段起始位置
+    const positions = [];
+    MARKERS.forEach(mk => {
+      const m = text.match(mk.re);
+      if (m) {
+        positions.push({
+          key: mk.key,
+          start: m.index + m[0].length,
+          markerStart: m.index,
+        });
+      }
+    });
+
+    // 按位置排序
+    positions.sort((a, b) => a.markerStart - b.markerStart);
+
+    // 切段：每段内容 = 从本段 start 到下一段 markerStart
+    for (let i = 0; i < positions.length; i++) {
+      const cur = positions[i];
+      const end = (i + 1 < positions.length) ? positions[i + 1].markerStart : text.length;
+      result[cur.key] = text.slice(cur.start, end).trim();
+    }
+
+    return result;
+  }
+
+  // ─────────────────────────────────────────
   //  解析行动令段（M-30 规则书格式）
   // ─────────────────────────────────────────
   function _parseActionsBlock(text) {
@@ -170,6 +229,9 @@ window.SGParser = (function () {
     storyZone = _parseSecrets(storyZone, result);
     result.rawDigest = storyZone;
 
+    // 剧情区结构化拆分
+    result.storyParts = _parseStoryZone(storyZone);
+
     if (dataZone) {
       _parseDataZone(dataZone, result);
     } else {
@@ -181,6 +243,19 @@ window.SGParser = (function () {
     result.firstMove = actionsBlock.firstMove;
     result.opportunities = actionsBlock.opportunities;
     result.playerActions = actionsBlock.playerActions;
+
+    // ── 校验 warnings ──
+    if (!result.warnings) result.warnings = [];
+    if (dataZone) {
+      if (!result.round) result.warnings.push({ line: 0, message: '数据区缺少 [回合] 段或回合号解析失败' });
+      if (!result.prestige) result.warnings.push({ line: 0, message: '数据区缺少 [威望] 段' });
+      if (result.players.length === 0) result.warnings.push({ line: 0, message: '数据区缺少 [甲][乙][丙] 任何玩家段' });
+    }
+    if (storyZone && result.storyParts) {
+      if (!result.storyParts.title) result.warnings.push({ line: 0, message: '剧情区缺少回合标题行' });
+      if (!result.storyParts.narrator) result.warnings.push({ line: 0, message: '剧情区缺少 📢 旁白 段' });
+      if (!result.storyParts.actionOrder) result.warnings.push({ line: 0, message: '剧情区缺少 🎯 行动令 段' });
+    }
 
     return result;
   }
@@ -212,6 +287,10 @@ window.SGParser = (function () {
       // #sanguo-inherit-batch2-v1 玩家段 城池/武将 继承标记,
       // 由 _parsePlayerBlock 写入 player 对象内部,_empty 无需占位
       // ── 新增字段 ──
+      prestige:      null,   // { players:[{slot,征伐,治政,人才,目标,total}], npcHighest:{name,score} }
+      worldStatus:   null,   // { level, name, endgame }
+      storyParts:    null,   // { title, narrator, situation, events, actionOrder }
+      warnings:      [],     // [{ line, message }]
       firstMove: null,           // 先手权
       opportunities: [],         // 公共机遇
       playerActions: {}          // 三令选项 { '甲': { wu: {a,b}, wen: {a,b}, ce: {a,b} } }
@@ -443,6 +522,16 @@ window.SGParser = (function () {
       result.transit = _parseTransit(blocks['在途']);
     }
 
+    // [威望]
+    if (blocks['威望']) {
+      result.prestige = _parsePrestige(blocks['威望']);
+    }
+
+    // [世界状态]
+    if (blocks['世界状态']) {
+      result.worldStatus = _parseWorldStatus(blocks['世界状态']);
+    }
+
     // [世界](v3.39 M-31 新增):被俘/在野/客途三态武将
     // #sanguo-inherit-batch2-v1 支持"同上"
     if (blocks['世界']) {
@@ -485,7 +574,7 @@ window.SGParser = (function () {
   //  按方括号标签切块
   // ─────────────────────────────────────────
   function _splitBlocks(text) {
-    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','调度','变动','驻城']);
+    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','调度','变动','驻城','威望','世界状态']);
     const lines  = text.split('\n');
     const blocks = {};
     let curKey = null, curBuf = [];
@@ -1025,6 +1114,61 @@ window.SGParser = (function () {
       events.push({ type: 'wild', city: '野外', desc: m[1].trim() });
     }
     return events;
+  }
+
+  // ─────────────────────────────────────────
+  //  解析 [威望] 段
+  //  格式：
+  //    甲 征伐:12 治政:8 人才:5 目标:3 合计:28
+  //    乙 征伐:10 治政:6 人才:4 目标:2 合计:22
+  //    丙 征伐:8 治政:9 人才:6 目标:1 合计:24
+  //    NPC最高:袁绍:30
+  // ─────────────────────────────────────────
+  function _parsePrestige(raw) {
+    const result = { players: [], npcHighest: { name: '', score: 0 } };
+    if (!raw) return result;
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    const SLOTS = ['甲', '乙', '丙'];
+
+    for (const line of lines) {
+      // 玩家威望行
+      const playerM = line.match(/^([甲乙丙])\s+征伐[:：](\d+)\s+治政[:：](\d+)\s+人才[:：](\d+)\s+目标[:：](\d+)\s+合计[:：](\d+)/);
+      if (playerM) {
+        result.players.push({
+          slot: playerM[1],
+          征伐: parseInt(playerM[2]),
+          治政: parseInt(playerM[3]),
+          人才: parseInt(playerM[4]),
+          目标: parseInt(playerM[5]),
+          total: parseInt(playerM[6]),
+        });
+        continue;
+      }
+      // NPC最高行
+      const npcM = line.match(/NPC最高[:：]([^:：]+)[:：](\d+)/);
+      if (npcM) {
+        result.npcHighest = { name: npcM[1].trim(), score: parseInt(npcM[2]) };
+      }
+    }
+    return result;
+  }
+
+  // ─────────────────────────────────────────
+  //  解析 [世界状态] 段
+  //  格式：Lv2-群雄割据 | 距终局:未触发
+  //        Lv3-诸侯争霸 | 距终局:还剩5回合
+  // ─────────────────────────────────────────
+  function _parseWorldStatus(raw) {
+    if (!raw) return null;
+    const line = raw.split('\n').map(l => l.trim()).filter(Boolean)[0] || '';
+    const m = line.match(/Lv(\d+)-([^\s|]+)\s*\|\s*距终局[:：]\s*(.+)/);
+    if (!m) return { level: null, name: '', endgame: line.trim(), raw: line };
+    return {
+      level: parseInt(m[1]),
+      name: m[2].trim(),
+      endgame: m[3].trim(),
+      raw: line,
+    };
   }
 
   // ─────────────────────────────────────────
