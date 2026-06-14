@@ -1385,25 +1385,18 @@
       const latest = state.rounds[state.rounds.length - 1];
       const playerActions = (latest && latest.parsed && latest.parsed.playerActions) || {};
 
-      let text = `第 ${currentRound} 回合 · 玩家行动
-
-`;
+      let text = '第 ' + currentRound + ' 回合 · 玩家行动\n\n';
 
       SLOT_NAMES.forEach((slotKey, i) => {
         const sub = submitted[slotKey];
         const name = state.players[i] ? state.players[i].name : slotKey;
         const slotOpts = playerActions[slotKey] || {};
 
-        text += `${name} [${slotKey}]
-`;
-        text += `  主令: ${_fmtChoiceText('wu', sub, slotOpts)}
-`;
-        text += `  副令: ${_fmtChoiceText('wen', sub, slotOpts)}
-`;
-        text += `  应变令: ${_fmtChoiceText('ce', sub, slotOpts)}
-`;
-        text += '
-';
+        text += name + ' [' + slotKey + ']\n';
+        text += '  主令: ' + _fmtChoiceText('wu', sub, slotOpts) + '\n';
+        text += '  副令: ' + _fmtChoiceText('wen', sub, slotOpts) + '\n';
+        text += '  应变令: ' + _fmtChoiceText('ce', sub, slotOpts) + '\n';
+        text += '\n';
       });
 
       await navigator.clipboard.writeText(text.trim());
