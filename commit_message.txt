@@ -1,0 +1,3 @@
+index.html: 482 -> 466 lines (-16 lines)
+js/main.js: 6623 -> 6631 lines (+8 lines)
+css/style.css: 15927 -> 16033 lines (+106 lines)

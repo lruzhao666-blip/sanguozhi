@@ -902,28 +902,16 @@
   // ══════════════════════════════════════════
 
   // ══════════════════════════════════════════
-  //  行动 Tab 模块 v2
-  //  工单 #action-tab-logic-v2b
-  //  职责：渲染决策参考 + 公共机遇 + 三令选项 + 提交 + 公开 + GM复制
+  //  行动 Tab 模块 v3
+  //  工单 #action-collab-v1
+  //  - 无身份验证，三家面板全部公开可操作
+  //  - 每家独立提交按钮
+  //  - 公共机遇与应变令联动
+  //  - GM 录入台一键复制（三家全提交后亮起）
   // ══════════════════════════════════════════
 
   const ACTION_SUPA_URL = 'https://smiifcbmmtolimtaxpip.supabase.co/rest/v1/action_submissions';
   const SLOT_NAMES = ['甲', '乙', '丙'];
-  const LING_LABELS = { wu: '主令', wen: '副令', ce: '应变令' };
-
-  // ── 获取当前登录身份的 slot index ──
-  function _getMySlot() {
-    const role = localStorage.getItem('sg_role');
-    if (role === '甲') return 0;
-    if (role === '乙') return 1;
-    if (role === '丙') return 2;
-    return -1;
-  }
-
-  // ── 判断是否 GM 模式 ──
-  function _isGM() {
-    return document.body.classList.contains('is-gm-mode');
-  }
 
   // ── 绑定行动 tab 交互 ──
   function bindActionTab() {
@@ -940,16 +928,10 @@
       });
     });
 
-    // 提交按钮
-    const submitBtn = document.getElementById('btn-action-submit');
-    if (submitBtn) {
-      submitBtn.addEventListener('click', onActionSubmit);
-    }
-
-    // GM 一键复制
-    const copyBtn = document.getElementById('btn-gm-copy-actions');
-    if (copyBtn) {
-      copyBtn.addEventListener('click', onGMCopyActions);
+    // GM 录入台一键复制按钮
+    const gmCopyBtn = document.getElementById('btn-gm-copy-all-actions');
+    if (gmCopyBtn) {
+      gmCopyBtn.addEventListener('click', onGMCopyActions);
     }
   }
 
@@ -1002,8 +984,6 @@
     if (!listEl) return;
 
     const opps = parsed.opportunities || [];
-    // 兜底：如果 opportunities 从 parser 直接输出的格式不同，尝试兼容
-    // parser 输出的 opp 对象必须含 id/title/desc/type/prestige 字段
     if (!opps.length) {
       listEl.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
       return;
@@ -1014,9 +994,9 @@
       const typeClass = opp.type === 'compete' ? 'opp-compete' :
                         opp.type === 'cooperate' ? 'opp-cooperate' :
                         opp.type === 'epic' ? 'opp-epic' : 'opp-gamble';
-      const typeText = opp.type === 'compete' ? '⚔争夺' :
-                       opp.type === 'cooperate' ? '🤝协力' :
-                       opp.type === 'epic' ? '🏆史诗' : '🎲赌博';
+      const typeText = opp.type === 'compete' ? '争夺' :
+                       opp.type === 'cooperate' ? '协力' :
+                       opp.type === 'epic' ? '史诗' : '赌博';
       html += `<div class="opp-card ${typeClass}" data-opp-id="${opp.id}">
         <div class="opp-card-top">
           <span class="opp-card-title">机遇${opp.id} · ${_escHtml(opp.title)}</span>
@@ -1032,8 +1012,7 @@
   // ── 渲染三家行动指令面板 ──
   function renderCmdPanels(parsed) {
     const actions = parsed.playerActions || {};
-    const mySlot = _getMySlot();
-    const isGM = _isGM();
+    const opps = parsed.opportunities || [];
 
     for (let i = 0; i < 3; i++) {
       const slotKey = SLOT_NAMES[i];
@@ -1041,31 +1020,22 @@
       if (!panelEl) continue;
 
       const slotActions = actions[slotKey];
-      // 兜底: parser 输出的 playerActions 结构是 { '甲': { wu: {a:{},b:{}}, wen: {a:{},b:{}}, ce: {a:{},b:{}} } }
-      // 确保 slotActions 存在且包含 wu/wen/ce
-      if (slotActions && typeof slotActions === 'object') {
-        if (!slotActions.wu) slotActions.wu = {};
-        if (!slotActions.wen) slotActions.wen = {};
-        if (!slotActions.ce) slotActions.ce = {};
-      }
-      const isMine = (i === mySlot);
-
-      // 如果不是自己的面板且不是GM，显示等待状态
-      if (!isMine && !isGM) {
-        panelEl.innerHTML = '<div class="cmd-waiting">等待该玩家提交行动…</div>';
-        continue;
-      }
 
       if (!slotActions) {
         panelEl.innerHTML = '<div class="cmd-waiting">等待 GM 发布行动选项…</div>';
         continue;
       }
 
+      // 确保 wu/wen/ce 存在
+      if (!slotActions.wu) slotActions.wu = {};
+      if (!slotActions.wen) slotActions.wen = {};
+      if (!slotActions.ce) slotActions.ce = {};
+
       // 渲染三令选项
       let html = '';
       html += _renderLingSection('wu', '⚔ 主令', '军事行动', slotActions.wu, i);
       html += _renderLingSection('wen', '🏛 副令', '内政建设', slotActions.wen, i);
-      html += _renderLingSection('ce', '🎯 应变令', '奇谋/机遇/配合', slotActions.ce, i);
+      html += _renderCeLingSection(slotActions.ce, opps, i);
 
       // 零消耗补充栏
       html += `<div class="cmd-zero-section">
@@ -1073,37 +1043,38 @@
         <input type="text" class="cmd-zero-input" id="cmd-zero-${i}" placeholder="额外说明，如外交意向等" maxlength="60" />
       </div>`;
 
-      panelEl.innerHTML = html;
-    }
+      // 独立提交按钮
+      html += `<div class="cmd-submit-slot" id="cmd-submit-slot-${i}">
+        <button class="action-submit-btn cmd-slot-submit-btn" data-slot="${i}">
+          提交 ${slotKey} 的行动
+        </button>
+        <div class="cmd-slot-submit-hint">选择三令后提交，提交后不可修改</div>
+      </div>`;
 
-    // 默认激活自己的 tab
-    if (mySlot >= 0) {
-      document.querySelectorAll('.cmd-ptab').forEach((btn, idx) => {
-        btn.classList.toggle('active', idx === mySlot);
-      });
-      for (let i = 0; i < 3; i++) {
-        const panel = document.getElementById('cmd-slot-' + i);
-        if (panel) panel.classList.toggle('hidden', i !== mySlot);
+      panelEl.innerHTML = html;
+
+      // 绑定提交按钮
+      const submitBtn = panelEl.querySelector('.cmd-slot-submit-btn');
+      if (submitBtn) {
+        submitBtn.addEventListener('click', () => onSlotSubmit(i));
       }
     }
 
     // 更新 tab 文字为玩家名号
     const tabBtns = document.querySelectorAll('.cmd-ptab');
     state.players.forEach((p, i) => {
-      if (tabBtns[i] && p.name) {
-        const isMe = (i === mySlot);
-        tabBtns[i].textContent = SLOT_NAMES[i] + (isMe ? ' · 我' : '');
+      if (tabBtns[i] && p.name && p.name !== '城主甲' && p.name !== '城主乙' && p.name !== '城主丙') {
+        tabBtns[i].textContent = SLOT_NAMES[i] + ' · ' + p.name;
       }
     });
 
-    // 提交按钮状态
-    const submitBtn = document.getElementById('btn-action-submit');
-    if (submitBtn) {
-      submitBtn.disabled = (mySlot < 0);
-    }
+    // 绑定机遇-应变令联动
+    _bindCeLingInteraction();
+    // 绑定自拟 radio 联动
+    _bindCustomRadioToggle();
   }
 
-  // ── 渲染单令选项区 ──
+  // ── 渲染主令/副令选项区 ──
   function _renderLingSection(type, icon, subtitle, options, slotIdx) {
     let html = `<div class="cmd-ling-section" data-ling="${type}" data-slot="${slotIdx}">
       <div class="ling-header"><span class="ling-icon">${icon}</span><span class="ling-sub">(${subtitle})</span></div>
@@ -1112,7 +1083,7 @@
     if (!options || Object.keys(options).length === 0) {
       html += '<div class="ling-empty">暂无选项</div>';
     } else {
-      const keys = Object.keys(options).sort(); // a, b, c
+      const keys = Object.keys(options).sort();
       keys.forEach(key => {
         const opt = options[key];
         const label = key.toUpperCase();
@@ -1139,9 +1110,7 @@
     html += `<label class="ling-option-card ling-custom-card">
       <input type="radio" name="ling-${type}-${slotIdx}" value="custom" class="ling-radio" />
       <div class="ling-option-body">
-        <div class="ling-opt-top">
-          <span class="ling-opt-label">自拟</span>
-        </div>
+        <div class="ling-opt-top"><span class="ling-opt-label">自拟</span></div>
         <input type="text" class="ling-custom-input" id="ling-custom-${type}-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled />
       </div>
     </label>`;
@@ -1150,31 +1119,124 @@
     return html;
   }
 
-  // ── 提交行动 ──
-  async function onActionSubmit() {
-    const mySlot = _getMySlot();
-    if (mySlot < 0) { showToast('请先登录身份'); return; }
+  // ── 渲染应变令区（含机遇联动）──
+  function _renderCeLingSection(ceOptions, opps, slotIdx) {
+    let html = `<div class="cmd-ling-section" data-ling="ce" data-slot="${slotIdx}">
+      <div class="ling-header"><span class="ling-icon">🎯 应变令</span><span class="ling-sub">(奇谋/机遇/配合)</span></div>
+      <div class="ling-options">`;
 
-    const slotKey = SLOT_NAMES[mySlot];
+    // 公共机遇选项（如果有机遇的话）
+    if (opps && opps.length > 0) {
+      opps.forEach(opp => {
+        const typeText = opp.type === 'compete' ? '争夺' :
+                         opp.type === 'cooperate' ? '协力' :
+                         opp.type === 'epic' ? '史诗' : '赌博';
+        html += `<label class="ling-option-card ling-opp-card">
+          <input type="radio" name="ling-ce-${slotIdx}" value="opp_${opp.id}" class="ling-radio ling-ce-radio" data-is-opp="1" />
+          <div class="ling-option-body">
+            <div class="ling-opt-top">
+              <span class="ling-opt-label">机遇${opp.id}.</span>
+              <span class="ling-opt-name">${_escHtml(opp.title)}</span>
+            </div>
+            <div class="ling-opt-desc">${_escHtml(opp.desc)}</div>
+            <div class="ling-opt-meta">
+              <span class="ling-opt-risk risk-medium">${typeText}</span>
+              <span class="ling-opt-prestige">+${opp.prestige} 威望</span>
+            </div>
+          </div>
+        </label>`;
+      });
+
+      // 分隔线
+      html += '<div class="ling-divider"><span>— 或选择以下应变令 —</span></div>';
+    }
+
+    // 常规应变令选项 A/B
+    if (ceOptions && Object.keys(ceOptions).length > 0) {
+      const keys = Object.keys(ceOptions).sort();
+      keys.forEach(key => {
+        const opt = ceOptions[key];
+        const label = key.toUpperCase();
+        const riskClass = opt.risk === '稳' ? 'risk-stable' :
+                          opt.risk === '中' ? 'risk-medium' : 'risk-risky';
+        html += `<label class="ling-option-card">
+          <input type="radio" name="ling-ce-${slotIdx}" value="${label}" class="ling-radio ling-ce-radio" data-is-opp="0" />
+          <div class="ling-option-body">
+            <div class="ling-opt-top">
+              <span class="ling-opt-label">${label}.</span>
+              <span class="ling-opt-name">${_escHtml(opt.name)}</span>
+            </div>
+            <div class="ling-opt-desc">${_escHtml(opt.desc)}</div>
+            <div class="ling-opt-meta">
+              <span class="ling-opt-risk ${riskClass}">${_escHtml(opt.risk)}</span>
+              <span class="ling-opt-prestige">+${_escHtml(opt.prestige)} 威望</span>
+            </div>
+          </div>
+        </label>`;
+      });
+    }
+
+    // 自拟选项
+    html += `<label class="ling-option-card ling-custom-card">
+      <input type="radio" name="ling-ce-${slotIdx}" value="custom" class="ling-radio ling-ce-radio" data-is-opp="0" />
+      <div class="ling-option-body">
+        <div class="ling-opt-top"><span class="ling-opt-label">自拟</span></div>
+        <input type="text" class="ling-custom-input" id="ling-custom-ce-${slotIdx}" placeholder="输入自拟内容(≤30字)" maxlength="30" disabled />
+      </div>
+    </label>`;
+
+    html += '</div></div>';
+    return html;
+  }
+
+  // ── 机遇-应变令联动绑定 ──
+  function _bindCeLingInteraction() {
+    // 机遇卡片点击 → 自动选中对应 slot 的应变令机遇 radio
+    document.querySelectorAll('.opp-card').forEach(card => {
+      card.addEventListener('click', function() {
+        const oppId = this.dataset.oppId;
+        // 在所有三个 slot 中高亮这个机遇卡（视觉提示）
+        document.querySelectorAll('.opp-card').forEach(c => c.classList.remove('opp-selected'));
+        this.classList.add('opp-selected');
+      });
+    });
+  }
+
+  // ── 自拟 radio 联动 ──
+  function _bindCustomRadioToggle() {
+    document.querySelectorAll('.ling-radio').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const name = this.name;
+        const parts = name.split('-'); // ['ling', 'wu', '0']
+        const type = parts[1];
+        const slot = parts[2];
+        const customInput = document.getElementById('ling-custom-' + type + '-' + slot);
+        if (customInput) {
+          customInput.disabled = (this.value !== 'custom');
+          if (this.value === 'custom') customInput.focus();
+        }
+      });
+    });
+  }
+
+  // ── 单家提交行动 ──
+  async function onSlotSubmit(slotIdx) {
+    const slotKey = SLOT_NAMES[slotIdx];
     const currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
     if (!currentRound) { showToast('当前无回合数据'); return; }
 
     // 收集选择
-    const wu = _getSelectedLing('wu', mySlot);
-    const wen = _getSelectedLing('wen', mySlot);
-    const ce = _getSelectedLing('ce', mySlot);
+    const wu = _getSelectedLing('wu', slotIdx);
+    const wen = _getSelectedLing('wen', slotIdx);
+    const ce = _getSelectedLing('ce', slotIdx);
 
     if (!wu.choice) { showToast('请选择主令'); return; }
     if (!wen.choice) { showToast('请选择副令'); return; }
     if (!ce.choice) { showToast('请选择应变令'); return; }
 
-    // 自拟校验
     if (wu.choice === 'custom' && !wu.custom) { showToast('请填写自拟主令内容'); return; }
     if (wen.choice === 'custom' && !wen.custom) { showToast('请填写自拟副令内容'); return; }
     if (ce.choice === 'custom' && !ce.custom) { showToast('请填写自拟应变令内容'); return; }
-
-    const zeroInput = document.getElementById('cmd-zero-' + mySlot);
-    const zeroText = zeroInput ? zeroInput.value.trim() : '';
 
     const payload = {
       round: currentRound,
@@ -1187,7 +1249,7 @@
       ce_custom: ce.custom || null,
     };
 
-    const submitBtn = document.getElementById('btn-action-submit');
+    const submitBtn = document.querySelector(`#cmd-slot-${slotIdx} .cmd-slot-submit-btn`);
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ 提交中…'; }
 
     try {
@@ -1198,13 +1260,13 @@
       }, 10000);
       if (!res.ok) throw new Error('HTTP ' + res.status);
 
-      showToast('✅ 行动已提交！');
-      _lockMyPanel(mySlot);
+      showToast(`✅ ${slotKey} 的行动已提交！`);
+      _lockSlotPanel(slotIdx);
       await checkAndRenderSubmissions(currentRound);
     } catch (e) {
       console.error('[SG] 行动提交失败:', e);
       showToast('❌ 提交失败，请重试');
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '提交本回合行动'; }
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = `提交 ${slotKey} 的行动`; }
     }
   }
 
@@ -1221,22 +1283,18 @@
     return { choice, custom };
   }
 
-  // ── 锁定自己的面板 ──
-  function _lockMyPanel(slotIdx) {
+  // ── 锁定某家面板 ──
+  function _lockSlotPanel(slotIdx) {
     const panel = document.getElementById('cmd-slot-' + slotIdx);
     if (!panel) return;
     panel.querySelectorAll('input').forEach(el => { el.disabled = true; });
-
-    const submitBtn = document.getElementById('btn-action-submit');
-    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '已提交'; }
-
-    const hint = document.getElementById('action-submit-hint');
-    const success = document.getElementById('action-submit-success');
-    if (hint) hint.classList.add('hidden');
-    if (success) success.classList.remove('hidden');
+    const submitArea = document.getElementById('cmd-submit-slot-' + slotIdx);
+    if (submitArea) {
+      submitArea.innerHTML = '<div class="cmd-slot-submitted">✅ 已提交，等待其他玩家</div>';
+    }
   }
 
-  // ── 查询提交状态并渲染公开/GM复制 ──
+  // ── 查询提交状态 ──
   async function checkAndRenderSubmissions(roundNum) {
     if (!roundNum) return;
     try {
@@ -1247,8 +1305,6 @@
       if (!res.ok) return;
       const rows = await res.json();
 
-      const mySlot = _getMySlot();
-      const isGM = _isGM();
       const submitted = {};
       rows.forEach(r => { submitted[r.slot] = r; });
 
@@ -1259,40 +1315,21 @@
         btn.classList.toggle('cmd-ptab-done', done);
       });
 
-      // 如果自己已提交，锁定面板
-      if (mySlot >= 0 && submitted[SLOT_NAMES[mySlot]]) {
-        _lockMyPanel(mySlot);
-      }
+      // 锁定已提交的面板
+      SLOT_NAMES.forEach((slotKey, i) => {
+        if (submitted[slotKey]) {
+          _lockSlotPanel(i);
+        }
+      });
 
-      // 检查是否三家全提交
+      // 三家全提交 → 显示公开区 + GM复制按钮
       const allDone = SLOT_NAMES.every(s => !!submitted[s]);
-
       if (allDone) {
         _renderReveal(submitted);
-        // GM 模式显示一键复制
-        if (isGM) {
-          const copyBar = document.getElementById('action-gm-copy');
-          if (copyBar) copyBar.classList.remove('hidden');
-        }
-      } else {
-        // 未全提交：非自己面板显示等待
-        if (!isGM) {
-          for (let i = 0; i < 3; i++) {
-            if (i === mySlot) continue;
-            const panel = document.getElementById('cmd-slot-' + i);
-            if (!panel) continue;
-            const slotKey = SLOT_NAMES[i];
-            if (submitted[slotKey]) {
-              panel.innerHTML = '<div class="cmd-waiting cmd-submitted-other">✅ 已提交，等待公开</div>';
-            } else {
-              panel.innerHTML = '<div class="cmd-waiting">等待该玩家提交行动…</div>';
-            }
-          }
-        }
+        // GM 录入台复制按钮亮起
+        const gmCopyBar = document.getElementById('gm-copy-actions-bar');
+        if (gmCopyBar) gmCopyBar.style.display = '';
       }
-
-      // 启用自拟输入框联动
-      _bindCustomRadioToggle();
 
     } catch (e) {
       console.error('[SG] 查询提交状态失败:', e);
@@ -1307,27 +1344,6 @@
 
     revealPanel.classList.remove('hidden');
 
-    // 同时解锁所有面板显示完整选择
-    for (let i = 0; i < 3; i++) {
-      const slotKey = SLOT_NAMES[i];
-      const sub = submitted[slotKey];
-      if (!sub) continue;
-
-      const panel = document.getElementById('cmd-slot-' + i);
-      if (panel && !panel.querySelector('.cmd-reveal-summary')) {
-        // 在面板顶部注入已选摘要
-        const summary = document.createElement('div');
-        summary.className = 'cmd-reveal-summary';
-        summary.innerHTML = `
-          <div class="reveal-item"><span class="reveal-ling">主令</span><span class="reveal-choice">${_formatChoice(sub.wu_choice, sub.wu_custom)}</span></div>
-          <div class="reveal-item"><span class="reveal-ling">副令</span><span class="reveal-choice">${_formatChoice(sub.wen_choice, sub.wen_custom)}</span></div>
-          <div class="reveal-item"><span class="reveal-ling">应变令</span><span class="reveal-choice">${_formatChoice(sub.ce_choice, sub.ce_custom)}</span></div>
-        `;
-        panel.prepend(summary);
-      }
-    }
-
-    // 渲染公开 grid
     let gridHtml = '';
     SLOT_NAMES.forEach((slotKey, i) => {
       const sub = submitted[slotKey];
@@ -1346,10 +1362,11 @@
   function _formatChoice(choice, custom) {
     if (!choice) return '<span class="reveal-none">未选择</span>';
     if (choice === 'custom') return '<span class="reveal-custom">自拟: ' + _escHtml(custom || '') + '</span>';
+    if (choice.startsWith('opp_')) return '<span class="reveal-option">机遇' + choice.replace('opp_', '') + '</span>';
     return '<span class="reveal-option">' + _escHtml(choice) + '</span>';
   }
 
-  // ── GM 一键复制 ──
+  // ── GM 一键复制全部行动 ──
   async function onGMCopyActions() {
     const currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
     if (!currentRound) return;
@@ -1365,26 +1382,32 @@
       const submitted = {};
       rows.forEach(r => { submitted[r.slot] = r; });
 
-      // 获取当前回合的 playerActions 用于还原选项名
       const latest = state.rounds[state.rounds.length - 1];
       const playerActions = (latest && latest.parsed && latest.parsed.playerActions) || {};
 
-      let text = `第 ${currentRound} 回合 · 玩家行动\n\n`;
+      let text = `第 ${currentRound} 回合 · 玩家行动
+
+`;
 
       SLOT_NAMES.forEach((slotKey, i) => {
         const sub = submitted[slotKey];
         const name = state.players[i] ? state.players[i].name : slotKey;
         const slotOpts = playerActions[slotKey] || {};
 
-        text += `${name} [${slotKey}]\n`;
-        text += `  主令: ${_formatChoiceText('wu', sub, slotOpts)}\n`;
-        text += `  副令: ${_formatChoiceText('wen', sub, slotOpts)}\n`;
-        text += `  应变令: ${_formatChoiceText('ce', sub, slotOpts)}\n`;
-        text += '\n';
+        text += `${name} [${slotKey}]
+`;
+        text += `  主令: ${_fmtChoiceText('wu', sub, slotOpts)}
+`;
+        text += `  副令: ${_fmtChoiceText('wen', sub, slotOpts)}
+`;
+        text += `  应变令: ${_fmtChoiceText('ce', sub, slotOpts)}
+`;
+        text += '
+';
       });
 
       await navigator.clipboard.writeText(text.trim());
-      const okEl = document.getElementById('gm-copy-ok');
+      const okEl = document.getElementById('gm-copy-all-ok');
       if (okEl) { okEl.classList.remove('hidden'); setTimeout(() => okEl.classList.add('hidden'), 2500); }
       showToast('📋 已复制全部行动');
     } catch (e) {
@@ -1392,15 +1415,17 @@
     }
   }
 
-  // ── 格式化选择为纯文本（供复制用）──
-  function _formatChoiceText(type, sub, slotOpts) {
+  // ── 格式化选择为纯文本 ──
+  function _fmtChoiceText(type, sub, slotOpts) {
     if (!sub) return '未提交';
     const choice = sub[type + '_choice'];
     const custom = sub[type + '_custom'];
     if (!choice) return '未选择';
     if (choice === 'custom') return '自拟: ' + (custom || '');
-
-    // 还原选项名称
+    if (choice.startsWith('opp_')) {
+      const oppId = choice.replace('opp_', '');
+      return '选择机遇' + oppId;
+    }
     const typeOpts = slotOpts[type] || {};
     const optKey = choice.toLowerCase();
     if (typeOpts[optKey] && typeOpts[optKey].name) {
@@ -1409,28 +1434,11 @@
     return choice;
   }
 
-  // ── 自拟 radio 联动 ──
-  function _bindCustomRadioToggle() {
-    document.querySelectorAll('.ling-radio').forEach(radio => {
-      radio.addEventListener('change', function() {
-        const name = this.name; // ling-wu-0
-        const parts = name.split('-'); // ['ling', 'wu', '0']
-        const type = parts[1];
-        const slot = parts[2];
-        const customInput = document.getElementById('ling-custom-' + type + '-' + slot);
-        if (customInput) {
-          customInput.disabled = (this.value !== 'custom');
-          if (this.value === 'custom') customInput.focus();
-        }
-      });
-    });
-  }
-
   // ── HTML 转义 ──
   function _escHtml(text) {
     if (!text) return '';
     const d = document.createElement('div');
-    d.textContent = text;
+    d.textContent = String(text);
     return d.innerHTML;
   }
 
