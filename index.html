@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260614action" />
+  <link rel="stylesheet" href="css/style.css?v=20260615v2a" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -298,153 +298,110 @@
 
 
 <!-- ══════════════════════════════════════════
-     TAB 3：行动
+     TAB：行动
 ══════════════════════════════════════════ -->
 <section id="tab-action" class="tab-panel">
+  <div class="action-page">
 
-  <div class="actions-page-v2">
-
-    <!-- ══ 上回合结算 ══ -->
-    <div class="info-block settlement-block" style="display:none;">
-      <div class="ib-header">
-        <span class="ib-icon">📋</span>
-        <span class="ib-title">上回合结算</span>
-      </div>
-      <div class="ib-body">
-        <!-- 由 JS 动态渲染 -->
-      </div>
-    </div>
-
-    <!-- ══ 决策参考 v2 ══ -->
-    <div class="decision-ref-v2" id="decision-ref">
-      <div class="dr-v2-header">
-        <span class="dr-v2-label">决策</span>
-        <span class="dr-v2-title">决策参考</span>
-      </div>
-      <div class="dr-v2-grid">
-
-        <!-- 威望排行卡 -->
-        <div class="dr-v2-card">
-          <div class="dr-v2-card-header">
-            <span class="drc-label">威望</span>
-            <span class="drc-title">威望排行</span>
-          </div>
-          <div class="dr-v2-card-body" id="prestige-rank-content">
-            <div class="prestige-bar-v2">
-              <span class="pb-v2-badge p0-badge">甲</span>
-              <div class="pb-v2-track">
-                <div class="pb-v2-fill" id="prestige-bar-0" style="width: 0%"></div>
-              </div>
-              <span class="pb-v2-value" id="prestige-val-0">—</span>
-            </div>
-            <div class="prestige-bar-v2">
-              <span class="pb-v2-badge p1-badge">乙</span>
-              <div class="pb-v2-track">
-                <div class="pb-v2-fill" id="prestige-bar-1" style="width: 0%"></div>
-              </div>
-              <span class="pb-v2-value" id="prestige-val-1">—</span>
-            </div>
-            <div class="prestige-bar-v2">
-              <span class="pb-v2-badge p2-badge">丙</span>
-              <div class="pb-v2-track">
-                <div class="pb-v2-fill" id="prestige-bar-2" style="width: 0%"></div>
-              </div>
-              <span class="pb-v2-value" id="prestige-val-2">—</span>
-            </div>
-            <div class="npc-highest-v2" id="npc-highest">
-              <span class="npc-label">NPC最高</span>
-              <span class="npc-name" id="npc-highest-name">—</span>
-              <span class="npc-score" id="npc-highest-score">—</span>
-            </div>
-          </div>
+    <!-- ══ 决策参考区 ══ -->
+    <div class="action-ref-bar" id="action-ref-bar">
+      <div class="ref-card ref-prestige">
+        <div class="ref-card-header">
+          <span class="ref-label">威望</span>
+          <span class="ref-title">威望排行</span>
         </div>
-
-        <!-- 先手权卡 -->
-        <div class="dr-v2-card">
-          <div class="dr-v2-card-header">
-            <span class="drc-label">先手</span>
-            <span class="drc-title">本回合先手</span>
-          </div>
-          <div class="dr-v2-card-body" id="first-mover-content">
-            <div class="first-mover-v2">
-              <span class="fm-crown">👑</span>
-              <span class="fm-name" id="first-mover-name">等待GM数据</span>
-            </div>
-          </div>
+        <div class="ref-card-body" id="ref-prestige-body">
+          <div class="prestige-row"><span class="p-badge p0-badge">甲</span><div class="p-track"><div class="p-fill" id="p-fill-0"></div></div><span class="p-val" id="p-val-0">—</span></div>
+          <div class="prestige-row"><span class="p-badge p1-badge">乙</span><div class="p-track"><div class="p-fill" id="p-fill-1"></div></div><span class="p-val" id="p-val-1">—</span></div>
+          <div class="prestige-row"><span class="p-badge p2-badge">丙</span><div class="p-track"><div class="p-fill" id="p-fill-2"></div></div><span class="p-val" id="p-val-2">—</span></div>
+          <div class="prestige-npc"><span class="npc-label">NPC最高</span><span id="ref-npc-name">—</span><span id="ref-npc-score">—</span></div>
         </div>
-
-        <!-- 目标进度卡 -->
-        <div class="dr-v2-card">
-          <div class="dr-v2-card-header">
-            <span class="drc-label">目标</span>
-            <span class="drc-title">本幕目标进度</span>
-          </div>
-          <div class="dr-v2-card-body" id="goals-content">
-            <span class="goals-placeholder">等待GM公布目标...</span>
-          </div>
+      </div>
+      <div class="ref-card ref-firstmove">
+        <div class="ref-card-header">
+          <span class="ref-label">先手</span>
+          <span class="ref-title">本回合先手</span>
         </div>
-
+        <div class="ref-card-body">
+          <div class="firstmove-display"><span class="fm-crown">👑</span><span id="ref-first-mover">等待GM数据</span></div>
+        </div>
       </div>
-    </div>
-
-    <!-- ══ 公共机遇 v2 ══ -->
-    <div class="opportunities-panel-v2" id="opportunities-panel">
-      <div class="opp-v2-header">
-        <span class="opp-v2-label">机遇</span>
-        <span class="opp-v2-title">公共机遇</span>
-        <span class="opp-v2-hint">选则占用策令</span>
-      </div>
-      <div class="opp-v2-body" id="opp-body">
-        <div class="opp-v2-empty">
-          <div class="opp-empty-deco"></div>
-          <span class="opp-empty-text">暂无公共机遇</span>
-          <span class="opp-empty-hint">关注下回合战局动态发布</span>
+      <div class="ref-card ref-world">
+        <div class="ref-card-header">
+          <span class="ref-label">世界</span>
+          <span class="ref-title">世界状态</span>
+        </div>
+        <div class="ref-card-body">
+          <span id="ref-world-status">等待GM数据</span>
         </div>
       </div>
     </div>
 
-    <!-- ══ 行动指令三栏 ══ -->
-    <div class="aci-block" id="aci-block">
-      <div class="aci-header">
-        <span class="aci-icon">指令</span>
-        <span class="aci-title">行动指令</span>
-        <span class="aci-mode-tag" id="aci-mode-tag"></span>
+    <!-- ══ 公共机遇池 ══ -->
+    <div class="action-opp-panel" id="action-opp-panel">
+      <div class="opp-header">
+        <span class="opp-label">机遇</span>
+        <span class="opp-title">公共机遇池</span>
+        <span class="opp-hint">选则占用应变令</span>
+      </div>
+      <div class="opp-list" id="action-opp-list">
+        <div class="opp-empty">本回合无公共机遇</div>
+      </div>
+    </div>
+
+    <!-- ══ 行动指令区 ══ -->
+    <div class="action-cmd-panel" id="action-cmd-panel">
+      <div class="cmd-header">
+        <span class="cmd-label">指令</span>
+        <span class="cmd-title">行动指令</span>
+        <span class="cmd-status" id="cmd-status-tag"></span>
       </div>
 
-      <div class="aci-mobile-tabs" id="aci-mobile-tabs">
-        <button class="aci-mtab" data-slot="0">甲</button>
-        <button class="aci-mtab" data-slot="1">乙</button>
-        <button class="aci-mtab" data-slot="2">丙</button>
+      <!-- 玩家切换 tab -->
+      <div class="cmd-player-tabs" id="cmd-player-tabs">
+        <button class="cmd-ptab active" data-slot="0">甲</button>
+        <button class="cmd-ptab" data-slot="1">乙</button>
+        <button class="cmd-ptab" data-slot="2">丙</button>
       </div>
 
-      <div class="aci-cols" id="aci-cols">
-        <!-- 三栏由 renderActionPanelV2 渲染 -->
-        <div class="aci-empty-init">等待 GM 发布回合数据…</div>
-      </div>
+      <!-- 三个玩家面板（JS 控制显示/隐藏） -->
+      <div class="cmd-slot-panel" id="cmd-slot-0"></div>
+      <div class="cmd-slot-panel hidden" id="cmd-slot-1"></div>
+      <div class="cmd-slot-panel hidden" id="cmd-slot-2"></div>
     </div>
 
     <!-- ══ 提交栏 ══ -->
-    <div class="aci-submit-bar">
-      <button id="btn-submit-actions" class="aci-submit-btn">
+    <div class="action-submit-bar" id="action-submit-bar">
+      <button id="btn-action-submit" class="action-submit-btn" disabled>
         提交本回合行动
       </button>
-      <div class="aci-submit-meta" id="submit-warning">
-        ⚠️ 提交后三家同时公开,不可修改
+      <div class="action-submit-hint" id="action-submit-hint">
+        选择三令后提交，提交后不可修改
       </div>
-      <div class="aci-submit-success hidden" id="submit-success">
-        ✅ 已提交,等待其他玩家和GM结算
+      <div class="action-submit-success hidden" id="action-submit-success">
+        ✅ 已提交，等待其他玩家
       </div>
     </div>
 
-    <!-- ══ GM 一键复制 ══ -->
-    <div class="gm-copy-bar" id="gm-copy-bar" style="display:none;">
-      <button class="gm-copy-btn" onclick="window.SGAction && window.SGAction.copyAllActions()">
+    <!-- ══ 全员公开区（三家全提交后显示） ══ -->
+    <div class="action-reveal-panel hidden" id="action-reveal-panel">
+      <div class="reveal-header">
+        <span class="reveal-label">公开</span>
+        <span class="reveal-title">全员行动已公开</span>
+      </div>
+      <div class="reveal-grid" id="reveal-grid">
+        <!-- JS 动态渲染三家选择结果 -->
+      </div>
+    </div>
+
+    <!-- ══ GM 一键复制栏 ══ -->
+    <div class="action-gm-copy hidden" id="action-gm-copy">
+      <button class="gm-copy-btn" id="btn-gm-copy-actions">
         📋 一键复制全部行动
       </button>
       <span class="gm-copy-hint">复制后粘贴给 AI 主持人</span>
-      <span class="gm-copy-success" style="display:none;">✓ 已复制到剪贴板</span>
+      <span class="gm-copy-ok hidden" id="gm-copy-ok">✓ 已复制</span>
     </div>
-
 
   </div>
 </section>
