@@ -937,65 +937,83 @@
 
   // ── 渲染决策参考栏 ──
   function renderRefBar(parsed) {
-    // 威望
-    if (parsed.prestige && parsed.prestige.players.length) {
-      const maxScore = Math.max(...parsed.prestige.players.map(p => p.total), 1);
-      const SLOT_LABELS = ['甲', '乙', '丙'];
-      parsed.prestige.players.forEach((p, i) => {
-        const valEl = document.getElementById('arl-val-' + i);
-        const fillEl = document.getElementById('arl-fill-' + i);
-        const nameEl = document.getElementById('arl-name-' + i);
-        if (valEl) valEl.textContent = p.total;
-        if (fillEl) fillEl.style.width = Math.round((p.total / maxScore) * 100) + '%';
-        if (nameEl) nameEl.textContent = (state.players[i] && state.players[i].name) || ('城主' + SLOT_LABELS[i]);
-      });
-      const npcNameEl = document.getElementById('ref-npc-name');
-      const npcScoreEl = document.getElementById('ref-npc-score');
-      if (npcNameEl) npcNameEl.textContent = parsed.prestige.npcHighest.name || '—';
-      if (npcScoreEl) npcScoreEl.textContent = parsed.prestige.npcHighest.score || '—';
+    const bodyEl = document.getElementById('ap-body');
+    if (!bodyEl) return;
+
+    const prestige = parsed.prestige;
+    if (!prestige || !prestige.entries || !prestige.entries.length) {
+      bodyEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-dim);font-size:.76rem;">等待GM数据</div>';
+      return;
     }
-    // 先手
-    const fmEl = document.getElementById('ref-first-mover');
-    if (fmEl) fmEl.textContent = parsed.firstMove || '等待GM数据';
-    // 世界状态
-    const wsEl = document.getElementById('ref-world-status');
-    if (wsEl) {
-      if (parsed.worldStatus) {
-        wsEl.textContent = parsed.worldStatus.raw || (parsed.worldStatus.name + ' | ' + parsed.worldStatus.endgame);
-      } else {
-        wsEl.textContent = '等待GM数据';
+
+    const SLOT_COLORS = { '甲': '0', '乙': '1', '丙': '2' };
+    const entries = prestige.entries; // 已按降序排列
+    const maxScore = entries.length ? entries[0].score : 1;
+
+    let html = '';
+    entries.forEach((e, i) => {
+      const rank = i + 1;
+      const rankCls = rank === 1 ? ' r1' : rank === 2 ? ' r2' : rank === 3 ? ' r3' : '';
+      const colorKey = SLOT_COLORS[e.name] || (e.isPlayer ? '0' : 'n');
+      const barCls = 'ap-bar-' + colorKey;
+      const fillCls = 'f' + colorKey;
+      const nameCls = e.isPlayer ? '' : ' npc';
+      const pct = Math.round((e.score / maxScore) * 100);
+
+      // 玩家名优先用 state.players 中的名号
+      let displayName = e.name;
+      if (e.isPlayer) {
+        const pidx = { '甲': 0, '乙': 1, '丙': 2 }[e.name];
+        if (pidx !== undefined && state.players[pidx] && state.players[pidx].name) {
+          displayName = state.players[pidx].name;
+        }
       }
-    }
+
+      html += '<div class="ap-row">'
+        + '<span class="ap-rank' + rankCls + '">' + rank + '</span>'
+        + '<span class="ap-bar ' + barCls + '"></span>'
+        + '<span class="ap-name' + nameCls + '">' + _escHtml(displayName) + '</span>'
+        + '<div class="ap-micro"><div class="ap-micro-fill ' + fillCls + '" style="width:' + pct + '%"></div></div>'
+        + '<span class="ap-val">' + e.score + '</span>'
+        + '</div>';
+    });
+
+    bodyEl.innerHTML = html;
   }
   // ── 渲染公共机遇池 ──
   function renderOppPanel(parsed) {
     const listEl = document.getElementById('action-opp-list');
     if (!listEl) return;
+
     const opps = parsed.opportunities || [];
     if (!opps.length) {
-      listEl.innerHTML = '<div class="arr-opp-empty">本回合无公共机遇</div>';
+      listEl.innerHTML = '<div class="ao-empty">本回合无公共机遇</div>';
       return;
     }
+
     const TYPE_MAP = {
-      compete:   { cls: 'opp-compete',   text: '⚔ 争夺' },
-      cooperate: { cls: 'opp-cooperate', text: '🤝 协力' },
-      epic:      { cls: 'opp-epic',      text: '🏆 史诗' },
-      gamble:    { cls: 'opp-gamble',    text: '🎲 赌博' },
+      compete:   { cls: 'tc', text: '⚔️ 争夺' },
+      cooperate: { cls: 'tp', text: '🤝 协力' },
+      epic:      { cls: 'te', text: '🏆 史诗' },
+      gamble:    { cls: 'tg', text: '🎲 赌博' },
     };
+
     let html = '';
     opps.forEach(opp => {
       const info = TYPE_MAP[opp.type] || TYPE_MAP.compete;
-      html += `<div class="arr-opp-card ${info.cls}" data-opp-id="${opp.id}">
-        <div class="arr-opp-card-top"><span class="arr-opp-card-title">机遇${opp.id} · ${_escHtml(opp.title)}</span><span class="arr-opp-type">${info.text}</span></div>
-        <div class="arr-opp-card-desc">${_escHtml(opp.desc)}</div>
-        <div class="arr-opp-prestige">预估 +${opp.prestige} 威望</div>
-      </div>`;
+      html += '<div class="ao-card ' + info.cls + '" data-opp-id="' + opp.id + '">'
+        + '<div class="ao-top"><span class="ao-name">机遇' + opp.id + ' · ' + _escHtml(opp.title) + '</span><span class="ao-type">' + info.text + '</span></div>'
+        + '<div class="ao-desc">' + _escHtml(opp.desc) + '</div>'
+        + '<div class="ao-pres">+' + opp.prestige + ' 威望</div>'
+        + '</div>';
     });
     listEl.innerHTML = html;
-    listEl.querySelectorAll('.arr-opp-card').forEach(card => {
+
+    // 点击高亮
+    listEl.querySelectorAll('.ao-card').forEach(card => {
       card.addEventListener('click', function () {
-        listEl.querySelectorAll('.arr-opp-card').forEach(c => c.classList.remove('arr-selected'));
-        this.classList.add('arr-selected');
+        listEl.querySelectorAll('.ao-card').forEach(c => c.classList.remove('ao-selected'));
+        this.classList.add('ao-selected');
       });
     });
   }
