@@ -1889,6 +1889,14 @@
       rawText = rawText.replace(RE, ''); // 删除整个密报块
     }
 
+    // ── v6.0: 截断行动令段 ──
+    // 🎯 行动令 已由行动 Tab 专门渲染，战局总览不重复显示。
+    // 从 rawText 中移除 🎯 行动令 及其后所有内容（到剧情区末尾）。
+    const actionOrderCutIdx = rawText.search(/🎯\s*行动令/);
+    if (actionOrderCutIdx > 0) {
+      rawText = rawText.slice(0, actionOrderCutIdx).replace(/\s+$/, '');
+    }
+
     // ── 第一步：预处理，把所有「🎯 行动建议」块整体替换成占位符
     // 这样后续逐行循环完全不会碰到 ①②③ 行，彻底避免 NUMBULLET_RE 抢先匹配
     const { text, placeholders } = _preRenderActionBlocks(rawText);
