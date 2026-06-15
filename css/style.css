@@ -14331,11 +14331,3 @@ html.tab-switching {
 }
 
 /* ╚══ END v20260615 工单#action-top-v6-final ═════════════════ */
-
-/* v20260617act6 移动端行动 tab 栏缝隙修复 */
-@media (max-width: 720px) {
-  .act-mob-tabs {
-    background: var(--black-deep, #080808) !important;
-    box-shadow: 0 1px 0 rgba(212,168,67,.22);
-  }
-}
