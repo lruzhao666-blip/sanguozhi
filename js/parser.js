@@ -151,20 +151,49 @@ window.SGParser = (function () {
       // 格式：机遇1 · 流民归附 · ⚔ — 描述(⚔争夺·预估+4威望)
       // 或：  机遇1 · 流民归附 — 描述(争夺·预估+4威望)
       // 核心锚点：机遇N · 标题 ... — 描述 ... (类型·预估+N威望)
+      const EMOJI_TYPE_MAP = {
+        '🏆': 'epic', '⚔': 'compete', '⚔️': 'compete',
+        '🤝': 'cooperate', '🎲': 'gamble'
+      };
+      const KEYWORD_TYPE_MAP = {
+        '史诗': 'epic', '争夺': 'compete',
+        '协力': 'cooperate', '赌博': 'gamble'
+      };
+
       const lines = oppText.split('\n');
       for (const line of lines) {
         const t = line.trim();
         if (!t) continue;
-        // 宽松正则：机遇{数字} · {标题} — {描述}({类型关键字}·预估+{N}威望)
-        const m = t.match(/^机遇(\d+)\s*·\s*(.+?)\s*[—–-]\s*(.+?)\s*[（(]\s*(?:[^\s）)]*?)?(史诗|争夺|协力|赌博)\s*·\s*(?:预估)?\s*\+?(\d+)\s*威望\s*[）)]/);
+
+        // 宽松正则：机遇{数字} · {标题} [· emoji] — {描述}({任意前缀}{N}威望)
+        // 类型关键词、emoji、"预估" 均可选
+        const m = t.match(
+          /^机遇(\d+)\s*·\s*(.+?)\s*[—–-]\s*(.+?)\s*[（(]([^）)]*?)\+?(\d+)\s*威望\s*[）)]/
+        );
         if (m) {
-          const typeWord = m[4];
-          const type = typeWord === '史诗' ? 'epic' :
-                       typeWord === '争夺' ? 'compete' :
-                       typeWord === '协力' ? 'cooperate' : 'gamble';
+          const rawTitle = m[2].trim();
+          const paren = m[4] || '';
+
+          // 类型推断：括号内关键词 > 标题行 emoji > 默认 compete
+          let type = 'compete';
+          for (const [kw, tp] of Object.entries(KEYWORD_TYPE_MAP)) {
+            if (paren.includes(kw)) { type = tp; break; }
+          }
+          if (type === 'compete') {
+            // 从整行提取 emoji 推断
+            for (const [emo, tp] of Object.entries(EMOJI_TYPE_MAP)) {
+              if (t.includes(emo)) { type = tp; break; }
+            }
+          }
+
+          // 从标题中剥离尾部 emoji（如 "流民归附 · ⚔️" 中的 " · ⚔️"）
+          const cleanTitle = rawTitle
+            .replace(/\s*·\s*[🏆⚔️🤝🎲]\uFE0F?\s*$/, '')
+            .trim();
+
           result.opportunities.push({
             id: parseInt(m[1]),
-            title: m[2].trim(),
+            title: cleanTitle || rawTitle,
             desc: m[3].trim(),
             emoji: '',
             type: type,
