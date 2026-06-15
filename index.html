@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260617act4" />
+  <link rel="stylesheet" href="css/style.css?v=20260617act5" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -303,61 +303,31 @@
 <section id="tab-action" class="tab-panel">
     <div class="act-page-v3">
 
-    <!-- ═══ 决策参考区：左右分栏 ═══ -->
-    <div class="act-ref-split">
+    <!-- ═══ 决策参考区 v6.0 ═══ -->
+    <div class="act-top-split" id="act-top-split">
 
-      <!-- 左栏：威望排行 -->
-      <div class="act-ref-left">
-        <div class="arl-header">
-          <span class="arl-tag">威望</span>
-          <span class="arl-title">威望排行</span>
+      <!-- 威望排行 -->
+      <div class="act-pres" id="act-pres-block">
+        <div class="ap-hd">
+          <span class="ap-tag">威望</span>
+          <span class="ap-title">威望排行</span>
         </div>
-        <div class="arl-body">
-          <div class="arl-row" data-slot="0">
-            <span class="arl-badge arl-badge-0">甲</span>
-            <span class="arl-name" id="arl-name-0">—</span>
-            <span class="arl-val" id="arl-val-0">—</span>
-            <div class="arl-track"><div class="arl-fill arl-fill-0" id="arl-fill-0"></div></div>
-          </div>
-          <div class="arl-row" data-slot="1">
-            <span class="arl-badge arl-badge-1">乙</span>
-            <span class="arl-name" id="arl-name-1">—</span>
-            <span class="arl-val" id="arl-val-1">—</span>
-            <div class="arl-track"><div class="arl-fill arl-fill-1" id="arl-fill-1"></div></div>
-          </div>
-          <div class="arl-row" data-slot="2">
-            <span class="arl-badge arl-badge-2">丙</span>
-            <span class="arl-name" id="arl-name-2">—</span>
-            <span class="arl-val" id="arl-val-2">—</span>
-            <div class="arl-track"><div class="arl-fill arl-fill-2" id="arl-fill-2"></div></div>
-          </div>
+        <div class="ap-body" id="ap-body"></div>
+      </div>
+
+      <!-- 公共机遇池 -->
+      <div class="act-opp" id="act-opp-block">
+        <div class="ao-hd">
+          <span class="ap-tag">机遇</span>
+          <span class="ao-title">公共机遇池</span>
+          <span class="ao-hint">选则占用应变令</span>
+        </div>
+        <div class="ao-body" id="action-opp-list">
+          <div class="ao-empty">本回合无公共机遇</div>
         </div>
       </div>
 
-      <!-- 右栏：先手/世界/NPC + 机遇池 -->
-      <div class="act-ref-right">
-        <!-- 信息标签条 -->
-        <div class="arr-info-strip">
-          <div class="arr-item"><span class="arr-label">先手</span><span class="arr-value" id="ref-first-mover">等待GM数据</span></div>
-          <span class="arr-sep">│</span>
-          <div class="arr-item"><span class="arr-label">世界</span><span class="arr-value" id="ref-world-status">等待GM数据</span></div>
-          <span class="arr-sep">│</span>
-          <div class="arr-item"><span class="arr-label">NPC</span><span class="arr-value"><span id="ref-npc-name">—</span> <span id="ref-npc-score" class="arr-npc-score">—</span></span></div>
-        </div>
-        <!-- 公共机遇池 -->
-        <div class="arr-opp">
-          <div class="arr-opp-header">
-            <span class="arr-opp-tag">机遇</span>
-            <span class="arr-opp-title">公共机遇池</span>
-            <span class="arr-opp-hint">选则占用应变令</span>
-          </div>
-          <div class="arr-opp-body" id="action-opp-list">
-            <div class="arr-opp-empty">本回合无公共机遇</div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /act-ref-split -->
+    </div>
 
     <!-- ═══ 三令行动面板 ═══ -->
     <!-- 移动端 tab 切换栏 -->
@@ -448,13 +418,13 @@
 
 
 
-<script src="js/parser.js?v=20260615fix3"></script>
+<script src="js/parser.js?v=20260615fix4"></script>
 <script src="js/map.js?v=20261111a"></script>
 <script src="js/generals-tooltip.js?v=v20260601a"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/generals-organize.js?v=20260608a"></script>
 
 <script src="js/generals-organize-ui.js?v=20260608r"></script>
-<script src="js/main.js?v=20260617fix2"></script>
+<script src="js/main.js?v=20260617fix3"></script>
 </body>
 </html>

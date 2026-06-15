@@ -539,6 +539,7 @@ window.SGParser = (function () {
     }
 
     // [世界状态]
+    // [世界状态]（v6.0 已废弃，遇到时静默解析，不报错）
     if (blocks['世界状态']) {
       result.worldStatus = _parseWorldStatus(blocks['世界状态']);
     }
@@ -1136,31 +1137,60 @@ window.SGParser = (function () {
   //    NPC最高:袁绍:30
   // ─────────────────────────────────────────
   function _parsePrestige(raw) {
-    const result = { players: [], npcHighest: { name: '', score: 0 } };
+    const result = { entries: [], players: [], npcHighest: { name: '', score: 0 } };
     if (!raw) return result;
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-    const SLOTS = ['甲', '乙', '丙'];
 
     for (const line of lines) {
-      // 玩家威望行
-      const playerM = line.match(/^([甲乙丙])\s+征伐[:：](\d+)\s+治政[:：](\d+)\s+人才[:：](\d+)\s+目标[:：](\d+)\s+合计[:：](\d+)/);
-      if (playerM) {
+      // v6.0 新格式：{名字} 威望:{N}
+      const m = line.match(/^(\S+)\s+威望[:：](\d+)/);
+      if (m) {
+        const name = m[1];
+        const score = parseInt(m[2]);
+        const isPlayer = ['甲','乙','丙'].includes(name);
+        result.entries.push({ name, score, isPlayer });
+        continue;
+      }
+      // v5.x 旧格式兼容：甲 征伐:{N} 治政:{N} 人才:{N} 目标:{N} 合计:{N}
+      const oldM = line.match(/^([甲乙丙])\s+征伐[:：](\d+)\s+治政[:：](\d+)\s+人才[:：](\d+)\s+目标[:：](\d+)\s+合计[:：](\d+)/);
+      if (oldM) {
+        const name = oldM[1];
+        const score = parseInt(oldM[6]);
+        result.entries.push({ name, score, isPlayer: true });
+        // 兼容旧 players 数组
         result.players.push({
-          slot: playerM[1],
-          征伐: parseInt(playerM[2]),
-          治政: parseInt(playerM[3]),
-          人才: parseInt(playerM[4]),
-          目标: parseInt(playerM[5]),
-          total: parseInt(playerM[6]),
+          slot: name,
+          征伐: parseInt(oldM[2]), 治政: parseInt(oldM[3]),
+          人才: parseInt(oldM[4]), 目标: parseInt(oldM[5]),
+          total: score,
         });
         continue;
       }
-      // NPC最高行
-      const npcM = line.match(/NPC最高[:：]([^:：]+)[:：](\d+)/);
-      if (npcM) {
-        result.npcHighest = { name: npcM[1].trim(), score: parseInt(npcM[2]) };
+      // v5.x 旧格式：NPC最高:{名}:{N}
+      const npcOldM = line.match(/NPC最高[:：]([^:：]+)[:：](\d+)/);
+      if (npcOldM) {
+        const name = npcOldM[1].trim();
+        const score = parseInt(npcOldM[2]);
+        result.entries.push({ name, score, isPlayer: false });
+        result.npcHighest = { name, score };
       }
     }
+
+    // 降序排列
+    result.entries.sort((a, b) => b.score - a.score);
+
+    // 兼容旧 players 数组（如果新格式没填 players）
+    if (!result.players.length) {
+      result.entries.filter(e => e.isPlayer).forEach(e => {
+        result.players.push({ slot: e.name, total: e.score });
+      });
+    }
+    // 兼容旧 npcHighest（如果新格式没填）
+    if (!result.npcHighest.name) {
+      const topNpc = result.entries.find(e => !e.isPlayer);
+      if (topNpc) result.npcHighest = { name: topNpc.name, score: topNpc.score };
+    }
+
     return result;
   }
 
