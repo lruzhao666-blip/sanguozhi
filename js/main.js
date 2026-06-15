@@ -966,7 +966,10 @@
     if (!listEl) return;
 
     const opps = parsed.opportunities || [];
-    const TOTAL_SLOTS = 6; // 预留 6 个槽位（2行×3列）
+    if (!opps.length) {
+      listEl.innerHTML = '<div class="ao-empty">本回合无公共机遇</div>';
+      return;
+    }
 
     const TYPE_MAP = {
       compete:   { cls: 'tc', text: '⚔️ 争夺' },
@@ -976,7 +979,6 @@
     };
 
     let html = '';
-    // 渲染现有机遇卡
     opps.forEach(opp => {
       const info = TYPE_MAP[opp.type] || TYPE_MAP.compete;
       html += '<div class="ao-card ' + info.cls + '" data-opp-id="' + opp.id + '">'
@@ -985,51 +987,15 @@
         + '<div class="ao-pres">+' + opp.prestige + ' 威望</div>'
         + '</div>';
     });
-    // 补足空槽至 TOTAL_SLOTS
-    const emptyCount = Math.max(0, TOTAL_SLOTS - opps.length);
-    for (let i = 0; i < emptyCount; i++) {
-      html += '<div class="ao-slot-empty"><span class="ao-slot-empty-text">暂无</span></div>';
-    }
     listEl.innerHTML = html;
 
-    // 点击高亮 + 联动各行动面板应变令
+    // 点击高亮
     listEl.querySelectorAll('.ao-card').forEach(card => {
       card.addEventListener('click', function () {
-        const wasSelected = this.classList.contains('ao-selected');
-        // 取消所有选中
         listEl.querySelectorAll('.ao-card').forEach(c => c.classList.remove('ao-selected'));
-        if (!wasSelected) {
-          this.classList.add('ao-selected');
-        }
-        _syncOppSelectionToAll(listEl);
+        this.classList.add('ao-selected');
       });
     });
-  }
-
-  // ── 同步机遇池选中状态到三家应变令区 ──
-  function _syncOppSelectionToAll(listEl) {
-    const selectedCard = listEl ? listEl.querySelector('.ao-card.ao-selected') : null;
-    const oppId = selectedCard ? selectedCard.dataset.oppId : null;
-
-    for (let i = 0; i < 3; i++) {
-      const ceLing = document.querySelector(`.act-ling-v3[data-ling="ce"][data-slot="${i}"]`);
-      if (!ceLing) continue;
-
-      if (oppId) {
-        // 选中机遇后：选中对应应变令选项，并锁定其他应变选项
-        const oppOpt = ceLing.querySelector(`.act-opt-opp-v3[data-value="opp_${oppId}"]`);
-        if (oppOpt) {
-          ceLing.querySelectorAll('.act-opt-v3').forEach(o => o.classList.remove('act-opt-checked'));
-          oppOpt.classList.add('act-opt-checked');
-          const radio = oppOpt.querySelector('.act-radio-v3');
-          if (radio) { radio.checked = true; }
-        }
-        ceLing.classList.add('opp-locked');
-      } else {
-        // 取消选中：解锁
-        ceLing.classList.remove('opp-locked');
-      }
-    }
   }
   // ── 渲染三家行动指令面板 ──
   function renderCmdPanels(parsed) {
@@ -1065,7 +1031,7 @@
       html += `<div class="act-zero-v3"><label class="act-zero-label-v3">零消耗补充（可选）</label><textarea class="act-zero-input-v3" id="cmd-zero-${i}" placeholder="额外说明，如外交意向等" maxlength="200" rows="1"></textarea></div>`;
 
       // 提交
-      html += `<div class="act-submit-area" id="act-submit-area-${i}"><button class="act-submit-btn-v3" data-slot="${i}">提交行动</button><div class="act-submit-hint-v3">选择三令后提交</div></div>`;
+      html += `<div class="act-submit-area" id="act-submit-area-${i}"><button class="act-submit-btn-v3" data-slot="${i}">提交 ${slotKey} 的行动</button><div class="act-submit-hint-v3">选择三令后提交</div></div>`;
 
       html += '</div>';
       panelEl.innerHTML = html;
@@ -1135,22 +1101,6 @@
         document.querySelectorAll(`.act-opt-v3[data-name="${name}"] .act-custom-input-v3`).forEach(inp => {
           if (inp !== customInput) inp.disabled = true;
         });
-
-        // 应变令区：若点了机遇选项 → 给应变区加 opp-locked；若点了普通选项 → 移除
-        const ceLing = this.closest('.act-ling-v3[data-ling="ce"]');
-        if (ceLing) {
-          const isOppOpt = this.classList.contains('act-opt-opp-v3');
-          if (isOppOpt) {
-            ceLing.classList.add('opp-locked');
-          } else {
-            ceLing.classList.remove('opp-locked');
-            // 同步取消机遇池的选中（该玩家对应的机遇选择由面板内决定，无法知道具体是哪家，取消所有池选中）
-            const listEl = document.getElementById('action-opp-list');
-            if (listEl) {
-              listEl.querySelectorAll('.ao-card').forEach(c => c.classList.remove('ao-selected'));
-            }
-          }
-        }
       });
     });
   }
@@ -1218,7 +1168,7 @@
       ce_custom: ce.custom || null,
     };
 
-    const submitBtn = document.querySelector(`#act-submit-area-${slotIdx} .act-submit-btn-v3`);
+    const submitBtn = document.querySelector(`#cmd-slot-${slotIdx} .cmd-slot-submit-btn`);
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ 提交中…'; }
 
     try {
@@ -1235,7 +1185,7 @@
     } catch (e) {
       console.error('[SG] 行动提交失败:', e);
       showToast('❌ 提交失败，请重试');
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = `提交行动`; }
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = `提交 ${slotKey} 的行动`; }
     }
   }
 
@@ -1293,36 +1243,6 @@
     }
   }
 
-  // ── 在玩家行动卡内渲染已选摘要 ──
-  function _renderInCardSummary(slotIdx, sub, playerActions) {
-    const panel = document.getElementById('act-col-' + slotIdx);
-    if (!panel || !sub) return;
-
-    // 移除旧摘要（如有）
-    const old = panel.querySelector('.act-col-summary');
-    if (old) old.remove();
-
-    const slotKey = SLOT_NAMES[slotIdx];
-    const slotOpts = playerActions[slotKey] || {};
-
-    const wuText  = _fmtChoiceText('wu',  sub, slotOpts);
-    const wenText = _fmtChoiceText('wen', sub, slotOpts);
-    const ceText  = _fmtChoiceText('ce',  sub, slotOpts);
-
-    const summaryEl = document.createElement('div');
-    summaryEl.className = 'act-col-summary';
-    summaryEl.innerHTML = `<div class="act-col-summary-title">已选行动</div>`
-      + `<div class="act-col-summary-row"><span class="act-summary-label">主令</span><span class="act-summary-value">${_escHtml(wuText)}</span></div>`
-      + `<div class="act-col-summary-row"><span class="act-summary-label">副令</span><span class="act-summary-value">${_escHtml(wenText)}</span></div>`
-      + `<div class="act-col-summary-row"><span class="act-summary-label">应变</span><span class="act-summary-value">${_escHtml(ceText)}</span></div>`;
-
-    // 插入到 act-col-body-v3 最前面
-    const body = panel.querySelector('.act-col-body-v3');
-    if (body) {
-      body.insertBefore(summaryEl, body.firstChild);
-    }
-  }
-
   // ── 查询提交状态 ──
   async function checkAndRenderSubmissions(roundNum) {
     if (!roundNum) return;
@@ -1356,16 +1276,7 @@
       const gmCopyBtn3 = document.getElementById('btn-gm-copy-all-actions');
       if (gmCopyBtn3) gmCopyBtn3.disabled = !allDone;
 
-      // 在各家行动卡内直接渲染已选摘要（替代独立公开区）
-      const latest = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1] : null;
-      const playerActions = (latest && latest.parsed && latest.parsed.playerActions) || {};
-      SLOT_NAMES.forEach((slotKey, i) => {
-        if (submitted[slotKey]) {
-          _renderInCardSummary(i, submitted[slotKey], playerActions);
-        }
-      });
-
-      // 有任意一家提交 → 即时更新公开区（三方可见）—— 保留备用但面板已隐藏
+      // 有任意一家提交 → 即时更新公开区（三方可见）
       const anyDone = SLOT_NAMES.some(s => !!submitted[s]);
       if (anyDone) {
         _renderReveal(submitted);
