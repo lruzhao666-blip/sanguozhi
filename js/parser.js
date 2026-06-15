@@ -188,7 +188,7 @@ window.SGParser = (function () {
 
           // 从标题中剥离尾部 emoji（如 "流民归附 · ⚔️" 中的 " · ⚔️"）
           const cleanTitle = rawTitle
-            .replace(/\s*·\s*[🏆⚔️🤝🎲]\uFE0F?\s*$/, '')
+            .replace(/\s*·\s*(?:🏆|⚔️?|🤝|🎲)\uFE0F?\s*$/, '')
             .trim();
 
           result.opportunities.push({
