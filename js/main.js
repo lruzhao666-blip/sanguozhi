@@ -120,31 +120,7 @@
 
   // #fog-of-war-main-v1: 战争迷雾开关逻辑
   function bindFogToggle() {
-    const checkbox = document.getElementById('fog-checkbox');
-    const statusEl = document.getElementById('fog-status');
-    if (!checkbox || !statusEl) return;
-
-    // 从 localStorage 读取状态（默认开启）
-    const saved = localStorage.getItem('sg_fog_of_war');
-    const enabled = saved !== '0';
-    checkbox.checked = enabled;
-    statusEl.textContent = enabled ? '开' : '关';
-
-    // 监听开关变化
-    checkbox.addEventListener('change', () => {
-      const nowEnabled = checkbox.checked;
-      localStorage.setItem('sg_fog_of_war', nowEnabled ? '1' : '0');
-      statusEl.textContent = nowEnabled ? '开' : '关';
-      // 重新渲染战局动态（应用密报过滤）
-      if (state.rounds.length > 0) {
-        const latest = state.rounds[state.rounds.length - 1];
-        renderDigest(latest);
-      }
-      // 触发地图重渲染（应用兵力过滤）
-      if (typeof window.SGMap !== 'undefined' && window.SGMap.refresh) {
-        window.SGMap.refresh();
-      }
-    });
+    // v6.0: 战争迷雾已移除，所有兵力公开展示
   }
 
   // ══════════════════════════════════════════
@@ -582,6 +558,10 @@
     document.getElementById('btn-publish').addEventListener('click', onPublish);
     document.getElementById('btn-clear-all').addEventListener('click', onClearAll);
     document.getElementById('btn-undo').addEventListener('click', onUndo);
+
+    // 初始化 GM 复制按钮为 disabled（等三家全提交后启用）
+    const gmCopyBtn2 = document.getElementById('btn-gm-copy-all-actions');
+    if (gmCopyBtn2) gmCopyBtn2.disabled = true;
   }
 
   // ════ #gm-data-only-mode-v1 ════
@@ -1288,12 +1268,13 @@
         }
       });
 
-      // 三家全提交 → 显示公开区 + GM复制按钮
+      // GM 复制按钮：三家全提交则启用，否则禁用
+      const gmCopyBtn3 = document.getElementById('btn-gm-copy-all-actions');
+      if (gmCopyBtn3) gmCopyBtn3.disabled = !allDone;
+
+      // 三家全提交 → 显示公开区
       if (allDone) {
         _renderReveal(submitted);
-        // GM 录入台复制按钮亮起
-        const gmCopyBar = document.getElementById('gm-copy-actions-bar');
-        if (gmCopyBar) gmCopyBar.style.display = '';
       }
 
     } catch (e) {
@@ -2824,41 +2805,8 @@
     // 渲染调度列 + #fog-transit-filter-v1: 战争迷雾过滤
     const transitListEl = document.getElementById('wb-transit-list');
     if (transitListEl) {
-      // 读取当前登录身份
-      const currentRole = window.SGRole ? window.SGRole.get() : null;
-      const currentSlot = currentRole === '甲' ? 0 : currentRole === '乙' ? 1 : currentRole === '丙' ? 2 : null;
-
-      // 战争迷雾过滤：只隐藏"其他玩家攻击玩家"的调度
-      const visibleTransit = transit.filter(function(t) {
-        // 1. 自己的调度 → 可见
-        if (t.slot === currentSlot) return true;
-
-        // 2. 已交战 → 可见（战争迷雾已揭开）
-        if (t.status === '交战中') return true;
-
-        // 3. NPC 调度（slot=null）→ 可见
-        if (t.slot === null) return true;
-
-        // 4. 玩家调度：判断目标是否为玩家城池
-        if (t.slot === 0 || t.slot === 1 || t.slot === 2) {
-          // 获取所有玩家城池列表
-          const allPlayerCities = [];
-          state.players.forEach(function(p) {
-            if (p.cities_list && p.cities_list.length) {
-              p.cities_list.forEach(function(c) { allPlayerCities.push(c.name); });
-            }
-          });
-
-          // 目标是玩家城池 → 隐藏（玩家间军事隔离）
-          if (allPlayerCities.indexOf(t.to) !== -1) return false;
-
-          // 目标是 NPC 城池 → 可见（公开情报）
-          return true;
-        }
-
-        // 兜底：可见
-        return true;
-      });
+      // v6.0: 战争迷雾已移除，所有调度全部公开
+      const visibleTransit = transit;
 
       if (!visibleTransit.length) {
         transitListEl.innerHTML = '<div class="wb-empty-wrap"><span class="wb-empty">本回合无调度部队</span></div>';
