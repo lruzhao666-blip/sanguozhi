@@ -912,6 +912,7 @@
     renderRefBar(parsed);
     renderOppPanel(parsed);
     renderCmdPanels(parsed);
+    syncActPresHeight();
     await checkAndRenderSubmissions(rd.round || parsed.round);
   }
 
@@ -960,6 +961,21 @@
 
     bodyEl.innerHTML = html;
   }
+
+  // ── 威望面板高度跟随机遇池面板（align-items:start 后取自然高度）──
+  function syncActPresHeight() {
+    const oppEl  = document.getElementById('act-opp-block');
+    const presEl = document.getElementById('act-pres-block');
+    const body   = document.getElementById('ap-body');
+    if (!oppEl || !presEl || !body) return;
+    if (window.innerWidth <= 720) { body.style.maxHeight = '200px'; return; }
+    const oppH = oppEl.getBoundingClientRect().height;
+    const hdEl = presEl.querySelector('.ap-hd');
+    const hdH  = hdEl ? hdEl.getBoundingClientRect().height : 36;
+    body.style.maxHeight = Math.max(80, oppH - hdH - 8) + 'px';
+  }
+  window.addEventListener('resize', syncActPresHeight);
+
   // ── 渲染公共机遇池 ──
   function renderOppPanel(parsed) {
     const listEl = document.getElementById('action-opp-list');
@@ -987,6 +1003,12 @@
         + '<div class="ao-pres">+' + opp.prestige + ' 威望</div>'
         + '</div>';
     });
+    // 凑满 3 列×N 行（最少 6 槽），避免底部留白
+    const COLS = 3;
+    const needed = Math.ceil(opps.length / COLS) * COLS;
+    for (let i = opps.length; i < needed; i++) {
+      html += '<div class="ao-empty-slot"></div>';
+    }
     listEl.innerHTML = html;
 
     // 点击高亮
@@ -1031,7 +1053,7 @@
       html += `<div class="act-zero-v3"><label class="act-zero-label-v3">零消耗补充（可选）</label><textarea class="act-zero-input-v3" id="cmd-zero-${i}" placeholder="额外说明，如外交意向等" maxlength="200" rows="1"></textarea></div>`;
 
       // 提交
-      html += `<div class="act-submit-area" id="act-submit-area-${i}"><button class="act-submit-btn-v3" data-slot="${i}">提交 ${slotKey} 的行动</button><div class="act-submit-hint-v3">选择三令后提交</div></div>`;
+      html += `<div class="act-submit-area" id="act-submit-area-${i}"><button class="act-submit-btn-v3" data-slot="${i}">提交 ${slotKey} 的行动</button><div class="act-submit-hint-v3">选择三令后提交</div><div class="act-val-toast" id="act-val-toast-${i}"></div></div>`;
 
       html += '</div>';
       panelEl.innerHTML = html;
@@ -1056,8 +1078,8 @@
         html += `<div class="act-opt-v3" data-name="ling-${type}-${slotIdx}" data-value="${label}"><input type="radio" name="ling-${type}-${slotIdx}" value="${label}" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3">${label}.</span><span class="act-opt-name-v3">${_escHtml(opt.name)}</span></div><div class="act-opt-desc-v3">${_escHtml(opt.desc)}</div><div class="act-opt-meta-v3"><span class="act-opt-risk-v3 ${riskClass}">${_escHtml(opt.risk)}</span><span class="act-opt-prestige-v3">+${_escHtml(opt.prestige)} 威望</span></div></div></div>`;
       });
     }
-    // 自拟
-    html += `<div class="act-opt-v3 act-opt-custom-v3" data-name="ling-${type}-${slotIdx}" data-value="custom"><input type="radio" name="ling-${type}-${slotIdx}" value="custom" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3">自拟</span></div><textarea class="act-custom-input-v3" id="ling-custom-${type}-${slotIdx}" placeholder="输入自拟内容" maxlength="200" rows="1" disabled></textarea></div></div>`;
+    // 自定军令（原「自拟」）
+    html += `<div class="act-opt-v3 act-opt-custom-v3" data-name="ling-${type}-${slotIdx}" data-value="custom"><input type="radio" name="ling-${type}-${slotIdx}" value="custom" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3" style="color:var(--gold-dim);font-size:.7rem;">自定</span><span class="act-opt-name-v3" style="color:rgba(240,230,211,.6);">自定军令</span><span style="font-size:.64rem;color:var(--text-dim);margin-left:auto;">替换本令·算1行动</span></div><textarea class="act-custom-input-v3" id="ling-custom-${type}-${slotIdx}" placeholder="请填写自定军令内容（需注明领域）…" maxlength="300" rows="2" disabled></textarea></div></div>`;
     html += '</div></div>';
     return html;
   }
@@ -1079,28 +1101,47 @@
         html += `<div class="act-opt-v3" data-name="ling-ce-${slotIdx}" data-value="${label}"><input type="radio" name="ling-ce-${slotIdx}" value="${label}" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3">${label}.</span><span class="act-opt-name-v3">${_escHtml(opt.name)}</span></div><div class="act-opt-desc-v3">${_escHtml(opt.desc)}</div><div class="act-opt-meta-v3"><span class="act-opt-risk-v3 ${riskClass}">${_escHtml(opt.risk)}</span><span class="act-opt-prestige-v3">+${_escHtml(opt.prestige)} 威望</span></div></div></div>`;
       });
     }
-    html += `<div class="act-opt-v3 act-opt-custom-v3" data-name="ling-ce-${slotIdx}" data-value="custom"><input type="radio" name="ling-ce-${slotIdx}" value="custom" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3">自拟</span></div><textarea class="act-custom-input-v3" id="ling-custom-ce-${slotIdx}" placeholder="输入自拟内容" maxlength="200" rows="1" disabled></textarea></div></div>`;
+    // 自定军令（原「自拟」）
+    html += `<div class="act-opt-v3 act-opt-custom-v3" data-name="ling-ce-${slotIdx}" data-value="custom"><input type="radio" name="ling-ce-${slotIdx}" value="custom" class="act-radio-v3" /><div class="act-radio-dot"></div><div class="act-opt-body-v3"><div class="act-opt-top-v3"><span class="act-opt-label-v3" style="color:var(--gold-dim);font-size:.7rem;">自定</span><span class="act-opt-name-v3" style="color:rgba(240,230,211,.6);">自定军令</span><span style="font-size:.64rem;color:var(--text-dim);margin-left:auto;">替换本令·算1行动</span></div><textarea class="act-custom-input-v3" id="ling-custom-ce-${slotIdx}" placeholder="请填写自定军令内容（需注明领域）…" maxlength="300" rows="2" disabled></textarea></div></div>`;
+    html += `<div class="act-opp-chosen-hint">已选机遇 · 自定军令已禁用</div>`;
     html += '</div></div>';
     return html;
   }
 
-  // 选项点击 → 高亮 + radio checked
+  // 选项点击 → 高亮 + radio checked + Toggle取消
   function _bindOptClickV3() {
     document.querySelectorAll('.act-opt-v3').forEach(opt => {
-      opt.addEventListener('click', function () {
+      opt.addEventListener('click', function (e) {
+        // 不拦截 textarea 点击
+        if (e.target.tagName === 'TEXTAREA') return;
         const name = this.dataset.name;
-        // 取消同组其他选中
-        document.querySelectorAll(`.act-opt-v3[data-name="${name}"]`).forEach(o => o.classList.remove('act-opt-checked'));
-        this.classList.add('act-opt-checked');
-        const radio = this.querySelector('.act-radio-v3');
-        if (radio) radio.checked = true;
-        // 自拟联动
-        const customInput = this.querySelector('.act-custom-input-v3');
-        if (customInput) customInput.disabled = false;
-        // 禁用同组其他自拟
-        document.querySelectorAll(`.act-opt-v3[data-name="${name}"] .act-custom-input-v3`).forEach(inp => {
-          if (inp !== customInput) inp.disabled = true;
+        const already = this.classList.contains('act-opt-checked');
+        // 取消同组所有
+        document.querySelectorAll(`.act-opt-v3[data-name="${name}"]`).forEach(o => {
+          o.classList.remove('act-opt-checked');
+          const r = o.querySelector('.act-radio-v3');
+          if (r) r.checked = false;
+          const inp = o.querySelector('.act-custom-input-v3');
+          if (inp) inp.disabled = true;
         });
+        if (!already) {
+          // 选中
+          this.classList.add('act-opt-checked');
+          const radio = this.querySelector('.act-radio-v3');
+          if (radio) radio.checked = true;
+          const customInput = this.querySelector('.act-custom-input-v3');
+          if (customInput) customInput.disabled = false;
+        }
+        // 机遇选中/取消 → 控制同栏 act-opp-chosen
+        const colPanel = this.closest('.act-col-v3');
+        if (colPanel && this.classList.contains('act-opt-opp-v3')) {
+          // 当前是机遇选项行
+          const isOppNowChecked = this.classList.contains('act-opt-checked');
+          colPanel.classList.toggle('act-opp-chosen', isOppNowChecked);
+        }
+        // 隐藏校验 Toast
+        const slotIdx = colPanel ? colPanel.dataset.slot : null;
+        if (slotIdx !== null) { const t = document.getElementById('act-val-toast-' + slotIdx); if (t) { t.classList.remove('show'); t.innerHTML = ''; } }
       });
     });
   }
@@ -1149,13 +1190,26 @@
     const wen = _getSelectedLing('wen', slotIdx);
     const ce = _getSelectedLing('ce', slotIdx);
 
-    if (!wu.choice) { showToast('请选择主令'); return; }
-    if (!wen.choice) { showToast('请选择副令'); return; }
-    if (!ce.choice) { showToast('请选择应变令'); return; }
-
-    if (wu.choice === 'custom' && !wu.custom) { showToast('请填写自拟主令内容'); return; }
-    if (wen.choice === 'custom' && !wen.custom) { showToast('请填写自拟副令内容'); return; }
-    if (ce.choice === 'custom' && !ce.custom) { showToast('请填写自拟应变令内容'); return; }
+    // 内联校验
+    const reasons = [];
+    if (!wu.choice)  reasons.push('请选择<b>主令</b>选项');
+    if (!wen.choice) reasons.push('请选择<b>副令</b>选项');
+    if (!ce.choice)  reasons.push('请选择<b>应变令</b>选项（机遇或普通令或自定军令）');
+    if (wu.choice  === 'custom' && !wu.custom)  reasons.push('已勾选主令「自定军令」但内容为空');
+    if (wen.choice === 'custom' && !wen.custom) reasons.push('已勾选副令「自定军令」但内容为空');
+    if (ce.choice  === 'custom' && !ce.custom)  reasons.push('已勾选应变令「自定军令」但内容为空');
+    if (reasons.length) {
+      const toast = document.getElementById('act-val-toast-' + slotIdx);
+      if (toast) {
+        toast.innerHTML = '<div class="act-val-toast-hd">提交前请检查以下问题：</div><ul>' + reasons.map(r => '<li>' + r + '</li>').join('') + '</ul>';
+        toast.classList.add('show');
+        toast.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      return;
+    }
+    // 清除 toast
+    const toast = document.getElementById('act-val-toast-' + slotIdx);
+    if (toast) { toast.classList.remove('show'); toast.innerHTML = ''; }
 
     const payload = {
       round: currentRound,
