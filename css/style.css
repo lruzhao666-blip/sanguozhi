@@ -14332,10 +14332,23 @@ html.tab-switching {
 
 /* ╚══ END v20260615 工单#action-top-v6-final ═════════════════ */
 
-/* v20260617act6 移动端行动 tab 栏缝隙修复 */
+/* v20260617act6 移动端行动 tab 栏缝隙修复 v2 */
 @media (max-width: 720px) {
   .act-mob-tabs {
     background: var(--black-deep, #080808) !important;
-    box-shadow: 0 1px 0 rgba(212,168,67,.22);
+    position: sticky !important;
+    top: 42px !important;
+    z-index: 50 !important;
+  }
+  .act-mob-tabs::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -42px;
+    height: 42px;
+    background: var(--black-deep, #080808);
+    z-index: -1;
+    pointer-events: none;
   }
 }
