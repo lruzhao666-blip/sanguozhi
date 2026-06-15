@@ -5167,45 +5167,6 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 .pcard-v4 .pc-city:not(:empty)::before { content: '· '; opacity: .5; }
 
-/* ═══ 成就徽 ═══ */
-.pcard-v4 .pc-ach-slot {
-  display: flex; align-items: center; flex-shrink: 0;
-  cursor: pointer; position: relative;
-}
-.pcard-v4 .pc-ach-slot:hover .ach-title {
-  filter: brightness(1.18); transform: translateY(-1px);
-}
-.pcard-v4 .ach-title {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 9px 3px 8px; border-radius: 3px;
-  font-family: var(--font-serif); font-size: .7rem; font-weight: 700;
-  letter-spacing: .06em;
-  border: 1px solid var(--rar-bd);
-  background: var(--rar-bg); color: var(--rar-fg);
-  transition: all .2s;
-}
-.pcard-v4 .ach-title::before {
-  content: ''; width: 3px; height: 3px; border-radius: 50%;
-  background: currentColor; box-shadow: 0 0 4px currentColor;
-  margin-right: 2px;
-}
-.pcard-v4 .ach-title.rar-bronze { --rar-bd: rgba(168,150,122,.5);  --rar-bg: rgba(168,150,122,.08); --rar-fg: #c8b89a; }
-.pcard-v4 .ach-title.rar-silver { --rar-bd: rgba(126,170,214,.55); --rar-bg: rgba(126,170,214,.1);  --rar-fg: #a8c8e8; }
-.pcard-v4 .ach-title.rar-gold   { --rar-bd: rgba(232,184,64,.6);   --rar-bg: rgba(232,184,64,.13);  --rar-fg: #f0c870;
-  box-shadow: 0 0 8px rgba(232,184,64,.18), inset 0 1px 0 rgba(255,235,160,.12);
-}
-.pcard-v4 .ach-title.rar-purple { --rar-bd: rgba(200,120,232,.62); --rar-bg: rgba(200,120,232,.13); --rar-fg: #dba0f0;
-  box-shadow: 0 0 10px rgba(200,120,232,.2), inset 0 1px 0 rgba(240,200,255,.12);
-}
-.pcard-v4 .ach-count {
-  display: inline-flex; align-items: center; justify-content: center;
-  margin-left: 4px; min-width: 19px; height: 18px; padding: 0 5px;
-  border-radius: 9px; font-family: var(--font-sans); font-size: .6rem; font-weight: 700;
-  background: rgba(212,168,67,.18); border: 1px solid rgba(212,168,67,.4);
-  color: var(--gold-light); line-height: 1;
-}
-.pcard-v4 .ach-count::before { content: '+'; opacity: .7; margin-right: 1px; }
-
 /* ═══ 资源五格 ═══ */
 .pcard-v4 .pc-resources { background: rgba(0,0,0,.2); }
 .pcard-v4 .pc-res-grid {
@@ -8309,107 +8270,6 @@ body.fx-off-captured [data-ctype="captured"] {
 }
 
 /* ══ v20260601a 工单#map-tooltip-region-bonus-v1 END ══ */
-/* ════════════════════════════════════════════════════════════
-   v20261002a 工单#achievement-ui-B1 · 成就 UI 重做
-   - 玩家卡徽章：4 种稀有度态 + 钻石呼吸光晕 + 未解锁灰态
-   - 成就墙模态：三层背景 + 双层金线 + 嵌套阴影（对齐"世界"板块）
-   - 旧规则不删（保留 v20260702a 的成就墙样式），靠后写覆盖
-   ──────────────────────────────────────────────────────────── */
-
-/* ═══ 玩家卡徽章 4 态（覆盖 v20260702a 的简化版）═══ */
-.pcard.pcard-v4 .pc-ach-slot {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-.pcard.pcard-v4 .pc-ach-slot:hover .ach-title {
-  filter: brightness(1.18);
-  transform: translateY(-1px);
-}
-.pcard.pcard-v4 .ach-title {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  padding: 3px 9px 3px 8px !important;
-  border-radius: 3px !important;
-  font-family: var(--font-serif) !important;
-  font-size: .7rem !important;
-  font-weight: 700 !important;
-  letter-spacing: .06em !important;
-  transition: all .2s !important;
-  color: var(--rar-fg, var(--text-dim)) !important;
-  background: var(--rar-bg, rgba(120,108,90,.06)) !important;
-  border: 1px solid var(--rar-bd, rgba(120,108,90,.3)) !important;
-}
-.pcard.pcard-v4 .ach-title::before {
-  content: '';
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 4px currentColor;
-  margin-right: 2px;
-  flex-shrink: 0;
-}
-.pcard.pcard-v4 .ach-title.rar-bronze {
-  --rar-bd: rgba(168,124,74,.5);
-  --rar-bg: rgba(168,124,74,.08);
-  --rar-fg: #c8a88a;
-}
-.pcard.pcard-v4 .ach-title.rar-silver {
-  --rar-bd: rgba(184,184,184,.55);
-  --rar-bg: rgba(184,184,184,.08);
-  --rar-fg: #d8d8d8;
-}
-.pcard.pcard-v4 .ach-title.rar-gold {
-  --rar-bd: rgba(212,168,67,.6);
-  --rar-bg: rgba(212,168,67,.13);
-  --rar-fg: #f0c870;
-  box-shadow: 0 0 8px rgba(212,168,67,.22), inset 0 1px 0 rgba(255,235,160,.14) !important;
-}
-.pcard.pcard-v4 .ach-title.rar-diamond {
-  --rar-bd: rgba(127,184,212,.62);
-  --rar-bg: rgba(127,184,212,.13);
-  --rar-fg: #a8d8ec;
-  box-shadow: 0 0 10px rgba(127,184,212,.25), inset 0 1px 0 rgba(200,232,250,.14) !important;
-  animation: achRarDiamondPulse 3s ease-in-out infinite;
-}
-.pcard.pcard-v4 .ach-title.rar-none {
-  --rar-bd: rgba(120,108,90,.3);
-  --rar-bg: rgba(120,108,90,.06);
-  --rar-fg: rgba(140,128,108,.55);
-  font-style: italic;
-}
-@keyframes achRarDiamondPulse {
-  0%,100% { box-shadow: 0 0 10px rgba(127,184,212,.22), inset 0 1px 0 rgba(200,232,250,.14); }
-  50%     { box-shadow: 0 0 16px rgba(127,184,212,.42), inset 0 1px 0 rgba(200,232,250,.18); }
-}
-.pcard.pcard-v4 .ach-count {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin-left: 4px !important;
-  min-width: 19px !important;
-  height: 18px !important;
-  padding: 0 5px !important;
-  border-radius: 9px !important;
-  font-family: var(--font-sans) !important;
-  font-size: .6rem !important;
-  font-weight: 700 !important;
-  background: rgba(212,168,67,.18) !important;
-  border: 1px solid rgba(212,168,67,.4) !important;
-  color: var(--gold-light) !important;
-  line-height: 1 !important;
-  font-variant-numeric: tabular-nums;
-}
-.pcard.pcard-v4 .pc-ach-slot:has(.rar-none) .ach-count {
-  background: rgba(120,108,90,.1) !important;
-  border-color: rgba(120,108,90,.25) !important;
-  color: rgba(140,128,108,.55) !important;
-}
-
-
 /* ════════════════════════════════════════════════════════════
    v20261110a 工单#diagnostics-engine-A1 · 数据诊断器 v1
    右下角浮动徽章 + 右侧侧拉抽屉
@@ -14395,4 +14255,60 @@ html.tab-switching {
   font-size: .72rem;
   color: var(--text-dim);
   letter-spacing: .04em;
+}
+
+/* ════════════════════════════════════════════
+   v20260618fix1
+   1. 文本输入框（自拟/零消耗）→ textarea 自适应高度
+   2. 成就徽章 → display:none（已删除 DOM，CSS 兜底）
+   3. 行动公开区：支持部分提交可见
+   ════════════════════════════════════════════ */
+
+/* ── textarea 自适应高度覆盖 ── */
+.act-custom-input-v3,
+.act-zero-input-v3 {
+  resize: none;
+  overflow: hidden;
+  min-height: 34px;
+  line-height: 1.5;
+  box-sizing: border-box;
+  display: block;
+  font-family: var(--font-sans);
+}
+
+/* ── 成就徽章隐藏（DOM 已删除，保留作旧存档兜底） ── */
+.pc-ach-slot,
+.pcard-v4 .pc-ach-slot,
+.pcard.pcard-v4 .pc-ach-slot {
+  display: none !important;
+}
+
+/* ── 行动公开区：等待提交状态 ── */
+.reveal-col-pending {
+  opacity: 0.55;
+}
+.reveal-col-waiting {
+  padding: 14px 10px;
+  font-size: .8rem;
+  color: var(--text-dim);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ── 撤回按钮（去掉旧 ↩ 符号后重新美化） ── */
+.act-withdraw-btn {
+  background: transparent;
+  border: 1px solid rgba(212,168,67,.3);
+  color: var(--gold-dim);
+  font-size: .78rem;
+  padding: 5px 14px;
+  border-radius: var(--r);
+  cursor: pointer;
+  margin-top: 6px;
+  letter-spacing: .06em;
+  transition: all .18s;
+}
+.act-withdraw-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold-light);
 }
