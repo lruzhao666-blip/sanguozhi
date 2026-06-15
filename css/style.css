@@ -13906,10 +13906,6 @@ html.tab-switching {
   font-size: .84rem;
   outline: none;
   transition: border-color .18s, background .18s;
-  resize: vertical;  /* 可纵向拉伸 */
-  min-height: 52px;
-  line-height: 1.55;
-  word-break: break-all;
 }
 .act-custom-input-v3:focus {
   border-color: var(--gold);
@@ -13957,9 +13953,6 @@ html.tab-switching {
   font-size: .82rem;
   outline: none;
   transition: border-color .18s;
-  resize: vertical;  /* 可纵向拉伸 */
-  min-height: 34px;
-  line-height: 1.5;
 }
 .act-zero-input-v3:focus { border-color: var(--gold); }
 
@@ -14050,7 +14043,6 @@ html.tab-switching {
   grid-template-columns: 300px 1fr;
   gap: 10px;
   margin-bottom: 14px;
-  align-items: start; /* 各列自然高度，机遇池不被威望撑高 */
 }
 
 /* ══ 威望排行 ══ */
@@ -14059,7 +14051,6 @@ html.tab-switching {
   border: 1px solid var(--border-red);
   border-radius: var(--rl);
   overflow: hidden;
-  align-self: stretch; /* 威望面板独立撑满左列 */
 }
 .ap-hd {
   display: flex; align-items: center; gap: 8px;
@@ -14076,9 +14067,6 @@ html.tab-switching {
 .ap-body {
   display: flex; flex-direction: column; gap: 0;
   padding: 6px 0;
-  overflow-y: auto;
-  flex: 1;
-  max-height: 260px; /* JS syncActPresHeight() 动态同步机遇池高度 */
 }
 .ap-row {
   display: flex; align-items: center; gap: 8px;
@@ -14191,13 +14179,6 @@ html.tab-switching {
   grid-column: 1 / -1; text-align: center;
   font-size: .74rem; color: var(--gold-dim); letter-spacing: .14em;
   padding: 14px 0; opacity: .55;
-}
-/* 暗格占位，凑满 3×N 行 */
-.ao-empty-slot {
-  min-height: 70px;
-  background: rgba(255,255,255,.012);
-  border: 1px dashed rgba(255,255,255,.04);
-  border-radius: var(--r);
 }
 
 /* ═══ 移动端 ═══ */
@@ -14331,44 +14312,3 @@ html.tab-switching {
   border-color: var(--gold);
   color: var(--gold-light);
 }
-
-/* v20260615-landing: 行动Tab落地改动 — 机遇池空白/自定军令/校验Toast/resize */
-
-/* 机遇池同步高度：威望面板 pres-body 可滚动 */
-.act-pres { display: flex; flex-direction: column; }
-.ap-hd    { flex-shrink: 0; }
-.ap-body  { overflow-y: auto; flex: 1; }
-
-/* 提交校验内联 Toast */
-.act-val-toast {
-  display: none;
-  margin-top: 6px;
-  padding: 9px 12px;
-  background: rgba(70,8,8,.78);
-  border: 1px solid rgba(200,70,40,.45);
-  border-radius: var(--r);
-  font-size: .74rem;
-  color: #f0a888;
-  line-height: 1.65;
-  text-align: left;
-}
-.act-val-toast.show { display: block; }
-.act-val-toast-hd   { font-weight: 700; color: #f07050; font-size: .76rem; margin-bottom: 4px; }
-.act-val-toast ul   { padding-left: 15px; margin: 0; }
-.act-val-toast ul li { margin-bottom: 1px; }
-
-/* 选机遇后，同栏的「自定军令」选项变灰不可选 */
-.act-col-v3.act-opp-chosen .act-opt-custom-v3 {
-  opacity: .25;
-  pointer-events: none;
-  filter: saturate(.1);
-}
-/* 选机遇提示条 */
-.act-opp-chosen-hint {
-  display: none;
-  font-size: .63rem;
-  color: rgba(200,136,232,.6);
-  padding: 2px 0 0 4px;
-  font-style: italic;
-}
-.act-col-v3.act-opp-chosen .act-opp-chosen-hint { display: block; }
