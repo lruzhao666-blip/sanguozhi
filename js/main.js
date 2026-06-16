@@ -976,16 +976,8 @@
   }
 
   // ── 威望面板高度同步 ──
-  function _act10SyncPresHeight() {
-    var oppP = document.getElementById('act10-opp-panel');
-    var presB = document.getElementById('act10-pres-body');
-    if (!oppP || !presB) return;
-    if (window.innerWidth <= 900) { presB.style.maxHeight = '200px'; return; }
-    var oppH = oppP.getBoundingClientRect().height;
-    var hdEl = document.querySelector('#act10-pres-panel .panel-hd');
-    var hdH = hdEl ? hdEl.getBoundingClientRect().height : 36;
-    presB.style.maxHeight = Math.max(80, oppH - hdH - 8) + 'px';
-  }
+  // v6.2: 威望面板等高由 CSS stretch 控制，不再 JS 同步
+  function _act10SyncPresHeight() {}
   window.addEventListener('resize', _act10SyncPresHeight);
 
   // ── 公共机遇池 ──
@@ -1009,9 +1001,8 @@
       h += '<div class="opp-foot"><span class="opp-pres">预估 +' + o.prestige + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
       h += '</div>';
     });
-    var COLS = 3;
-    var need = Math.ceil(opps.length / COLS) * COLS;
-    for (var i = opps.length; i < need; i++) h += '<div class="opp-empty"></div>';
+    var TOTAL_SLOTS = 4;
+    for (var i = opps.length; i < TOTAL_SLOTS; i++) h += '<div class="opp-empty"></div>';
     el.innerHTML = h;
   }
 
