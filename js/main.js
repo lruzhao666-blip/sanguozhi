@@ -87,22 +87,31 @@
   /**
    * Toast提示函数（如果不存在则添加）
    */
-  function showToast(message, type) {
+  function showToast(message, type, duration) {
     const toast = document.getElementById('toast');
     if (!toast) return;
 
     toast.textContent = message;
     toast.className = 'toast';
+
+    // ← 新增：支持 info 类型
     if (type === 'error') {
       toast.style.background = 'rgba(244,67,54,.95)';
     } else if (type === 'success') {
       toast.style.background = 'rgba(76,175,80,.95)';
+    } else if (type === 'info') {
+      toast.style.background = 'rgba(33,150,243,.95)';
+    } else {
+      toast.style.background = 'rgba(76,175,80,.95)'; // 默认绿色
     }
+
     toast.classList.remove('hidden');
 
+    // ← 修改：支持自定义持续时间，默认3秒
+    const delay = duration !== undefined ? duration : 3000;
     setTimeout(() => {
       toast.classList.add('hidden');
-    }, 3000);
+    }, delay);
   }
 
 
@@ -947,6 +956,8 @@
     _act10OppPool(parsed);
     _act10Columns(parsed);
     _act10SyncPresHeight();
+
+    console.log('[act10] 渲染行动Tab，当前回合:', rd.round || parsed.round);
     await _act10LoadSubmissions(rd.round || parsed.round);
   }
 
@@ -1536,6 +1547,10 @@
 
       // 缓存提交数据给 GM 复制用
       window._act10Submitted = submitted;
+
+      // ← 新增：自动更新高亮状态
+      _act10UpdateAllPanelsHighlight();
+
     } catch (e) {
       console.error('[act10] 加载提交状态失败:', e);
     }
@@ -1552,14 +1567,97 @@
     var changedRound = payload.new?.round || payload.old?.round;
     if (changedRound !== currentRound) return;
 
+    console.log('[act10] 检测到行动提交变更，同步中...', payload);
+
     // 重新加载提交状态
     await _act10LoadSubmissions(currentRound);
 
     // 检查是否三人全部提交
     _checkAllSubmitted();
 
-    // 更新行动卡高亮
-    _act10UpdateOtherPlayersHighlight();
+    // ← 修改：强化高亮更新 + Toast 提示
+    _act10UpdateAllPanelsHighlight();
+
+    // 提示：哪个玩家刚刚提交/修改了
+    if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+      var changedSlot = payload.new?.slot;
+      if (changedSlot) {
+        var slotIdx = ACT10_SLOT_NAMES.indexOf(changedSlot);
+        var playerName = state.players[slotIdx] ? state.players[slotIdx].name : '城主' + changedSlot;
+        showToast('📬 ' + playerName + ' 已提交行动', 'info', 2000);
+      }
+    } else if (payload.eventType === 'DELETE') {
+      var changedSlot = payload.old?.slot;
+      if (changedSlot) {
+        var slotIdx = ACT10_SLOT_NAMES.indexOf(changedSlot);
+        var playerName = state.players[slotIdx] ? state.players[slotIdx].name : '城主' + changedSlot;
+        showToast('↩️ ' + playerName + ' 已撤回行动', 'info', 2000);
+      }
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  全面板高亮更新函数（方案A v2）
+  // ══════════════════════════════════════════
+  /**
+   * 更新所有行动面板的已选高亮状态
+   * - 自己的选择：正常高亮（checked）
+   * - 其他人的选择：半透明高亮（other-submitted）
+   */
+  function _act10UpdateAllPanelsHighlight() {
+    var submitted = window._act10Submitted || {};
+    var currentSlot = getCurrentPlayerSlot();
+
+    ACT10_SLOT_NAMES.forEach(function(sk, slotIdx) {
+      var sub = submitted[sk];
+      var panel = document.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+      if (!panel) return;
+
+      // 先清除所有高亮状态
+      panel.querySelectorAll('.opt').forEach(function(opt) {
+        opt.classList.remove('other-submitted');
+      });
+      panel.querySelectorAll('.opp-opt-row').forEach(function(row) {
+        row.classList.remove('other-submitted');
+      });
+
+      // 如果没有提交数据，跳过
+      if (!sub) return;
+
+      var lingSelections = safeJson(sub.ling_selections, []);
+      var oppSel = safeJson(sub.opp_selection, {});
+
+      // 标记已提交的选项
+      lingSelections.forEach(function(sel) {
+        var lings = panel.querySelectorAll('.ling');
+        var ling = lings[sel.lingIdx];
+        if (!ling) return;
+
+        var targetOpt = null;
+        if (sel.customText) {
+          // 自定军令
+          targetOpt = ling.querySelector('.opt.zdjl-opt');
+        } else {
+          // 普通选项
+          targetOpt = ling.querySelector('.opt[data-val="' + sel.choice + '"]');
+        }
+
+        if (targetOpt) {
+          // 如果是当前玩家，保持 checked 状态；否则添加 other-submitted
+          if (slotIdx !== currentSlot) {
+            targetOpt.classList.add('other-submitted');
+          }
+        }
+      });
+
+      // 机遇选择高亮
+      if (oppSel.type === 'opp' && oppSel.oppId) {
+        var oppRow = panel.querySelector('.opp-opt-row[data-opp-id="' + oppSel.oppId + '"]');
+        if (oppRow && slotIdx !== currentSlot) {
+          oppRow.classList.add('other-submitted');
+        }
+      }
+    });
   }
 
   // ══════════════════════════════════════════
@@ -1571,51 +1669,21 @@
 
     if (allDone && !window._act10AllSubmittedNotified) {
       window._act10AllSubmittedNotified = true;
-      showToast('🎯 三家行动已齐，可结算！', 5000);
 
-      // 可选：播放提示音（如果需要）
-      // var audio = new Audio('path/to/notification.mp3');
-      // audio.play().catch(function() {});
-    }
-  }
+      // ← 修改：更醒目的提示（5秒 + success 样式）
+      showToast('🎯 三家行动已齐，可结算！', 'success', 5000);
 
-  // ══════════════════════════════════════════
-  //  更新行动卡其他玩家选择高亮
-  // ══════════════════════════════════════════
-  function _act10UpdateOtherPlayersHighlight() {
-    var submitted = window._act10Submitted || {};
-
-    ACT10_SLOT_NAMES.forEach(function(sk, slotIdx) {
-      var sub = submitted[sk];
-      if (!sub) return;
-
-      var lingSelections = safeJson(sub.ling_selections, []);
-      var oppSel = safeJson(sub.opp_selection, {});
-
-      // 在对应的行动卡上添加"已选"徽章
-      lingSelections.forEach(function(sel) {
-        var opt = document.querySelector(
-          '.col-panel[data-slot="' + slotIdx + '"] ' +
-          '.ling:nth-child(' + (sel.lingIdx + 1) + ') ' +
-          '.opt[data-val="' + sel.choice + '"]'
-        );
-        if (opt && !opt.classList.contains('checked')) {
-          // 添加半透明高亮样式（表示其他玩家选择）
-          opt.classList.add('other-player-selected');
-        }
-      });
-
-      // 机遇选择高亮
-      if (oppSel.type === 'opp' && oppSel.oppId) {
-        var oppOpt = document.querySelector(
-          '.col-panel[data-slot="' + slotIdx + '"] ' +
-          '.opp-opt-row[data-opp-id="' + oppSel.oppId + '"]'
-        );
-        if (oppOpt && !oppOpt.classList.contains('checked')) {
-          oppOpt.classList.add('other-player-selected');
-        }
+      // ← 新增：可选的提示音效（浏览器允许的情况下播放）
+      try {
+        var audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE=');
+        audio.volume = 0.3;
+        audio.play().catch(function() {
+          console.log('[act10] 提示音播放失败（用户未交互）');
+        });
+      } catch (e) {
+        // 静默失败，不影响主流程
       }
-    });
+    }
   }
 
   // ── 构建已提交摘要 HTML ──
@@ -1655,6 +1723,33 @@
     var submitted = window._act10Submitted || {};
     var sub = submitted[sk];
     if (!sub) return;
+
+    // ← ↓↓↓ 新增：真删除数据库记录 ↓↓↓
+    try {
+      // 删除 Supabase 中的提交记录
+      var deleteUrl = ACT10_SUPA_URL + '?round=eq.' + currentRound + '&slot=eq.' + sk;
+      var res = await fetchWithTimeout(deleteUrl, {
+        method: 'DELETE',
+        headers: SUPA_HEADERS,
+      }, 8000);
+
+      if (!res.ok) {
+        console.error('[act10] 删除提交记录失败:', res.status);
+        showToast('❌ 撤回失败，请重试');
+        return;
+      }
+
+      // 从本地缓存中移除
+      delete submitted[sk];
+      window._act10Submitted = submitted;
+
+      showToast('↩️ 已撤回 ' + sk + ' 的提交，可重新编辑');
+    } catch (e) {
+      console.error('[act10] 撤回失败:', e);
+      showToast('❌ 撤回失败，请重试');
+      return;
+    }
+    // ← ↑↑↑ 新增结束 ↑↑↑
 
     // 隐藏摘要
     var sumEl = document.getElementById('act10-summary-' + slotIdx);
