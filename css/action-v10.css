@@ -213,7 +213,7 @@
 .act10 .ling-quote{display:flex;align-items:flex-start;flex-wrap:wrap;gap:5px;font-size:.82rem;color:var(--text-quote, #c0aa80);line-height:1.5;margin:6px 0 2px 0;font-style:italic;}
 .act10 .ling-quote-marks{font-family:var(--font-serif);font-size:.82rem;color:rgba(212,168,67,.4);flex-shrink:0;line-height:1.5;}
 .act10 .ling-quote-text{font-style:italic;flex:1;}
-.act10 .ling-quote-who{display:block;width:100%;margin-top:2px;margin-left:0;font-size:.72rem;color:var(--text-dim);font-style:normal;text-align:right;}
+.act10 .ling-quote-who{display:inline;width:auto;margin-top:0;margin-left:6px;font-size:.72rem;color:var(--text-dim);font-style:normal;text-align:left;}
 .act10 .ling-note{font-size:.72rem;color:var(--text-dim);line-height:1.45;margin-top:1px;}
 
 /* Branch options */
