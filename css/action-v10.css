@@ -314,6 +314,9 @@
 .act10 .withdraw-btn{background:transparent;border:1px solid rgba(212,168,67,.25);color:var(--gold-dim);font-size:.7rem;padding:4px 11px;border-radius:var(--r);cursor:pointer;letter-spacing:.05em;transition:all .16s;}
 .act10 .withdraw-btn:hover{border-color:var(--gold);color:var(--gold-light);}
 
+/* 移动端 tab 栏：桌面端隐藏 */
+.act10 .mob-tabs{display:none;}
+
 /* ═══ MOBILE ═══ */
 @media(max-width:900px){
   .act10 .round-strip{flex-wrap:wrap;}
@@ -323,6 +326,7 @@
   .act10 .pres-body{max-height:200px!important;}
   .act10 .opp-grid{grid-template-columns:repeat(2,1fr);}
   .act10 .cols-grid{grid-template-columns:1fr;}
+  .act10 .mob-tabs{display:flex;}
 }
 @media(max-width:540px){
   .act10 .opp-grid{grid-template-columns:1fr;}
