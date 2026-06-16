@@ -1032,13 +1032,8 @@
     var opps = parsed.opportunities || [];
     var pres = parsed.prestige;
 
-    // 移动端 tab 栏
-    var tabH = '<div class="mob-tabs" id="act10-mob-tabs">';
-    for (var t = 0; t < 3; t++) {
-      var tn = state.players[t] ? state.players[t].name : ACT10_SLOT_NAMES[t];
-      tabH += '<button class="mob-tab' + (t === 0 ? ' active' : '') + '" data-slot="' + t + '">' + _act10Esc(tn) + '</button>';
-    }
-    tabH += '</div>';
+    // v6.3: 移动端 tab 已删除，三栏始终并排显示（移动端纵向堆叠）
+    var tabH = '';
 
     var h = '';
     for (var i = 0; i < 3; i++) {
@@ -1051,7 +1046,7 @@
         if (pe) pp = pe.score;
       }
 
-      h += '<div class="col-panel' + (i === 0 ? ' col-visible' : '') + '" data-slot="' + i + '">';
+      h += '<div class="col-panel" data-slot="' + i + '">';
       h += '<div class="col-head">';
       h += '<span class="col-name">' + _act10Esc(pn) + '</span>';
       h += '<span class="col-slot-tag">[' + sk + ']</span>';
@@ -1279,18 +1274,7 @@
       btn.addEventListener('click', function() { _act10Submit(parseInt(this.dataset.slot)); });
     });
 
-    // 移动端 tab
-    var mobTabs = root.querySelectorAll('.mob-tab');
-    mobTabs.forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        var slot = parseInt(this.dataset.slot);
-        mobTabs.forEach(function(t) { t.classList.remove('active'); });
-        this.classList.add('active');
-        root.querySelectorAll('.col-panel').forEach(function(p, pi) {
-          p.classList.toggle('col-visible', pi === slot);
-        });
-      });
-    });
+    // v6.3: 移动端 tab 已删除，无需事件绑定
   }
 
   function _act10UpdateBadge(si) {
