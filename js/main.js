@@ -1063,13 +1063,20 @@
       if (!sa) {
         h += '<div style="text-align:center;padding:28px 10px;color:var(--text-dim);font-size:.82rem;">等待 GM 发布行动选项…</div>';
       } else {
-        // 三个令
-        var lingKeys = ['wu', 'wen', 'ce'];
-        lingKeys.forEach(function(key, li) {
-          var ling = sa[key];
-          if (!ling) return;
-          h += _act10BuildLing(ling, li, i, key);
-        });
+        // v6.2: 优先读 items 数组（①②③），降级读旧 wu/wen/ce
+        var lingItems = sa.items || [];
+        if (lingItems.length) {
+          lingItems.forEach(function(item, li) {
+            h += _act10BuildLing(item, li, i, 'item' + li);
+          });
+        } else {
+          var lingKeys = ['wu', 'wen', 'ce'];
+          lingKeys.forEach(function(key, li) {
+            var ling = sa[key];
+            if (!ling) return;
+            h += _act10BuildLing(ling, li, i, key);
+          });
+        }
 
         // 机遇选取区
         h += _act10BuildOppSelect(opps, i);
@@ -1098,7 +1105,7 @@
     var h = '<div class="ling" id="act10-ling-' + slotIdx + '-' + lingIdx + '">';
 
     // 令头
-    h += '<div class="ling-header"><span class="ling-num">' + ACT10_LING_NUMS[lingIdx] + '</span><div class="ling-main">';
+    h += '<div class="ling-header"><span class="ling-num">' + _act10Esc(ling.num || ACT10_LING_NUMS[lingIdx] || '') + '</span><div class="ling-main">';
     h += '<div class="ling-title-row"><span class="ling-name">' + _act10Esc(ling.title || ling.name || '') + '</span>';
     if (ling.risk || ling.prestige) {
       var rc = ling.risk === '稳' ? 'chip-s' : ling.risk === '险' ? 'chip-r' : 'chip-m';

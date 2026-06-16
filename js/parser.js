@@ -129,28 +129,21 @@ window.SGParser = (function () {
     if (!text) return result;
 
     // Step 1: 提取 🎯 行动令段
-    // 结束符放宽：═══(三个或更多全角=) / ════(任意长全角=横线) / 36 个半角= / 📋 / 文末
     const actionsMatch = text.match(/🎯\s*行动令([\s\S]*)$/);
     if (!actionsMatch) return result;
 
     const actionsText = actionsMatch[1];
 
-    // Step 2: 提取先手权（玩家名号或单字甲/乙/丙，括号说明可选）
-    // 改动：允许玩家名号(2-8 汉字) + 可选括号说明
+    // Step 2: 提取先手权
     const firstMoveMatch = actionsText.match(/本回合先手[:：]\s*([\u4e00-\u9fa5]{1,8})(?:[（(][^）)]*[）)])?/);
     if (firstMoveMatch) {
       result.firstMove = firstMoveMatch[1].trim();
     }
 
     // Step 3: 提取公共机遇
-    // 结束符放宽：═══ / 36 个 = / 📋 / 文末
-    const oppMatch = actionsText.match(/公共机遇[池]?[^:：]*[:：]?\s*\n([\s\S]*?)(?=\n\s*[\u4e00-\u9fa5]+\s*\[[甲乙丙]\]|\n\s*═|$)/);
+    const oppMatch = actionsText.match(/公共机遇[池]?[^:：]*[:：]?\s*\n([\s\S]*?)(?=\n\s*={3}\s*\n|\n\s*[\u4e00-\u9fa5]+\s*\[[甲乙丙]\]|\n\s*$)/);
     if (oppMatch) {
       const oppText = oppMatch[1] || oppMatch[0];
-      // 逐行匹配机遇，不依赖 emoji
-      // 格式：机遇1 · 流民归附 · ⚔ — 描述(⚔争夺·预估+4威望)
-      // 或：  机遇1 · 流民归附 — 描述(争夺·预估+4威望)
-      // 核心锚点：机遇N · 标题 ... — 描述 ... (类型·预估+N威望)
       const EMOJI_TYPE_MAP = {
         '🏆': 'epic', '⚔': 'compete', '⚔️': 'compete',
         '🤝': 'cooperate', '🎲': 'gamble'
@@ -164,33 +157,24 @@ window.SGParser = (function () {
       for (const line of lines) {
         const t = line.trim();
         if (!t) continue;
-
-        // 宽松正则：机遇{数字} · {标题} [· emoji] — {描述}({任意前缀}{N}威望)
-        // 类型关键词、emoji、"预估" 均可选
         const m = t.match(
           /^机遇(\d+)\s*·\s*(.+?)\s*[—–-]\s*(.+?)\s*[（(]([^）)]*?)\+?(\d+)\s*威望\s*[）)]/
         );
         if (m) {
           const rawTitle = m[2].trim();
           const paren = m[4] || '';
-
-          // 类型推断：括号内关键词 > 标题行 emoji > 默认 compete
           let type = 'compete';
           for (const [kw, tp] of Object.entries(KEYWORD_TYPE_MAP)) {
             if (paren.includes(kw)) { type = tp; break; }
           }
           if (type === 'compete') {
-            // 从整行提取 emoji 推断
             for (const [emo, tp] of Object.entries(EMOJI_TYPE_MAP)) {
               if (t.includes(emo)) { type = tp; break; }
             }
           }
-
-          // 从标题中剥离尾部 emoji（如 "流民归附 · ⚔️" 中的 " · ⚔️"）
           const cleanTitle = rawTitle
             .replace(/\s*·\s*(?:🏆|⚔️?|🤝|🎲)\uFE0F?\s*$/, '')
             .trim();
-
           result.opportunities.push({
             id: parseInt(m[1]),
             title: cleanTitle || rawTitle,
@@ -203,37 +187,117 @@ window.SGParser = (function () {
       }
     }
 
-    // Step 4: 提取每个玩家的三令选项
-    // 改动核心：玩家段标识改为 "玩家名号 [甲]:" 格式
-    // 用 --- 分隔玩家段，但要先把行动令段开头到第一个 [甲]/[乙]/[丙] 之前的内容剥掉
-    const playerSections = actionsText.split(/^[-—]{3,}\s*$/m);
-    playerSections.forEach(section => {
-      // 匹配玩家槽位：玩家名号 [甲]:(威望:N) 或 玩家名号[甲]:(威望:N)
-      // 改动：从 "城主([甲乙丙])" 改为 "\[([甲乙丙])\]" 抓方括号槽位
-      const playerMatch = section.match(/\[([甲乙丙])\]\s*[:：]/);
-      if (!playerMatch) return;
+    // Step 4: v6.2 格式 — 按 --- 分隔玩家段，解析 ①②③ + A/B/C 分支
+    // 先找到 === 分隔线之后的内容（玩家段在 === 之后）
+    const tripleEqIdx = actionsText.search(/\n\s*={3}\s*\n/);
+    const playerZone = tripleEqIdx !== -1
+      ? actionsText.slice(tripleEqIdx)
+      : actionsText;
 
-      const slot = playerMatch[1];
-      result.playerActions[slot] = { wu: {}, wen: {}, ce: {} };
+    const playerSections = playerZone.split(/^[-—]{3,}\s*$/m);
 
-      // 匹配三令：武令|A.行动名:描述(风险·+N威望) 或 (风险·+N~M威望)
-      // 改动：威望段允许 +N 或 +N~M 单符号写法
-      const actionRe = /(主令|副令|应变令|武令|文令|策令)\s*[|｜]\s*([A-Ca-c])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·）)]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/g;
-      let m;
-      while ((m = actionRe.exec(section)) !== null) {
-        const lingType = (m[1] === '主令' || m[1] === '武令') ? 'wu' : (m[1] === '副令' || m[1] === '文令') ? 'wen' : (m[1] === '应变令' || m[1] === '策令') ? 'ce' : 'ce';
-        const option = m[2].toLowerCase(); // 'a' | 'b'
-        result.playerActions[slot][lingType][option] = {
-          name: m[3].trim(),
-          desc: m[4].trim(),
-          risk: m[5].trim(),
-          prestige: m[6].trim()
-        };
+    // 建议编号 regex: ① ② ③ ④ ⑤ ⑥
+    const LING_NUM_RE = /^([①②③④⑤⑥])\s*(.+)/;
+    const BRANCH_RE = /^\s{1,4}([A-Ca-c])\s*[.．、]\s*([^：:]+)(?:[：:](.*))?$/;
+    const PLAYER_HEAD_RE = /\[([甲乙丙])\]\s*[：:]/;
+    const LING_NUMS_ORDER = ['①', '②', '③', '④', '⑤', '⑥'];
+
+    for (const section of playerSections) {
+      const playerMatch = section.match(PLAYER_HEAD_RE);
+      if (!playerMatch) continue;
+
+      const slot = playerMatch[1]; // 甲/乙/丙
+      const items = [];
+      const lines = section.split('\n');
+      let currentItem = null;
+
+      for (let li = 0; li < lines.length; li++) {
+        const raw = lines[li];
+        const t = raw.trimEnd();
+
+        // 建议行: ① 南下援汝南：「主公,曹仁势大...」率主力疾趋汝南（中·预估+3~+6威望）
+        const lingM = t.match(LING_NUM_RE);
+        if (lingM) {
+          // 保存上一个 item
+          if (currentItem) items.push(currentItem);
+
+          const num = lingM[1];
+          const rest = lingM[2].trim();
+
+          // 解析标题、引言、补注、风险、威望
+          // 格式: 标题：「引言」补注（风险·预估+N威望）
+          // 或:   标题：「引言」补注（风险·预估+N~+M威望）
+          let title = '', quote = '', note = '', risk = '', prestige = '';
+
+          // 先提取尾部括号: （中·预估+3~+6威望）或（稳·预估+2威望）
+          const tailM = rest.match(/[（(]([^）)]+)[）)]$/);
+          let body = tailM ? rest.slice(0, rest.length - tailM[0].length).trim() : rest;
+
+          if (tailM) {
+            const inner = tailM[1]; // "中·预估+3~+6威望"
+            const riskM = inner.match(/^(稳|中|险)\s*[·]/);
+            if (riskM) risk = riskM[1];
+            const presM = inner.match(/预估\s*\+?\s*([\d~～\-+]+)\s*威望/);
+            if (presM) prestige = presM[1];
+          }
+
+          // 从 body 提取标题和引言
+          // body 格式: "南下援汝南：「主公,曹仁势大...」率主力疾趋汝南"
+          const colonIdx = body.search(/[：:]/);
+          if (colonIdx > 0) {
+            title = body.slice(0, colonIdx).trim();
+            const afterColon = body.slice(colonIdx + 1).trim();
+            // 提取「...」引言
+            const quoteM = afterColon.match(/^[「"'']([^」"'']*)[」"'']/);
+            if (quoteM) {
+              quote = quoteM[1];
+              note = afterColon.slice(quoteM[0].length).trim();
+            } else {
+              note = afterColon;
+            }
+          } else {
+            title = body;
+          }
+
+          currentItem = {
+            num: num,
+            idx: LING_NUMS_ORDER.indexOf(num),
+            title: title,
+            quote: quote,
+            note: note,
+            risk: risk,
+            prestige: prestige,
+            options: []
+          };
+          continue;
+        }
+
+        // 分支行: "   A.正面拒曹：兵出新野走叶县，与曹仁正面相抗"
+        const branchM = t.match(BRANCH_RE);
+        if (branchM && currentItem) {
+          currentItem.options.push({
+            label: branchM[1].toUpperCase(),
+            name: branchM[2].trim(),
+            desc: branchM[3] ? branchM[3].trim() : ''
+          });
+          continue;
+        }
       }
-    });
+      // 保存最后一个 item
+      if (currentItem) items.push(currentItem);
+
+      // 写入 playerActions — 新结构 items 数组
+      result.playerActions[slot] = { items: items };
+
+      // 同时填充旧 wu/wen/ce 空壳，防止旧代码读取时报错
+      if (!result.playerActions[slot].wu) result.playerActions[slot].wu = {};
+      if (!result.playerActions[slot].wen) result.playerActions[slot].wen = {};
+      if (!result.playerActions[slot].ce) result.playerActions[slot].ce = {};
+    }
 
     return result;
   }
+
 
   // ─────────────────────────────────────────
   //  主入口：格式探针 → 路由到对应解析器
