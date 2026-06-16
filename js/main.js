@@ -1173,7 +1173,6 @@
     h += '<span class="ling-num">④</span>';
     h += '<div class="ling-main">';
     h += '<div class="ling-title-row"><span class="ling-name">自定军令</span></div>';
-    h += '<div class="ling-note">自拟行动内容，需注明领域。与①②③同级，占1个行动额度。</div>';
     h += '</div></div>';
 
     // 输入区（作为唯一选项）
