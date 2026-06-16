@@ -493,3 +493,26 @@
     display:flex !important;
   }
 }
+
+/* 其他玩家已选高亮 */
+.act10 .opt.other-player-selected,
+.act10 .opp-opt-row.other-player-selected {
+  background: rgba(212, 168, 67, 0.08) !important;
+  border-left: 2px solid rgba(212, 168, 67, 0.35) !important;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.act10 .opt.other-player-selected::after,
+.act10 .opp-opt-row.other-player-selected::after {
+  content: '已被其他玩家选择';
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-size: 0.58rem;
+  color: var(--gold-dim);
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 6px;
+  border-radius: 3px;
+  pointer-events: none;
+}
