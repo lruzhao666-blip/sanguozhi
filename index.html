@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260615land3" />
+  <link rel="stylesheet" href="css/style.css?v=20260615land4" />
   <link rel="stylesheet" href="css/action-v10.css?v=9" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
@@ -28,6 +28,14 @@
   <div class="header-divider"></div>
   <div class="header-sync-bar">
     <span id="sync-status" class="sync-status">☁️ 连接云端中…</span>
+    <!-- ↓↓↓ 新增身份选择器 ↓↓↓ -->
+    <div class="identity-selector" id="identity-selector">
+      <span class="identity-label">我的身份：</span>
+      <button class="identity-btn" data-slot="0">甲</button>
+      <button class="identity-btn" data-slot="1">乙</button>
+      <button class="identity-btn" data-slot="2">丙</button>
+    </div>
+    <!-- ↑↑↑ 新增结束 ↑↑↑ -->
   </div>
 </header>
 

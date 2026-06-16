@@ -116,6 +116,7 @@
     bindFogToggle();
     loadFromCloud();
     bindActionTab();
+    initIdentitySelector();
 
   }
 
@@ -1069,17 +1070,20 @@
     var tabH = '';
 
     var h = '';
+    var currentSlot = getCurrentPlayerSlot();
+
     for (var i = 0; i < 3; i++) {
       var sk = ACT10_SLOT_NAMES[i];
       var sa = actions[sk];
       var pn = state.players[i] ? state.players[i].name : '城主' + sk;
+      var isEditable = (i === currentSlot);
       var pp = '';
       if (pres && pres.entries) {
         var pe = pres.entries.find(function(x) { return x.name === sk; });
         if (pe) pp = pe.score;
       }
 
-      h += '<div class="col-panel" data-slot="' + i + '">';
+      h += '<div class="col-panel' + (isEditable ? '' : ' readonly') + '" data-slot="' + i + '" data-editable="' + isEditable + '">';
       h += '<div class="col-head">';
       h += '<span class="col-name">' + _act10Esc(pn) + '</span>';
       h += '<span class="col-slot-tag">[' + sk + ']</span>';
@@ -1254,6 +1258,13 @@
     root.querySelectorAll('.opt').forEach(function(opt) {
       opt.addEventListener('click', function(e) {
         if (e.target.tagName === 'TEXTAREA') return;
+
+        var panel = this.closest('.col-panel');
+        if (panel && panel.dataset.editable === 'false') {
+          showToast('⚠️ 无法编辑其他玩家的行动');
+          return;
+        }
+
         var grp = this.dataset.grp;
         var si = parseInt(this.dataset.slot);
         var li = parseInt(this.dataset.ling);
@@ -1277,6 +1288,12 @@
     // 机遇 Toggle（点击选中，再点取消，单选）
     root.querySelectorAll('.opp-opt-row').forEach(function(row) {
       row.addEventListener('click', function() {
+        var panel = this.closest('.col-panel');
+        if (panel && panel.dataset.editable === 'false') {
+          showToast('⚠️ 无法编辑其他玩家的行动');
+          return;
+        }
+
         var grp = this.dataset.grp;
         var si = parseInt(this.dataset.slot);
         var already = this.classList.contains('checked');
@@ -1303,7 +1320,17 @@
 
     // 提交按钮
     root.querySelectorAll('.submit-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() { _act10Submit(parseInt(this.dataset.slot)); });
+      btn.addEventListener('click', function() {
+        var slotIdx = parseInt(this.dataset.slot);
+        var currentSlot = getCurrentPlayerSlot();
+
+        if (slotIdx !== currentSlot) {
+          showToast('⚠️ 无法提交其他玩家的行动');
+          return;
+        }
+
+        _act10Submit(slotIdx);
+      });
     });
 
     // v6.3: 移动端 tab 已删除，无需事件绑定
@@ -3969,6 +3996,97 @@
       tabBtn.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     });
   }
+
+// ══════════════════════════════════════════
+//  身份识别模块 v1
+//  工单：#identity-selector-v1
+// ══════════════════════════════════════════
+
+/**
+ * 初始化身份选择器
+ * - 从 localStorage 读取上次选择的身份
+ * - 绑定按钮点击事件
+ * - 默认选择"甲"
+ */
+function initIdentitySelector() {
+  const selector = document.getElementById('identity-selector');
+  if (!selector) return;
+
+  // 从 localStorage 读取身份，默认为 0（甲）
+  const savedSlot = localStorage.getItem('sg_current_slot');
+  const currentSlot = savedSlot !== null ? parseInt(savedSlot, 10) : 0;
+
+  // 验证有效性
+  const validSlot = (currentSlot >= 0 && currentSlot <= 2) ? currentSlot : 0;
+
+  // 设置全局变量
+  window._currentPlayerSlot = validSlot;
+
+  // 更新按钮激活状态
+  updateIdentityUI(validSlot);
+
+  // 绑定按钮点击事件
+  selector.querySelectorAll('.identity-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const slot = parseInt(this.dataset.slot, 10);
+      switchIdentity(slot);
+    });
+  });
+}
+
+/**
+ * 切换身份
+ * @param {number} slot - 0=甲, 1=乙, 2=丙
+ */
+function switchIdentity(slot) {
+  if (slot < 0 || slot > 2) return;
+
+  // 保存到 localStorage
+  localStorage.setItem('sg_current_slot', slot);
+
+  // 更新全局变量
+  window._currentPlayerSlot = slot;
+
+  // 更新 UI
+  updateIdentityUI(slot);
+
+  // 重新渲染行动 Tab（应用权限控制）
+  if (state.rounds.length > 0) {
+    const latest = state.rounds[state.rounds.length - 1];
+    renderActionTab(latest);
+  }
+
+  // Toast 提示
+  const slotNames = ['甲', '乙', '丙'];
+  const playerName = state.players[slot] ? state.players[slot].name : '城主' + slotNames[slot];
+  showToast('✅ 已切换到 ' + playerName + ' [' + slotNames[slot] + ']');
+}
+
+/**
+ * 更新身份选择器 UI 激活状态
+ * @param {number} activeSlot - 当前激活的 slot
+ */
+function updateIdentityUI(activeSlot) {
+  const selector = document.getElementById('identity-selector');
+  if (!selector) return;
+
+  selector.querySelectorAll('.identity-btn').forEach(btn => {
+    const slot = parseInt(btn.dataset.slot, 10);
+    btn.classList.toggle('active', slot === activeSlot);
+  });
+}
+
+/**
+ * 获取当前玩家身份
+ * @returns {number} 0=甲, 1=乙, 2=丙
+ */
+function getCurrentPlayerSlot() {
+  return window._currentPlayerSlot !== undefined ? window._currentPlayerSlot : 0;
+}
+
+// ══════════════════════════════════════════
+//  身份识别模块结束
+// ══════════════════════════════════════════
 
   document.addEventListener('DOMContentLoaded', init);
 })();

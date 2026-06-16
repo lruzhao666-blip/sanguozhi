@@ -1,0 +1,11 @@
+index.html:
+Before: 396
+After: 404
+
+css/style.css:
+Before: 13492
+After: 13617
+
+js/main.js:
+Before: 4902
+After: 5020
