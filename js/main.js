@@ -1648,13 +1648,22 @@
     var panel = document.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
     if (!panel) return;
 
-    // 1. 恢复行动令选择
-    var lingSelections = safeJson(sub.ling_selections, []);
+    // 先清除所有选中状态
     panel.querySelectorAll('.opt').forEach(function(opt) {
       opt.classList.remove('checked');
     });
+    panel.querySelectorAll('.opp-opt-row').forEach(function(row) {
+      row.classList.remove('checked');
+    });
+    panel.classList.remove('opp-active');
+
+    var lingSelections = safeJson(sub.ling_selections, []);
+    var oppSel = safeJson(sub.opp_selection, {});
+
+    // 1. 恢复行动令选择（模拟点击以触发事件）
     lingSelections.forEach(function(sel) {
-      var ling = panel.querySelectorAll('.ling')[sel.lingIdx];
+      var lings = panel.querySelectorAll('.ling');
+      var ling = lings[sel.lingIdx];
       if (!ling) return;
 
       var targetOpt = null;
@@ -1664,42 +1673,36 @@
         if (targetOpt) {
           var ta = targetOpt.querySelector('.zdjl-ta');
           if (ta) ta.value = sel.customText;
+          // 模拟点击自定军令选项
+          targetOpt.click();
         }
       } else {
         // 普通选项
         targetOpt = ling.querySelector('.opt[data-val="' + sel.choice + '"]');
+        if (targetOpt) {
+          // 模拟点击普通选项
+          targetOpt.click();
+        }
       }
-      if (targetOpt) targetOpt.classList.add('checked');
     });
 
-    // 2. 恢复机遇选择
-    var oppSel = safeJson(sub.opp_selection, {});
-    panel.querySelectorAll('.opp-opt-row').forEach(function(row) {
-      row.classList.remove('checked');
-    });
+    // 2. 恢复机遇选择（模拟点击）
     if (oppSel.type === 'opp' && oppSel.oppId) {
       var oppRow = panel.querySelector('.opp-opt-row[data-opp-id="' + oppSel.oppId + '"]');
-      if (oppRow) oppRow.classList.add('checked');
-      panel.classList.add('opp-active');
+      if (oppRow) {
+        oppRow.click();
+      }
     } else {
       var noOppRow = panel.querySelector('.opp-opt-row.no-opp');
-      if (noOppRow) noOppRow.classList.add('checked');
-      panel.classList.remove('opp-active');
+      if (noOppRow) {
+        noOppRow.click();
+      }
     }
 
-    // 3. 恢复零消耗
+    // 3. 恢复零消耗（直接赋值即可）
     var zeroTa = panel.querySelector('.zero-ta');
     if (zeroTa && sub.zero_cost) {
       zeroTa.value = sub.zero_cost;
-    }
-
-    // 4. 更新选择计数徽章
-    var badge = document.getElementById('act10-badge-' + slotIdx);
-    if (badge) {
-      var count = lingSelections.length;
-      var sc = badge.querySelector('.sc');
-      if (sc) sc.textContent = count;
-      badge.classList.toggle('full', count >= 2);
     }
   }
 
