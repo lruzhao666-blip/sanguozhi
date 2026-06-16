@@ -1067,12 +1067,16 @@
       if (!sa) {
         h += '<div style="text-align:center;padding:28px 10px;color:var(--text-dim);font-size:.82rem;">等待 GM 发布行动选项…</div>';
       } else {
-        // v6.2: ①②③ 建议令 + ④ 自定军令（4选2）
+        // v6.2: ①②③④ 建议令（含自定军令，4选2）
         var lingItems = sa.items || [];
         if (lingItems.length) {
           lingItems.forEach(function(item, li) {
             h += _act10BuildLing(item, li, i, 'item' + li);
           });
+          // 只有当 items 数组少于4个时，才补充自定军令
+          if (lingItems.length < 4) {
+            h += _act10BuildCustomOrder(i, lingItems.length);
+          }
         } else {
           var lingKeys = ['wu', 'wen', 'ce'];
           lingKeys.forEach(function(key, li) {
@@ -1080,10 +1084,9 @@
             if (!ling) return;
             h += _act10BuildLing(ling, li, i, key);
           });
+          // 旧版本格式才自动追加自定军令
+          h += _act10BuildCustomOrder(i, 3);
         }
-
-        // ④ 自定军令（和①②③同级，4选2）
-        h += _act10BuildCustomOrder(i);
 
         // 机遇选取区（占1个行动额度）
         h += _act10BuildOppSelect(opps, i);
@@ -1166,9 +1169,9 @@
   }
 
   // ── 构建④自定军令（和①②③同级）──
-  function _act10BuildCustomOrder(slotIdx) {
+  function _act10BuildCustomOrder(slotIdx, lingIdx) {
     var grp = 'g' + slotIdx + '-custom';
-    var h = '<div class="ling" id="act10-ling-' + slotIdx + '-custom">';
+    var h = '<div class="ling" id="act10-ling-' + slotIdx + '-' + lingIdx + '">';
 
     // 令头
     h += '<div class="ling-header">';
@@ -1180,14 +1183,14 @@
 
     // 输入区（作为唯一选项）
     h += '<div class="branch-list">';
-    h += '<div class="opt zdjl-opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="custom" data-val="custom">';
+    h += '<div class="opt zdjl-opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="custom">';
     h += '<div class="zdjl-top"><div class="rdot"></div><span class="zdjl-tag">④</span><span class="zdjl-nm">填写自定军令</span></div>';
     h += '<div class="zdjl-wrap"><textarea class="zdjl-ta" rows="3" placeholder="请填写自定军令内容（需注明领域）…"></textarea></div>';
     h += '</div>';
     h += '</div>';
 
     // 备注区
-    h += '<div class="remark-block" id="act10-remark-' + slotIdx + '-custom"><div class="remark-lbl">备注（可选，不占额度）</div><textarea class="remark-ta" rows="1" placeholder="对此行动的补充说明…"></textarea></div>';
+    h += '<div class="remark-block" id="act10-remark-' + slotIdx + '-' + lingIdx + '"><div class="remark-lbl">备注（可选，不占额度）</div><textarea class="remark-ta" rows="1" placeholder="对此行动的补充说明…"></textarea></div>';
 
     h += '</div>';
     return h;
