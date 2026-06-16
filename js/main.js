@@ -891,6 +891,665 @@
   // ══════════════════════════════════════════
 
 
+  // ══════════════════════════════════════════
+  //  行动 Tab v10 — 完整渲染 + Supabase 提交模块
+  // ══════════════════════════════════════════
+
+  var ACT10_SUPA_URL = 'https://smiifcbmmtolimtaxpip.supabase.co/rest/v1/action_submissions_v2';
+  var ACT10_SLOT_NAMES = ['甲', '乙', '丙'];
+  var ACT10_SLOT_COLORS = { '甲': '0', '乙': '1', '丙': '2' };
+  var ACT10_LING_NUMS = ['①', '②', '③'];
+
+  function bindActionTab() {
+    var gmCopyBtn = document.getElementById('btn-gm-copy-all-actions');
+    if (gmCopyBtn) gmCopyBtn.addEventListener('click', _act10GMCopy);
+  }
+
+  async function renderActionTab(rd) {
+    if (!rd || !rd.parsed) return;
+    var parsed = rd.parsed;
+    _act10RoundStrip(parsed);
+    _act10Prestige(parsed);
+    _act10OppPool(parsed);
+    _act10Columns(parsed);
+    _act10SyncPresHeight();
+    await _act10LoadSubmissions(rd.round || parsed.round);
+  }
+
+  // ── 回合信息条 ──
+  function _act10RoundStrip(parsed) {
+    var el = document.getElementById('act10-round-strip');
+    if (!el) return;
+    var round = parsed.round || '';
+    var sp = parsed.storyParts || {};
+    var title = sp.title || '';
+    var season = sp.season || '';
+    var fm = parsed.firstMove || '';
+    var h = '';
+    h += '<div class="rs-block"><span class="rs-label">回合</span><span class="rs-val">第 ' + _act10Esc(round) + ' 回合</span></div>';
+    if (title) h += '<div class="rs-block"><span class="rs-label">标题</span><span class="rs-val small">' + _act10Esc(title) + '</span></div>';
+    if (season) h += '<div class="rs-block"><span class="rs-label">节气</span><span class="rs-val season">' + _act10Esc(season) + '</span></div>';
+    if (fm) h += '<div class="rs-block"><span class="rs-label">先手（威望最低）</span><span class="rs-val small" style="color:#c888e8;">' + _act10Esc(fm) + '</span></div>';
+    h += '<div class="rs-spacer"></div>';
+    h += '<div class="rs-rule">';
+    h += '<span class="rs-rule-item"><strong>3选2</strong> 执行</span><span class="rs-rule-sep"></span>';
+    h += '<span class="rs-rule-item">可自拟替换任意1-2条（注明领域）</span><span class="rs-rule-sep"></span>';
+    h += '<span class="rs-rule-item"><strong>机遇</strong>不占行动额度，选则放弃自拟权</span><span class="rs-rule-sep"></span>';
+    h += '<span class="rs-rule-item">零消耗不限量</span>';
+    h += '</div>';
+    el.innerHTML = h;
+  }
+
+  // ── 威望排行 ──
+  function _act10Prestige(parsed) {
+    var el = document.getElementById('act10-pres-body');
+    if (!el) return;
+    var pres = parsed.prestige;
+    if (!pres || !pres.entries || !pres.entries.length) {
+      el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-dim);font-size:.76rem;">等待GM数据</div>';
+      return;
+    }
+    var entries = pres.entries;
+    var maxS = entries[0].score || 1;
+    var h = '';
+    entries.forEach(function(e, idx) {
+      var rank = idx + 1;
+      var rCls = rank === 1 ? ' r1' : rank === 2 ? ' r2' : rank === 3 ? ' r3' : ' rn';
+      var isP = e.isPlayer;
+      var ck = isP ? (ACT10_SLOT_COLORS[e.name] || '0') : 'n';
+      var barCls = isP ? 'c' + ck + ' c' + ck + 's' : 'cn';
+      var nCls = isP ? '' : ' npc';
+      var pct = Math.round((e.score / maxS) * 100);
+      var dn = e.name;
+      if (isP) {
+        var pi = { '甲': 0, '乙': 1, '丙': 2 }[e.name];
+        if (pi !== undefined && state.players[pi] && state.players[pi].name) dn = state.players[pi].name;
+      }
+      h += '<div class="pres-row">';
+      h += '<span class="pr-rank' + rCls + '">' + rank + '</span>';
+      h += '<span class="pr-bar ' + barCls + '"></span>';
+      h += '<span class="pr-name' + nCls + '">' + _act10Esc(dn) + '</span>';
+      h += '<div class="pr-micro"><div class="pr-fill ' + barCls.split(' ')[0] + '" style="width:' + pct + '%"></div></div>';
+      h += '<span class="pr-val">' + e.score + '</span>';
+      h += '</div>';
+      // 玩家与 NPC 之间加分隔线
+      if (isP && idx < entries.length - 1 && !entries[idx + 1].isPlayer) {
+        h += '<div class="pr-divider"></div>';
+      }
+    });
+    el.innerHTML = h;
+  }
+
+  // ── 威望面板高度同步 ──
+  function _act10SyncPresHeight() {
+    var oppP = document.getElementById('act10-opp-panel');
+    var presB = document.getElementById('act10-pres-body');
+    if (!oppP || !presB) return;
+    if (window.innerWidth <= 900) { presB.style.maxHeight = '200px'; return; }
+    var oppH = oppP.getBoundingClientRect().height;
+    var hdEl = document.querySelector('#act10-pres-panel .panel-hd');
+    var hdH = hdEl ? hdEl.getBoundingClientRect().height : 36;
+    presB.style.maxHeight = Math.max(80, oppH - hdH - 8) + 'px';
+  }
+  window.addEventListener('resize', _act10SyncPresHeight);
+
+  // ── 公共机遇池 ──
+  function _act10OppPool(parsed) {
+    var el = document.getElementById('act10-opp-grid');
+    if (!el) return;
+    var opps = parsed.opportunities || [];
+    if (!opps.length) {
+      el.innerHTML = '<div class="opp-empty" style="grid-column:1/-1;text-align:center;padding:18px;color:var(--text-dim);font-size:.76rem;">本回合无公共机遇</div>';
+      return;
+    }
+    var TM = { compete: 'ot-jing', cooperate: 'ot-xie', epic: 'ot-shi', gamble: 'ot-du' };
+    var TI = { compete: '⚔️', cooperate: '🤝', epic: '🏆', gamble: '🎲' };
+    var TT = { compete: '竞争', cooperate: '协力', epic: '史诗', gamble: '赌博' };
+    var h = '';
+    opps.forEach(function(o) {
+      var cls = TM[o.type] || 'ot-jing';
+      h += '<div class="opp-display ' + cls + '">';
+      h += '<div class="opp-top"><span class="opp-id">机遇' + o.id + '</span><span class="opp-name">' + _act10Esc(o.title) + '</span><span class="opp-type-icon">' + (TI[o.type] || '⚔️') + '</span></div>';
+      h += '<div class="opp-desc">' + _act10Esc(o.desc) + '</div>';
+      h += '<div class="opp-foot"><span class="opp-pres">预估 +' + o.prestige + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
+      h += '</div>';
+    });
+    var COLS = 3;
+    var need = Math.ceil(opps.length / COLS) * COLS;
+    for (var i = opps.length; i < need; i++) h += '<div class="opp-empty"></div>';
+    el.innerHTML = h;
+  }
+
+  // ── 三家行动面板 ──
+  function _act10Columns(parsed) {
+    var el = document.getElementById('act10-cols-grid');
+    if (!el) return;
+    var actions = parsed.playerActions || {};
+    var opps = parsed.opportunities || [];
+    var pres = parsed.prestige;
+
+    // 移动端 tab 栏
+    var tabH = '<div class="mob-tabs" id="act10-mob-tabs">';
+    for (var t = 0; t < 3; t++) {
+      var tn = state.players[t] ? state.players[t].name : ACT10_SLOT_NAMES[t];
+      tabH += '<button class="mob-tab' + (t === 0 ? ' active' : '') + '" data-slot="' + t + '">' + _act10Esc(tn) + '</button>';
+    }
+    tabH += '</div>';
+
+    var h = '';
+    for (var i = 0; i < 3; i++) {
+      var sk = ACT10_SLOT_NAMES[i];
+      var sa = actions[sk];
+      var pn = state.players[i] ? state.players[i].name : '城主' + sk;
+      var pp = '';
+      if (pres && pres.entries) {
+        var pe = pres.entries.find(function(x) { return x.name === sk; });
+        if (pe) pp = pe.score;
+      }
+
+      h += '<div class="col-panel' + (i === 0 ? ' col-visible' : '') + '" data-slot="' + i + '">';
+      h += '<div class="col-head">';
+      h += '<span class="col-name">' + _act10Esc(pn) + '</span>';
+      h += '<span class="col-slot-tag">[' + sk + ']</span>';
+      h += '<div class="col-sel-badge" id="act10-badge-' + i + '"><span class="sc">0</span>/2 令已选</div>';
+      if (pp !== '') h += '<div class="col-pres-val"><span class="col-pres-num">' + pp + '</span><span class="col-pres-lbl"> 威望</span></div>';
+      h += '</div>';
+
+      // 已提交摘要区（初始隐藏，加载提交数据后填充）
+      h += '<div class="col-summary" id="act10-summary-' + i + '" style="display:none"></div>';
+
+      h += '<div class="col-body" id="act10-body-' + i + '">';
+
+      if (!sa) {
+        h += '<div style="text-align:center;padding:28px 10px;color:var(--text-dim);font-size:.82rem;">等待 GM 发布行动选项…</div>';
+      } else {
+        // 三个令
+        var lingKeys = ['wu', 'wen', 'ce'];
+        lingKeys.forEach(function(key, li) {
+          var ling = sa[key];
+          if (!ling) return;
+          h += _act10BuildLing(ling, li, i, key);
+        });
+
+        // 机遇选取区
+        h += _act10BuildOppSelect(opps, i);
+
+        // 零消耗
+        h += '<div class="zero-area"><label class="zero-lbl">零消耗（不限量）：派将驻城 / 收发书信 / 外交回应 / 安抚 / 同州调兵…</label>';
+        h += '<textarea class="zero-ta" id="act10-zero-' + i + '" rows="2" placeholder="输入零消耗行动（可多行）…"></textarea></div>';
+
+        // 提交区
+        h += '<div class="submit-area" id="act10-submit-' + i + '">';
+        h += '<button class="submit-btn" data-slot="' + i + '">提交行动</button>';
+        h += '<span class="submit-hint" id="act10-hint-' + i + '">请选择两令后提交（3选2）</span>';
+        h += '<div class="val-toast" id="act10-toast-' + i + '"></div>';
+        h += '</div>';
+      }
+
+      h += '</div></div>';
+    }
+    el.innerHTML = tabH + h;
+    _act10BindAll();
+  }
+
+  // ── 构建单个令 HTML ──
+  function _act10BuildLing(ling, lingIdx, slotIdx, lingKey) {
+    var grp = 'g' + slotIdx + '-' + lingKey;
+    var h = '<div class="ling" id="act10-ling-' + slotIdx + '-' + lingIdx + '">';
+
+    // 令头
+    h += '<div class="ling-header"><span class="ling-num">' + ACT10_LING_NUMS[lingIdx] + '</span><div class="ling-main">';
+    h += '<div class="ling-title-row"><span class="ling-name">' + _act10Esc(ling.title || ling.name || '') + '</span>';
+    if (ling.risk || ling.prestige) {
+      var rc = ling.risk === '稳' ? 'chip-s' : ling.risk === '险' ? 'chip-r' : 'chip-m';
+      h += '<div class="ling-risk">';
+      if (ling.risk) h += '<span class="chip ' + rc + '">' + _act10Esc(ling.risk) + '</span>';
+      if (ling.prestige) h += '<span class="ling-pres">预估 +' + _act10Esc(ling.prestige) + ' 威望</span>';
+      h += '</div>';
+    }
+    h += '</div>';
+    if (ling.quote) {
+      h += '<div class="ling-quote"><span class="ling-quote-marks">「</span><span class="ling-quote-text">' + _act10Esc(ling.quote) + '</span><span class="ling-quote-marks">」</span>';
+      if (ling.quoteWho) h += '<span class="ling-quote-who">— ' + _act10Esc(ling.quoteWho) + '</span>';
+      h += '</div>';
+    }
+    if (ling.note) h += '<div class="ling-note">' + _act10Esc(ling.note) + '</div>';
+    h += '</div></div>';
+
+    // 分支列表
+    h += '<div class="branch-list">';
+    // 优先读 options 数组（parser 标准输出）
+    var opts = ling.options || [];
+    if (opts.length) {
+      opts.forEach(function(opt) {
+        h += '<div class="opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="' + _act10Esc(opt.label || opt.name) + '">';
+        h += '<div class="rdot"></div><div class="opt-body">';
+        if (opt.label) h += '<span class="opt-lbl">' + _act10Esc(opt.label) + '.</span>';
+        h += '<span class="opt-nm">' + _act10Esc(opt.name) + '</span>';
+        if (opt.desc) h += '<div class="opt-desc">' + _act10Esc(opt.desc) + '</div>';
+        h += '</div></div>';
+      });
+    } else {
+      // 兜底：读 a/b/c 字段
+      var optKeys = Object.keys(ling).filter(function(k) { return /^[a-c]$/.test(k); }).sort();
+      if (optKeys.length) {
+        optKeys.forEach(function(k) {
+          var o = ling[k]; if (!o) return;
+          h += '<div class="opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="' + k.toUpperCase() + '">';
+          h += '<div class="rdot"></div><div class="opt-body"><span class="opt-lbl">' + k.toUpperCase() + '.</span><span class="opt-nm">' + _act10Esc(o.name) + '</span>';
+          if (o.desc) h += '<div class="opt-desc">' + _act10Esc(o.desc) + '</div>';
+          h += '</div></div>';
+        });
+      } else if (ling.desc) {
+        // 直球令
+        h += '<div class="opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="execute">';
+        h += '<div class="rdot"></div><div class="opt-body"><span class="opt-nm">执行此谋略</span><div class="opt-desc">' + _act10Esc(ling.desc) + '</div></div></div>';
+      }
+    }
+    // 自定军令
+    h += '<div class="opt zdjl-opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="custom">';
+    h += '<div class="zdjl-top"><div class="rdot"></div><span class="zdjl-tag">自定</span><span class="zdjl-nm">自定军令</span><span class="zdjl-sub">替换本令·算1行动</span></div>';
+    h += '<div class="zdjl-wrap"><textarea class="zdjl-ta" rows="2" placeholder="请填写自定军令内容（需注明领域）…"></textarea></div>';
+    h += '</div>';
+    h += '</div>';
+
+    // 备注区
+    h += '<div class="remark-block" id="act10-remark-' + slotIdx + '-' + lingIdx + '"><div class="remark-lbl">备注（可选）</div><textarea class="remark-ta" rows="1" placeholder=""></textarea></div>';
+
+    h += '</div>';
+    return h;
+  }
+
+  // ── 构建机遇选取区 ──
+  function _act10BuildOppSelect(opps, slotIdx) {
+    var TI = { compete: '⚔️', cooperate: '🤝', epic: '🏆', gamble: '🎲' };
+    var TT = { compete: '竞争', cooperate: '协力', epic: '史诗', gamble: '赌博' };
+    var TC = { compete: 'chip-ot-jing', cooperate: 'chip-ot-xie', epic: 'chip-ot-shi', gamble: 'chip-ot-du' };
+    var grp = 'opp-g' + slotIdx;
+    var h = '<div class="opp-select-block">';
+    h += '<div class="opp-select-hd"><span class="chip chip-opp" style="font-size:.6rem;">机遇</span><span class="opp-select-title">选取机遇（可选）</span><span class="opp-select-hint">选则放弃自拟权</span></div>';
+    h += '<div class="opp-active-hint">已选机遇 · 自定军令已禁用</div>';
+    opps.forEach(function(o) {
+      h += '<div class="opp-opt-row" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-opp-id="' + o.id + '">';
+      h += '<div class="opp-rdot"></div>';
+      h += '<span class="opp-opt-icon">' + (TI[o.type] || '⚔️') + '</span>';
+      h += '<span class="opp-opt-name">机遇' + o.id + ' · ' + _act10Esc(o.title) + '</span>';
+      h += '<span class="opp-opt-pres">+' + o.prestige + '</span>';
+      h += '<span class="chip ' + (TC[o.type] || 'chip-ot-jing') + '" style="margin-left:2px;">' + (TT[o.type] || '竞争') + '</span>';
+      h += '</div>';
+    });
+    h += '<div class="opp-opt-row no-opp checked" data-grp="' + grp + '" data-slot="' + slotIdx + '">';
+    h += '<div class="opp-rdot"></div><span class="opp-opt-name">不选机遇 · 保留自拟权</span></div>';
+    h += '<div class="opp-no-sel-note">不占行动额度 · 每人每回合最多选1条</div>';
+    h += '</div>';
+    return h;
+  }
+
+  // ══════════════════════════════════════════
+  //  交互绑定
+  // ══════════════════════════════════════════
+  function _act10BindAll() {
+    var root = document.getElementById('act10-root');
+    if (!root) return;
+
+    // 选项 Toggle
+    root.querySelectorAll('.opt').forEach(function(opt) {
+      opt.addEventListener('click', function(e) {
+        if (e.target.tagName === 'TEXTAREA') return;
+        var grp = this.dataset.grp;
+        var si = parseInt(this.dataset.slot);
+        var li = parseInt(this.dataset.ling);
+        var already = this.classList.contains('checked');
+        root.querySelectorAll('.opt[data-grp="' + grp + '"]').forEach(function(c) { c.classList.remove('checked'); });
+        var rem = document.getElementById('act10-remark-' + si + '-' + li);
+        if (!already) {
+          this.classList.add('checked');
+          if (rem) { this.classList.contains('zdjl-opt') ? rem.classList.remove('visible') : rem.classList.add('visible'); }
+        } else {
+          if (rem) rem.classList.remove('visible');
+        }
+        _act10UpdateBadge(si);
+        _act10HideToast(si);
+      });
+    });
+
+    // 机遇 Toggle
+    root.querySelectorAll('.opp-opt-row').forEach(function(row) {
+      row.addEventListener('click', function() {
+        var grp = this.dataset.grp;
+        var si = parseInt(this.dataset.slot);
+        var already = this.classList.contains('checked');
+        root.querySelectorAll('.opp-opt-row[data-grp="' + grp + '"]').forEach(function(c) { c.classList.remove('checked'); });
+        var panel = root.querySelector('.col-panel[data-slot="' + si + '"]');
+        if (!already) {
+          this.classList.add('checked');
+          if (panel) panel.classList.toggle('opp-active', !this.classList.contains('no-opp'));
+        } else {
+          if (panel) panel.classList.remove('opp-active');
+        }
+        _act10HideToast(si);
+      });
+    });
+
+    // textarea 阻止冒泡
+    root.querySelectorAll('.zdjl-ta, .remark-ta, .zero-ta').forEach(function(ta) {
+      ta.addEventListener('click', function(e) { e.stopPropagation(); });
+    });
+
+    // 提交按钮
+    root.querySelectorAll('.submit-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() { _act10Submit(parseInt(this.dataset.slot)); });
+    });
+
+    // 移动端 tab
+    var mobTabs = root.querySelectorAll('.mob-tab');
+    mobTabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        var slot = parseInt(this.dataset.slot);
+        mobTabs.forEach(function(t) { t.classList.remove('active'); });
+        this.classList.add('active');
+        root.querySelectorAll('.col-panel').forEach(function(p, pi) {
+          p.classList.toggle('col-visible', pi === slot);
+        });
+      });
+    });
+  }
+
+  function _act10UpdateBadge(si) {
+    var root = document.getElementById('act10-root');
+    if (!root) return;
+    var panel = root.querySelector('.col-panel[data-slot="' + si + '"]');
+    if (!panel) return;
+    var count = Math.min(panel.querySelectorAll('.branch-list .opt.checked').length, 2);
+    var badge = document.getElementById('act10-badge-' + si);
+    if (badge) {
+      badge.querySelector('.sc').textContent = count;
+      badge.classList.toggle('full', count >= 2);
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  收集选择数据
+  // ══════════════════════════════════════════
+  function _act10CollectSlot(slotIdx) {
+    var root = document.getElementById('act10-root');
+    if (!root) return null;
+    var panel = root.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+    if (!panel) return null;
+
+    var lingSelections = [];
+    var remarks = [];
+    panel.querySelectorAll('.ling').forEach(function(ling, li) {
+      var checked = ling.querySelector('.opt.checked');
+      if (!checked) return;
+      var val = checked.dataset.val || '';
+      var customText = null;
+      if (checked.classList.contains('zdjl-opt')) {
+        var ta = checked.querySelector('.zdjl-ta');
+        customText = ta ? ta.value.trim() : '';
+        if (!customText) return; // 自定军令为空不计
+      }
+      lingSelections.push({ lingIdx: li, choice: val, customText: customText });
+      // 备注
+      var remEl = document.getElementById('act10-remark-' + slotIdx + '-' + li);
+      if (remEl && remEl.classList.contains('visible')) {
+        var remTa = remEl.querySelector('.remark-ta');
+        if (remTa && remTa.value.trim()) {
+          remarks.push({ lingIdx: li, text: remTa.value.trim() });
+        }
+      }
+    });
+
+    // 机遇
+    var oppSel = { type: 'none' };
+    var oppChecked = panel.querySelector('.opp-opt-row.checked:not(.no-opp)');
+    if (oppChecked) {
+      oppSel = { type: 'opp', oppId: oppChecked.dataset.oppId || '' };
+    }
+
+    // 零消耗
+    var zeroTa = document.getElementById('act10-zero-' + slotIdx);
+    var zeroCost = zeroTa ? zeroTa.value.trim() : '';
+
+    return {
+      ling_selections: lingSelections,
+      opp_selection: oppSel,
+      zero_cost: zeroCost,
+      remarks: remarks
+    };
+  }
+
+  // ══════════════════════════════════════════
+  //  提交到 Supabase
+  // ══════════════════════════════════════════
+  async function _act10Submit(slotIdx) {
+    var root = document.getElementById('act10-root');
+    if (!root) return;
+    var panel = root.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+    if (!panel) return;
+    var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (!currentRound) { showToast('当前无回合数据'); return; }
+
+    // 校验
+    var reasons = [];
+    var actionCount = 0;
+    var zdjlEmpty = false;
+    panel.querySelectorAll('.ling').forEach(function(ling) {
+      var reg = ling.querySelector('.opt:not(.zdjl-opt).checked');
+      if (reg) { actionCount++; return; }
+      var zd = ling.querySelector('.zdjl-opt.checked');
+      if (zd) {
+        var ta = zd.querySelector('.zdjl-ta');
+        (ta && ta.value.trim()) ? actionCount++ : (zdjlEmpty = true);
+      }
+    });
+    if (actionCount < 2) reasons.push('还需选择 <b>' + (2 - actionCount) + '</b> 个行动令（已选 ' + actionCount + ' / 2）');
+    if (zdjlEmpty) reasons.push('已勾选「自定军令」但内容为空，请填写后再提交');
+    if (!panel.querySelector('.opp-opt-row.checked')) reasons.push('请在机遇区做出选择（选取一条机遇，或选「不选机遇」）');
+    if (reasons.length) { _act10ShowToast(slotIdx, reasons); return; }
+    _act10HideToast(slotIdx);
+
+    var data = _act10CollectSlot(slotIdx);
+    if (!data) return;
+
+    var payload = {
+      round: currentRound,
+      slot: ACT10_SLOT_NAMES[slotIdx],
+      ling_selections: JSON.stringify(data.ling_selections),
+      opp_selection: JSON.stringify(data.opp_selection),
+      zero_cost: data.zero_cost,
+      remarks: JSON.stringify(data.remarks)
+    };
+
+    var btn = panel.querySelector('.submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 提交中…'; }
+
+    try {
+      // UPSERT by round+slot
+      var res = await fetchWithTimeout(ACT10_SUPA_URL, {
+        method: 'POST',
+        headers: Object.assign({}, SUPA_HEADERS, { 'Prefer': 'return=representation,resolution=merge-duplicates' }),
+        body: JSON.stringify(payload),
+      }, 10000);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      showToast('✅ ' + ACT10_SLOT_NAMES[slotIdx] + ' 行动已提交！');
+      await _act10LoadSubmissions(currentRound);
+    } catch (e) {
+      console.error('[act10] 提交失败:', e);
+      showToast('❌ 提交失败，请重试');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '提交行动'; }
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  加载已提交数据 + 渲染摘要 + GM 复制按钮
+  // ══════════════════════════════════════════
+  async function _act10LoadSubmissions(roundNum) {
+    if (!roundNum) return;
+    try {
+      var res = await fetchWithTimeout(
+        ACT10_SUPA_URL + '?round=eq.' + roundNum + '&select=*',
+        { headers: SUPA_HEADERS }, 8000
+      );
+      if (!res.ok) return;
+      var rows = await res.json();
+      var submitted = {};
+      rows.forEach(function(r) { submitted[r.slot] = r; });
+
+      // 渲染摘要 + 控制提交区
+      ACT10_SLOT_NAMES.forEach(function(sk, i) {
+        var sumEl = document.getElementById('act10-summary-' + i);
+        var subArea = document.getElementById('act10-submit-' + i);
+        var sub = submitted[sk];
+        if (sub) {
+          // 显示摘要
+          if (sumEl) {
+            sumEl.style.display = '';
+            sumEl.innerHTML = _act10BuildSummary(sub, i);
+          }
+          // 提交区改为"已提交 + 修改按钮"
+          if (subArea) {
+            subArea.innerHTML = '<div class="submitted-tag">✅ 已提交行动</div>'
+              + '<button class="withdraw-btn" data-slot="' + i + '">修改</button>';
+            subArea.querySelector('.withdraw-btn').addEventListener('click', function() {
+              _act10Withdraw(parseInt(this.dataset.slot));
+            });
+          }
+        } else {
+          if (sumEl) sumEl.style.display = 'none';
+        }
+      });
+
+      // GM 复制按钮
+      var allDone = ACT10_SLOT_NAMES.every(function(s) { return !!submitted[s]; });
+      var gmBtn = document.getElementById('btn-gm-copy-all-actions');
+      if (gmBtn) gmBtn.disabled = !allDone;
+
+      // 缓存提交数据给 GM 复制用
+      window._act10Submitted = submitted;
+    } catch (e) {
+      console.error('[act10] 加载提交状态失败:', e);
+    }
+  }
+
+  // ── 构建已提交摘要 HTML ──
+  function _act10BuildSummary(sub, slotIdx) {
+    var sels = [];
+    try { sels = typeof sub.ling_selections === 'string' ? JSON.parse(sub.ling_selections) : (sub.ling_selections || []); } catch (e) { sels = []; }
+    var opp = {};
+    try { opp = typeof sub.opp_selection === 'string' ? JSON.parse(sub.opp_selection) : (sub.opp_selection || {}); } catch (e) { opp = {}; }
+    var rems = [];
+    try { rems = typeof sub.remarks === 'string' ? JSON.parse(sub.remarks) : (sub.remarks || []); } catch (e) { rems = []; }
+
+    var h = '<div class="col-summary-hd">已提交行动</div>';
+    sels.forEach(function(sel) {
+      var label = '行动' + ACT10_LING_NUMS[sel.lingIdx];
+      var val = sel.choice === 'custom' ? '自定军令: ' + _act10Esc(sel.customText || '') : ACT10_LING_NUMS[sel.lingIdx] + ' ' + _act10Esc(sel.choice);
+      h += '<div class="col-summary-row"><span class="sum-lbl">' + label + '</span><span class="sum-val">' + val + '</span></div>';
+    });
+    if (opp.type === 'opp') {
+      h += '<div class="col-summary-row"><span class="sum-lbl">机遇</span><span class="sum-val">机遇' + _act10Esc(opp.oppId) + '</span></div>';
+    }
+    if (sub.zero_cost) {
+      h += '<div class="col-summary-row"><span class="sum-lbl">零消耗</span><span class="sum-val dim">' + _act10Esc(sub.zero_cost) + '</span></div>';
+    }
+    rems.forEach(function(rem) {
+      h += '<div class="col-summary-row"><span class="sum-lbl">备注' + ACT10_LING_NUMS[rem.lingIdx] + '</span><span class="sum-val dim">' + _act10Esc(rem.text) + '</span></div>';
+    });
+    return h;
+  }
+
+  // ── 修改（撤回后重新编辑）──
+  async function _act10Withdraw(slotIdx) {
+    var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (!currentRound) return;
+    var sk = ACT10_SLOT_NAMES[slotIdx];
+
+    // 隐藏摘要
+    var sumEl = document.getElementById('act10-summary-' + slotIdx);
+    if (sumEl) sumEl.style.display = 'none';
+
+    // 恢复提交按钮
+    var subArea = document.getElementById('act10-submit-' + slotIdx);
+    if (subArea) {
+      subArea.innerHTML = '<button class="submit-btn" data-slot="' + slotIdx + '">提交行动</button>'
+        + '<span class="submit-hint" id="act10-hint-' + slotIdx + '">修改后重新提交</span>'
+        + '<div class="val-toast" id="act10-toast-' + slotIdx + '"></div>';
+      subArea.querySelector('.submit-btn').addEventListener('click', function() {
+        _act10Submit(parseInt(this.dataset.slot));
+      });
+    }
+  }
+
+  // ── GM 一键复制 ──
+  async function _act10GMCopy() {
+    var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (!currentRound) return;
+    var submitted = window._act10Submitted || {};
+
+    var text = '第 ' + currentRound + ' 回合 · 玩家行动\n\n';
+    ACT10_SLOT_NAMES.forEach(function(sk, i) {
+      var name = state.players[i] ? state.players[i].name : sk;
+      var sub = submitted[sk];
+      text += name + ' [' + sk + ']\n';
+      if (!sub) { text += '  （未提交）\n\n'; return; }
+
+      var sels = [];
+      try { sels = typeof sub.ling_selections === 'string' ? JSON.parse(sub.ling_selections) : (sub.ling_selections || []); } catch (e) {}
+      var opp = {};
+      try { opp = typeof sub.opp_selection === 'string' ? JSON.parse(sub.opp_selection) : (sub.opp_selection || {}); } catch (e) {}
+      var rems = [];
+      try { rems = typeof sub.remarks === 'string' ? JSON.parse(sub.remarks) : (sub.remarks || []); } catch (e) {}
+
+      sels.forEach(function(sel) {
+        var label = '  行动' + ACT10_LING_NUMS[sel.lingIdx] + ': ';
+        if (sel.choice === 'custom') {
+          text += label + '自定军令: ' + (sel.customText || '') + '\n';
+        } else {
+          text += label + sel.choice + '\n';
+        }
+      });
+      if (opp.type === 'opp') {
+        text += '  机遇: 机遇' + (opp.oppId || '') + '\n';
+      } else {
+        text += '  机遇: 不选\n';
+      }
+      if (sub.zero_cost) text += '  零消耗: ' + sub.zero_cost + '\n';
+      rems.forEach(function(rem) {
+        text += '  备注' + ACT10_LING_NUMS[rem.lingIdx] + ': ' + rem.text + '\n';
+      });
+      text += '\n';
+    });
+
+    try {
+      await navigator.clipboard.writeText(text.trim());
+      showToast('📋 已复制全部行动');
+      var okEl = document.getElementById('gm-copy-all-ok');
+      if (okEl) { okEl.classList.remove('hidden'); setTimeout(function() { okEl.classList.add('hidden'); }, 2500); }
+    } catch (e) {
+      showToast('❌ 复制失败');
+    }
+  }
+
+  // ── Toast ──
+  function _act10ShowToast(si, reasons) {
+    var t = document.getElementById('act10-toast-' + si);
+    if (!t) return;
+    t.innerHTML = '<div class="val-toast-hd">⚠️ 提交条件未满足</div><ul>' + reasons.map(function(r) { return '<li>' + r + '</li>'; }).join('') + '</ul>';
+    t.classList.add('show');
+  }
+  function _act10HideToast(si) {
+    var t = document.getElementById('act10-toast-' + si);
+    if (t) t.classList.remove('show');
+  }
+
+  // ── HTML 转义 ──
+  function _act10Esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   function renderAll() {
     const hasData = state.rounds.length > 0;
     const emptyEl = document.getElementById('arena-empty');
