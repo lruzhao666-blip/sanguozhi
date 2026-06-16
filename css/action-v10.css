@@ -252,7 +252,8 @@
 }
 .act10 .zdjl-ta:focus{border-color:rgba(212,168,67,.58);border-style:solid;background:rgba(0,0,0,.5);}
 .act10 .zdjl-ta::placeholder{color:var(--text-dim);font-style:italic;}
-.act10 .col-panel.opp-active .zdjl-opt{opacity:.25;pointer-events:none;filter:saturate(.1);}
+/* v6.2: 机遇不再禁用自定军令 */
+/* .act10 .col-panel.opp-active .zdjl-opt{opacity:.25;pointer-events:none;filter:saturate(.1);} */
 
 /* 备注区 */
 .act10 .remark-block{border:1px solid rgba(255,255,255,.07);border-top:none;background:rgba(0,0,0,.14);padding:6px 10px 7px;border-radius:0 0 var(--r) var(--r);display:none;}

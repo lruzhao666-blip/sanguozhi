@@ -931,12 +931,7 @@
     if (season) h += '<div class="rs-block"><span class="rs-label">节气</span><span class="rs-val season">' + _act10Esc(season) + '</span></div>';
     if (fm) h += '<div class="rs-block"><span class="rs-label">先手（威望最低）</span><span class="rs-val small" style="color:#c888e8;">' + _act10Esc(fm) + '</span></div>';
     h += '<div class="rs-spacer"></div>';
-    h += '<div class="rs-rule">';
-    h += '<span class="rs-rule-item"><strong>3选2</strong> 执行</span><span class="rs-rule-sep"></span>';
-    h += '<span class="rs-rule-item">可自拟替换任意1-2条（注明领域）</span><span class="rs-rule-sep"></span>';
-    h += '<span class="rs-rule-item"><strong>机遇</strong>不占行动额度，选则放弃自拟权</span><span class="rs-rule-sep"></span>';
-    h += '<span class="rs-rule-item">零消耗不限量</span>';
-    h += '</div>';
+    /* v6.2: 规则描述已删除 */
     el.innerHTML = h;
   }
 
@@ -1063,7 +1058,7 @@
       if (!sa) {
         h += '<div style="text-align:center;padding:28px 10px;color:var(--text-dim);font-size:.82rem;">等待 GM 发布行动选项…</div>';
       } else {
-        // v6.2: 优先读 items 数组（①②③），降级读旧 wu/wen/ce
+        // v6.2: ①②③ 建议令 + ④ 自定军令（4选2）
         var lingItems = sa.items || [];
         if (lingItems.length) {
           lingItems.forEach(function(item, li) {
@@ -1078,12 +1073,11 @@
           });
         }
 
-        // 机遇选取区
-        h += _act10BuildOppSelect(opps, i);
+        // ④ 自定军令（和①②③同级，4选2）
+        h += _act10BuildCustomOrder(i);
 
-        // 零消耗
-        h += '<div class="zero-area"><label class="zero-lbl">零消耗（不限量）：派将驻城 / 收发书信 / 外交回应 / 安抚 / 同州调兵…</label>';
-        h += '<textarea class="zero-ta" id="act10-zero-' + i + '" rows="2" placeholder="输入零消耗行动（可多行）…"></textarea></div>';
+        // 机遇选取区（占1个行动额度）
+        h += _act10BuildOppSelect(opps, i);
 
         // 提交区
         h += '<div class="submit-area" id="act10-submit-' + i + '">';
@@ -1153,15 +1147,38 @@
         h += '<div class="rdot"></div><div class="opt-body"><span class="opt-nm">执行此谋略</span><div class="opt-desc">' + _act10Esc(ling.desc) + '</div></div></div>';
       }
     }
-    // 自定军令
-    h += '<div class="opt zdjl-opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="custom">';
-    h += '<div class="zdjl-top"><div class="rdot"></div><span class="zdjl-tag">自定</span><span class="zdjl-nm">自定军令</span><span class="zdjl-sub">替换本令·算1行动</span></div>';
-    h += '<div class="zdjl-wrap"><textarea class="zdjl-ta" rows="2" placeholder="请填写自定军令内容（需注明领域）…"></textarea></div>';
+    h += '</div>';
+
+    // 备注区（选中此令后显示，不占额度）
+    h += '<div class="remark-block" id="act10-remark-' + slotIdx + '-' + lingIdx + '"><div class="remark-lbl">备注（可选，不占额度）</div><textarea class="remark-ta" rows="1" placeholder="对此行动的补充说明…"></textarea></div>';
+
+    h += '</div>';
+    return h;
+  }
+
+  // ── 构建④自定军令（和①②③同级）──
+  function _act10BuildCustomOrder(slotIdx) {
+    var grp = 'g' + slotIdx + '-custom';
+    var h = '<div class="ling" id="act10-ling-' + slotIdx + '-custom">';
+
+    // 令头
+    h += '<div class="ling-header">';
+    h += '<span class="ling-num">④</span>';
+    h += '<div class="ling-main">';
+    h += '<div class="ling-title-row"><span class="ling-name">自定军令</span></div>';
+    h += '<div class="ling-note">自拟行动内容，需注明领域。与①②③同级，占1个行动额度。</div>';
+    h += '</div></div>';
+
+    // 输入区（作为唯一选项）
+    h += '<div class="branch-list">';
+    h += '<div class="opt zdjl-opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="custom" data-val="custom">';
+    h += '<div class="zdjl-top"><div class="rdot"></div><span class="zdjl-tag">④</span><span class="zdjl-nm">填写自定军令</span></div>';
+    h += '<div class="zdjl-wrap"><textarea class="zdjl-ta" rows="3" placeholder="请填写自定军令内容（需注明领域）…"></textarea></div>';
     h += '</div>';
     h += '</div>';
 
     // 备注区
-    h += '<div class="remark-block" id="act10-remark-' + slotIdx + '-' + lingIdx + '"><div class="remark-lbl">备注（可选）</div><textarea class="remark-ta" rows="1" placeholder=""></textarea></div>';
+    h += '<div class="remark-block" id="act10-remark-' + slotIdx + '-custom"><div class="remark-lbl">备注（可选，不占额度）</div><textarea class="remark-ta" rows="1" placeholder="对此行动的补充说明…"></textarea></div>';
 
     h += '</div>';
     return h;
@@ -1174,8 +1191,8 @@
     var TC = { compete: 'chip-ot-jing', cooperate: 'chip-ot-xie', epic: 'chip-ot-shi', gamble: 'chip-ot-du' };
     var grp = 'opp-g' + slotIdx;
     var h = '<div class="opp-select-block">';
-    h += '<div class="opp-select-hd"><span class="chip chip-opp" style="font-size:.6rem;">机遇</span><span class="opp-select-title">选取机遇（可选）</span><span class="opp-select-hint">选则放弃自拟权</span></div>';
-    h += '<div class="opp-active-hint">已选机遇 · 自定军令已禁用</div>';
+    h += '<div class="opp-select-hd"><span class="chip chip-opp" style="font-size:.6rem;">机遇</span><span class="opp-select-title">选取机遇（可选）</span><span class="opp-select-hint">占1个行动额度</span></div>';
+    h += '<div class="opp-active-hint">已选机遇 · 占用1个行动额度，还可再选1条令</div>';
     opps.forEach(function(o) {
       h += '<div class="opp-opt-row" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-opp-id="' + o.id + '">';
       h += '<div class="opp-rdot"></div>';
@@ -1187,7 +1204,7 @@
     });
     h += '<div class="opp-opt-row no-opp checked" data-grp="' + grp + '" data-slot="' + slotIdx + '">';
     h += '<div class="opp-rdot"></div><span class="opp-opt-name">不选机遇 · 保留自拟权</span></div>';
-    h += '<div class="opp-no-sel-note">不占行动额度 · 每人每回合最多选1条</div>';
+    h += '<div class="opp-no-sel-note">占1个行动额度 · 每人每回合最多选1条</div>';
     h += '</div>';
     return h;
   }
@@ -1211,7 +1228,7 @@
         var rem = document.getElementById('act10-remark-' + si + '-' + li);
         if (!already) {
           this.classList.add('checked');
-          if (rem) { this.classList.contains('zdjl-opt') ? rem.classList.remove('visible') : rem.classList.add('visible'); }
+          if (rem) rem.classList.add('visible');
         } else {
           if (rem) rem.classList.remove('visible');
         }
@@ -1234,6 +1251,7 @@
         } else {
           if (panel) panel.classList.remove('opp-active');
         }
+        _act10UpdateBadge(si);
         _act10HideToast(si);
       });
     });
@@ -1267,11 +1285,16 @@
     if (!root) return;
     var panel = root.querySelector('.col-panel[data-slot="' + si + '"]');
     if (!panel) return;
-    var count = Math.min(panel.querySelectorAll('.branch-list .opt.checked').length, 2);
+    // 令选中数（①②③④ 中选中的）
+    var lingCount = panel.querySelectorAll('.branch-list .opt.checked').length;
+    // 机遇是否选中（非"不选机遇"）
+    var oppChecked = panel.querySelector('.opp-opt-row.checked:not(.no-opp)');
+    var oppCount = oppChecked ? 1 : 0;
+    var total = Math.min(lingCount + oppCount, 2);
     var badge = document.getElementById('act10-badge-' + si);
     if (badge) {
-      badge.querySelector('.sc').textContent = count;
-      badge.classList.toggle('full', count >= 2);
+      badge.querySelector('.sc').textContent = total;
+      badge.classList.toggle('full', total >= 2);
     }
   }
 
@@ -1314,9 +1337,8 @@
       oppSel = { type: 'opp', oppId: oppChecked.dataset.oppId || '' };
     }
 
-    // 零消耗
-    var zeroTa = document.getElementById('act10-zero-' + slotIdx);
-    var zeroCost = zeroTa ? zeroTa.value.trim() : '';
+    // 零消耗已删除
+    var zeroCost = '';
 
     return {
       ling_selections: lingSelections,
@@ -1337,22 +1359,31 @@
     var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
     if (!currentRound) { showToast('当前无回合数据'); return; }
 
-    // 校验
+    // 校验：总额度2，机遇占1，令占1~2
     var reasons = [];
-    var actionCount = 0;
+    var lingCount = 0;
     var zdjlEmpty = false;
     panel.querySelectorAll('.ling').forEach(function(ling) {
       var reg = ling.querySelector('.opt:not(.zdjl-opt).checked');
-      if (reg) { actionCount++; return; }
+      if (reg) { lingCount++; return; }
       var zd = ling.querySelector('.zdjl-opt.checked');
       if (zd) {
         var ta = zd.querySelector('.zdjl-ta');
-        (ta && ta.value.trim()) ? actionCount++ : (zdjlEmpty = true);
+        (ta && ta.value.trim()) ? lingCount++ : (zdjlEmpty = true);
       }
     });
-    if (actionCount < 2) reasons.push('还需选择 <b>' + (2 - actionCount) + '</b> 个行动令（已选 ' + actionCount + ' / 2）');
+    var oppChecked = panel.querySelector('.opp-opt-row.checked:not(.no-opp)');
+    var oppCount = oppChecked ? 1 : 0;
+    var totalUsed = lingCount + oppCount;
+    if (!panel.querySelector('.opp-opt-row.checked')) {
+      reasons.push('请在机遇区做出选择（选取一条机遇，或选「不选机遇」）');
+    } else if (totalUsed < 2) {
+      var need = 2 - totalUsed;
+      reasons.push('还需选择 <b>' + need + '</b> 个行动' + (oppCount ? '令' : '') + '（已用 ' + totalUsed + ' / 2 额度）');
+    } else if (totalUsed > 2) {
+      reasons.push('行动额度已超（已选 ' + totalUsed + ' / 2）。机遇占1个额度，请减少令的选择');
+    }
     if (zdjlEmpty) reasons.push('已勾选「自定军令」但内容为空，请填写后再提交');
-    if (!panel.querySelector('.opp-opt-row.checked')) reasons.push('请在机遇区做出选择（选取一条机遇，或选「不选机遇」）');
     if (reasons.length) { _act10ShowToast(slotIdx, reasons); return; }
     _act10HideToast(slotIdx);
 
