@@ -140,10 +140,10 @@ window.SGParser = (function () {
       result.firstMove = firstMoveMatch[1].trim();
     }
 
-    // Step 3: 提取公共机遇
-    const oppMatch = actionsText.match(/公共机遇[池]?[^:：]*[:：]?\s*\n([\s\S]*?)(?=\n\s*={3}\s*\n|\n\s*[\u4e00-\u9fa5]+\s*\[[甲乙丙]\]|\n\s*$)/);
-    if (oppMatch) {
-      const oppText = oppMatch[1] || oppMatch[0];
+    // Step 3: 提取公共机遇（含多行详情）
+    const oppBlockMatch = actionsText.match(/公共机遇[池]?[^:：]*[:：]?\s*\n([\s\S]*?)(?=\n\s*={3}\s*\n|\n\s*[\u4e00-\u9fa5]+\s*\[[甲乙丙]\]|\n\s*$)/);
+    if (oppBlockMatch) {
+      const oppText = oppBlockMatch[1] || oppBlockMatch[0];
       const EMOJI_TYPE_MAP = {
         '🏆': 'epic', '⚔': 'compete', '⚔️': 'compete',
         '🤝': 'cooperate', '🎲': 'gamble'
@@ -153,14 +153,27 @@ window.SGParser = (function () {
         '协力': 'cooperate', '赌博': 'gamble'
       };
 
-      const lines = oppText.split('\n');
-      for (const line of lines) {
-        const t = line.trim();
-        if (!t) continue;
-        const m = t.match(
-          /^机遇(\d+)\s*·\s*(.+?)\s*[—–-]\s*(.+?)\s*[（(]([^）)]*?)\+?(\d+)\s*威望\s*[）)]/
-        );
+      // 按机遇头行切分块
+      const oppLines = oppText.split('\n');
+      const OPP_HEAD_RE = /^机遇(\d+)\s*·\s*(.+?)\s*[—–-]\s*(.+?)\s*[（(]([^）)]*?)\+?(-?\d+(?:[~～]\+?\d+)?)\s*威望\s*[）)]/;
+      let currentOpp = null;
+      const flushOpp = () => {
+        if (currentOpp) {
+          result.opportunities.push(currentOpp);
+          currentOpp = null;
+        }
+      };
+
+      for (let oi = 0; oi < oppLines.length; oi++) {
+        const t = oppLines[oi].trim();
+        if (!t) {
+          // 空行：如果当前有 opp 且已有 detail 行，继续收集
+          if (currentOpp && currentOpp.detail) currentOpp.detail += '\n';
+          continue;
+        }
+        const m = t.match(OPP_HEAD_RE);
         if (m) {
+          flushOpp();
           const rawTitle = m[2].trim();
           const paren = m[4] || '';
           let type = 'compete';
@@ -175,16 +188,28 @@ window.SGParser = (function () {
           const cleanTitle = rawTitle
             .replace(/\s*·\s*(?:🏆|⚔️?|🤝|🎲)\uFE0F?\s*$/, '')
             .trim();
-          result.opportunities.push({
+          currentOpp = {
             id: parseInt(m[1]),
             title: cleanTitle || rawTitle,
             desc: m[3].trim(),
             emoji: '',
             type: type,
-            prestige: parseInt(m[5])
-          });
+            prestige: parseInt(m[5]),
+            detail: ''
+          };
+        } else if (currentOpp) {
+          // 非头行 → 详情文本
+          currentOpp.detail = currentOpp.detail
+            ? currentOpp.detail + '\n' + t
+            : t;
         }
       }
+      flushOpp();
+
+      // 清理 detail 首尾空白
+      result.opportunities.forEach(function(o) {
+        if (o.detail) o.detail = o.detail.trim();
+      });
     }
 
     // Step 4: v6.2 格式 — 按 --- 分隔玩家段，解析 ①②③ + A/B/C 分支
