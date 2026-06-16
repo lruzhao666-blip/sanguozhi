@@ -315,9 +315,6 @@
 .act10 .withdraw-btn{background:transparent;border:1px solid rgba(212,168,67,.25);color:var(--gold-dim);font-size:.7rem;padding:4px 11px;border-radius:var(--r);cursor:pointer;letter-spacing:.05em;transition:all .16s;}
 .act10 .withdraw-btn:hover{border-color:var(--gold);color:var(--gold-light);}
 
-/* 移动端 tab 栏：桌面端隐藏 */
-.act10 .mob-tabs{display:none;}
-
 /* ═══ MOBILE ═══ */
 @media(max-width:900px){
   .act10 .round-strip{flex-wrap:wrap;}
@@ -327,7 +324,6 @@
   .act10 .pres-body{max-height:200px!important;}
   .act10 .opp-grid{grid-template-columns:repeat(2,1fr);}
   .act10 .cols-grid{grid-template-columns:1fr;}
-  .act10 .mob-tabs{display:flex;}
 }
 @media(max-width:540px){
   .act10 .opp-grid{grid-template-columns:1fr;}
@@ -338,11 +334,6 @@
   .act10 .opt{padding:7px 9px;}
 }
 
-/* v6.2-fix: 移动端 tab 栏桌面隐藏 */
-.act10 .mob-tabs{display:none;}
-@media(max-width:900px){
-  .act10 .mob-tabs{display:flex;}
-}
 /* ════════════════════════════════════════════════════════════
    v6.2-fix: 威望排行 + 机遇池布局重做
    - 威望：固定5行，删滚动条，跟随右侧等高
@@ -483,57 +474,21 @@
   display:block;
 }
 
-/* ── 手机端 ≤900px：行动卡 Tab 切换 ── */
+/* ── 手机端 ≤900px：三栏纵向堆叠 ── */
 @media(max-width:900px){
-  /* Tab 栏样式 */
-  .act10 .mob-tabs{
-    display:flex !important;
-    position:sticky;
-    top:42px;
-    z-index:50;
-    background:rgba(8,3,3,.97);
-    border-bottom:1px solid rgba(212,168,67,.22);
-    padding:0;
-    margin-bottom:10px;
+  .act10 .cols-grid{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
   }
-  .act10 .mob-tab{
-    flex:1;
-    padding:10px 0;
-    font-family:var(--font-serif);
-    font-size:.84rem;
-    font-weight:700;
-    color:var(--text-dim);
-    background:transparent;
-    border:none;
-    border-bottom:2px solid transparent;
-    cursor:pointer;
-    letter-spacing:.08em;
-    text-align:center;
-    transition:color .18s,border-color .18s;
-    white-space:nowrap;
-  }
-  .act10 .mob-tab:hover{
-    color:var(--text-sub);
-  }
-  .act10 .mob-tab.active{
-    color:var(--gold-light);
-    border-bottom-color:var(--gold);
-  }
-
-  /* 三家面板：默认隐藏，.col-visible 显示 */
   .act10 .col-panel{
-    display:none !important;
-  }
-  .act10 .col-panel.col-visible{
     display:flex !important;
+    width:100%;
   }
 }
 
-/* ── 桌面端：mob-tabs 隐藏，三家面板始终显示 ── */
+/* ── 桌面端：三家面板始终显示 ── */
 @media(min-width:901px){
-  .act10 .mob-tabs{
-    display:none !important;
-  }
   .act10 .col-panel{
     display:flex !important;
   }
