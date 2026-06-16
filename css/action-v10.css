@@ -343,3 +343,105 @@
 @media(max-width:900px){
   .act10 .mob-tabs{display:flex;}
 }
+/* ════════════════════════════════════════════════════════════
+   v6.2-fix: 威望排行 + 机遇池布局重做
+   - 威望：固定5行，删滚动条，跟随右侧等高
+   - 机遇池：2列2行（4槽位）
+   - 两侧 stretch 等高对齐
+   ──────────────────────────────────────────────────────────── */
+
+/* ── row-top 容器：等高 + 威望面板加宽 ── */
+.act10 .row-top{
+  grid-template-columns:240px 1fr !important;
+  align-items:stretch !important;
+}
+
+/* ── 威望面板：删滚动条，flex 拉满 ── */
+.act10 .panel-pres{
+  display:flex !important;
+  flex-direction:column !important;
+  align-self:stretch !important;
+}
+.act10 .pres-body{
+  flex:1 !important;
+  max-height:none !important;
+  overflow-y:visible !important;
+  overflow:visible !important;
+  padding:6px 0 10px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+}
+
+/* ── 威望行：间距微调，分隔线精细化 ── */
+.act10 .pres-row{
+  padding:7px 14px 7px 12px !important;
+}
+.act10 .pr-divider{
+  height:1px !important;
+  margin:2px 12px !important;
+  background:linear-gradient(90deg,transparent,rgba(212,168,67,.12),transparent) !important;
+}
+
+/* ── 威望条微条加粗 ── */
+.act10 .pr-bar{
+  width:3px !important;
+  height:20px !important;
+}
+
+/* ── 机遇池：2列，固定4槽 ── */
+.act10 .opp-grid{
+  grid-template-columns:repeat(2,1fr) !important;
+  gap:8px !important;
+  padding:10px 12px 12px !important;
+}
+
+/* ── 机遇卡片：高度均匀 ── */
+.act10 .opp-display{
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+.act10 .opp-desc{
+  flex:1 !important;
+  -webkit-line-clamp:3 !important;
+}
+
+/* ── 空槽位：虚线占位 ── */
+.act10 .opp-empty{
+  min-height:80px !important;
+  background:rgba(255,255,255,.012) !important;
+  border:1px dashed rgba(255,255,255,.06) !important;
+  border-radius:var(--r) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+.act10 .opp-empty::after{
+  content:'空槽位' !important;
+  font-family:var(--font-serif) !important;
+  font-size:.66rem !important;
+  color:var(--text-dim) !important;
+  opacity:.3 !important;
+  letter-spacing:.1em !important;
+}
+
+/* ── 移动端 ≤900px ── */
+@media(max-width:900px){
+  .act10 .row-top{
+    grid-template-columns:1fr !important;
+  }
+  .act10 .pres-body{
+    max-height:200px !important;
+    overflow-y:auto !important;
+    justify-content:flex-start !important;
+  }
+  .act10 .opp-grid{
+    grid-template-columns:repeat(2,1fr) !important;
+  }
+}
+@media(max-width:540px){
+  .act10 .opp-grid{
+    grid-template-columns:1fr !important;
+  }
+}
