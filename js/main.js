@@ -59,6 +59,7 @@
   const SUPA_TABLE_NAME  = 'sanguo_rounds';
   let _supaClient = null;
   let _realtimeChannel = null;
+  let _actionRealtimeChannel = null;  // 行动提交实时监听
   let _realtimeOk = false;
   let _realtimeReloadTimer = null;
 
@@ -434,6 +435,20 @@
     state.pollTimer = setInterval(pollForUpdates, interval);
   }
 
+  function cleanupRealtime() {
+    if (_realtimeChannel) {
+      _realtimeChannel.unsubscribe();
+      _realtimeChannel = null;
+    }
+    if (_actionRealtimeChannel) {
+      _actionRealtimeChannel.unsubscribe();
+      _actionRealtimeChannel = null;
+    }
+  }
+
+  // 页面卸载时清理
+  window.addEventListener('beforeunload', cleanupRealtime);
+
   // ════ #sanguo-gm-gate-realtime-v1 ════
   function applyGMGate() {
     let pwd = '';
@@ -486,6 +501,21 @@
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             _realtimeOk = false;
             console.warn('[SG] Realtime 异常降级:', status);
+          }
+        });
+
+      // ════ 行动提交实时监听 ════
+      _actionRealtimeChannel = _supaClient
+        .channel('action-submissions-changes')
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'action_submissions_v2' },
+          function (payload) {
+            console.log('[SG] 行动提交变更:', payload);
+            _onActionSubmissionChanged(payload);
+          })
+        .subscribe(function (status) {
+          if (status === 'SUBSCRIBED') {
+            console.log('[SG] 行动实时监听就绪');
           }
         });
       return true;
@@ -906,6 +936,9 @@
   }
 
   async function renderActionTab(rd) {
+    // 重置全齐提醒标记
+    window._act10AllSubmittedNotified = false;
+
     if (!rd || !rd.parsed) return;
     var parsed = rd.parsed;
     _act10RoundStrip(parsed);
@@ -1481,6 +1514,83 @@
     }
   }
 
+  // ══════════════════════════════════════════
+  //  行动提交实时变更回调
+  // ══════════════════════════════════════════
+  async function _onActionSubmissionChanged(payload) {
+    var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (!currentRound) return;
+
+    // 只处理当前回合的变更
+    var changedRound = payload.new?.round || payload.old?.round;
+    if (changedRound !== currentRound) return;
+
+    // 重新加载提交状态
+    await _act10LoadSubmissions(currentRound);
+
+    // 检查是否三人全部提交
+    _checkAllSubmitted();
+
+    // 更新行动卡高亮
+    _act10UpdateOtherPlayersHighlight();
+  }
+
+  // ══════════════════════════════════════════
+  //  检测三人全部提交 + 弹窗提醒
+  // ══════════════════════════════════════════
+  function _checkAllSubmitted() {
+    var submitted = window._act10Submitted || {};
+    var allDone = ACT10_SLOT_NAMES.every(function(s) { return !!submitted[s]; });
+
+    if (allDone && !window._act10AllSubmittedNotified) {
+      window._act10AllSubmittedNotified = true;
+      showToast('🎯 三家行动已齐，可结算！', 5000);
+
+      // 可选：播放提示音（如果需要）
+      // var audio = new Audio('path/to/notification.mp3');
+      // audio.play().catch(function() {});
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  更新行动卡其他玩家选择高亮
+  // ══════════════════════════════════════════
+  function _act10UpdateOtherPlayersHighlight() {
+    var submitted = window._act10Submitted || {};
+
+    ACT10_SLOT_NAMES.forEach(function(sk, slotIdx) {
+      var sub = submitted[sk];
+      if (!sub) return;
+
+      var lingSelections = safeJson(sub.ling_selections, []);
+      var oppSel = safeJson(sub.opp_selection, {});
+
+      // 在对应的行动卡上添加"已选"徽章
+      lingSelections.forEach(function(sel) {
+        var opt = document.querySelector(
+          '.col-panel[data-slot="' + slotIdx + '"] ' +
+          '.ling:nth-child(' + (sel.lingIdx + 1) + ') ' +
+          '.opt[data-val="' + sel.choice + '"]'
+        );
+        if (opt && !opt.classList.contains('checked')) {
+          // 添加半透明高亮样式（表示其他玩家选择）
+          opt.classList.add('other-player-selected');
+        }
+      });
+
+      // 机遇选择高亮
+      if (oppSel.type === 'opp' && oppSel.oppId) {
+        var oppOpt = document.querySelector(
+          '.col-panel[data-slot="' + slotIdx + '"] ' +
+          '.opp-opt-row[data-opp-id="' + oppSel.oppId + '"]'
+        );
+        if (oppOpt && !oppOpt.classList.contains('checked')) {
+          oppOpt.classList.add('other-player-selected');
+        }
+      }
+    });
+  }
+
   // ── 构建已提交摘要 HTML ──
   function _act10BuildSummary(sub, slotIdx) {
     var sels = [];
@@ -1514,6 +1624,11 @@
     if (!currentRound) return;
     var sk = ACT10_SLOT_NAMES[slotIdx];
 
+    // 获取已提交的数据
+    var submitted = window._act10Submitted || {};
+    var sub = submitted[sk];
+    if (!sub) return;
+
     // 隐藏摘要
     var sumEl = document.getElementById('act10-summary-' + slotIdx);
     if (sumEl) sumEl.style.display = 'none';
@@ -1527,6 +1642,64 @@
       subArea.querySelector('.submit-btn').addEventListener('click', function() {
         _act10Submit(parseInt(this.dataset.slot));
       });
+    }
+
+    // ════ 恢复选择状态 ════
+    var panel = document.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+    if (!panel) return;
+
+    // 1. 恢复行动令选择
+    var lingSelections = safeJson(sub.ling_selections, []);
+    panel.querySelectorAll('.opt').forEach(function(opt) {
+      opt.classList.remove('checked');
+    });
+    lingSelections.forEach(function(sel) {
+      var ling = panel.querySelectorAll('.ling')[sel.lingIdx];
+      if (!ling) return;
+
+      var targetOpt = null;
+      if (sel.customText) {
+        // 自定军令
+        targetOpt = ling.querySelector('.opt.zdjl-opt');
+        if (targetOpt) {
+          var ta = targetOpt.querySelector('.zdjl-ta');
+          if (ta) ta.value = sel.customText;
+        }
+      } else {
+        // 普通选项
+        targetOpt = ling.querySelector('.opt[data-val="' + sel.choice + '"]');
+      }
+      if (targetOpt) targetOpt.classList.add('checked');
+    });
+
+    // 2. 恢复机遇选择
+    var oppSel = safeJson(sub.opp_selection, {});
+    panel.querySelectorAll('.opp-opt-row').forEach(function(row) {
+      row.classList.remove('checked');
+    });
+    if (oppSel.type === 'opp' && oppSel.oppId) {
+      var oppRow = panel.querySelector('.opp-opt-row[data-opp-id="' + oppSel.oppId + '"]');
+      if (oppRow) oppRow.classList.add('checked');
+      panel.classList.add('opp-active');
+    } else {
+      var noOppRow = panel.querySelector('.opp-opt-row.no-opp');
+      if (noOppRow) noOppRow.classList.add('checked');
+      panel.classList.remove('opp-active');
+    }
+
+    // 3. 恢复零消耗
+    var zeroTa = panel.querySelector('.zero-ta');
+    if (zeroTa && sub.zero_cost) {
+      zeroTa.value = sub.zero_cost;
+    }
+
+    // 4. 更新选择计数徽章
+    var badge = document.getElementById('act10-badge-' + slotIdx);
+    if (badge) {
+      var count = lingSelections.length;
+      var sc = badge.querySelector('.sc');
+      if (sc) sc.textContent = count;
+      badge.classList.toggle('full', count >= 2);
     }
   }
 
