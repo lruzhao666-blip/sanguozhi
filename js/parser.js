@@ -272,11 +272,11 @@ window.SGParser = (function () {
           if (colonIdx > 0) {
             title = body.slice(0, colonIdx).trim();
             const afterColon = body.slice(colonIdx + 1).trim();
-            // 提取「...」引言
-            const quoteM = afterColon.match(/^[「"'']([^」"'']*)[」"'']/);
+            // 照抄原文：引号及引号后所有内容作为完整的 quote
+            const quoteM = afterColon.match(/^([「"''][^」"'']*[」"''].*)$/);
             if (quoteM) {
-              quote = quoteM[1];
-              note = afterColon.slice(quoteM[0].length).trim();
+              quote = quoteM[1].trim();
+              note = '';
             } else {
               note = afterColon;
             }
