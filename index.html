@@ -7,7 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260618fix1" />
+  <link rel="stylesheet" href="css/style.css?v=20260615land2" />
+  <link rel="stylesheet" href="css/action-v10.css?v=1" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -289,55 +290,32 @@
      TAB：行动
 ══════════════════════════════════════════ -->
 <section id="tab-action" class="tab-panel">
-    <div class="act-page-v3">
+  <div class="act10" id="act10-root">
+    <!-- 回合信息条 — JS 动态填充 -->
+    <div class="round-strip" id="act10-round-strip"></div>
 
-    <!-- ═══ 决策参考区 v6.0 ═══ -->
-    <div class="act-top-split" id="act-top-split">
-
-      <!-- 威望排行 -->
-      <div class="act-pres" id="act-pres-block">
-        <div class="ap-hd">
-          <span class="ap-tag">威望</span>
-          <span class="ap-title">威望排行</span>
+    <!-- 威望排行 + 公共机遇池 -->
+    <div class="row-top" id="act10-row-top">
+      <div class="panel panel-pres" id="act10-pres-panel">
+        <div class="panel-hd">
+          <span class="chip chip-gold">威望</span>
+          <span class="panel-title">威望排行</span>
         </div>
-        <div class="ap-body" id="ap-body"></div>
+        <div class="pres-body" id="act10-pres-body"></div>
       </div>
-
-      <!-- 公共机遇池 -->
-      <div class="act-opp" id="act-opp-block">
-        <div class="ao-hd">
-          <span class="ap-tag">机遇</span>
-          <span class="ao-title">公共机遇池</span>
-          <span class="ao-hint">选则占用应变令</span>
+      <div class="panel" id="act10-opp-panel">
+        <div class="panel-hd">
+          <span class="chip chip-opp">机遇</span>
+          <span class="panel-title">公共机遇池</span>
+          <span class="opp-hd-hint">本回合可用机遇 · 在各玩家行动卡内选取</span>
         </div>
-        <div class="ao-body" id="action-opp-list">
-          <div class="ao-empty">本回合无公共机遇</div>
-        </div>
+        <div class="opp-grid" id="act10-opp-grid"></div>
       </div>
-
     </div>
 
-    <!-- ═══ 三令行动面板 ═══ -->
-    <!-- 移动端 tab 切换栏 -->
-    <div class="act-mob-tabs" id="act-mob-tabs">
-      <button class="act-mob-tab active" data-slot="0">甲</button>
-      <button class="act-mob-tab" data-slot="1">乙</button>
-      <button class="act-mob-tab" data-slot="2">丙</button>
-    </div>
-
-    <div class="act-cols-v3" id="act-cols">
-      <div class="act-col-v3" data-slot="0" id="act-col-0"></div>
-      <div class="act-col-v3" data-slot="1" id="act-col-1"></div>
-      <div class="act-col-v3" data-slot="2" id="act-col-2"></div>
-    </div>
-
-    <!-- 全员公开区 -->
-    <div class="act-reveal hidden" id="action-reveal-panel">
-      <div class="act-reveal-hd"><span class="act-reveal-tag">公开</span><span class="act-reveal-title">全员行动已公开</span></div>
-      <div class="act-reveal-grid" id="reveal-grid"></div>
-    </div>
-
-  </div><!-- /act-page-v3 -->
+    <!-- 三家行动面板 — JS 动态填充 -->
+    <div class="cols-grid" id="act10-cols-grid"></div>
+  </div>
 </section>
 
 <!-- ══════════════════════════════════════════
