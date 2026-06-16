@@ -337,3 +337,9 @@
   .act10 .ling-header{padding:7px 9px 6px;}
   .act10 .opt{padding:7px 9px;}
 }
+
+/* v6.2-fix: 移动端 tab 栏桌面隐藏 */
+.act10 .mob-tabs{display:none;}
+@media(max-width:900px){
+  .act10 .mob-tabs{display:flex;}
+}
