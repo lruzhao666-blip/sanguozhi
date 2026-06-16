@@ -445,3 +445,96 @@
     grid-template-columns:1fr !important;
   }
 }
+/* ════════════════════════════════════════════════════════════
+   v6.2-fix: 机遇详情展开 + 手机端行动卡 Tab 切换
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 机遇详情展开按钮 ── */
+.act10 .opp-detail-toggle{
+  display:inline-block;
+  margin-top:5px;
+  font-family:var(--font-serif);
+  font-size:.66rem;
+  color:var(--gold-dim);
+  cursor:pointer;
+  letter-spacing:.06em;
+  transition:color .18s;
+  user-select:none;
+}
+.act10 .opp-detail-toggle:hover{
+  color:var(--gold-light);
+}
+
+/* ── 机遇详情内容（默认收起）── */
+.act10 .opp-detail-body{
+  display:none;
+  margin-top:6px;
+  padding:8px 10px;
+  font-family:var(--font-serif);
+  font-size:.76rem;
+  color:var(--text-sub);
+  line-height:1.72;
+  letter-spacing:.02em;
+  background:rgba(0,0,0,.22);
+  border-left:2px solid rgba(212,168,67,.22);
+  border-radius:0 var(--r) var(--r) 0;
+}
+.act10 .opp-detail-body.opp-detail-open{
+  display:block;
+}
+
+/* ── 手机端 ≤900px：行动卡 Tab 切换 ── */
+@media(max-width:900px){
+  /* Tab 栏样式 */
+  .act10 .mob-tabs{
+    display:flex !important;
+    position:sticky;
+    top:42px;
+    z-index:50;
+    background:rgba(8,3,3,.97);
+    border-bottom:1px solid rgba(212,168,67,.22);
+    padding:0;
+    margin-bottom:10px;
+  }
+  .act10 .mob-tab{
+    flex:1;
+    padding:10px 0;
+    font-family:var(--font-serif);
+    font-size:.84rem;
+    font-weight:700;
+    color:var(--text-dim);
+    background:transparent;
+    border:none;
+    border-bottom:2px solid transparent;
+    cursor:pointer;
+    letter-spacing:.08em;
+    text-align:center;
+    transition:color .18s,border-color .18s;
+    white-space:nowrap;
+  }
+  .act10 .mob-tab:hover{
+    color:var(--text-sub);
+  }
+  .act10 .mob-tab.active{
+    color:var(--gold-light);
+    border-bottom-color:var(--gold);
+  }
+
+  /* 三家面板：默认隐藏，.col-visible 显示 */
+  .act10 .col-panel{
+    display:none !important;
+  }
+  .act10 .col-panel.col-visible{
+    display:flex !important;
+  }
+}
+
+/* ── 桌面端：mob-tabs 隐藏，三家面板始终显示 ── */
+@media(min-width:901px){
+  .act10 .mob-tabs{
+    display:none !important;
+  }
+  .act10 .col-panel{
+    display:flex !important;
+  }
+}
