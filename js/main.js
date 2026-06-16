@@ -1409,7 +1409,22 @@
       await _act10LoadSubmissions(currentRound);
     } catch (e) {
       console.error('[act10] 提交失败:', e);
-      showToast('❌ 提交失败，请重试');
+      // 超时或报错后，强制重新加载提交状态，确认是否真的失败
+      try {
+        await _act10LoadSubmissions(currentRound);
+        var sumEl = document.getElementById('act10-summary-' + slotIdx);
+        if (sumEl && sumEl.style.display !== 'none') {
+          // 摘要区显示 = 实际已提交成功（只是响应超时）
+          showToast('✅ ' + ACT10_SLOT_NAMES[slotIdx] + ' 行动已提交（网络延迟，已自动确认）');
+          return; // 提前返回，不执行 finally 中的按钮恢复
+        } else {
+          // 确实失败
+          showToast('❌ 提交失败，请重试');
+        }
+      } catch (e2) {
+        // 重新加载状态也失败，显示原始错误
+        showToast('❌ 提交失败，请重试');
+      }
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '提交行动'; }
     }
