@@ -1179,12 +1179,9 @@
     h += '<div class="branch-list">';
     h += '<div class="opt zdjl-opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="custom">';
     h += '<div class="zdjl-top"><div class="rdot"></div><span class="zdjl-tag">④</span><span class="zdjl-nm">填写自定军令</span></div>';
-    h += '<div class="zdjl-wrap"><textarea class="zdjl-ta" rows="3" placeholder="请填写自定军令内容（需注明领域）…"></textarea></div>';
+    h += '<div class="zdjl-wrap"><textarea class="zdjl-ta" rows="3" placeholder="请填写自定军令内容..."></textarea></div>';
     h += '</div>';
     h += '</div>';
-
-    // 备注区
-    h += '<div class="remark-block" id="act10-remark-' + slotIdx + '-' + lingIdx + '"><div class="remark-lbl">备注（可选，不占额度）</div><textarea class="remark-ta" rows="1" placeholder="对此行动的补充说明…"></textarea></div>';
 
     h += '</div>';
     return h;
@@ -1328,14 +1325,6 @@
         if (!customText) return; // 自定军令为空不计
       }
       lingSelections.push({ lingIdx: li, choice: val, customText: customText });
-      // 备注
-      var remEl = document.getElementById('act10-remark-' + slotIdx + '-' + li);
-      if (remEl && remEl.classList.contains('visible')) {
-        var remTa = remEl.querySelector('.remark-ta');
-        if (remTa && remTa.value.trim()) {
-          remarks.push({ lingIdx: li, text: remTa.value.trim() });
-        }
-      }
     });
 
     // 机遇（可选，不选则 type:'none'）
