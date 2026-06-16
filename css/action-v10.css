@@ -210,10 +210,10 @@
 .act10 .ling-name{font-family:var(--font-serif);font-size:.9rem;font-weight:700;color:var(--text-main);letter-spacing:.02em;}
 .act10 .ling-risk{margin-left:auto;display:flex;align-items:center;gap:5px;flex-shrink:0;}
 .act10 .ling-pres{font-size:.72rem;color:var(--gold-dim);font-weight:700;white-space:nowrap;}
-.act10 .ling-quote{display:flex;align-items:flex-start;gap:5px;font-size:.75rem;color:#c0aa80;line-height:1.5;margin-bottom:2px;}
+.act10 .ling-quote{display:flex;align-items:flex-start;flex-wrap:wrap;gap:5px;font-size:.82rem;color:var(--text-quote, #c0aa80);line-height:1.5;margin:6px 0 2px 0;font-style:italic;}
 .act10 .ling-quote-marks{font-family:var(--font-serif);font-size:.82rem;color:rgba(212,168,67,.4);flex-shrink:0;line-height:1.5;}
 .act10 .ling-quote-text{font-style:italic;flex:1;}
-.act10 .ling-quote-who{font-size:.67rem;color:var(--text-dim);white-space:nowrap;flex-shrink:0;align-self:flex-end;padding-bottom:1px;}
+.act10 .ling-quote-who{display:block;width:100%;margin-top:2px;margin-left:0;font-size:.72rem;color:var(--text-dim);font-style:normal;text-align:right;}
 .act10 .ling-note{font-size:.72rem;color:var(--text-dim);line-height:1.45;margin-top:1px;}
 
 /* Branch options */
