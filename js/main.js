@@ -1415,7 +1415,7 @@
         var sumEl = document.getElementById('act10-summary-' + slotIdx);
         if (sumEl && sumEl.style.display !== 'none') {
           // 摘要区显示 = 实际已提交成功（只是响应超时）
-          showToast('✅ ' + ACT10_SLOT_NAMES[slotIdx] + ' 行动已提交（网络延迟，已自动确认）');
+          showToast('✅ ' + ACT10_SLOT_NAMES[slotIdx] + ' 行动已提交！');
           return; // 提前返回，不执行 finally 中的按钮恢复
         } else {
           // 确实失败
