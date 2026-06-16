@@ -1227,6 +1227,9 @@
         var grp = this.dataset.grp;
         var si = parseInt(this.dataset.slot);
         var li = parseInt(this.dataset.ling);
+        if (isNaN(li)) {
+          console.warn('[act10] Invalid data-ling:', this.dataset.ling, 'for opt:', this);
+        }
         var already = this.classList.contains('checked');
         root.querySelectorAll('.opt[data-grp="' + grp + '"]').forEach(function(c) { c.classList.remove('checked'); });
         var rem = document.getElementById('act10-remark-' + si + '-' + li);
@@ -1278,19 +1281,28 @@
 
   function _act10UpdateBadge(si) {
     var root = document.getElementById('act10-root');
-    if (!root) return;
+    if (!root) {
+      console.warn('[act10] UpdateBadge: root not found');
+      return;
+    }
     var panel = root.querySelector('.col-panel[data-slot="' + si + '"]');
-    if (!panel) return;
+    if (!panel) {
+      console.warn('[act10] UpdateBadge: panel not found for slot', si);
+      return;
+    }
     // 令选中数（①②③④ 中选中的）
     var lingCount = panel.querySelectorAll('.branch-list .opt.checked').length;
     // 机遇是否选中
     var oppChecked = panel.querySelector('.opp-opt-row.checked');
     var oppCount = oppChecked ? 1 : 0;
     var total = Math.min(lingCount + oppCount, 2);
+    console.log('[act10] UpdateBadge slot', si, '- lingCount:', lingCount, 'oppCount:', oppCount, 'total:', total);
     var badge = document.getElementById('act10-badge-' + si);
     if (badge) {
       badge.querySelector('.sc').textContent = total;
       badge.classList.toggle('full', total >= 2);
+    } else {
+      console.warn('[act10] UpdateBadge: badge not found for slot', si);
     }
   }
 
