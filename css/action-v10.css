@@ -516,3 +516,56 @@
   border-radius: 3px;
   pointer-events: none;
 }
+
+/* ════════════════════════════════════════
+   其他玩家已选高亮样式 v1
+   工单：#action-realtime-sync-v1
+   ════════════════════════════════════════ */
+
+/* 其他玩家已提交的选项 - 半透明紫色高亮 */
+.opt.other-submitted,
+.opp-opt-row.other-submitted {
+  position: relative;
+  background: rgba(180, 120, 255, 0.08) !important;
+  border-color: rgba(180, 120, 255, 0.4) !important;
+}
+
+.opt.other-submitted::after,
+.opp-opt-row.other-submitted::after {
+  content: '✓';
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 0.7rem;
+  color: rgba(180, 120, 255, 0.7);
+  font-weight: 700;
+}
+
+/* 自己已选 + 其他人也选了同一个 → 双重高亮 */
+.opt.checked.other-submitted {
+  box-shadow: 0 0 0 2px rgba(180, 120, 255, 0.4),
+              0 0 12px rgba(180, 120, 255, 0.2);
+}
+
+.opt.checked.other-submitted::after {
+  content: '✓✓';
+  color: #b478ff;
+  font-size: 0.75rem;
+  animation: pulse-check 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-check {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* 机遇行其他人已选 */
+.opp-opt-row.other-submitted .opp-rdot {
+  background: rgba(180, 120, 255, 0.6);
+  box-shadow: 0 0 8px rgba(180, 120, 255, 0.4);
+}
+
+/* 只读面板中的已选标记（工单1已添加，这里补充兼容） */
+.col-panel.readonly .opt.other-submitted {
+  opacity: 1; /* 只读面板中的其他人选择也要清晰可见 */
+}
