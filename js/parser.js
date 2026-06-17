@@ -270,7 +270,7 @@ window.SGParser = (function () {
           // 解析标题、引言、补注、风险、威望
           // 格式: 标题：「引言」补注（风险·预估+N威望）
           // 或:   标题：「引言」补注（风险·预估+N~+M威望）
-          let title = '', quote = '', quoteWho = '', note = '', risk = '', prestige = '';
+          let title = '', quote = '', note = '', risk = '', prestige = '';
 
           // 先提取尾部括号: （中·预估+3~+6威望）或（稳·预估+2威望）
           const tailM = rest.match(/[（(]([^）)]+)[）)]$/);
@@ -284,28 +284,19 @@ window.SGParser = (function () {
             if (presM) prestige = presM[1];
           }
 
-          // 从 body 提取标题和引言
+          // 从 body 提取标题和引言（原样保留）
           // body 格式: "南下援汝南：「主公,曹仁势大...」——法正谏"
           const colonIdx = body.search(/[：:]/);
           if (colonIdx > 0) {
             title = body.slice(0, colonIdx).trim();
             const afterColon = body.slice(colonIdx + 1).trim();
 
-            // 提取引号内的内容（不包括引号本身）+ 引号后的补注
-            const quoteM = afterColon.match(/^[「"'']([^」"'']*)[」"''](.*?)$/);
-            if (quoteM) {
-              quote = quoteM[1].trim();  // 引号内的内容
-              const suffix = quoteM[2].trim();  // 引号后的部分（如 "——法正谏"）
-
-              // 解析 "——法正谏" 或 "—法正谏"
-              const whoM = suffix.match(/^[—–-]\s*(.+?)谏/);
-              if (whoM) {
-                quoteWho = whoM[1].trim();  // 提取武将名（如 "法正"）
-              } else {
-                note = suffix;  // 其他补注保留
-              }
+            // 判断是否有引号开头（引号格式的引言）
+            if (/^[「"'']/.test(afterColon)) {
+              // 有引号，整段作为 quote（包括引号和后续内容）
+              quote = afterColon;
             } else {
-              // 没有引号，整个作为补注
+              // 没有引号，作为 note
               note = afterColon;
             }
           } else {
@@ -317,7 +308,6 @@ window.SGParser = (function () {
             idx: LING_NUMS_ORDER.indexOf(num),
             title: title,
             quote: quote,
-            quoteWho: quoteWho,  // 新增
             note: note,
             risk: risk,
             prestige: prestige,

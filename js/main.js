@@ -1337,9 +1337,7 @@ let lastSubmissionCheck = {};
     }
     h += '</div>';
     if (ling.quote) {
-      h += '<div class="ling-quote"><span class="ling-quote-marks">「</span><span class="ling-quote-text">' + _act10Esc(ling.quote) + '</span><span class="ling-quote-marks">」</span>';
-      if (ling.quoteWho) h += '<span class="ling-quote-who">— ' + _act10Esc(ling.quoteWho) + '</span>';
-      h += '</div>';
+      h += '<div class="ling-quote">' + _act10Esc(ling.quote) + '</div>';
     }
     if (ling.note) h += '<div class="ling-note">' + _act10Esc(ling.note) + '</div>';
     h += '</div></div>';
