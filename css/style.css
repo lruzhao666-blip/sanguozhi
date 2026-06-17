@@ -13748,10 +13748,9 @@ html.tab-switching {
   letter-spacing: .02em;
 }
 
-/* 威望范围符淡化 */
+/* 威望范围符间距 */
 .opp-pres .range-sep {
-  opacity: 0.35;
-  font-weight: 400;
+  padding: 0 3px;
 }
 
 .chip {
@@ -14123,10 +14122,9 @@ html.tab-switching {
   letter-spacing: .02em;
 }
 
-/* 威望范围符淡化 */
+/* 威望范围符间距 */
 .opp-pres .range-sep {
-  opacity: 0.35;
-  font-weight: 400;
+  padding: 0 3px;
 }
 
 .chip {
