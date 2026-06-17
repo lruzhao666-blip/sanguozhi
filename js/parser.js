@@ -116,6 +116,19 @@ window.SGParser = (function () {
     return result;
   }
 
+  // ── 工具函数：标准化威望格式 ──
+  function _normalizePrestige(raw) {
+    if (!raw) return raw;
+
+    // 移除多余的加号：++8 → +8, +++10 → +10
+    let normalized = raw.replace(/^\+{2,}/, '+');
+
+    // 处理范围中的多余加号：+8~++10 → +8~+10
+    normalized = normalized.replace(/~\+{2,}/, '~+');
+
+    return normalized;
+  }
+
   // ─────────────────────────────────────────
   //  解析行动令段（M-30 规则书格式）
   // ─────────────────────────────────────────
@@ -194,7 +207,7 @@ window.SGParser = (function () {
             desc: m[3].trim(),
             emoji: '',
             type: type,
-            prestige: m[5].trim(),
+            prestige: _normalizePrestige(m[5].trim()),
             detail: ''
           };
         } else if (currentOpp) {
@@ -2356,7 +2369,7 @@ if (/^产出△/.test(line)) {
           name: wuMatch[2].trim(),
           desc: wuMatch[3].trim(),
           risk: wuMatch[4].trim(),
-          prestige: wuMatch[5].trim()
+          prestige: _normalizePrestige(wuMatch[5].trim())
         });
         continue;
       }
@@ -2368,7 +2381,7 @@ if (/^产出△/.test(line)) {
           name: wenMatch[2].trim(),
           desc: wenMatch[3].trim(),
           risk: wenMatch[4].trim(),
-          prestige: wenMatch[5].trim()
+          prestige: _normalizePrestige(wenMatch[5].trim())
         });
         continue;
       }
@@ -2380,7 +2393,7 @@ if (/^产出△/.test(line)) {
           name: ceMatch[2].trim(),
           desc: ceMatch[3].trim(),
           risk: ceMatch[4].trim(),
-          prestige: ceMatch[5].trim()
+          prestige: _normalizePrestige(ceMatch[5].trim())
         });
         continue;
       }
