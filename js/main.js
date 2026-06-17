@@ -959,6 +959,39 @@
 
     console.log('[act10] 渲染行动Tab，当前回合:', rd.round || parsed.round);
     await _act10LoadSubmissions(rd.round || parsed.round);
+
+    // ↓↓↓ 工单 #action-panel-reorder-v1 ↓↓↓
+    // 监听窗口尺寸变化，动态调整行动面板顺序
+    function _act10ReorderPanels() {
+      var root = document.getElementById('act10-root');
+      if (!root) return;
+      var isMobile = window.matchMedia('(max-width: 768px)').matches;
+      var currentSlot = getCurrentPlayerSlot();
+
+      for (var i = 0; i < 3; i++) {
+        var panel = root.querySelector('.col-panel[data-slot="' + i + '"]');
+        if (panel) {
+          if (isMobile) {
+            panel.style.order = (i === currentSlot) ? '0' : String(i + 1);
+          } else {
+            panel.style.order = '';
+          }
+        }
+      }
+    }
+
+    // 初始执行一次
+    _act10ReorderPanels();
+
+    // 监听窗口尺寸变化
+    if (!window._act10ResizeHandler) {
+      window._act10ResizeHandler = function() {
+        clearTimeout(window._act10ResizeTimer);
+        window._act10ResizeTimer = setTimeout(_act10ReorderPanels, 200);
+      };
+      window.addEventListener('resize', window._act10ResizeHandler);
+    }
+    // ↑↑↑ 工单结束 ↑↑↑
   }
 
   // ── 回合信息条 ──
@@ -1094,7 +1127,14 @@
         if (pe) pp = pe.score;
       }
 
-      h += '<div class="col-panel" data-slot="' + i + '" data-editable="' + isEditable + '">';
+      // ↓↓↓ 工单 #action-panel-reorder-v1 ↓↓↓
+      var orderStyle = '';
+      if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+        var currentSlot = getCurrentPlayerSlot();
+        orderStyle = ' style="order:' + (i === currentSlot ? '0' : String(i + 1)) + '"';
+      }
+      h += '<div class="col-panel" data-slot="' + i + '" data-editable="' + isEditable + '"' + orderStyle + '>';
+      // ↑↑↑ 工单结束 ↑↑↑
       h += '<div class="col-head">';
       h += '<span class="col-name">' + _act10Esc(pn) + '</span>';
       h += '<span class="col-slot-tag">[' + sk + ']</span>';
@@ -1363,6 +1403,90 @@
         showToast('📝 已解锁，可重新选择行动');
       });
     });
+    // ↑↑↑ 工单结束 ↑↑↑
+
+    // ↓↓↓ 工单 #action-draft-autosave-v1 ↓↓↓
+    // 草稿自动保存逻辑
+    var draftTimer = null;
+    var DRAFT_DEBOUNCE = 1000; // 1秒防抖
+
+    // 监听所有输入变化（选项、机遇、自定军令、备注）
+    root.querySelectorAll('.opt, .opp-opt-row, .zdjl-ta, .remark-ta').forEach(function(el) {
+      var eventType = (el.tagName === 'TEXTAREA') ? 'input' : 'click';
+      el.addEventListener(eventType, function() {
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(function() {
+          _act10SaveDraft();
+        }, DRAFT_DEBOUNCE);
+      });
+    });
+
+    // 保存草稿函数
+    function _act10SaveDraft() {
+      var currentSlot = getCurrentPlayerSlot();
+      var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+      if (currentSlot === null || !currentRound) return;
+
+      var draft = _act10CollectSlot(currentSlot);
+      if (!draft) return;
+
+      var key = 'sg_draft_r' + currentRound + '_s' + currentSlot;
+      try {
+        localStorage.setItem(key, JSON.stringify(draft));
+        console.log('[act10] 草稿已保存:', key);
+      } catch (e) {
+        console.warn('[act10] 草稿保存失败:', e);
+      }
+    }
+
+    // 加载草稿函数（在渲染完成后调用）
+    function _act10LoadDraft() {
+      var currentSlot = getCurrentPlayerSlot();
+      var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+      if (currentSlot === null || !currentRound) return;
+
+      var key = 'sg_draft_r' + currentRound + '_s' + currentSlot;
+      var draftStr = localStorage.getItem(key);
+      if (!draftStr) return;
+
+      try {
+        var draft = JSON.parse(draftStr);
+        _act10RestoreDraft(draft, currentSlot);
+        console.log('[act10] 草稿已加载:', key);
+      } catch (e) {
+        console.warn('[act10] 草稿加载失败:', e);
+      }
+    }
+
+    // 恢复草稿到UI
+    function _act10RestoreDraft(draft, slotIdx) {
+      var panel = root.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+      if (!panel) return;
+
+      // 恢复令选择
+      (draft.ling_selections || []).forEach(function(sel) {
+        var ling = panel.querySelector('.ling[id*="-' + sel.lingIdx + '"]');
+        if (!ling) return;
+        var opt = ling.querySelector('.opt[data-val="' + sel.choice + '"]');
+        if (opt) {
+          opt.click(); // 模拟点击，触发UI更新
+          // 恢复自定军令文本
+          if (sel.customText) {
+            var ta = opt.querySelector('.zdjl-ta');
+            if (ta) ta.value = sel.customText;
+          }
+        }
+      });
+
+      // 恢复机遇选择
+      if (draft.opp_selection && draft.opp_selection.type === 'opp') {
+        var oppRow = panel.querySelector('.opp-opt-row[data-opp-id="' + draft.opp_selection.oppId + '"]');
+        if (oppRow) oppRow.click();
+      }
+    }
+
+    // 页面加载时恢复草稿
+    _act10LoadDraft();
     // ↑↑↑ 工单结束 ↑↑↑
 
     // v6.3: 移动端 tab 已删除，无需事件绑定
@@ -4155,12 +4279,14 @@ function initIdentitySelector() {
   updateIdentityUI(validSlot);
 
   // 绑定按钮点击事件
-  selector.querySelectorAll('.identity-btn').forEach(btn => {
+  // ↓↓↓ 工单 #identity-btn-class-fix ↓↓↓
+  selector.querySelectorAll('.identity-btn, .identity-btn-mini').forEach(btn => {
     btn.addEventListener('click', function() {
       const slot = parseInt(this.dataset.slot, 10);
       switchIdentity(slot);
     });
   });
+  // ↑↑↑ 工单结束 ↑↑↑
   // ↓↓↓ 工单 #mobile-panel-reorder-v1 ↓↓↓
   // 监听身份变化，移动端时重排玩家面板顺序
   window.addEventListener('storage', _reorderPlayerPanelsOnMobile);
@@ -4234,10 +4360,12 @@ function updateIdentityUI(activeSlot) {
   const selector = document.getElementById('identity-selector');
   if (!selector) return;
 
-  selector.querySelectorAll('.identity-btn').forEach(btn => {
+  // ↓↓↓ 工单 #identity-btn-class-fix ↓↓↓
+  selector.querySelectorAll('.identity-btn, .identity-btn-mini').forEach(btn => {
     const slot = parseInt(btn.dataset.slot, 10);
     btn.classList.toggle('active', slot === activeSlot);
   });
+  // ↑↑↑ 工单结束 ↑↑↑
 }
 
 /**
