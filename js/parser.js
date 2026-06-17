@@ -199,6 +199,11 @@ window.SGParser = (function () {
           };
         } else if (currentOpp) {
           // 非头行 → 详情文本
+          // 过滤分隔符 --- 和 ===
+          if (/^[-—]{3,}$/.test(t) || /^═{3,}$/.test(t)) {
+            // 跳过分隔符行
+            continue;
+          }
           currentOpp.detail = currentOpp.detail
             ? currentOpp.detail + '\n' + t
             : t;
