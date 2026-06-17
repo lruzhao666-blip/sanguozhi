@@ -4127,6 +4127,41 @@ function initIdentitySelector() {
       switchIdentity(slot);
     });
   });
+  // ↓↓↓ 工单 #mobile-panel-reorder-v1 ↓↓↓
+  // 监听身份变化，移动端时重排玩家面板顺序
+  window.addEventListener('storage', _reorderPlayerPanelsOnMobile);
+  _reorderPlayerPanelsOnMobile(); // 初始化时执行一次
+
+  function _reorderPlayerPanelsOnMobile() {
+    var slot = getCurrentPlayerSlot();
+    if (slot === null) return;
+
+    // 仅移动端生效（≤768px）
+    var isMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (!isMobile) {
+      // 桌面端：重置所有面板 order
+      for (var i = 0; i < 3; i++) {
+        var panel = document.getElementById('pcard-' + i);
+        if (panel) panel.style.order = '';
+      }
+      return;
+    }
+
+    // 移动端：选中的面板 order=0（置顶），其他按原顺序
+    for (var i = 0; i < 3; i++) {
+      var panel = document.getElementById('pcard-' + i);
+      if (panel) {
+        panel.style.order = (i === slot) ? '0' : String(i + 1);
+      }
+    }
+  }
+
+  // 监听窗口尺寸变化
+  window.addEventListener('resize', function() {
+    clearTimeout(window._resizeTimer);
+    window._resizeTimer = setTimeout(_reorderPlayerPanelsOnMobile, 200);
+  });
+  // ↑↑↑ 工单结束 ↑↑↑
 }
 
 /**
