@@ -13748,6 +13748,12 @@ html.tab-switching {
   letter-spacing: .02em;
 }
 
+/* 威望范围符淡化 */
+.opp-pres .range-sep {
+  opacity: 0.35;
+  font-weight: 400;
+}
+
 .chip {
   font-family: var(--font-sans);
   font-size: .64rem;
@@ -14115,6 +14121,12 @@ html.tab-switching {
   font-weight: 600;
   color: var(--gold-light);
   letter-spacing: .02em;
+}
+
+/* 威望范围符淡化 */
+.opp-pres .range-sep {
+  opacity: 0.35;
+  font-weight: 400;
 }
 
 .chip {
