@@ -13584,7 +13584,7 @@ html.tab-switching {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
-/* 修改按钮 */
+/* 修改按钮基础样式 */
 .col-edit-btn {
   display: none;
   margin-top: 8px;
@@ -13598,6 +13598,11 @@ html.tab-switching {
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
+  /* ↓↓↓ 工单 #submit-lock-fix 关键修复 ↓↓↓ */
+  pointer-events: auto; /* 确保按钮可点击 */
+  position: relative;   /* 提升层级 */
+  z-index: 10;          /* 高于遮罩层 */
+  /* ↑↑↑ 工单结束 ↑↑↑ */
 }
 
 .col-edit-btn:hover {
@@ -13615,6 +13620,15 @@ html.tab-switching {
 .col-panel.submitted-locked .submit-btn {
   display: none;
 }
+
+/* ↓↓↓ 工单 #submit-lock-fix 关键修复 ↓↓↓ */
+/* 确保提交区（submit-area）在锁定态时仍可交互 */
+.col-panel.submitted-locked .submit-area {
+  pointer-events: auto;
+  position: relative;
+  z-index: 10;
+}
+/* ↑↑↑ 工单结束 ↑↑↑ */
 
 /* ════════════════════════════════════════
    极简身份选择器 v3 — 方案A
