@@ -13636,37 +13636,3 @@ html.tab-switching {
   position: relative;
   z-index: 2;
 }
-
-/* ════════════════════════════════════════
-   修改按钮修复 v3 — 摘要区与选项区共存
-   工单：#edit-btn-fix-v3
-   ════════════════════════════════════════ */
-
-/* 摘要区：提交后显示 */
-.col-summary {
-  display: none; /* 默认隐藏 */
-  margin-bottom: 12px;
-  padding: 12px;
-  background: rgba(100, 150, 100, 0.1);
-  border: 1px solid rgba(100, 150, 100, 0.3);
-  border-radius: 6px;
-}
-
-/* 选项区：始终存在，提交后可能被隐藏 */
-.col-body {
-  display: block; /* 默认显示 */
-  position: relative;
-  z-index: 2; /* 高于摘要区 */
-}
-
-/* 提交后：显示摘要区，隐藏选项区 */
-.col-panel.submitted-locked .col-summary {
-  display: block;
-}
-
-.col-panel.submitted-locked .col-body {
-  display: none; /* 提交后隐藏选项区 */
-}
-
-/* 点击修改后：摘要区和选项区都显示（通过JS强制设置） */
-/* JS会显式设置 colBody.style.display = 'block' */
