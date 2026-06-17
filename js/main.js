@@ -948,7 +948,7 @@ let lastSubmissionCheck = {};
   var ACT10_SUPA_URL = 'https://smiifcbmmtolimtaxpip.supabase.co/rest/v1/action_submissions_v2';
   var ACT10_SLOT_NAMES = ['甲', '乙', '丙'];
   var ACT10_SLOT_COLORS = { '甲': '0', '乙': '1', '丙': '2' };
-  var ACT10_LING_NUMS = ['①', '②', '③'];
+  var ACT10_LING_NUMS = ['①', '②', '③', '④'];
 
   function bindActionTab() {
     var gmCopyBtn = document.getElementById('btn-gm-copy-all-actions');
@@ -2016,8 +2016,9 @@ let lastSubmissionCheck = {};
 
     var h = '<div class="col-summary-hd">已提交行动</div>';
     sels.forEach(function(sel) {
-      var label = '行动' + ACT10_LING_NUMS[sel.lingIdx];
-      var val = sel.choice === 'custom' ? '自定军令: ' + _act10Esc(sel.customText || '') : ACT10_LING_NUMS[sel.lingIdx] + ' ' + _act10Esc(sel.choice);
+      var lingNum = ACT10_LING_NUMS[sel.lingIdx] || '⑩';
+      var label = '行动' + lingNum;
+      var val = sel.choice === 'custom' ? '自定军令: ' + _act10Esc(sel.customText || '') : lingNum + ' ' + _act10Esc(sel.choice);
 
       // 拼接备注
       var remarkText = remarks[sel.lingIdx] ? ' <span class="sum-remark">备注：' + _act10Esc(remarks[sel.lingIdx]) + '</span>' : '';
