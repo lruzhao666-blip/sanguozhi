@@ -1400,6 +1400,17 @@
         var summary = document.getElementById('act10-summary-' + slotIdx);
         if (summary) summary.style.display = 'none';
 
+        // ↓↓↓ 工单 #edit-btn-instant-fix ↓↓↓
+        // 强制触发重绘，确保 pointer-events 立即恢复
+        var colBody = panel.querySelector('.col-body');
+        if (colBody) {
+          // 方法1：强制重排
+          void colBody.offsetHeight;
+          // 方法2：显式恢复 pointer-events（防止CSS未及时生效）
+          colBody.style.pointerEvents = 'auto';
+        }
+        // ↑↑↑ 工单结束 ↑↑↑
+
         showToast('📝 已解锁，可重新选择行动');
       });
     });
