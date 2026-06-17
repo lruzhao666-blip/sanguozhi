@@ -1396,22 +1396,20 @@
         // 解锁面板
         panel.classList.remove('submitted-locked');
 
-        // ↓↓↓ 工单 #edit-btn-fix-v3 保留摘要，显示选项区 ↓↓↓
-        // 保留摘要区显示（不清空，不隐藏）
+        // ↓↓↓ 工单 #edit-btn-fix-v2 彻底清除摘要区 ↓↓↓
         var summary = document.getElementById('act10-summary-' + slotIdx);
-        // 如果需要摘要区可见，取消下面两行注释：
-        // if (summary) {
-        //   summary.style.display = 'block';
-        // }
-
-        // 强制显示并恢复选项区交互
-        var colBody = panel.querySelector('.col-body');
-        if (colBody) {
-          colBody.style.display = 'block';        // 强制显示
-          colBody.style.pointerEvents = 'auto';   // 恢复交互
-          void colBody.offsetHeight;              // 强制重排
+        if (summary) {
+          summary.style.display = 'none';
+          summary.innerHTML = ''; // 清空内容，防止占据空间
         }
         // ↑↑↑ 工单结束 ↑↑↑
+
+        // 强制触发重绘，确保 pointer-events 立即恢复
+        var colBody = panel.querySelector('.col-body');
+        if (colBody) {
+          void colBody.offsetHeight;
+          colBody.style.pointerEvents = 'auto';
+        }
 
         // ↓↓↓ 工单 #edit-btn-fix-v2 清除残留选中态 ↓↓↓
         // 清除所有选项的选中状态，避免 UI 残留
@@ -1653,14 +1651,6 @@
       // 提交成功后锁定面板
       var panel = root.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
       if (panel) panel.classList.add('submitted-locked');
-      // ↑↑↑ 工单结束 ↑↑↑
-
-      // ↓↓↓ 工单 #edit-btn-fix-v3 提交后隐藏选项区 ↓↓↓
-      // 提交成功后，隐藏选项区（让摘要区独占显示）
-      var colBody = panel ? panel.querySelector('.col-body') : null;
-      if (colBody) {
-        colBody.style.display = 'none';
-      }
       // ↑↑↑ 工单结束 ↑↑↑
     } catch (e) {
       console.error('[act10] 提交失败:', e);
