@@ -155,7 +155,7 @@ window.SGParser = (function () {
 
       // 按机遇头行切分块
       const oppLines = oppText.split('\n');
-      const OPP_HEAD_RE = /^机遇(\d+)\s*·\s*(.+?)\s*[—–-]\s*(.+?)\s*[（(]([^）)]*?)\+?(-?\d+(?:[~～]\+?\d+)?)\s*威望\s*[）)]/;
+      const OPP_HEAD_RE = /^机遇(\d+)\s*·\s*(.+?)\s*[—–-]\s*(.+?)\s*[（(]([^）)]*?)([+-]?\d+(?:[~～][+-]?\d+)?)\s*威望\s*[）)]/;
       let currentOpp = null;
       const flushOpp = () => {
         if (currentOpp) {
@@ -194,7 +194,7 @@ window.SGParser = (function () {
             desc: m[3].trim(),
             emoji: '',
             type: type,
-            prestige: parseInt(m[5]),
+            prestige: m[5].trim(),
             detail: ''
           };
         } else if (currentOpp) {

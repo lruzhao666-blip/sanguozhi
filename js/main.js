@@ -1073,31 +1073,159 @@
     var h = '';
     opps.forEach(function(o) {
       var cls = TM[o.type] || 'ot-jing';
-      var hasDetail = o.detail && o.detail.trim();
-      h += '<div class="opp-display ' + cls + '">';
+      h += '<div class="opp-display ' + cls + '" data-opp-id="' + o.id + '" data-opp-type="' + o.type + '">';
       h += '<div class="opp-top"><span class="opp-id">机遇' + o.id + '</span><span class="opp-name">' + _act10Esc(o.title) + '</span><span class="opp-type-icon">' + (TI[o.type] || '⚔️') + '</span></div>';
       h += '<div class="opp-desc">' + _act10Esc(o.desc) + '</div>';
-      h += '<div class="opp-foot"><span class="opp-pres">预估 +' + _act10Esc(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
-      if (hasDetail) {
-        h += '<div class="opp-detail-toggle" data-opp-id="' + o.id + '">详情 ▾</div>';
-        h += '<div class="opp-detail-body" id="act10-opp-detail-' + o.id + '">' + _act10Esc(o.detail).replace(/\n/g, '<br>') + '</div>';
-      }
+      h += '<div class="opp-foot"><span class="opp-pres">预估 ' + _act10Esc(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
       h += '</div>';
     });
     var TOTAL_SLOTS = 4;
     for (var i = opps.length; i < TOTAL_SLOTS; i++) h += '<div class="opp-empty"></div>';
     el.innerHTML = h;
 
-    // 绑定详情展开事件
-    el.querySelectorAll('.opp-detail-toggle').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var oppId = this.dataset.oppId;
-        var body = document.getElementById('act10-opp-detail-' + oppId);
-        if (!body) return;
-        var isOpen = body.classList.contains('opp-detail-open');
-        body.classList.toggle('opp-detail-open');
-        this.textContent = isOpen ? '详情 ▾' : '收起 ▴';
+    // 电脑端：智能悬浮卡
+    if (window.matchMedia && window.matchMedia('(min-width: 769px)').matches) {
+      _act10InitTooltip(opps);
+    }
+    // 手机端：底部抽屉
+    else {
+      _act10InitDrawer(opps);
+    }
+  }
+
+  // ── 电脑端：智能悬浮卡初始化 ──
+  function _act10InitTooltip(opps) {
+    var tooltip = document.getElementById('opp-tooltip');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.id = 'opp-tooltip';
+      document.body.appendChild(tooltip);
+    }
+
+    var cards = document.querySelectorAll('.opp-display[data-opp-id]');
+    cards.forEach(function(card) {
+      card.addEventListener('mouseenter', function() {
+        var oppId = parseInt(this.dataset.oppId);
+        var opp = opps.find(function(o) { return o.id === oppId; });
+        if (!opp || !opp.detail) return;
+
+        var TI = { compete: '⚔️', cooperate: '🤝', epic: '🏆', gamble: '🎲' };
+        var TT = { compete: '竞争', cooperate: '协力', epic: '史诗', gamble: '赌博' };
+        var TM = { compete: 'ot-jing', cooperate: 'ot-xie', epic: 'ot-shi', gamble: 'ot-du' };
+        var cls = TM[opp.type] || 'ot-jing';
+
+        var html = '';
+        html += '<div class="opp-tooltip-header">';
+        html += '<span class="opp-tooltip-icon">' + (TI[opp.type] || '⚔️') + '</span>';
+        html += '<span class="opp-tooltip-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
+        html += '<span class="opp-tooltip-type chip chip-' + cls + '">' + (TT[opp.type] || '竞争') + '</span>';
+        html += '</div>';
+        html += '<div class="opp-tooltip-body">';
+        html += _act10Esc(opp.detail).replace(/\n/g, '<br>');
+        html += '<div class="opp-tooltip-prestige">预估 ' + _act10Esc(String(opp.prestige)) + ' 威望</div>';
+        html += '</div>';
+
+        tooltip.innerHTML = html;
+        tooltip.classList.add('show');
+
+        // 智能定位
+        _act10PositionTooltip(tooltip, this);
+      });
+
+      card.addEventListener('mouseleave', function() {
+        tooltip.classList.remove('show');
+      });
+    });
+  }
+
+  // ── 智能定位算法 ──
+  function _act10PositionTooltip(tooltip, trigger) {
+    var rect = trigger.getBoundingClientRect();
+    var tooltipW = tooltip.offsetWidth;
+    var tooltipH = tooltip.offsetHeight;
+    var winW = window.innerWidth;
+    var winH = window.innerHeight;
+    var gap = 8;
+
+    var x, y;
+
+    // 优先右侧
+    if (rect.right + gap + tooltipW <= winW) {
+      x = rect.right + gap;
+      y = rect.top;
+    }
+    // 尝试左侧
+    else if (rect.left - gap - tooltipW >= 0) {
+      x = rect.left - gap - tooltipW;
+      y = rect.top;
+    }
+    // 尝试上方
+    else if (rect.top - gap - tooltipH >= 0) {
+      x = Math.max(gap, Math.min(winW - tooltipW - gap, rect.left));
+      y = rect.top - gap - tooltipH;
+    }
+    // 兜底下方
+    else {
+      x = Math.max(gap, Math.min(winW - tooltipW - gap, rect.left));
+      y = rect.bottom + gap;
+    }
+
+    // 垂直居中调整
+    if (y + tooltipH > winH - gap) {
+      y = Math.max(gap, winH - tooltipH - gap);
+    }
+
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  }
+
+  // ── 手机端：底部抽屉初始化 ──
+  function _act10InitDrawer(opps) {
+    var overlay = document.getElementById('opp-drawer-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'opp-drawer-overlay';
+      overlay.className = 'opp-drawer-overlay';
+      overlay.innerHTML = '<div class="opp-drawer"><div class="opp-drawer-handle"></div><div class="opp-drawer-header"></div><div class="opp-drawer-body"></div></div>';
+      document.body.appendChild(overlay);
+
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+          overlay.classList.remove('show');
+        }
+      });
+    }
+
+    var cards = document.querySelectorAll('.opp-display[data-opp-id]');
+    cards.forEach(function(card) {
+      card.addEventListener('click', function() {
+        var oppId = parseInt(this.dataset.oppId);
+        var opp = opps.find(function(o) { return o.id === oppId; });
+        if (!opp || !opp.detail) return;
+
+        var TI = { compete: '⚔️', cooperate: '🤝', epic: '🏆', gamble: '🎲' };
+        var TT = { compete: '竞争', cooperate: '协力', epic: '史诗', gamble: '赌博' };
+        var TM = { compete: 'ot-jing', cooperate: 'ot-xie', epic: 'ot-shi', gamble: 'ot-du' };
+        var cls = TM[opp.type] || 'ot-jing';
+
+        var headerHtml = '';
+        headerHtml += '<span class="opp-drawer-icon">' + (TI[opp.type] || '⚔️') + '</span>';
+        headerHtml += '<span class="opp-drawer-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
+        headerHtml += '<span class="opp-drawer-type chip chip-' + cls + '">' + (TT[opp.type] || '竞争') + '</span>';
+        headerHtml += '<button class="opp-drawer-close">✕</button>';
+
+        var bodyHtml = '';
+        bodyHtml += _act10Esc(opp.detail).replace(/\n/g, '<br>');
+        bodyHtml += '<div class="opp-drawer-prestige">预估 ' + _act10Esc(String(opp.prestige)) + ' 威望</div>';
+
+        overlay.querySelector('.opp-drawer-header').innerHTML = headerHtml;
+        overlay.querySelector('.opp-drawer-body').innerHTML = bodyHtml;
+        overlay.classList.add('show');
+
+        // 绑定关闭按钮
+        overlay.querySelector('.opp-drawer-close').addEventListener('click', function() {
+          overlay.classList.remove('show');
+        });
       });
     });
   }
