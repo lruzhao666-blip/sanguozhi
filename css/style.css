@@ -14374,3 +14374,38 @@ html.tab-switching {
   letter-spacing: .12em;
   opacity: .5;
 }
+
+/* ════════════════════════════════════════════════════════════
+   工单#opp-tooltip-fix-v3
+   修复悬浮卡3个问题：留白/滚动条/hover交互
+   ──────────────────────────────────────────────────────────── */
+
+/* 修复1：隐藏空态占位（避免留白） */
+.opp-empty {
+  display: none !important;
+}
+
+/* 修复2：悬浮卡自适应高度（移除滚动条） */
+@media (min-width: 769px) {
+  .opp-tooltip-body {
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+
+  /* 修复3：悬浮卡内容区允许鼠标交互 */
+  #opp-tooltip .opp-tooltip-body,
+  #opp-tooltip .opp-tooltip-header {
+    pointer-events: auto;
+  }
+}
+
+/* 修复4：强制机遇卡片hover效果 */
+.opp-display:hover {
+  background: rgba(38,20,10,.82) !important;
+  border-color: rgba(212,168,67,.25) !important;
+  transform: translateX(2px) !important;
+}
+
+.opp-display:hover::before {
+  width: 4px !important;
+}
