@@ -13620,3 +13620,19 @@ html.tab-switching {
     padding: 2px 8px;
   }
 }
+
+/* ════════════════════════════════════════
+   行动摘要区层级修复
+   工单：#edit-btn-fix-v2
+   ════════════════════════════════════════ */
+
+.col-summary {
+  position: relative;
+  z-index: 1; /* 确保不阻挡选项区域 */
+}
+
+/* 选项区域（ling、机遇）保持更高层级 */
+.col-body {
+  position: relative;
+  z-index: 2;
+}

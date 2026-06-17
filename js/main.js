@@ -1396,19 +1396,32 @@
         // 解锁面板
         panel.classList.remove('submitted-locked');
 
-        // 隐藏已提交摘要
+        // ↓↓↓ 工单 #edit-btn-fix-v2 彻底清除摘要区 ↓↓↓
         var summary = document.getElementById('act10-summary-' + slotIdx);
-        if (summary) summary.style.display = 'none';
+        if (summary) {
+          summary.style.display = 'none';
+          summary.innerHTML = ''; // 清空内容，防止占据空间
+        }
+        // ↑↑↑ 工单结束 ↑↑↑
 
-        // ↓↓↓ 工单 #edit-btn-instant-fix ↓↓↓
         // 强制触发重绘，确保 pointer-events 立即恢复
         var colBody = panel.querySelector('.col-body');
         if (colBody) {
-          // 方法1：强制重排
           void colBody.offsetHeight;
-          // 方法2：显式恢复 pointer-events（防止CSS未及时生效）
           colBody.style.pointerEvents = 'auto';
         }
+
+        // ↓↓↓ 工单 #edit-btn-fix-v2 清除残留选中态 ↓↓↓
+        // 清除所有选项的选中状态，避免 UI 残留
+        panel.querySelectorAll('.opt.checked, .opp-opt-row.checked').forEach(function(el) {
+          el.classList.remove('checked');
+        });
+        // 清空自定军令和备注输入框
+        panel.querySelectorAll('.zdjl-ta, .remark-ta').forEach(function(ta) {
+          ta.value = '';
+        });
+        // 重置徽章
+        _act10UpdateBadge(slotIdx);
         // ↑↑↑ 工单结束 ↑↑↑
 
         showToast('📝 已解锁，可重新选择行动');
