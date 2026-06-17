@@ -270,7 +270,7 @@ window.SGParser = (function () {
           // 解析标题、引言、补注、风险、威望
           // 格式: 标题：「引言」补注（风险·预估+N威望）
           // 或:   标题：「引言」补注（风险·预估+N~+M威望）
-          let title = '', quote = '', note = '', risk = '', prestige = '';
+          let title = '', quote = '', quoteWho = '', note = '', risk = '', prestige = '';
 
           // 先提取尾部括号: （中·预估+3~+6威望）或（稳·预估+2威望）
           const tailM = rest.match(/[（(]([^）)]+)[）)]$/);
@@ -295,7 +295,15 @@ window.SGParser = (function () {
             const quoteM = afterColon.match(/^[「"'']([^」"'']*)[」"''](.*?)$/);
             if (quoteM) {
               quote = quoteM[1].trim();  // 引号内的内容
-              note = quoteM[2].trim();   // 引号后的补注（如 "——法正谏"）
+              const suffix = quoteM[2].trim();  // 引号后的部分（如 "——法正谏"）
+
+              // 解析 "——法正谏" 或 "—法正谏"
+              const whoM = suffix.match(/^[—–-]\s*(.+?)谏/);
+              if (whoM) {
+                quoteWho = whoM[1].trim();  // 提取武将名（如 "法正"）
+              } else {
+                note = suffix;  // 其他补注保留
+              }
             } else {
               // 没有引号，整个作为补注
               note = afterColon;
@@ -309,6 +317,7 @@ window.SGParser = (function () {
             idx: LING_NUMS_ORDER.indexOf(num),
             title: title,
             quote: quote,
+            quoteWho: quoteWho,  // 新增
             note: note,
             risk: risk,
             prestige: prestige,
