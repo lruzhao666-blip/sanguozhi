@@ -13870,6 +13870,10 @@ html.tab-switching {
     font-weight: 600;
     color: var(--gold-light);
   }
+
+  .opp-tooltip-prestige .range-sep {
+    padding: 0 3px;
+  }
 }
 
 /* ═══ 手机端：底部抽屉 ═══ */
@@ -13996,6 +14000,10 @@ html.tab-switching {
     font-size: .84rem;
     font-weight: 600;
     color: var(--gold-light);
+  }
+
+  .opp-drawer-prestige .range-sep {
+    padding: 0 3px;
   }
 }
 
@@ -14244,6 +14252,10 @@ html.tab-switching {
     font-weight: 600;
     color: var(--gold-light);
   }
+
+  .opp-tooltip-prestige .range-sep {
+    padding: 0 3px;
+  }
 }
 
 /* ═══ 手机端：底部抽屉 ═══ */
@@ -14371,6 +14383,10 @@ html.tab-switching {
     font-weight: 600;
     color: var(--gold-light);
   }
+
+  .opp-drawer-prestige .range-sep {
+    padding: 0 3px;
+  }
 }
 
 /* 空态占位 */
@@ -14433,4 +14449,9 @@ html.tab-switching {
 .opp-drawer {
   -webkit-user-select: text;
   user-select: text;
+}
+
+/* 通用威望范围符间距（兜底所有区域） */
+.range-sep {
+  padding: 0 3px;
 }
