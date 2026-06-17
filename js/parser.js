@@ -285,17 +285,19 @@ window.SGParser = (function () {
           }
 
           // 从 body 提取标题和引言
-          // body 格式: "南下援汝南：「主公,曹仁势大...」率主力疾趋汝南"
+          // body 格式: "南下援汝南：「主公,曹仁势大...」——法正谏"
           const colonIdx = body.search(/[：:]/);
           if (colonIdx > 0) {
             title = body.slice(0, colonIdx).trim();
             const afterColon = body.slice(colonIdx + 1).trim();
-            // 照抄原文：引号及引号后所有内容作为完整的 quote
-            const quoteM = afterColon.match(/^([「"''][^」"'']*[」"''].*)$/);
+
+            // 提取引号内的内容（不包括引号本身）+ 引号后的补注
+            const quoteM = afterColon.match(/^[「"'']([^」"'']*)[」"''](.*?)$/);
             if (quoteM) {
-              quote = quoteM[1].trim();
-              note = '';
+              quote = quoteM[1].trim();  // 引号内的内容
+              note = quoteM[2].trim();   // 引号后的补注（如 "——法正谏"）
             } else {
+              // 没有引号，整个作为补注
               note = afterColon;
             }
           } else {
