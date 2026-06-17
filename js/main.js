@@ -1102,7 +1102,7 @@
 
     var cards = document.querySelectorAll('.opp-display[data-opp-id]');
     cards.forEach(function(card) {
-      card.addEventListener('mouseenter', function() {
+      card.addEventListener('mouseenter', function(e) {
         var oppId = parseInt(this.dataset.oppId);
         var opp = opps.find(function(o) { return o.id === oppId; });
         if (!opp || !opp.detail) return;
@@ -1126,8 +1126,14 @@
         tooltip.innerHTML = html;
         tooltip.classList.add('show');
 
-        // 智能定位
-        _act10PositionTooltip(tooltip, this);
+        // 初始定位（鼠标位置）
+        _act10PositionTooltipMouse(tooltip, e);
+      });
+
+      card.addEventListener('mousemove', function(e) {
+        if (!tooltip.classList.contains('show')) return;
+        // 跟随鼠标移动
+        _act10PositionTooltipMouse(tooltip, e);
       });
 
       card.addEventListener('mouseleave', function() {
@@ -1136,45 +1142,34 @@
     });
   }
 
-  // ── 智能定位算法 ──
-  function _act10PositionTooltip(tooltip, trigger) {
-    var rect = trigger.getBoundingClientRect();
-    var tooltipW = tooltip.offsetWidth;
-    var tooltipH = tooltip.offsetHeight;
-    var winW = window.innerWidth;
-    var winH = window.innerHeight;
-    var gap = 8;
+  // ── 机遇悬浮卡跟随鼠标定位（复用武将悬浮卡逻辑）──
+  function _act10PositionTooltipMouse(tooltip, e) {
+    var W  = window.innerWidth;
+    var H  = window.innerHeight;
+    var tw = tooltip.offsetWidth  || 420;
+    var th = tooltip.offsetHeight || 300;
+    var gap = 16;
 
-    var x, y;
+    // 默认右下定位（鼠标右下方）
+    var x = e.clientX + gap;
+    var y = e.clientY + gap;
 
-    // 优先右侧
-    if (rect.right + gap + tooltipW <= winW) {
-      x = rect.right + gap;
-      y = rect.top;
-    }
-    // 尝试左侧
-    else if (rect.left - gap - tooltipW >= 0) {
-      x = rect.left - gap - tooltipW;
-      y = rect.top;
-    }
-    // 尝试上方
-    else if (rect.top - gap - tooltipH >= 0) {
-      x = Math.max(gap, Math.min(winW - tooltipW - gap, rect.left));
-      y = rect.top - gap - tooltipH;
-    }
-    // 兜底下方
-    else {
-      x = Math.max(gap, Math.min(winW - tooltipW - gap, rect.left));
-      y = rect.bottom + gap;
+    // 右侧超出 → 改为左侧
+    if (x + tw > W - 8) {
+      x = e.clientX - tw - 12;
     }
 
-    // 垂直居中调整
-    if (y + tooltipH > winH - gap) {
-      y = Math.max(gap, winH - tooltipH - gap);
+    // 下方超出 → 改为上方
+    if (y + th > H - 8) {
+      y = e.clientY - th - 12;
     }
+
+    // 边界保护
+    if (x < 4) x = 4;
+    if (y < 4) y = 4;
 
     tooltip.style.left = x + 'px';
-    tooltip.style.top = y + 'px';
+    tooltip.style.top  = y + 'px';
   }
 
   // ── 手机端：底部抽屉初始化 ──
