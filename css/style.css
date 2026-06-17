@@ -14409,3 +14409,18 @@ html.tab-switching {
 .opp-display:hover::before {
   width: 4px !important;
 }
+
+/* 移除手机端点击机遇卡片的蓝色高亮残像 */
+.opp-display {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 允许悬浮卡和抽屉内容可选中（方便复制） */
+#opp-tooltip,
+.opp-drawer {
+  -webkit-user-select: text;
+  user-select: text;
+}
