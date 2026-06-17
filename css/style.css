@@ -14455,3 +14455,159 @@ html.tab-switching {
 .range-sep {
   padding: 0 3px;
 }
+/* ════════════════════════════════════════════════════════════
+   实时同步 UI 样式
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 连接状态指示器 ── */
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .72rem;
+  color: var(--text-dim);
+  transition: color .3s;
+}
+
+.sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: background .3s;
+}
+
+/* 连接状态：正常 */
+.sync-status.connected .sync-dot {
+  background: #2ecc71;
+  box-shadow: 0 0 4px rgba(46,204,113,.6);
+}
+
+.sync-status.connected .sync-text {
+  color: rgba(46,204,113,.8);
+}
+
+/* 连接状态：断开 */
+.sync-status.disconnected {
+  color: #e74c3c;
+  cursor: pointer;
+}
+
+.sync-status.disconnected .sync-dot {
+  background: #e74c3c;
+  box-shadow: 0 0 4px rgba(231,76,60,.6);
+}
+
+.sync-status.disconnected:hover {
+  opacity: .8;
+}
+
+/* ── 实时通知横幅 ── */
+.realtime-banner {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  min-width: 400px;
+  max-width: 600px;
+  padding: 14px 24px;
+  background: rgba(212,168,67,.15);
+  border: 1px solid var(--border-gold);
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity .3s, transform .3s;
+  pointer-events: none;
+}
+
+.realtime-banner.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.realtime-banner.hidden {
+  display: none;
+}
+
+.rb-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-serif);
+  font-size: .88rem;
+  color: var(--gold-light);
+  letter-spacing: .02em;
+}
+
+.rb-icon {
+  font-size: 1rem;
+}
+
+.rb-text {
+  flex: 1;
+}
+
+/* 新回合横幅（赤红主题） */
+.realtime-banner.new-round {
+  background: rgba(231,76,60,.15);
+  border-color: var(--border-red);
+  cursor: pointer;
+}
+
+.realtime-banner.new-round .rb-content {
+  color: var(--red-bright);
+}
+
+.realtime-banner.new-round:hover {
+  background: rgba(231,76,60,.22);
+}
+
+/* ── Footer 提交状态 ── */
+.submit-status {
+  font-size: .72rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.submit-count {
+  color: var(--gold-light);
+  font-weight: 600;
+}
+
+#submit-markers {
+  display: inline-flex;
+  gap: 4px;
+  font-family: var(--font-sans);
+}
+
+.submit-marker {
+  font-size: .7rem;
+}
+
+.submit-marker.done {
+  color: var(--gold-light);
+}
+
+.submit-marker.pending {
+  color: rgba(180,140,50,.3);
+}
+
+/* ── 移动端适配 ── */
+@media (max-width: 768px) {
+  .realtime-banner {
+    min-width: 90%;
+    top: 60px;
+    padding: 12px 16px;
+  }
+
+  .rb-content {
+    font-size: .8rem;
+  }
+
+  .submit-status {
+    display: none; /* 手机端隐藏提交状态，避免 footer 过挤 */
+  }
+}
