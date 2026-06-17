@@ -13492,94 +13492,6 @@ html.tab-switching {
 }
 
 /* ════════════════════════════════════════
-   身份识别选择器 v1
-   工单：#identity-selector-v1
-   ════════════════════════════════════════ */
-
-.header-sync-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap; /* 移动端允许换行 */
-  gap: 8px;
-}
-
-.identity-selector {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-left: 12px;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.identity-label {
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  margin-right: 2px;
-}
-
-.identity-btn {
-  padding: 4px 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.3);
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.identity-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.identity-btn.active {
-  border-color: var(--p0-glow);
-  background: rgba(var(--p0-glow-rgb, 180, 120, 255), 0.15);
-  color: var(--p0-glow);
-  box-shadow: 0 0 8px rgba(var(--p0-glow-rgb, 180, 120, 255), 0.3);
-}
-
-.identity-btn[data-slot="0"].active {
-  --p0-glow: #b478ff;
-  --p0-glow-rgb: 180, 120, 255;
-}
-
-.identity-btn[data-slot="1"].active {
-  --p0-glow: #4ac8ff;
-  --p0-glow-rgb: 74, 200, 255;
-}
-
-.identity-btn[data-slot="2"].active {
-  --p0-glow: #ffb84a;
-  --p0-glow-rgb: 255, 184, 74;
-}
-
-/* 移动端适配 */
-@media (max-width: 768px) {
-  .identity-selector {
-    padding-left: 0;
-    border-left: none;
-    width: 100%;
-    justify-content: center;
-    margin-top: 4px;
-  }
-
-  .identity-label {
-    font-size: 0.7rem;
-  }
-
-  .identity-btn {
-    padding: 3px 10px;
-    font-size: 0.7rem;
-  }
-}
-
-/* ════════════════════════════════════════
    只读面板样式 v1
    工单：#identity-selector-v1
    ════════════════════════════════════════ */
@@ -13614,4 +13526,107 @@ html.tab-switching {
   padding: 2px 8px;
   border-radius: 3px;
   z-index: 10;
+}
+
+/* ════════════════════════════════════════
+   身份选择器 v2 — 页脚右下角 + 势力色
+   工单：#identity-footer-v2
+   ════════════════════════════════════════ */
+
+/* 页脚布局调整 */
+#site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  position: relative;
+}
+
+/* 身份选择器容器 */
+.identity-selector-footer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 0.7rem;
+}
+
+/* "我的身份："标签 */
+.identity-selector-footer .identity-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  opacity: 0.6;
+  margin-right: 2px;
+}
+
+/* 身份按钮基础样式 */
+.identity-selector-footer .identity-btn {
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.identity-selector-footer .identity-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 选中态 — 使用势力色 */
+.identity-selector-footer .identity-btn.active {
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* 甲 — 紫色 */
+.identity-selector-footer .identity-btn[data-slot="0"].active {
+  border-color: #b478ff;
+  background: rgba(180, 120, 255, 0.12);
+  color: #b478ff;
+}
+
+/* 乙 — 蓝色 */
+.identity-selector-footer .identity-btn[data-slot="1"].active {
+  border-color: #4ac8ff;
+  background: rgba(74, 200, 255, 0.12);
+  color: #4ac8ff;
+}
+
+/* 丙 — 橙色 */
+.identity-selector-footer .identity-btn[data-slot="2"].active {
+  border-color: #ffb84a;
+  background: rgba(255, 184, 74, 0.12);
+  color: #ffb84a;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  #site-footer {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .identity-selector-footer {
+    margin-left: 0;
+    margin-top: 4px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .identity-selector-footer .identity-label {
+    font-size: 0.62rem;
+  }
+
+  .identity-selector-footer .identity-btn {
+    padding: 2px 10px;
+    font-size: 0.66rem;
+  }
 }
