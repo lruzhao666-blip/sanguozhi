@@ -91,7 +91,12 @@ header, nav, main, footer { position: relative; z-index: 1; }
   height: 1px; margin-top: 10px;
   background: linear-gradient(90deg, transparent, rgba(180,120,40,.5), rgba(212,168,67,.7), rgba(180,120,40,.5), transparent);
 }
-.header-sync-bar { padding: 5px 0 4px; }
+.header-sync-bar {
+  padding: 5px 0 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .sync-status { font-size: .66rem; letter-spacing: .06em; color: #6dbe6d; font-family: var(--font-sans); }
 
 /* ══ NAV ══ */
