@@ -1754,9 +1754,9 @@ header, nav, main, footer { position: relative; z-index: 1; }
 }
 /* 状态 badge */
 .ag-status-badge {
-  display: inline-block; padding: 1px 9px; border-radius: 10px;
+  /* display: inline-block; padding: 1px 9px; border-radius: 10px;
   font-size: .68rem; font-family: var(--font-sans); font-weight: 700;
-  letter-spacing: .06em; white-space: nowrap;
+  letter-spacing: .06em; white-space: nowrap; overrides at bottom */
 }
 .ag-status-injured { background: rgba(200,55,45,.18);  color: #f08878; border: 1px solid rgba(210,65,55,.30); }
 .ag-status-tired   { background: rgba(180,120,30,.16); color: #d4aa43; border: 1px solid rgba(190,130,40,.28); }
@@ -14639,4 +14639,60 @@ html.tab-switching {
   overflow: hidden; /* 隐藏滚动条 */
   min-height: 32px; /* 最小高度 */
   transition: height 0.1s ease; /* 平滑过渡 */
+}
+
+/* ══════════════════════════════════════════
+   武将状态小标签
+   ══════════════════════════════════════════ */
+
+.ag-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  padding: 2px 5px;
+  border-radius: 2px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  font-family: var(--font-sans);
+  line-height: 1;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* 受伤 - 红色 */
+.ag-status-badge.injured {
+  background: rgba(200,55,45,.18);
+  color: #f08878;
+  border: 1px solid rgba(210,65,55,.30);
+}
+
+/* 疲劳 - 黄色 */
+.ag-status-badge.tired {
+  background: rgba(180,120,30,.16);
+  color: #d4aa43;
+  border: 1px solid rgba(190,130,40,.28);
+}
+
+/* 患病 - 紫色 */
+.ag-status-badge.sick {
+  background: rgba(140,60,180,.16);
+  color: #c08ae0;
+  border: 1px solid rgba(150,70,190,.26);
+}
+
+/* 阵亡 - 灰色 */
+.ag-status-badge.dead {
+  background: rgba(60,60,60,.22);
+  color: #888;
+  border: 1px solid rgba(80,80,80,.30);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .ag-status-badge {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    margin-left: 3px;
+  }
 }

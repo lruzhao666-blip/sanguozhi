@@ -960,36 +960,38 @@ window.SGParser = (function () {
   function _parseGeneralList(raw) {
     if (!raw || !raw.trim()) return [];
     const result = [];
-    // 同时匹配半角 () 和全角（）括号 — BUG#4 修复
-    const re = /([^,，、(（\s]+)[（(]([^）)]*)[）)]/g;
-    let m;
-    while ((m = re.exec(raw)) !== null) {
-      const name   = m[1].trim();
-      // 状态字段去除括号内多余空格，再查白名单
-      let   status = m[2].trim();
-      // #sanguo-parser-empty-status-fix-v1
-      // 规则书 M-29 红线六:空括号 = 健康,不打警告
-      if (!status) {
-        status = '健康';
-      } else if (!VALID_STATUS.includes(status)) {
-        // 白名单外的非空状态：记录警告但不丢失武将，默认健康
-        /* #parser-silence-warns-v1 silenced */
-        status = '健康';
-      }
-      // 武将名：2-8 汉字（过滤拼音、英文、残余标点）
-      if (name && name.length >= 2 && name.length <= 8 && /[\u4e00-\u9fa5]/.test(name)) {
-        result.push({ name, status });
-      }
-    }
-    // 兜底：无括号格式（如 "马超,庞德"）
-    if (!result.length) {
-      raw.split(/[,，、\s]+/).forEach(s => {
-        const n = s.trim();
-        if (n && n.length >= 2 && n.length <= 8 && /[\u4e00-\u9fa5]/.test(n)) {
-          result.push({ name: n, status: '健康' });
+
+    // 第一步：用逗号、顿号或空格分割各个武将
+    const agParts = raw.split(/[,，、\s]+/);
+
+    agParts.forEach(function(part) {
+      part = part.trim();
+      if (!part) return;
+
+      // 匹配：武将名(状态) 支持全角/半角
+      const m = part.match(/^([^()（）]+)(?:[(（]([^)）]*)[)）])?$/);
+      if (m) {
+        const name = m[1].trim();
+        const statusText = m[2] ? m[2].trim() : '';
+
+        let status = null;
+        if (statusText === '受伤') status = 'injured';
+        else if (statusText === '疲劳') status = 'tired';
+        else if (statusText === '患病' || statusText === '生病') status = 'sick';
+        else if (statusText === '阵亡') status = 'dead';
+
+        // 如果是有效武将名
+        if (name && name.length >= 2 && name.length <= 8 && /[\u4e00-\u9fa5]/.test(name)) {
+          result.push({ name: name, status: status });
         }
-      });
-    }
+      } else {
+        // 没有括号或者其他格式，默认健康
+        if (part && part.length >= 2 && part.length <= 8 && /[\u4e00-\u9fa5]/.test(part)) {
+          result.push({ name: part, status: null });
+        }
+      }
+    });
+
     return result;
   }
 
