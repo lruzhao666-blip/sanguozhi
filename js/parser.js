@@ -123,8 +123,8 @@ window.SGParser = (function () {
     // 移除多余的加号：++8 → +8, +++10 → +10
     let normalized = raw.replace(/^\+{2,}/, '+');
 
-    // 处理范围中的多余加号：+8~++10 → +8~+10
-    normalized = normalized.replace(/~\+{2,}/, '~+');
+  // 处理范围中的多余加号：+8~++10 → +8~+10 或 ~++10 → ~+10
+  normalized = normalized.replace(/~\+{2,}/g, '~+');
 
     return normalized;
   }

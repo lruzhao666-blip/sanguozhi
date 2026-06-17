@@ -1076,7 +1076,7 @@
       h += '<div class="opp-display ' + cls + '" data-opp-id="' + o.id + '" data-opp-type="' + o.type + '">';
       h += '<div class="opp-top"><span class="opp-id">机遇' + o.id + '</span><span class="opp-name">' + _act10Esc(o.title) + '</span><span class="opp-type-icon">' + (TI[o.type] || '⚔️') + '</span></div>';
       h += '<div class="opp-desc">' + _act10Esc(o.desc) + '</div>';
-      h += '<div class="opp-foot"><span class="opp-pres">预估 ' + _act10Esc(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
+      h += '<div class="opp-foot"><span class="opp-pres">预估 ' + _act10WrapPrestige(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
       h += '</div>';
     });
     el.innerHTML = h;
@@ -1120,7 +1120,7 @@
         html += '</div>';
         html += '<div class="opp-tooltip-body">';
         html += _act10Esc(opp.detail).replace(/\n/g, '<br>');
-        html += '<div class="opp-tooltip-prestige">预估 ' + _act10Esc(String(opp.prestige)) + ' 威望</div>';
+        html += '<div class="opp-tooltip-prestige">预估 ' + _act10WrapPrestige(String(opp.prestige)) + ' 威望</div>';
         html += '</div>';
 
         tooltip.innerHTML = html;
@@ -1209,7 +1209,7 @@
 
         var bodyHtml = '';
         bodyHtml += _act10Esc(opp.detail).replace(/\n/g, '<br>');
-        bodyHtml += '<div class="opp-drawer-prestige">预估 ' + _act10Esc(String(opp.prestige)) + ' 威望</div>';
+        bodyHtml += '<div class="opp-drawer-prestige">预估 ' + _act10WrapPrestige(String(opp.prestige)) + ' 威望</div>';
 
         overlay.querySelector('.opp-drawer-header').innerHTML = headerHtml;
         overlay.querySelector('.opp-drawer-body').innerHTML = bodyHtml;
@@ -1322,7 +1322,7 @@
       var rc = ling.risk === '稳' ? 'chip-s' : ling.risk === '险' ? 'chip-r' : 'chip-m';
       h += '<div class="ling-risk">';
       if (ling.risk) h += '<span class="chip ' + rc + '">' + _act10Esc(ling.risk) + '</span>';
-      if (ling.prestige) h += '<span class="ling-pres">预估 +' + _act10Esc(ling.prestige) + ' 威望</span>';
+      if (ling.prestige) h += '<span class="ling-pres">预估 ' + _act10WrapPrestige('+' + ling.prestige) + ' 威望</span>';
       h += '</div>';
     }
     h += '</div>';
@@ -1411,7 +1411,7 @@
       h += '<div class="opp-rdot"></div>';
       h += '<span class="opp-opt-icon">' + (TI[o.type] || '⚔️') + '</span>';
       h += '<span class="opp-opt-name">机遇' + o.id + ' · ' + _act10Esc(o.title) + '</span>';
-      h += '<span class="opp-opt-pres">+' + o.prestige + '</span>';
+      h += '<span class="opp-opt-pres">' + _act10WrapPrestige(String(o.prestige)) + '</span>';
       h += '<span class="chip ' + (TC[o.type] || 'chip-ot-jing') + '" style="margin-left:2px;">' + (TT[o.type] || '竞争') + '</span>';
       h += '</div>';
     });
@@ -2197,6 +2197,12 @@
   function _act10Esc(s) {
     if (!s) return '';
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── 威望范围符包裹工具函数 ──
+  function _act10WrapPrestige(str) {
+    if (!str) return '';
+    return _act10Esc(String(str)).replace(/~/g, '<span class="range-sep">~</span>');
   }
 
   function renderAll() {
@@ -5224,7 +5230,7 @@ function renderOpportunities(opportunities) {
         </div>
         <div class="opp-card-desc">${esc(opp.desc)}</div>
         <div class="opp-card-foot">
-          <span class="opp-card-prestige">预估 +${opp.prestige} 威望</span>
+          <span class="opp-card-prestige">预估 ${_act10WrapPrestige('+' + opp.prestige)} 威望</span>
         </div>
       </div>
       <div class="opp-card-actions">
@@ -5336,7 +5342,7 @@ function fillLingOption(lingType, option, data) {
   }
 
   if (prestigeEl) {
-    prestigeEl.innerHTML = `预估 <strong>+${data.prestige}</strong> 威望`;
+    prestigeEl.innerHTML = `预估 <strong>${_act10WrapPrestige('+' + data.prestige)}</strong> 威望`;
   }
 }
 
