@@ -1079,8 +1079,6 @@
       h += '<div class="opp-foot"><span class="opp-pres">预估 ' + _act10Esc(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
       h += '</div>';
     });
-    var TOTAL_SLOTS = 4;
-    for (var i = opps.length; i < TOTAL_SLOTS; i++) h += '<div class="opp-empty"></div>';
     el.innerHTML = h;
 
     // 电脑端：智能悬浮卡
