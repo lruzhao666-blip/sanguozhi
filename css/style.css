@@ -1296,11 +1296,22 @@ header, nav, main, footer { position: relative; z-index: 1; }
    Footer / Toast
 ══════════════════════════════════════════ */
 #site-footer {
-  text-align: center; padding: 12px; border-top: 1px solid rgba(80,25,15,.3);
+  text-align: center; border-top: 1px solid rgba(80,25,15,.3);
   font-size: .68rem; color: var(--text-dim); background: rgba(3,0,0,.9);
-  letter-spacing: .12em; display: flex; align-items: center; justify-content: center; gap: 8px;
+  letter-spacing: .12em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 20px;
 }
-.footer-sep { color: rgba(120,40,20,.5); }
+.footer-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.footer-sep { color: rgba(120,40,20,.5); opacity: 0.5; }
 .toast {
   position: fixed; bottom: 24px; left: 50%;
   transform: translateX(-50%) translateY(10px);
@@ -13492,13 +13503,16 @@ html.tab-switching {
 }
 
 /* ════════════════════════════════════════
-   只读面板样式 v1
+   只读面板样式 v1 — 已禁用（工单#readonly-remove）
    工单：#identity-selector-v1
    ════════════════════════════════════════ */
 
+/* 需求1：取消透明度降低规则，保留此注释块但不应用样式 */
+
+/*
 .col-panel.readonly {
   opacity: 0.6;
-  pointer-events: none; /* 禁用所有交互 */
+  pointer-events: none;
 }
 
 .col-panel.readonly .col-head {
@@ -13506,7 +13520,7 @@ html.tab-switching {
 }
 
 .col-panel.readonly .submit-btn {
-  display: none; /* 隐藏提交按钮 */
+  display: none;
 }
 
 .col-panel.readonly .opt,
@@ -13514,7 +13528,6 @@ html.tab-switching {
   cursor: not-allowed;
 }
 
-/* 只读提示（可选，如果需要更明显的提示） */
 .col-panel.readonly::before {
   content: '🔒 只读';
   position: absolute;
@@ -13527,106 +13540,139 @@ html.tab-switching {
   border-radius: 3px;
   z-index: 10;
 }
+*/
 
 /* ════════════════════════════════════════
-   身份选择器 v2 — 页脚右下角 + 势力色
-   工单：#identity-footer-v2
+   提交后锁定面板样式 v1
+   工单：#submit-lock-v1
    ════════════════════════════════════════ */
 
-/* 页脚布局调整 */
-#site-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
+/* 已提交且锁定态 */
+.col-panel.submitted-locked {
   position: relative;
 }
 
-/* 身份选择器容器 */
-.identity-selector-footer {
+.col-panel.submitted-locked .col-body {
+  pointer-events: none;
+  position: relative;
+}
+
+/* 锁定态遮罩层（半透明，显示"已锁定"） */
+.col-panel.submitted-locked .col-body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* 锁定提示 */
+.col-panel.submitted-locked .col-body::after {
+  content: '🔒 已锁定';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 6;
+  pointer-events: none;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* 修改按钮 */
+.col-edit-btn {
+  display: none;
+  margin-top: 8px;
+  padding: 6px 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 200, 100, 0.5);
+  border-radius: 4px;
+  background: rgba(255, 200, 100, 0.15);
+  color: #ffcc66;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.col-edit-btn:hover {
+  background: rgba(255, 200, 100, 0.25);
+  border-color: rgba(255, 200, 100, 0.7);
+  color: #ffd480;
+}
+
+/* 锁定态时显示修改按钮 */
+.col-panel.submitted-locked .col-edit-btn {
+  display: inline-block;
+}
+
+/* 锁定态时隐藏提交按钮 */
+.col-panel.submitted-locked .submit-btn {
+  display: none;
+}
+
+/* ════════════════════════════════════════
+   极简身份选择器 v3 — 方案A
+   工单：#identity-minimal-v3
+   ════════════════════════════════════════ */
+
+.identity-selector-minimal {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-left: auto;
-  font-size: 0.7rem;
 }
 
-/* "我的身份："标签 */
-.identity-selector-footer .identity-label {
-  font-size: 0.65rem;
-  color: var(--text-dim);
-  opacity: 0.6;
-  margin-right: 2px;
-}
-
-/* 身份按钮基础样式 */
-.identity-selector-footer .identity-btn {
-  padding: 2px 8px;
-  font-size: 0.68rem;
+.identity-btn-mini {
+  padding: 2px 6px;
+  font-size: 0.72rem;
   font-weight: 500;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: none;
   border-radius: 3px;
-  background: rgba(0, 0, 0, 0.2);
+  background: transparent;
   color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
 }
 
-.identity-selector-footer .identity-btn:hover {
+.identity-btn-mini:hover {
+  color: rgba(255, 255, 255, 0.7);
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: rgba(255, 255, 255, 0.6);
 }
 
-/* 选中态 — 使用势力色 */
-.identity-selector-footer .identity-btn.active {
+/* 选中态 — 纯颜色高亮，无边框无背景 */
+.identity-btn-mini.active {
   font-weight: 600;
-  box-shadow: none;
 }
 
-/* 甲 — 紫色 */
-.identity-selector-footer .identity-btn[data-slot="0"].active {
-  border-color: #b478ff;
-  background: rgba(180, 120, 255, 0.12);
-  color: #b478ff;
+/* 甲 — 红色 */
+.identity-btn-mini[data-slot="0"].active {
+  color: #ff6b6b;
 }
 
-/* 乙 — 蓝色 */
-.identity-selector-footer .identity-btn[data-slot="1"].active {
-  border-color: #4ac8ff;
-  background: rgba(74, 200, 255, 0.12);
-  color: #4ac8ff;
+/* 乙 — 绿色 */
+.identity-btn-mini[data-slot="1"].active {
+  color: #51cf66;
 }
 
-/* 丙 — 橙色 */
-.identity-selector-footer .identity-btn[data-slot="2"].active {
-  border-color: #ffb84a;
-  background: rgba(255, 184, 74, 0.12);
-  color: #ffb84a;
+/* 丙 — 蓝色 */
+.identity-btn-mini[data-slot="2"].active {
+  color: #4dabf7;
 }
 
 /* 移动端适配 */
 @media (max-width: 768px) {
-  #site-footer {
-    flex-direction: column;
-    gap: 6px;
+  .footer-content {
+    font-size: 0.7rem;
   }
 
-  .identity-selector-footer {
-    margin-left: 0;
-    margin-top: 4px;
-    width: 100%;
-    justify-content: center;
-  }
-
-  .identity-selector-footer .identity-label {
-    font-size: 0.62rem;
-  }
-
-  .identity-selector-footer .identity-btn {
-    padding: 2px 10px;
-    font-size: 0.66rem;
+  .identity-btn-mini {
+    font-size: 0.7rem;
+    padding: 2px 8px;
   }
 }
