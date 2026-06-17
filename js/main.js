@@ -1138,7 +1138,7 @@
       h += '<div class="col-head">';
       h += '<span class="col-name">' + _act10Esc(pn) + '</span>';
       h += '<span class="col-slot-tag">[' + sk + ']</span>';
-      h += '<div class="col-sel-badge" id="act10-badge-' + i + '"><span class="sc">0</span>/2 已选</div>';
+      h += '<div class="col-sel-badge" id="act10-badge-' + i + '"><span class="sc">0</span>/3 已选</div>';
       if (pp !== '') h += '<div class="col-pres-val"><span class="col-pres-num">' + pp + '</span><span class="col-pres-lbl"> 威望</span></div>';
       h += '</div>';
 
@@ -1178,7 +1178,7 @@
         h += '<div class="submit-area" id="act10-submit-' + i + '">';
         h += '<button class="submit-btn" data-slot="' + i + '">提交行动</button>';
         h += '<button class="col-edit-btn" data-slot="' + i + '">📝 修改行动</button>';
-        h += '<span class="submit-hint" id="act10-hint-' + i + '">选满2个行动额度后提交</span>';
+        h += '<span class="submit-hint" id="act10-hint-' + i + '">选满3个行动额度后提交</span>';
         h += '<div class="val-toast" id="act10-toast-' + i + '"></div>';
         h += '</div>';
       }
@@ -1532,12 +1532,12 @@
     // 机遇是否选中
     var oppChecked = panel.querySelector('.opp-opt-row.checked');
     var oppCount = oppChecked ? 1 : 0;
-    var total = Math.min(lingCount + oppCount, 2);
+    var total = Math.min(lingCount + oppCount, 3);
     console.log('[act10] UpdateBadge slot', si, '- lingCount:', lingCount, 'oppCount:', oppCount, 'total:', total);
     var badge = document.getElementById('act10-badge-' + si);
     if (badge) {
       badge.querySelector('.sc').textContent = total;
-      badge.classList.toggle('full', total >= 2);
+      badge.classList.toggle('full', total >= 3);
     } else {
       console.warn('[act10] UpdateBadge: badge not found for slot', si);
     }
@@ -1596,7 +1596,7 @@
     var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
     if (!currentRound) { showToast('当前无回合数据'); return; }
 
-    // 校验：总额度2，机遇占1（可选），令占剩余
+    // 校验：总额度3，机遇占1（可选），令占剩余
     var reasons = [];
     var lingCount = 0;
     var zdjlEmpty = false;
@@ -1612,11 +1612,11 @@
     var oppChecked = panel.querySelector('.opp-opt-row.checked');
     var oppCount = oppChecked ? 1 : 0;
     var totalUsed = lingCount + oppCount;
-    if (totalUsed < 2) {
-      var need = 2 - totalUsed;
-      reasons.push('还需选择 <b>' + need + '</b> 个行动（已用 ' + totalUsed + ' / 2 额度）');
-    } else if (totalUsed > 2) {
-      reasons.push('行动额度已超（已选 ' + totalUsed + ' / 2 额度）。机遇占1个额度，请减少选择');
+    if (totalUsed < 3) {
+      var need = 3 - totalUsed;
+      reasons.push('还需选择 <b>' + need + '</b> 个行动（已用 ' + totalUsed + ' / 3 额度）');
+    } else if (totalUsed > 3) {
+      reasons.push('行动额度已超（已选 ' + totalUsed + ' / 3 额度）。机遇占1个额度，请减少选择');
     }
     if (zdjlEmpty) reasons.push('已勾选「自定军令」但内容为空，请填写后再提交');
     if (reasons.length) { _act10ShowToast(slotIdx, reasons); return; }
