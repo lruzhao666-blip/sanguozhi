@@ -1,1 +1,23 @@
-127.0.0.1 - - [13/Jun/2026 17:39:08] "GET /index.html HTTP/1.1" 200 -
+No-cache server running on port 8000
+17/Jun/2026 09:04:07 "GET / HTTP/1.1" 200 -
+17/Jun/2026 09:04:07 "GET /css/style.css?v=20260615land10 HTTP/1.1" 200 -
+17/Jun/2026 09:04:07 "GET /css/action-v10.css?v=10 HTTP/1.1" 200 -
+17/Jun/2026 09:04:07 "GET /js/parser.js?v=20260615fix6 HTTP/1.1" 200 -
+17/Jun/2026 09:04:07 "GET /js/map.js?v=20261111a HTTP/1.1" 200 -
+17/Jun/2026 09:04:07 "GET /js/generals-tooltip.js?v=v20260601a HTTP/1.1" 200 -
+17/Jun/2026 09:04:07 "GET /js/generals-organize.js?v=20260608a HTTP/1.1" 200 -
+17/Jun/2026 09:04:07 "GET /js/generals-organize-ui.js?v=20260608r HTTP/1.1" 200 -
+17/Jun/2026 09:04:07 "GET /js/main.js?v=20260616act10 HTTP/1.1" 200 -
+17/Jun/2026 09:04:08 "GET /images/bg-main.jpg HTTP/1.1" 200 -
+17/Jun/2026 09:04:12 "GET /images/map-bg2.jpg HTTP/1.1" 200 -
+17/Jun/2026 09:05:03 "GET / HTTP/1.1" 200 -
+17/Jun/2026 09:05:03 "GET /css/style.css?v=20260615land10 HTTP/1.1" 200 -
+17/Jun/2026 09:05:03 "GET /css/action-v10.css?v=10 HTTP/1.1" 200 -
+17/Jun/2026 09:05:03 "GET /js/parser.js?v=20260615fix6 HTTP/1.1" 200 -
+17/Jun/2026 09:05:03 "GET /js/map.js?v=20261111a HTTP/1.1" 200 -
+17/Jun/2026 09:05:03 "GET /js/generals-tooltip.js?v=v20260601a HTTP/1.1" 200 -
+17/Jun/2026 09:05:03 "GET /js/generals-organize.js?v=20260608a HTTP/1.1" 200 -
+17/Jun/2026 09:05:03 "GET /js/generals-organize-ui.js?v=20260608r HTTP/1.1" 200 -
+17/Jun/2026 09:05:03 "GET /js/main.js?v=20260616act10 HTTP/1.1" 200 -
+17/Jun/2026 09:05:03 "GET /images/bg-main.jpg HTTP/1.1" 200 -
+17/Jun/2026 09:05:06 "GET /images/map-bg2.jpg HTTP/1.1" 200 -
