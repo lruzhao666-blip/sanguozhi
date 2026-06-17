@@ -1094,7 +1094,7 @@
         if (pe) pp = pe.score;
       }
 
-      h += '<div class="col-panel' + (isEditable ? '' : ' readonly') + '" data-slot="' + i + '" data-editable="' + isEditable + '">';
+      h += '<div class="col-panel" data-slot="' + i + '" data-editable="' + isEditable + '">';
       h += '<div class="col-head">';
       h += '<span class="col-name">' + _act10Esc(pn) + '</span>';
       h += '<span class="col-slot-tag">[' + sk + ']</span>';
@@ -1137,6 +1137,7 @@
         // 提交区
         h += '<div class="submit-area" id="act10-submit-' + i + '">';
         h += '<button class="submit-btn" data-slot="' + i + '">提交行动</button>';
+        h += '<button class="col-edit-btn" data-slot="' + i + '">📝 修改行动</button>';
         h += '<span class="submit-hint" id="act10-hint-' + i + '">选满2个行动额度后提交</span>';
         h += '<div class="val-toast" id="act10-toast-' + i + '"></div>';
         h += '</div>';
@@ -1344,6 +1345,26 @@
       });
     });
 
+    // ↓↓↓ 工单 #submit-lock-v1 ↓↓↓
+    // 修改按钮
+    root.querySelectorAll('.col-edit-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var slotIdx = parseInt(this.dataset.slot);
+        var panel = root.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+        if (!panel) return;
+
+        // 解锁面板
+        panel.classList.remove('submitted-locked');
+
+        // 隐藏已提交摘要
+        var summary = document.getElementById('act10-summary-' + slotIdx);
+        if (summary) summary.style.display = 'none';
+
+        showToast('📝 已解锁，可重新选择行动');
+      });
+    });
+    // ↑↑↑ 工单结束 ↑↑↑
+
     // v6.3: 移动端 tab 已删除，无需事件绑定
   }
 
@@ -1478,6 +1499,11 @@
       if (!res.ok) throw new Error('HTTP ' + res.status);
       showToast('✅ ' + ACT10_SLOT_NAMES[slotIdx] + ' 行动已提交！');
       await _act10LoadSubmissions(currentRound);
+      // ↓↓↓ 工单 #submit-lock-v1 ↓↓↓
+      // 提交成功后锁定面板
+      var panel = root.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+      if (panel) panel.classList.add('submitted-locked');
+      // ↑↑↑ 工单结束 ↑↑↑
     } catch (e) {
       console.error('[act10] 提交失败:', e);
       // 超时或报错后，强制重新加载提交状态，确认是否真的失败
@@ -1527,6 +1553,14 @@
             sumEl.style.display = '';
             sumEl.innerHTML = _act10BuildSummary(sub, i);
           }
+          // ↓↓↓ 工单 #submit-lock-v1 ↓↓↓
+          // 已提交数据存在，且是当前玩家，自动锁定
+          var currentSlot = getCurrentPlayerSlot();
+          if (i === currentSlot) {
+            var panel = document.querySelector('.col-panel[data-slot="' + i + '"]');
+            if (panel) panel.classList.add('submitted-locked');
+          }
+          // ↑↑↑ 工单结束 ↑↑↑
           // 提交区改为"已提交 + 修改按钮"
           if (subArea) {
             subArea.innerHTML = '<div class="submitted-tag">✅ 已提交行动</div>'
