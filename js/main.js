@@ -1516,41 +1516,27 @@
       var submitted = {};
       rows.forEach(function(r) { submitted[r.slot] = r; });
 
-      // 渲染摘要 + 控制提交区 + 冻结面板
+      // 渲染摘要 + 控制提交区
       ACT10_SLOT_NAMES.forEach(function(sk, i) {
         var sumEl = document.getElementById('act10-summary-' + i);
         var subArea = document.getElementById('act10-submit-' + i);
-        var panel = document.querySelector('.col-panel[data-slot="' + i + '"]');
         var sub = submitted[sk];
-
         if (sub) {
           // 显示摘要
           if (sumEl) {
             sumEl.style.display = '';
             sumEl.innerHTML = _act10BuildSummary(sub, i);
           }
-
-          // ← 修改：只显示"已提交"标签，删除"修改"按钮
+          // 提交区改为"已提交 + 修改按钮"
           if (subArea) {
-            subArea.innerHTML = '<div class="submitted-tag">✅ 已提交行动 · 不可修改</div>';
-          }
-
-          // ← 新增：冻结面板（添加 .submitted 类）
-          if (panel) {
-            panel.classList.add('submitted');
-
-            // ← 新增：恢复已选项的 checked 状态（所有玩家都能看到）
-            if (typeof _act10RestoreSubmittedChoices === 'function') {
-              _act10RestoreSubmittedChoices(i, sub);
-            }
+            subArea.innerHTML = '<div class="submitted-tag">✅ 已提交行动</div>'
+              + '<button class="withdraw-btn" data-slot="' + i + '">修改</button>';
+            subArea.querySelector('.withdraw-btn').addEventListener('click', function() {
+              _act10Withdraw(parseInt(this.dataset.slot));
+            });
           }
         } else {
           if (sumEl) sumEl.style.display = 'none';
-
-          // ← 新增：移除冻结状态
-          if (panel) {
-            panel.classList.remove('submitted');
-          }
         }
       });
 
@@ -1571,72 +1557,6 @@
   }
 
   // ══════════════════════════════════════════
-  //  恢复已提交玩家的选择状态（所有玩家可见）
-  // ══════════════════════════════════════════
-  /**
-   * 恢复已提交玩家的选择状态
-   * - 勾选对应的选项（添加 checked 类）
-   * - 填充自定军令和备注内容（只读）
-   * - 所有玩家都能看到相同的 checked 高亮
-   */
-  function _act10RestoreSubmittedChoices(slotIdx, sub) {
-    var panel = document.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
-    if (!panel || !sub) return;
-
-    // 先清除所有选中状态
-    panel.querySelectorAll('.opt').forEach(function(opt) {
-      opt.classList.remove('checked');
-    });
-    panel.querySelectorAll('.opp-opt-row').forEach(function(row) {
-      row.classList.remove('checked');
-    });
-    panel.classList.remove('opp-active');
-
-    var lingSelections = safeJson(sub.ling_selections, []);
-    var oppSel = safeJson(sub.opp_selection, {});
-
-    // 1. 恢复行动令选择（勾选对应选项）
-    lingSelections.forEach(function(sel) {
-      var lings = panel.querySelectorAll('.ling');
-      var ling = lings[sel.lingIdx];
-      if (!ling) return;
-
-      var targetOpt = null;
-      if (sel.customText) {
-        // 自定军令：勾选 + 填充内容
-        targetOpt = ling.querySelector('.opt.zdjl-opt');
-        if (targetOpt) {
-          targetOpt.classList.add('checked');
-          var ta = targetOpt.querySelector('.zdjl-ta');
-          if (ta) {
-            ta.value = sel.customText;
-            ta.setAttribute('readonly', 'readonly'); // 只读
-          }
-        }
-      } else {
-        // 普通选项：勾选
-        targetOpt = ling.querySelector('.opt[data-val="' + sel.choice + '"]');
-        if (targetOpt) {
-          targetOpt.classList.add('checked');
-
-          // 显示备注区（如果有备注内容）
-          var rem = document.getElementById('act10-remark-' + slotIdx + '-' + sel.lingIdx);
-          if (rem) rem.classList.add('visible');
-        }
-      }
-    });
-
-    // 2. 恢复机遇选择
-    if (oppSel.type === 'opp' && oppSel.oppId) {
-      var oppRow = panel.querySelector('.opp-opt-row[data-opp-id="' + oppSel.oppId + '"]');
-      if (oppRow) {
-        oppRow.classList.add('checked');
-        panel.classList.add('opp-active');
-      }
-    }
-  }
-
-  // ══════════════════════════════════════════
   //  行动提交实时变更回调
   // ══════════════════════════════════════════
   async function _onActionSubmissionChanged(payload) {
@@ -1649,24 +1569,29 @@
 
     console.log('[act10] 检测到行动提交变更，同步中...', payload);
 
-    // 重新加载提交状态（会自动冻结面板 + 恢复选择）
+    // 重新加载提交状态
     await _act10LoadSubmissions(currentRound);
 
     // 检查是否三人全部提交
     _checkAllSubmitted();
 
-    // ← 新增：提示哪个玩家刚刚提交了
+    // ← 修改：强化高亮更新 + Toast 提示
+    _act10UpdateAllPanelsHighlight();
+
+    // 提示：哪个玩家刚刚提交/修改了
     if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
       var changedSlot = payload.new?.slot;
       if (changedSlot) {
         var slotIdx = ACT10_SLOT_NAMES.indexOf(changedSlot);
         var playerName = state.players[slotIdx] ? state.players[slotIdx].name : '城主' + changedSlot;
-        var currentSlot = getCurrentPlayerSlot();
-
-        // 只给其他玩家显示提示（自己提交时已经有提示了）
-        if (slotIdx !== currentSlot) {
-          showToast('📬 ' + playerName + ' 已提交行动', 'info', 2000);
-        }
+        showToast('📬 ' + playerName + ' 已提交行动', 'info', 2000);
+      }
+    } else if (payload.eventType === 'DELETE') {
+      var changedSlot = payload.old?.slot;
+      if (changedSlot) {
+        var slotIdx = ACT10_SLOT_NAMES.indexOf(changedSlot);
+        var playerName = state.players[slotIdx] ? state.players[slotIdx].name : '城主' + changedSlot;
+        showToast('↩️ ' + playerName + ' 已撤回行动', 'info', 2000);
       }
     }
   }
@@ -1788,10 +1713,120 @@
     return h;
   }
 
-  // ═══ 已废弃：工单2删除"修改"功能，提交后不可撤回 ═══
-  // async function _act10Withdraw(slotIdx) {
-  //   ...
-  // }
+  // ── 修改（撤回后重新编辑）──
+  async function _act10Withdraw(slotIdx) {
+    var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (!currentRound) return;
+    var sk = ACT10_SLOT_NAMES[slotIdx];
+
+    // 获取已提交的数据
+    var submitted = window._act10Submitted || {};
+    var sub = submitted[sk];
+    if (!sub) return;
+
+    // ← ↓↓↓ 新增：真删除数据库记录 ↓↓↓
+    try {
+      // 删除 Supabase 中的提交记录
+      var deleteUrl = ACT10_SUPA_URL + '?round=eq.' + currentRound + '&slot=eq.' + sk;
+      var res = await fetchWithTimeout(deleteUrl, {
+        method: 'DELETE',
+        headers: SUPA_HEADERS,
+      }, 8000);
+
+      if (!res.ok) {
+        console.error('[act10] 删除提交记录失败:', res.status);
+        showToast('❌ 撤回失败，请重试');
+        return;
+      }
+
+      // 从本地缓存中移除
+      delete submitted[sk];
+      window._act10Submitted = submitted;
+
+      showToast('↩️ 已撤回 ' + sk + ' 的提交，可重新编辑');
+    } catch (e) {
+      console.error('[act10] 撤回失败:', e);
+      showToast('❌ 撤回失败，请重试');
+      return;
+    }
+    // ← ↑↑↑ 新增结束 ↑↑↑
+
+    // 隐藏摘要
+    var sumEl = document.getElementById('act10-summary-' + slotIdx);
+    if (sumEl) sumEl.style.display = 'none';
+
+    // 恢复提交按钮
+    var subArea = document.getElementById('act10-submit-' + slotIdx);
+    if (subArea) {
+      subArea.innerHTML = '<button class="submit-btn" data-slot="' + slotIdx + '">提交行动</button>'
+        + '<span class="submit-hint" id="act10-hint-' + slotIdx + '">修改后重新提交</span>'
+        + '<div class="val-toast" id="act10-toast-' + slotIdx + '"></div>';
+      subArea.querySelector('.submit-btn').addEventListener('click', function() {
+        _act10Submit(parseInt(this.dataset.slot));
+      });
+    }
+
+    // ════ 恢复选择状态 ════
+    var panel = document.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+    if (!panel) return;
+
+    // 先清除所有选中状态
+    panel.querySelectorAll('.opt').forEach(function(opt) {
+      opt.classList.remove('checked');
+    });
+    panel.querySelectorAll('.opp-opt-row').forEach(function(row) {
+      row.classList.remove('checked');
+    });
+    panel.classList.remove('opp-active');
+
+    var lingSelections = safeJson(sub.ling_selections, []);
+    var oppSel = safeJson(sub.opp_selection, {});
+
+    // 1. 恢复行动令选择（模拟点击以触发事件）
+    lingSelections.forEach(function(sel) {
+      var lings = panel.querySelectorAll('.ling');
+      var ling = lings[sel.lingIdx];
+      if (!ling) return;
+
+      var targetOpt = null;
+      if (sel.customText) {
+        // 自定军令
+        targetOpt = ling.querySelector('.opt.zdjl-opt');
+        if (targetOpt) {
+          var ta = targetOpt.querySelector('.zdjl-ta');
+          if (ta) ta.value = sel.customText;
+          // 模拟点击自定军令选项
+          targetOpt.click();
+        }
+      } else {
+        // 普通选项
+        targetOpt = ling.querySelector('.opt[data-val="' + sel.choice + '"]');
+        if (targetOpt) {
+          // 模拟点击普通选项
+          targetOpt.click();
+        }
+      }
+    });
+
+    // 2. 恢复机遇选择（模拟点击）
+    if (oppSel.type === 'opp' && oppSel.oppId) {
+      var oppRow = panel.querySelector('.opp-opt-row[data-opp-id="' + oppSel.oppId + '"]');
+      if (oppRow) {
+        oppRow.click();
+      }
+    } else {
+      var noOppRow = panel.querySelector('.opp-opt-row.no-opp');
+      if (noOppRow) {
+        noOppRow.click();
+      }
+    }
+
+    // 3. 恢复零消耗（直接赋值即可）
+    var zeroTa = panel.querySelector('.zero-ta');
+    if (zeroTa && sub.zero_cost) {
+      zeroTa.value = sub.zero_cost;
+    }
+  }
 
   // ── GM 一键复制 ──
   async function _act10GMCopy() {
