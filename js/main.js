@@ -2093,6 +2093,9 @@ let lastSubmissionCheck = {};
     var panel = document.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
     if (!panel) return;
 
+    // 移除锁定状态（重要：让面板恢复可编辑）
+    panel.classList.remove('submitted-locked');
+
     // 先清除所有选中状态
     panel.querySelectorAll('.opt').forEach(function(opt) {
       opt.classList.remove('checked');
