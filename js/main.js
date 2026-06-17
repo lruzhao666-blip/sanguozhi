@@ -1074,64 +1074,32 @@
     opps.forEach(function(o) {
       var cls = TM[o.type] || 'ot-jing';
       var hasDetail = o.detail && o.detail.trim();
-      // ↓↓↓ 工单 #opp-hover-card-v1 ↓↓↓
-      h += '<div class="opp-display ' + cls + '" data-has-detail="' + (hasDetail ? 'true' : 'false') + '">';
-      // ↑↑↑ 工单结束 ↑↑↑
+      h += '<div class="opp-display ' + cls + '">';
       h += '<div class="opp-top"><span class="opp-id">机遇' + o.id + '</span><span class="opp-name">' + _act10Esc(o.title) + '</span><span class="opp-type-icon">' + (TI[o.type] || '⚔️') + '</span></div>';
       h += '<div class="opp-desc">' + _act10Esc(o.desc) + '</div>';
-
-      // ↓↓↓ 工单 #opp-prestige-range-fix ↓↓↓
-      // 修复威望显示：支持范围格式（如 "-3~+6"）
-      var prestigeText = String(o.prestige || '');
-      var prestigeDisplay = '预估 ';
-      if (prestigeText.includes('~')) {
-        // 范围格式：直接显示（如 "-3~+6 威望"）
-        prestigeDisplay += prestigeText + ' 威望';
-      } else {
-        // 单个数字：添加 + 号（如 "+5 威望"）
-        var num = parseInt(prestigeText, 10);
-        prestigeDisplay += (num >= 0 ? '+' : '') + prestigeText + ' 威望';
-      }
-      h += '<div class="opp-foot"><span class="opp-pres">' + _act10Esc(prestigeDisplay) + '</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
-      // ↑↑↑ 工单结束 ↑↑↑
-
-      // ↓↓↓ 工单 #opp-hover-card-v1 改为悬浮卡片 ↓↓↓
+      h += '<div class="opp-foot"><span class="opp-pres">预估 +' + _act10Esc(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
       if (hasDetail) {
-        h += '<div class="opp-detail-card">' + _act10Esc(o.detail).replace(/\n/g, '<br>') + '</div>';
+        h += '<div class="opp-detail-toggle" data-opp-id="' + o.id + '">详情 ▾</div>';
+        h += '<div class="opp-detail-body" id="act10-opp-detail-' + o.id + '">' + _act10Esc(o.detail).replace(/\n/g, '<br>') + '</div>';
       }
-      // ↑↑↑ 工单结束 ↑↑↑
       h += '</div>';
     });
     var TOTAL_SLOTS = 4;
     for (var i = opps.length; i < TOTAL_SLOTS; i++) h += '<div class="opp-empty"></div>';
     el.innerHTML = h;
 
-    // ↓↓↓ 工单 #opp-hover-card-v1 移动端点击事件 ↓↓↓
-    // 移动端：点击显示/隐藏详情卡片
-    var isMobile = window.matchMedia('(max-width: 768px)').matches;
-    if (isMobile) {
-      el.querySelectorAll('.opp-display[data-has-detail="true"]').forEach(function(card) {
-        card.addEventListener('click', function(e) {
-          e.stopPropagation();
-          // 关闭其他卡片
-          el.querySelectorAll('.opp-display').forEach(function(c) {
-            if (c !== card) c.classList.remove('opp-detail-active');
-          });
-          // 切换当前卡片
-          this.classList.toggle('opp-detail-active');
-        });
+    // 绑定详情展开事件
+    el.querySelectorAll('.opp-detail-toggle').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var oppId = this.dataset.oppId;
+        var body = document.getElementById('act10-opp-detail-' + oppId);
+        if (!body) return;
+        var isOpen = body.classList.contains('opp-detail-open');
+        body.classList.toggle('opp-detail-open');
+        this.textContent = isOpen ? '详情 ▾' : '收起 ▴';
       });
-
-      // 点击外部关闭所有卡片
-      document.addEventListener('click', function(e) {
-        if (!e.target.closest('.opp-display')) {
-          el.querySelectorAll('.opp-display').forEach(function(c) {
-            c.classList.remove('opp-detail-active');
-          });
-        }
-      });
-    }
-    // ↑↑↑ 工单结束 ↑↑↑
+    });
   }
 
   // ── 三家行动面板 ──
