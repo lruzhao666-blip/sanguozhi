@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=13" />
+  <link rel="stylesheet" href="css/style.css?v=14" />
   <link rel="stylesheet" href="css/action-v10.css?v=10" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
 </head>
@@ -27,8 +27,11 @@
   </div>
   <div class="header-divider"></div>
   <div class="header-sync-bar">
-    <span id="sync-status" class="sync-status">☁️ 连接云端中…</span>
-  </div>
+  <span id="sync-status" class="sync-status">
+    <span class="sync-dot"></span>
+    <span class="sync-text">连接云端中…</span>
+  </span>
+</div>
 </header>
 
 <!-- ===== Nav ===== -->
@@ -374,21 +377,32 @@
 
 <footer id="site-footer">
   <div class="footer-content">
-    <span>⚔️ 三国志文字版</span>
-    <span class="footer-sep">·</span>
-    <span id="footer-info">尚未开局</span>
-    <span class="footer-sep">·</span>
-    <!-- ↓↓↓ 极简身份选择器 ↓↓↓ -->
-    <div class="identity-selector-minimal" id="identity-selector">
-      <button class="identity-btn-mini" data-slot="0">甲</button>
-      <button class="identity-btn-mini" data-slot="1">乙</button>
-      <button class="identity-btn-mini" data-slot="2">丙</button>
-    </div>
-    <!-- ↑↑↑ 身份选择器结束 ↑↑↑ -->
+  <span>⚔️ 三国志文字版</span>
+  <span class="footer-sep">·</span>
+  <span id="footer-info">尚未开局</span>
+  <span class="footer-sep">·</span>
+  <!-- 身份选择器 -->
+  <div class="identity-selector-minimal" id="identity-selector">
+    <button class="identity-btn-mini" data-slot="0">甲</button>
+    <button class="identity-btn-mini" data-slot="1">乙</button>
+    <button class="identity-btn-mini" data-slot="2">丙</button>
   </div>
+  <!-- 提交状态显示 -->
+  <span class="footer-sep" id="submit-status-sep" style="display:none;">·</span>
+  <span id="submit-status" class="submit-status" style="display:none;">
+    行动提交：<span id="submit-markers"></span> <span id="submit-count" class="submit-count"></span>
+  </span>
+</div>
 </footer>
 
 <div id="toast" class="toast hidden"></div>
+
+<div id="realtime-banner" class="realtime-banner hidden">
+  <div class="rb-content">
+    <span class="rb-icon"></span>
+    <span class="rb-text"></span>
+  </div>
+</div>
 
 
 
