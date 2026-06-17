@@ -14611,3 +14611,27 @@ html.tab-switching {
     display: none; /* 手机端隐藏提交状态，避免 footer 过挤 */
   }
 }
+
+/* ══════════════════════════════════════════
+   已提交摘要区备注样式
+   ══════════════════════════════════════════ */
+
+.sum-remark {
+  font-size: .76rem;
+  color: rgba(212,168,67,.7);
+  margin-left: 8px;
+  font-weight: 400;
+}
+
+/* ══════════════════════════════════════════
+   Textarea 自动高度样式优化
+   ══════════════════════════════════════════ */
+
+.remark-ta,
+.zdjl-ta,
+.zero-ta {
+  resize: none; /* 禁用手动拖拽调整 */
+  overflow: hidden; /* 隐藏滚动条 */
+  min-height: 32px; /* 最小高度 */
+  transition: height 0.1s ease; /* 平滑过渡 */
+}

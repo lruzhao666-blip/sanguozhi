@@ -2008,21 +2008,31 @@ let lastSubmissionCheck = {};
     var rems = [];
     try { rems = typeof sub.remarks === 'string' ? JSON.parse(sub.remarks) : (sub.remarks || []); } catch (e) { rems = []; }
 
+    // 解析备注
+    var remarks = {};
+    rems.forEach(function(rem) {
+      remarks[rem.lingIdx] = rem.text;
+    });
+
     var h = '<div class="col-summary-hd">已提交行动</div>';
     sels.forEach(function(sel) {
       var label = '行动' + ACT10_LING_NUMS[sel.lingIdx];
       var val = sel.choice === 'custom' ? '自定军令: ' + _act10Esc(sel.customText || '') : ACT10_LING_NUMS[sel.lingIdx] + ' ' + _act10Esc(sel.choice);
-      h += '<div class="col-summary-row"><span class="sum-lbl">' + label + '</span><span class="sum-val">' + val + '</span></div>';
+
+      // 拼接备注
+      var remarkText = remarks[sel.lingIdx] ? ' <span class="sum-remark">备注：' + _act10Esc(remarks[sel.lingIdx]) + '</span>' : '';
+
+      h += '<div class="col-summary-row"><span class="sum-lbl">' + label + '</span><span class="sum-val">' + val + remarkText + '</span></div>';
     });
+
     if (opp.type === 'opp') {
       h += '<div class="col-summary-row"><span class="sum-lbl">机遇</span><span class="sum-val">机遇' + _act10Esc(opp.oppId) + '</span></div>';
     }
+
     if (sub.zero_cost) {
       h += '<div class="col-summary-row"><span class="sum-lbl">零消耗</span><span class="sum-val dim">' + _act10Esc(sub.zero_cost) + '</span></div>';
     }
-    rems.forEach(function(rem) {
-      h += '<div class="col-summary-row"><span class="sum-lbl">备注' + ACT10_LING_NUMS[rem.lingIdx] + '</span><span class="sum-val dim">' + _act10Esc(rem.text) + '</span></div>';
-    });
+
     return h;
   }
 
@@ -2141,18 +2151,25 @@ let lastSubmissionCheck = {};
     }
   }
 
-  // ── GM 一键复制 ──
+// ── GM 一键复制 ──
   async function _act10GMCopy() {
     var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
     if (!currentRound) return;
     var submitted = window._act10Submitted || {};
 
-    var text = '第 ' + currentRound + ' 回合 · 玩家行动\n\n';
+    var lines = [];
+
     ACT10_SLOT_NAMES.forEach(function(sk, i) {
       var name = state.players[i] ? state.players[i].name : sk;
       var sub = submitted[sk];
-      text += name + ' [' + sk + ']\n';
-      if (!sub) { text += '  （未提交）\n\n'; return; }
+
+      lines.push(name + ' [' + sk + ']');
+
+      if (!sub) {
+        lines.push('（未提交）');
+        lines.push('');
+        return;
+      }
 
       var sels = [];
       try { sels = typeof sub.ling_selections === 'string' ? JSON.parse(sub.ling_selections) : (sub.ling_selections || []); } catch (e) {}
@@ -2161,28 +2178,49 @@ let lastSubmissionCheck = {};
       var rems = [];
       try { rems = typeof sub.remarks === 'string' ? JSON.parse(sub.remarks) : (sub.remarks || []); } catch (e) {}
 
+      // 建立备注映射
+      var remarksMap = {};
+      rems.forEach(function(rem) {
+        remarksMap[rem.lingIdx] = rem.text;
+      });
+
+      // 按顺序输出选中的令
       sels.forEach(function(sel) {
-        var label = '  行动' + ACT10_LING_NUMS[sel.lingIdx] + ': ';
+        var lingNum = ACT10_LING_NUMS[sel.lingIdx] || '';
+        var line = lingNum;
+
         if (sel.choice === 'custom') {
-          text += label + '自定军令: ' + (sel.customText || '') + '\n';
+          // 自定军令单独一行
+          lines.push('自定军令:' + (sel.customText || ''));
         } else {
-          text += label + sel.choice + '\n';
+          // 普通选项：①A 备注：XXXX
+          line += sel.choice.toUpperCase();
+          if (remarksMap[sel.lingIdx]) {
+            line += ' 备注：' + remarksMap[sel.lingIdx];
+          }
+          lines.push(line);
         }
       });
+
+      // 机遇
       if (opp.type === 'opp') {
-        text += '  机遇: 机遇' + (opp.oppId || '') + '\n';
+        lines.push('机遇: 机遇' + (opp.oppId || ''));
       } else {
-        text += '  机遇: 不选\n';
+        lines.push('机遇: 不选');
       }
-      if (sub.zero_cost) text += '  零消耗: ' + sub.zero_cost + '\n';
-      rems.forEach(function(rem) {
-        text += '  备注' + ACT10_LING_NUMS[rem.lingIdx] + ': ' + rem.text + '\n';
-      });
-      text += '\n';
+
+      // 零消耗（如果有）
+      if (sub.zero_cost && sub.zero_cost.trim()) {
+        lines.push('零消耗: ' + sub.zero_cost);
+      }
+
+      lines.push(''); // 玩家之间空一行
     });
 
+    var text = lines.join('\n').trim();
+
     try {
-      await navigator.clipboard.writeText(text.trim());
+      await navigator.clipboard.writeText(text);
       showToast('📋 已复制全部行动');
       var okEl = document.getElementById('gm-copy-all-ok');
       if (okEl) { okEl.classList.remove('hidden'); setTimeout(function() { okEl.classList.add('hidden'); }, 2500); }
@@ -5777,4 +5815,58 @@ window.addEventListener('beforeunload', () => {
 
 // ══════════════════════════════════════════════════════════
 //  实时同步模块结束
+// ══════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════
+//  Textarea 自动高度调整
+// ══════════════════════════════════════════════════════════
+
+/**
+ * 为 textarea 添加自动高度调整
+ */
+function autoResizeTextarea(textarea) {
+  if (!textarea) return;
+
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+}
+
+/**
+ * 绑定 textarea 自动高度
+ */
+function bindAutoResizeTextareas() {
+  var textareas = document.querySelectorAll('.remark-ta, .zdjl-ta, .zero-ta');
+
+  textareas.forEach(function(ta) {
+    // 输入时调整高度
+    ta.addEventListener('input', function() {
+      autoResizeTextarea(this);
+    });
+
+    // 初始化时调整高度（如果有预填值）
+    if (ta.value) {
+      autoResizeTextarea(ta);
+    }
+  });
+}
+
+// 在行动面板渲染后调用
+document.addEventListener('DOMContentLoaded', function() {
+  // 使用 MutationObserver 监听行动面板的 DOM 变化
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.addedNodes.length) {
+        bindAutoResizeTextareas();
+      }
+    });
+  });
+
+  var actRoot = document.getElementById('act10-root');
+  if (actRoot) {
+    observer.observe(actRoot, { childList: true, subtree: true });
+  }
+});
+
+// ══════════════════════════════════════════════════════════
+//  Textarea 自动高度调整结束
 // ══════════════════════════════════════════════════════════
