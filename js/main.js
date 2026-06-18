@@ -1271,7 +1271,6 @@ let lastSubmissionCheck = {};
       h += '<div class="col-head">';
       h += '<span class="col-name">' + _act10Esc(pn) + '</span>';
       h += '<span class="col-slot-tag">[' + sk + ']</span>';
-      h += '<div class="col-sel-badge" id="act10-badge-' + i + '"><span class="sc">0</span>/3 已选</div>';
       if (pp !== '') h += '<div class="col-pres-val"><span class="col-pres-num">' + pp + '</span><span class="col-pres-lbl"> 威望</span></div>';
       h += '</div>';
 
@@ -1647,31 +1646,8 @@ let lastSubmissionCheck = {};
     // v6.3: 移动端 tab 已删除，无需事件绑定
   }
 
-  function _act10UpdateBadge(si) {
-    var root = document.getElementById('act10-root');
-    if (!root) {
-      console.warn('[act10] UpdateBadge: root not found');
-      return;
-    }
-    var panel = root.querySelector('.col-panel[data-slot="' + si + '"]');
-    if (!panel) {
-      console.warn('[act10] UpdateBadge: panel not found for slot', si);
-      return;
-    }
-    // 令选中数（①②③④ 中选中的）
-    var lingCount = panel.querySelectorAll('.branch-list .opt.checked').length;
-    // 机遇是否选中
-    var oppChecked = panel.querySelector('.opp-opt-row.checked');
-    var oppCount = oppChecked ? 1 : 0;
-    var total = Math.min(lingCount + oppCount, 3);
-    console.log('[act10] UpdateBadge slot', si, '- lingCount:', lingCount, 'oppCount:', oppCount, 'total:', total);
-    var badge = document.getElementById('act10-badge-' + si);
-    if (badge) {
-      badge.querySelector('.sc').textContent = total;
-      badge.classList.toggle('full', total >= 3);
-    } else {
-      console.warn('[act10] UpdateBadge: badge not found for slot', si);
-    }
+  function _act10UpdateBadge(si, total) {
+    // 已选标记已移除，此函数保留为空函数以避免调用报错
   }
 
   // ══════════════════════════════════════════
