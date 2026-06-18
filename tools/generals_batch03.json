@@ -2654,12 +2654,25 @@
     "courtesy_name": "文达",
     "nickname": "",
     "faction_hint": "魏",
-    "tier": "精锐",
+    "tier": "精英",
     "biography": "江夏平春人。早年聚众起事，后投曹操。官渡之战拒降袁绍，保卫许都。破关羽，病逝途中。",
     "suitable_roles": [
       "前线守将",
       "先锋",
       "不宜主理内政"
+    ]
+  },
+  {
+    "name": "李丰",
+    "courtesy_name": "安国",
+    "nickname": "",
+    "faction_hint": "魏",
+    "tier": "常规",
+    "biography": "冯翊东县人。魏朝中书令。联结外戚张缉密谋诛杀司马师，事败被杀。",
+    "suitable_roles": [
+      "中书令",
+      "联姻外戚",
+      "密谋政变易遭反噬"
     ]
   }
 ]
