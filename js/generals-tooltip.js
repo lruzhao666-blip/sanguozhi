@@ -295,8 +295,16 @@
     if (!tag) return;
     var name = tag.dataset.name;
     if (!name) return;
-    _curTarget = name;
-    showTip(name, e);
+
+    // 提取纯武将名（去掉状态后缀，如"法正(疲劳)"→"法正"）
+    var cleanName = name;
+    var match = name.match(/^(.+?)\((.+?)\)$/);
+    if (match) {
+      cleanName = match[1];
+    }
+
+    _curTarget = cleanName;
+    showTip(cleanName, e);
   }
 
   function onMouseMove(e) {
