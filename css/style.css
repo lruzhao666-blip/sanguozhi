@@ -14711,6 +14711,68 @@ html.tab-switching {
   text-decoration-thickness: 1px;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   整队区域状态标签样式（复用 .pc-generals 的样式到 .gor-list）
+   工单：#fix-gor-status-label
+   ══════════════════════════════════════════════════════════════ */
+
+/* 整队区武将按钮 gap 调整 */
+.gor-list .gor-tag {
+  gap: 4px;
+}
+
+/* 整队区状态标签基础样式 */
+.gor-list .status-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+/* 受伤 - 红色 */
+.gor-list .status-label.injured {
+  background: rgba(224,112,112,0.20);
+  color: #e07070;
+  border: 1px solid rgba(224,112,112,0.35);
+}
+
+/* 患病 - 紫色 */
+.gor-list .status-label.sick {
+  background: rgba(204,128,238,0.18);
+  color: #cc80ee;
+  border: 1px solid rgba(204,128,238,0.32);
+}
+
+/* 疲劳 - 暗金 */
+.gor-list .status-label.tired {
+  background: rgba(212,176,64,0.18);
+  color: #d4b040;
+  border: 1px solid rgba(212,176,64,0.32);
+}
+
+/* 阵亡 - 灰色 */
+.gor-list .status-label.dead {
+  background: rgba(104,104,104,0.20);
+  color: #888;
+  border: 1px solid rgba(104,104,104,0.35);
+}
+
+/* 阵亡武将特殊处理 */
+.gor-list .gor-tag.dead-general {
+  opacity: 0.6;
+}
+
+.gor-list .gor-tag.dead-general .gen-name {
+  text-decoration: line-through;
+  text-decoration-color: #888;
+  text-decoration-thickness: 1px;
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .pc-generals .status-label {
