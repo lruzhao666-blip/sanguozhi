@@ -2004,7 +2004,9 @@ let lastSubmissionCheck = {};
     sels.forEach(function(sel) {
       var lingNum = ACT10_LING_NUMS[sel.lingIdx] || '⑩';
       var label = '行动' + lingNum;
-      var val = sel.choice === 'custom' ? '自定军令: ' + _act10Esc(sel.customText || '') : lingNum + ' ' + _act10Esc(sel.choice);
+      var val = sel.choice === 'custom'
+        ? '<span class="sum-custom-order">自定军令: ' + _act10Esc(sel.customText || '') + '</span>'
+        : lingNum + ' ' + _act10Esc(sel.choice);
 
       // 拼接备注
       var remarkText = remarks[sel.lingIdx] ? ' <span class="sum-remark">备注：' + _act10Esc(remarks[sel.lingIdx]) + '</span>' : '';

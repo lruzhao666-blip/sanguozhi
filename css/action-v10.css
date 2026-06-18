@@ -190,6 +190,9 @@
 .act10 .sum-lbl{font-size:.62rem;font-weight:700;color:var(--gold-dim);background:rgba(212,168,67,.07);border:1px solid rgba(212,168,67,.14);border-radius:3px;padding:1px 5px;white-space:nowrap;flex-shrink:0;min-width:3.2em;text-align:center;}
 .act10 .sum-val{color:var(--gold-light);font-weight:600;flex:1;}
 .act10 .sum-val.dim{color:var(--text-sub);font-weight:400;}
+/* 备注和自定军令：柔和样式 */
+.act10 .sum-remark{color:var(--text-sub);font-weight:400;font-size:.76rem;}
+.act10 .sum-custom-order{color:var(--text-sub);font-weight:400;font-size:.76rem;}
 
 /* ═══ ACTION GROUP (令) ═══ */
 .act10 .ling{display:flex;flex-direction:column;}
