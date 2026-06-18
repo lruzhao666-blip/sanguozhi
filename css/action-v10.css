@@ -358,19 +358,19 @@
   max-height:none !important;
   overflow-y:visible !important;
   overflow:visible !important;
-  padding:4px 0 4px !important;
+  padding:6px 0 4px !important;
   display:flex !important;
   flex-direction:column !important;
-  justify-content:center !important;
+  justify-content:flex-start !important;
 }
 
 /* ── 威望行：间距微调，分隔线精细化 ── */
 .act10 .pres-row{
-  padding:5px 14px 5px 12px !important;
+  padding:4px 14px 4px 12px !important;
 }
 .act10 .pr-divider{
   height:1px !important;
-  margin:1px 12px !important;
+  margin:0 12px !important;
   background:linear-gradient(90deg,transparent,rgba(212,168,67,.12),transparent) !important;
 }
 
