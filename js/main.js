@@ -1672,6 +1672,18 @@ let lastSubmissionCheck = {};
         if (!customText) return; // 自定军令为空不计
       }
       lingSelections.push({ lingIdx: li, choice: val, customText: customText });
+
+      // 收集备注内容
+      var remarkBlock = document.getElementById('act10-remark-' + slotIdx + '-' + li);
+      if (remarkBlock) {
+        var remarkTa = remarkBlock.querySelector('.remark-ta');
+        if (remarkTa) {
+          var remarkText = remarkTa.value.trim();
+          if (remarkText) {
+            remarks.push({ lingIdx: li, text: remarkText });
+          }
+        }
+      }
     });
 
     // 机遇（可选，不选则 type:'none'）
