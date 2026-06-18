@@ -3303,33 +3303,13 @@ let lastSubmissionCheck = {};
   // 提取武将名和状态
   const name = (g && g.name) || '';
   const rawStatus = (g && g.status) || '健康';
-  const status = _normalizeStatus(rawStatus);
+  // data-status 直接使用中文状态，供 CSS 选择器匹配
+  const status = rawStatus;
 
   // 只输出 class + data-status + data-name，样式完全由 CSS 控制
   let html = '<span class="gen-tag" data-status="' + esc(status)
     + '" data-name="' + esc(name) + '">'
     + esc(name);
-
-  let statusText = '';
-  let statusClass = '';
-
-  if (status === 'injured') {
-    statusText = '伤';
-    statusClass = 'injured';
-  } else if (status === 'tired') {
-    statusText = '疲';
-    statusClass = 'tired';
-  } else if (status === 'sick') {
-    statusText = '病';
-    statusClass = 'sick';
-  } else if (status === 'dead') {
-    statusText = '亡';
-    statusClass = 'dead';
-  }
-
-  if (statusText) {
-    html += '<span class="ag-status-badge ' + statusClass + '">' + statusText + '</span>';
-  }
 
   html += '</span>';
   return html;
