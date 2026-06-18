@@ -172,10 +172,57 @@
     if (ordered.length) {
       html += '<div class="gor-list' + (editing ? ' gor-list-editing' : '') + '" data-slot="' + slot + '">';
       ordered.forEach(function (name) {
-        html += '<span class="gor-tag gen-tag' + (editing ? ' gor-tag-draggable' : '') + '"'
+        // 解析武将名和状态（格式：李通(受伤)、沮授(患病)）
+        var cleanName = name;
+        var statusText = '';
+        var statusClass = '';
+        var isDeadGeneral = false;
+
+        var match = name.match(/^(.+?)\((.+?)\)$/);
+        if (match) {
+          cleanName = match[1];
+          var status = match[2];
+
+          // 状态映射
+          if (/受伤|伤/.test(status)) {
+            statusClass = 'injured';
+            statusText = '伤';
+          } else if (/患病|病/.test(status)) {
+            statusClass = 'sick';
+            statusText = '病';
+          } else if (/疲劳|疲/.test(status)) {
+            statusClass = 'tired';
+            statusText = '疲';
+          } else if (/阵亡|亡|死/.test(status)) {
+            statusClass = 'dead';
+            statusText = '亡';
+            isDeadGeneral = true;
+          }
+        }
+
+        // 构建武将按钮HTML
+        var tagClasses = 'gor-tag gen-tag';
+        if (editing) tagClasses += ' gor-tag-draggable';
+        if (isDeadGeneral) tagClasses += ' dead-general';
+
+        html += '<span class="' + tagClasses + '"'
           + ' data-name="' + _esc(name) + '"'
           + (editing ? ' draggable="true"' : '')
-          + '>' + _esc(name) + '</span>';
+          + '>';
+
+        // 武将名（阵亡时需要加 .gen-name 类用于删除线）
+        if (isDeadGeneral) {
+          html += '<span class="gen-name">' + _esc(cleanName) + '</span>';
+        } else {
+          html += _esc(cleanName);
+        }
+
+        // 状态标签
+        if (statusClass && statusText) {
+          html += '<span class="status-label ' + statusClass + '">' + statusText + '</span>';
+        }
+
+        html += '</span>';
       });
       html += '</div>';
     } else {
