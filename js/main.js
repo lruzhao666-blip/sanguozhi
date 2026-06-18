@@ -37,6 +37,8 @@
  * v36 (2026-06-04): 工单#gm-data-only-mode-v1 — GM 录入支持纯数据区修复模式,
  *                    第一行匹配 [回合] 则视为纯数据;查找该回合号对应剧情区,
  *                    拼接后 PATCH 替换 raw_content,不改剧情区。
+ * v37 (2026-XX-XX): 工单#warboard-smart-hide-v1 — 战情速报智能隐藏,
+ *                    电脑端保留占位文案,手机端空栏/空块自动隐藏
  */
 
 (function () {
@@ -3650,12 +3652,18 @@ let lastSubmissionCheck = {};
     const transit = Array.isArray(parsed.transit) ? parsed.transit : [];
     const battles = Array.isArray(parsed.battles) ? parsed.battles : [];
 
-    // 双空 → 隐藏整块
-    if (!transit.length && !battles.length) {
-      block.classList.add('hidden');
-      return;
-    }
-    block.classList.remove('hidden');
+    // 标记空态：电脑端保留占位，手机端通过CSS隐藏
+    const battlesEmpty = !battles.length;
+    const transitEmpty = !transit.length;
+    const allEmpty = battlesEmpty && transitEmpty;
+
+    // 给区块和栏目添加空态标记
+    block.classList.toggle('all-empty', allEmpty);
+
+    const battlesCol = document.getElementById('wb-col-battles');
+    const transitCol = document.getElementById('wb-col-transit');
+    if (battlesCol) battlesCol.classList.toggle('empty', battlesEmpty);
+    if (transitCol) transitCol.classList.toggle('empty', transitEmpty);
 
     // 渲染战报列
     const battlesListEl = document.getElementById('wb-battles-list');
