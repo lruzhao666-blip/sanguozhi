@@ -392,6 +392,55 @@
   }
 
   // ══════════════════════════════════════════
+  //  武将胶囊点击复制
+  // ══════════════════════════════════════════
+  function onGeneralTagClick(e) {
+    var tag = e.target.closest('.gor-tag');
+    if (!tag) return;
+
+    // 避免拖拽模式下触发复制
+    if (tag.classList.contains('gor-tag-draggable')) return;
+
+    var fullName = tag.getAttribute('data-name');
+    if (!fullName) return;
+
+    // 提取纯武将名（去除状态后缀，如"李通(受伤)"→"李通"）
+    var cleanName = fullName;
+    var match = fullName.match(/^(.+?)\((.+?)\)$/);
+    if (match) {
+      cleanName = match[1];
+    }
+
+    // 复制到剪贴板
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(cleanName).then(function () {
+        _toast('✓ 已复制「' + cleanName + '」');
+      }).catch(function () {
+        _toastFallback(cleanName);
+      });
+    } else {
+      _toastFallback(cleanName);
+    }
+  }
+
+  function _toastFallback(name) {
+    // 兜底：旧浏览器用 execCommand
+    var input = document.createElement('input');
+    input.value = name;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    try {
+      document.execCommand('copy');
+      _toast('✓ 已复制「' + name + '」');
+    } catch (e) {
+      _toast('⚠️ 复制失败，请手动复制');
+    }
+    document.body.removeChild(input);
+  }
+
+  // ══════════════════════════════════════════
   //  事件委托
   // ══════════════════════════════════════════
   function bindEvents() {
@@ -408,6 +457,9 @@
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd);
     document.addEventListener('touchcancel', onTouchEnd);
+
+    // 武将胶囊点击复制
+    document.addEventListener('click', onGeneralTagClick);
   }
 
   function init() {
