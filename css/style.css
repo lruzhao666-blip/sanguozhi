@@ -11726,54 +11726,6 @@ body.is-viewer-mode #diag-toast {
 
 
 
-/* ══════════════════════════════════════════════════════════════
-   v20260618a 工单#gen-status-badge-rebuild-v1
-   武将状态角标 v2.0 — 推倒重做，极简方案
-   ══════════════════════════════════════════════════════════════ */
-
-/* 状态色变量 */
-:root {
-  --badge-tired: #d4b040;  /* 疲劳·暗金 */
-  --badge-hurt:  #e07070;  /* 受伤·红色 */
-  --badge-sick:  #cc80ee;  /* 患病·紫色 */
-  --badge-dead:  #686868;  /* 阵亡·灰色 */
-}
-
-/* 角标：左上角三角形（只对有 data-status 的生效） */
-.gen-tag[data-status]::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 10px 10px 0 0;
-  border-color: transparent;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* 四种状态色（健康不显示角标，因为没有对应规则） */
-.gen-tag[data-status="疲劳"]::before { border-top-color: var(--badge-tired); }
-.gen-tag[data-status="受伤"]::before { border-top-color: var(--badge-hurt); }
-.gen-tag[data-status="患病"]::before { border-top-color: var(--badge-sick); }
-.gen-tag[data-status="阵亡"]::before { border-top-color: var(--badge-dead); }
-
-/* 阵亡特殊处理：灰化 + 删除线 */
-.gen-tag[data-status="阵亡"] {
-  opacity: 0.5;
-  text-decoration: line-through;
-  text-decoration-color: #888;
-  text-decoration-thickness: 1px;
-}
-
-/* 移动端：角标缩小到 8px */
-@media (max-width: 720px) {
-  .gen-tag[data-status]::before {
-    border-width: 8px 8px 0 0;
-  }
-}
 
 /* ════════════════════════════════════════════════════════════
    v20260619a 工单#warboard-html-css-v1
@@ -14694,6 +14646,76 @@ html.tab-switching {
     font-size: 0.6rem;
     padding: 1px 4px;
     margin-left: 3px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   武将状态标签 v3.0 - 方案C极简文字标签
+   工单：#gen-status-label-v3
+   ══════════════════════════════════════════════════════════════ */
+
+/* 武将按钮 gap 调整，为状态标签留出间距 */
+.pc-generals .gen-tag {
+  gap: 4px;
+}
+
+/* 状态标签基础样式 */
+.pc-generals .status-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+/* 受伤 - 红色 */
+.pc-generals .status-label.injured {
+  background: rgba(224,112,112,0.20);
+  color: #e07070;
+  border: 1px solid rgba(224,112,112,0.35);
+}
+
+/* 患病 - 紫色 */
+.pc-generals .status-label.sick {
+  background: rgba(204,128,238,0.18);
+  color: #cc80ee;
+  border: 1px solid rgba(204,128,238,0.32);
+}
+
+/* 疲劳 - 暗金 */
+.pc-generals .status-label.tired {
+  background: rgba(212,176,64,0.18);
+  color: #d4b040;
+  border: 1px solid rgba(212,176,64,0.32);
+}
+
+/* 阵亡 - 灰色 */
+.pc-generals .status-label.dead {
+  background: rgba(104,104,104,0.20);
+  color: #888;
+  border: 1px solid rgba(104,104,104,0.35);
+}
+
+/* 阵亡武将特殊处理：武将名加删除线 + 整体降低不透明度 */
+.pc-generals .gen-tag.dead-general {
+  opacity: 0.6;
+}
+
+.pc-generals .gen-tag.dead-general .gen-name {
+  text-decoration: line-through;
+  text-decoration-color: #888;
+  text-decoration-thickness: 1px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .pc-generals .status-label {
+    font-size: 0.6rem;
+    padding: 1px 4px;
   }
 }
 
