@@ -3290,7 +3290,7 @@ let lastSubmissionCheck = {};
     2: { bg:'rgba(52,152,219,.10)', bd:'rgba(52,152,219,.40)', c:'#8ec5e8' },  // 蓝
   };
 
-  function genStatusKey(s) {
+  function _normalizeStatus(s) {
     if (!s) return 'healthy';
     if (/疲劳|疲/.test(s))    return 'tired';
     if (/受伤|伤/.test(s))    return 'injured';
@@ -3302,7 +3302,8 @@ let lastSubmissionCheck = {};
   function buildGenTag(g, slot) {
   // 提取武将名和状态
   const name = (g && g.name) || '';
-  const status = (g && g.status) || '健康';
+  const rawStatus = (g && g.status) || '健康';
+  const status = _normalizeStatus(rawStatus);
 
   // 只输出 class + data-status + data-name，样式完全由 CSS 控制
   let html = '<span class="gen-tag" data-status="' + esc(status)
