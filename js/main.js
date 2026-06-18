@@ -1673,17 +1673,15 @@ let lastSubmissionCheck = {};
       }
       lingSelections.push({ lingIdx: li, choice: val, customText: customText });
 
-      // 收集备注内容
+      // ↓↓↓ 新增：收集备注内容 ↓↓↓
       var remarkBlock = document.getElementById('act10-remark-' + slotIdx + '-' + li);
       if (remarkBlock) {
         var remarkTa = remarkBlock.querySelector('.remark-ta');
-        if (remarkTa) {
-          var remarkText = remarkTa.value.trim();
-          if (remarkText) {
-            remarks.push({ lingIdx: li, text: remarkText });
-          }
+        if (remarkTa && remarkTa.value.trim()) {
+          remarks.push({ lingIdx: li, text: remarkTa.value.trim() });
         }
       }
+      // ↑↑↑ 新增结束 ↑↑↑
     });
 
     // 机遇（可选，不选则 type:'none'）
