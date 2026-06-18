@@ -358,7 +358,7 @@
   max-height:none !important;
   overflow-y:visible !important;
   overflow:visible !important;
-  padding:4px 0 6px !important;
+  padding:4px 0 4px !important;
   display:flex !important;
   flex-direction:column !important;
   justify-content:center !important;
@@ -383,8 +383,8 @@
 /* ── 机遇池：2列，固定4槽 ── */
 .act10 .opp-grid{
   grid-template-columns:repeat(2,1fr) !important;
-  gap:9px !important;
-  padding:10px 12px 12px !important;
+  gap:8px !important;
+  padding:10px 12px 8px !important;
 }
 
 /* ── 机遇卡片：高度均匀 ── */
