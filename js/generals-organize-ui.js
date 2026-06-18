@@ -68,7 +68,24 @@
     var players = (latest.parsed && latest.parsed.players) || [];
     if (!players[slot]) return [];
     return (players[slot].generals || []).map(function (g) {
-      return g.name || '';
+      var name = g.name || '';
+      if (!name) return '';
+
+      // 如果有状态字段，拼接状态后缀
+      if (g.status) {
+        var statusMap = {
+          'tired': '疲劳',
+          'injured': '受伤',
+          'sick': '患病',
+          'dead': '阵亡'
+        };
+        var statusText = statusMap[g.status];
+        if (statusText) {
+          return name + '(' + statusText + ')';
+        }
+      }
+
+      return name;
     }).filter(function (n) { return n; });
   }
 
