@@ -14696,3 +14696,27 @@ html.tab-switching {
     margin-left: 3px;
   }
 }
+
+/* ══════════════════════════════════════════
+   战情速报 - 智能隐藏（手机端）
+   工单：#warboard-smart-hide-v1
+   ══════════════════════════════════════════ */
+
+/* 手机端：空栏隐藏，两栏都空则整个区块隐藏 */
+@media (max-width: 900px) {
+  /* 单栏为空时隐藏该栏 */
+  #wb-col-battles.empty {
+    display: none;
+  }
+
+  #wb-col-transit.empty {
+    display: none;
+  }
+
+  /* 两栏都空时隐藏整个战情速报区块 */
+  #block-warboard.all-empty {
+    display: none;
+  }
+}
+
+/* 电脑端：始终显示，无需特殊处理 */
