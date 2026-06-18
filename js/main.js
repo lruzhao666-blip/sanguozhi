@@ -1088,9 +1088,18 @@ let lastSubmissionCheck = {};
       h += '<div class="opp-display ' + cls + '" data-opp-id="' + o.id + '" data-opp-type="' + o.type + '">';
       h += '<div class="opp-top"><span class="opp-id">机遇' + o.id + '</span><span class="opp-name">' + _act10Esc(o.title) + '</span><span class="opp-type-icon">' + (TI[o.type] || '⚔️') + '</span></div>';
       h += '<div class="opp-desc">' + _act10Esc(o.desc) + '</div>';
-      h += '<div class="opp-foot"><span class="opp-pres">预估 ' + _act10WrapPrestige(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
+      h += '<div class="opp-foot"><span class="opp-pres-tag">预估 ' + _act10WrapPrestige(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
       h += '</div>';
     });
+    var len = opps.length;
+    while (len < 4) {
+      h += '<div class="opp-empty-placeholder">';
+      h += '<div class="opp-empty-icon">⏳</div>';
+      h += '<div>待定机遇</div>';
+      h += '<div class="opp-empty-text">下回合开启</div>';
+      h += '</div>';
+      len++;
+    }
     el.innerHTML = h;
 
     // 电脑端：智能悬浮卡
