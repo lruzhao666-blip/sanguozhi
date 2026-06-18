@@ -290,6 +290,14 @@
 .act10 .opp-opt-row.no-opp .opp-opt-name{color:var(--text-dim);font-size:.76rem;font-family:var(--font-sans);}
 .act10 .opp-no-sel-note{font-size:.63rem;color:rgba(200,136,232,.45);padding:4px 10px 5px 31px;border-top:1px dashed rgba(140,50,200,.1);}
 
+/* 机遇决策输入框 */
+.act10 .opp-decision-block{display:none;border-top:1px dashed rgba(140,50,200,.12);padding:6px 10px 7px;background:rgba(100,30,160,.05);}
+.act10 .col-panel.opp-active .opp-decision-block{display:block;}
+.act10 .opp-decision-lbl{font-size:.63rem;color:rgba(200,136,232,.7);margin-bottom:3px;letter-spacing:.04em;}
+.act10 .opp-decision-ta{width:100%;padding:5px 8px;background:rgba(0,0,0,.35);border:1px dashed rgba(140,50,200,.28);border-radius:4px;color:var(--text-main);font-family:var(--font-sans);font-size:.78rem;outline:none;resize:vertical;min-height:34px;line-height:1.5;word-break:break-all;}
+.act10 .opp-decision-ta:focus{border-color:rgba(140,50,200,.58);border-style:solid;background:rgba(0,0,0,.5);}
+.act10 .opp-decision-ta::placeholder{color:rgba(200,136,232,.4);font-style:italic;}
+
 /* zero cost */
 .act10 .zero-area{padding-top:9px;border-top:1px solid rgba(212,168,67,.07);}
 .act10 .zero-lbl{display:block;font-size:.63rem;color:var(--text-dim);margin-bottom:4px;letter-spacing:.04em;}
