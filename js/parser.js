@@ -831,7 +831,7 @@ window.SGParser = (function () {
         continue;
       }
       // 资源行：金:54 粮:281 兵:680 民心:65 城:2
-      const resM = line.match(/金[:：](\d+)\s+粮[:：](\d+)\s+兵[:：](\d+)\s+民心[:：](\d+)\s+城[:：](\d+)/);
+      const resM = line.match(/金[:：](-?\d+)\s+粮[:：](-?\d+)\s+兵[:：](-?\d+)\s+民心[:：](-?\d+)\s+城[:：](-?\d+)/);
       if (resM) {
         p.gold   = parseInt(resM[1]);
         p.food   = parseInt(resM[2]);
