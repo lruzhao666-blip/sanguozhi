@@ -14698,6 +14698,93 @@ html.tab-switching {
 }
 
 /* ══════════════════════════════════════════
+   三方势力面板 - 武将按钮样式补充
+   工单：#gen-status-badge-fix-v1
+   ══════════════════════════════════════════ */
+
+/* 武将按钮基础样式 */
+.pc-generals .gen-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 0.74rem;
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-main);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.03);
+  cursor: default;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.15s;
+  white-space: nowrap;
+  position: relative;
+}
+
+/* 武将按钮悬停效果 */
+.pc-generals .gen-tag:hover {
+  background: rgba(255,255,255,0.08);
+  transform: translateY(-1px);
+}
+
+/* 状态图标基础样式 */
+.pc-generals .ag-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  padding: 2px 5px;
+  border-radius: 2px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-left: 4px;
+  position: relative;
+  top: -1px;
+}
+
+/* 受伤 - 橙红色 */
+.pc-generals .ag-status-badge.injured {
+  background: rgba(200,55,45,0.18);
+  color: #f08878;
+  border: 1px solid rgba(210,65,55,0.30);
+}
+
+/* 疲劳 - 黄色 */
+.pc-generals .ag-status-badge.tired {
+  background: rgba(180,120,30,0.16);
+  color: #d4aa43;
+  border: 1px solid rgba(190,130,40,0.28);
+}
+
+/* 患病 - 紫色 */
+.pc-generals .ag-status-badge.sick {
+  background: rgba(140,60,180,0.16);
+  color: #c08ae0;
+  border: 1px solid rgba(150,70,190,0.26);
+}
+
+/* 阵亡 - 灰色 */
+.pc-generals .ag-status-badge.dead {
+  background: rgba(60,60,60,0.22);
+  color: #888;
+  border: 1px solid rgba(80,80,80,0.30);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .pc-generals .gen-tag {
+    font-size: 0.7rem;
+    padding: 2px 7px;
+  }
+
+  .pc-generals .ag-status-badge {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    margin-left: 3px;
+  }
+}
+
+/* ══════════════════════════════════════════
    战情速报 - 智能隐藏（手机端）
    工单：#warboard-smart-hide-v1-fix
    ══════════════════════════════════════════ */
