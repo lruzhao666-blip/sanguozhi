@@ -14699,23 +14699,23 @@ html.tab-switching {
 
 /* ══════════════════════════════════════════
    战情速报 - 智能隐藏（手机端）
-   工单：#warboard-smart-hide-v1
+   工单：#warboard-smart-hide-v1-fix
    ══════════════════════════════════════════ */
 
 /* 手机端：空栏隐藏，两栏都空则整个区块隐藏 */
 @media (max-width: 900px) {
   /* 单栏为空时隐藏该栏 */
   #wb-col-battles.empty {
-    display: none;
+    display: none !important;
   }
 
   #wb-col-transit.empty {
-    display: none;
+    display: none !important;
   }
 
   /* 两栏都空时隐藏整个战情速报区块 */
   #block-warboard.all-empty {
-    display: none;
+    display: none !important;
   }
 }
 
