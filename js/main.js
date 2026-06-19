@@ -1425,6 +1425,14 @@ let lastSubmissionCheck = {};
       h += '</div>';
     });
     h += '<div class="opp-no-sel-note">占1个行动额度 · 每人每回合最多选1条</div>';
+
+    // ↓↓↓ 新增：机遇决策输入框 ↓↓↓
+    h += '<div class="opp-decision-block">';
+    h += '<div class="opp-decision-lbl">决策（可选，≤30字）</div>';
+    h += '<textarea class="opp-decision-ta" rows="1" maxlength="30" placeholder="说明如何处理此机遇…"></textarea>';
+    h += '</div>';
+    // ↑↑↑ 新增结束 ↑↑↑
+
     h += '</div>';
     return h;
   }
@@ -1689,6 +1697,13 @@ let lastSubmissionCheck = {};
     var oppChecked = panel.querySelector('.opp-opt-row.checked');
     if (oppChecked) {
       oppSel = { type: 'opp', oppId: oppChecked.dataset.oppId || '' };
+
+      // ↓↓↓ 新增：收集机遇决策 ↓↓↓
+      var oppDecisionTa = panel.querySelector('.opp-decision-ta');
+      if (oppDecisionTa && oppDecisionTa.value.trim()) {
+        oppSel.decision = oppDecisionTa.value.trim().slice(0, 30); // 强制截断30字
+      }
+      // ↑↑↑ 新增结束 ↑↑↑
     }
 
     // 零消耗已删除
@@ -2015,7 +2030,13 @@ let lastSubmissionCheck = {};
     });
 
     if (opp.type === 'opp') {
-      h += '<div class="col-summary-row"><span class="sum-lbl">机遇</span><span class="sum-val">机遇' + _act10Esc(opp.oppId) + '</span></div>';
+      var oppVal = '机遇' + _act10Esc(opp.oppId);
+      // ↓↓↓ 新增：显示决策 ↓↓↓
+      if (opp.decision) {
+        oppVal += ' <span class="sum-remark">决策：' + _act10Esc(opp.decision) + '</span>';
+      }
+      // ↑↑↑ 新增结束 ↑↑↑
+      h += '<div class="col-summary-row"><span class="sum-lbl">机遇</span><span class="sum-val">' + oppVal + '</span></div>';
     }
 
     if (sub.zero_cost) {
@@ -2128,6 +2149,15 @@ let lastSubmissionCheck = {};
       var oppRow = panel.querySelector('.opp-opt-row[data-opp-id="' + oppSel.oppId + '"]');
       if (oppRow) {
         oppRow.click();
+
+        // ↓↓↓ 新增：恢复决策内容 ↓↓↓
+        if (oppSel.decision) {
+          var oppDecisionTa = panel.querySelector('.opp-decision-ta');
+          if (oppDecisionTa) {
+            oppDecisionTa.value = oppSel.decision;
+          }
+        }
+        // ↑↑↑ 新增结束 ↑↑↑
       }
     } else {
       var noOppRow = panel.querySelector('.opp-opt-row.no-opp');
@@ -2196,7 +2226,13 @@ let lastSubmissionCheck = {};
 
       // 机遇
       if (opp.type === 'opp') {
-        lines.push('机遇: 机遇' + (opp.oppId || ''));
+        var oppLine = '机遇: 机遇' + (opp.oppId || '');
+        // ↓↓↓ 新增：包含决策 ↓↓↓
+        if (opp.decision) {
+          oppLine += ' 决策：' + opp.decision;
+        }
+        // ↑↑↑ 新增结束 ↑↑↑
+        lines.push(oppLine);
       } else {
         lines.push('机遇: 不选');
       }
