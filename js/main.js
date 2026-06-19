@@ -5873,7 +5873,7 @@ function autoResizeTextarea(textarea) {
  * 绑定 textarea 自动高度
  */
 function bindAutoResizeTextareas() {
-  var textareas = document.querySelectorAll('.remark-ta, .zdjl-ta, .zero-ta');
+  var textareas = document.querySelectorAll('.remark-ta, .zdjl-ta, .zero-ta, .opp-decision-ta');
 
   textareas.forEach(function(ta) {
     // 输入时调整高度
