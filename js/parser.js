@@ -1372,6 +1372,94 @@ window.SGParser = (function () {
     return [];
   }
 
+  /**
+   * 解析结算数据
+   *
+   * 格式支持：
+   * 1. 标准格式 (甲:行动名:结果 | +N威望)
+   * 2. 混合格式 (甲: \n - 行动名:结果 | +N威望)
+   *
+   * 输出结构：
+   * {
+   *   players: {
+   *     0: { actions: [{action:'攻许昌', result:'赵云阵亡·-8威', prestige:'+4威望'}] },
+   *     1: { actions: [{action:'募兵邺', result:'新兵+800', prestige:'+0威望'}] },
+   *     2: { actions: [{action:'自拟(援徐州)', result:'送粮800成功', prestige:'+2威望'}] }
+   *   }
+   * }
+   */
+  function parseSettlement(text) {
+    var settlement = {
+      players: {
+        0: { actions: [] },
+        1: { actions: [] },
+        2: { actions: [] }
+      }
+    };
+
+    if (!text) return settlement;
+
+    var lines = text.split('\n');
+    var slotMap = { '甲': 0, '乙': 1, '丙': 2 };
+    var currentSlot = null; // 记录当前所属玩家（用于混合格式）
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line) continue;
+
+      // ═══ 格式1：标准格式 ═══
+      // 甲:行动名:结果描述 | +N威望
+      var standardMatch = line.match(/^([甲乙丙]):([^:]+):(.+)\s*\|\s*(.+)$/);
+      if (standardMatch) {
+        var slotName = standardMatch[1];
+        var action = standardMatch[2].trim();
+        var result = standardMatch[3].trim();
+        var prestige = standardMatch[4].trim();
+
+        var slotIdx = slotMap[slotName];
+        if (slotIdx !== undefined) {
+          settlement.players[slotIdx].actions.push({
+            action: action,
+            result: result,
+            prestige: prestige
+          });
+        }
+        continue;
+      }
+
+      // ═══ 格式2：混合格式 — 玩家标记行 ═══
+      // 甲:
+      var slotHeaderMatch = line.match(/^([甲乙丙]):\s*$/);
+      if (slotHeaderMatch) {
+        currentSlot = slotMap[slotHeaderMatch[1]];
+        continue;
+      }
+
+      // ═══ 格式2：混合格式 — 行动条目行 ═══
+      // - 行动名:结果描述 | +N威望
+      var itemMatch = line.match(/^-\s*([^:]+):(.+)\s*\|\s*(.+)$/);
+      if (itemMatch && currentSlot !== null) {
+        var action = itemMatch[1].trim();
+        var result = itemMatch[2].trim();
+        var prestige = itemMatch[3].trim();
+
+        settlement.players[currentSlot].actions.push({
+          action: action,
+          result: result,
+          prestige: prestige
+        });
+        continue;
+      }
+
+      // ═══ NPC 行（忽略） ═══
+      if (line.indexOf('NPC:') === 0 || line.indexOf('- 曹操') === 0 || line.indexOf('- 吕布') === 0) {
+        continue;
+      }
+    }
+
+    return settlement;
+  }
+
   // ─────────────────────────────────────────
   //  解析单槽变动内容
   //  输入 raw 已剥去 "甲 " 前缀
@@ -2466,77 +2554,7 @@ if (/^产出△/.test(line)) {
  *   }
  * }
  */
-function parseSettlement(text) {
-  var settlement = {
-    players: {
-      0: { actions: [] },
-      1: { actions: [] },
-      2: { actions: [] }
-    }
-  };
 
-  if (!text) return settlement;
-
-  var lines = text.split('\n');
-  var slotMap = { '甲': 0, '乙': 1, '丙': 2 };
-  var currentSlot = null; // 记录当前所属玩家（用于混合格式）
-
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i].trim();
-    if (!line) continue;
-
-    // ═══ 格式1：标准格式 ═══
-    // 甲:行动名:结果描述 | +N威望
-    var standardMatch = line.match(/^([甲乙丙]):([^:]+):(.+)\s*\|\s*(.+)$/);
-    if (standardMatch) {
-      var slotName = standardMatch[1];
-      var action = standardMatch[2].trim();
-      var result = standardMatch[3].trim();
-      var prestige = standardMatch[4].trim();
-
-      var slotIdx = slotMap[slotName];
-      if (slotIdx !== undefined) {
-        settlement.players[slotIdx].actions.push({
-          action: action,
-          result: result,
-          prestige: prestige
-        });
-      }
-      continue;
-    }
-
-    // ═══ 格式2：混合格式 — 玩家标记行 ═══
-    // 甲:
-    var slotHeaderMatch = line.match(/^([甲乙丙]):\s*$/);
-    if (slotHeaderMatch) {
-      currentSlot = slotMap[slotHeaderMatch[1]];
-      continue;
-    }
-
-    // ═══ 格式2：混合格式 — 行动条目行 ═══
-    // - 行动名:结果描述 | +N威望
-    var itemMatch = line.match(/^-\s*([^:]+):(.+)\s*\|\s*(.+)$/);
-    if (itemMatch && currentSlot !== null) {
-      var action = itemMatch[1].trim();
-      var result = itemMatch[2].trim();
-      var prestige = itemMatch[3].trim();
-
-      settlement.players[currentSlot].actions.push({
-        action: action,
-        result: result,
-        prestige: prestige
-      });
-      continue;
-    }
-
-    // ═══ NPC 行（忽略） ═══
-    if (line.indexOf('NPC:') === 0 || line.indexOf('- 曹操') === 0 || line.indexOf('- 吕布') === 0) {
-      continue;
-    }
-  }
-
-  return settlement;
-}
 
 /**
  * 解析公共机遇池
@@ -2659,17 +2677,3 @@ function parseFirstMover(text) {
   return match ? match[1].trim() : null;
 }
 
-// 导出函数（挂载到全局）
-// ── #parser-expose-fix-v1-step2 START ──
-// 上轮把 4 个函数挂在 window.SGAction,但 main.js 末尾的
-// window.SGAction = { renderSettlement, ... } 是整体赋值覆盖,
-// 会把这里的 4 个 parse 函数抹掉。改挂到独立命名空间 SGParseV2,
-// 该名字未被任何文件占用,安全。
-if (typeof window !== 'undefined') {
-  window.SGParseV2 = window.SGParseV2 || {};
-  window.SGParseV2.parseSettlement       = parseSettlement;
-  window.SGParseV2.parseOpportunitiesV2  = parseOpportunities;
-  window.SGParseV2.parseActionOptionsV2  = parseActionOptions;
-  window.SGParseV2.parseFirstMoverV2     = parseFirstMover;
-}
-// ── END #parser-expose-fix-v1-step2 ──
