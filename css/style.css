@@ -14891,3 +14891,208 @@ html.tab-switching {
 }
 
 /* 电脑端：始终显示，无需特殊处理 */
+
+/* ══════════════════════════════════════════════════════
+   结算板块 — v6.5 新增
+   设计对齐：素颜外壳（.info-block 默认款）+ 玩家卡分栏
+   ══════════════════════════════════════════════════════ */
+
+/* ── 外壳：继承 .info-block 默认样式 ── */
+.block-settlement {
+  margin-bottom: 14px;
+}
+
+/* ── 主体布局：三栏玩家卡 ── */
+.settlement-body {
+  padding: 14px 16px 16px;
+}
+
+.settlement-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+/* ── 玩家卡片 ── */
+.settlement-player {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--r);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left-width: 3px;
+  transition: border-color 0.15s;
+}
+
+.settlement-player:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* 玩家卡左侧色条 */
+.sp-p0 { border-left-color: rgba(231, 76, 60, 0.5); }
+.sp-p1 { border-left-color: rgba(61, 190, 108, 0.5); }
+.sp-p2 { border-left-color: rgba(52, 152, 219, 0.5); }
+
+/* ── 玩家卡头部 ── */
+.sp-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sp-slot {
+  font-family: var(--font-serif);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  background: rgba(212, 168, 67, 0.08);
+  border: 1px solid rgba(212, 168, 67, 0.22);
+  border-radius: 3px;
+  padding: 1px 6px;
+  line-height: 1.6;
+  flex-shrink: 0;
+}
+
+.sp-name {
+  font-family: var(--font-serif);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: 0.02em;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── 行动列表 ── */
+.sp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+.sp-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.12s;
+}
+
+.sp-action:first-child {
+  border-top: none;
+}
+
+.sp-action:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.sp-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  background: rgba(212, 168, 67, 0.06);
+  border: 1px solid rgba(212, 168, 67, 0.16);
+  border-radius: 3px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 3.5em;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.sp-result {
+  font-size: 0.82rem;
+  color: var(--text-sub);
+  line-height: 1.55;
+  flex: 1;
+  word-break: break-word;
+}
+
+/* ── 机遇结算区（可选显示） ── */
+.settlement-opps {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(212, 168, 67, 0.12);
+}
+
+.so-header {
+  font-family: var(--font-serif);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  padding-left: 2px;
+}
+
+.so-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-left: 2px solid rgba(200, 136, 232, 0.35);
+  border-radius: var(--r);
+  margin-bottom: 6px;
+  transition: background 0.12s;
+}
+
+.so-item:last-child {
+  margin-bottom: 0;
+}
+
+.so-item:hover {
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.so-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  flex: 1;
+}
+
+.so-result {
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  font-style: italic;
+}
+
+/* ── 移动端响应式 ── */
+@media (max-width: 900px) {
+  .settlement-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 720px) {
+  .settlement-body {
+    padding: 12px 14px 14px;
+  }
+
+  .sp-header {
+    padding: 7px 10px;
+  }
+
+  .sp-action {
+    padding: 8px 10px;
+  }
+
+  .sp-label {
+    font-size: 0.66rem;
+    padding: 1px 6px;
+  }
+
+  .sp-result {
+    font-size: 0.79rem;
+  }
+}
