@@ -439,6 +439,7 @@ let lastSubmissionCheck = {};
             worldStatus:   (reparsed && reparsed.worldStatus) || null,
             storyParts:    (reparsed && reparsed.storyParts) || null,
             warnings:      (reparsed && Array.isArray(reparsed.warnings)) ? reparsed.warnings : [],
+            settlement:    safeJson(row.settlement_json, null),
           };
         })(),
         rawContent: row.raw_content || '',
