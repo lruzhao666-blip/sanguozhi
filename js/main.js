@@ -2498,7 +2498,7 @@ let lastSubmissionCheck = {};
     // 三家玩家结算
     ['甲', '乙', '丙'].forEach((slot, idx) => {
       const data = settlement.players[idx];
-      if (!data) return;
+      if (!data || !data.actions || !data.actions.length) return;
 
       const playerName = state.players[idx] ? state.players[idx].name : '城主' + slot;
       const slotColor = idx === 0 ? 'p0' : idx === 1 ? 'p1' : 'p2';
@@ -2510,24 +2510,20 @@ let lastSubmissionCheck = {};
       html += `</div>`;
       html += `<div class="sp-actions">`;
 
-      if (data.main) {
+      // 遍历该玩家的所有行动（1-3条不等）
+      data.actions.forEach((act, actIdx) => {
+        const labelText = actIdx === 0 ? '行动一' : actIdx === 1 ? '行动二' : '行动三';
         html += `<div class="sp-action">`;
-        html += `<span class="sp-label">行动一</span>`;
-        html += `<span class="sp-result">${escapeHtml(data.main)}</span>`;
+        html += `<div class="sp-action-header">`;
+        html += `<span class="sp-label">${labelText}</span>`;
+        html += `<span class="sp-action-name">${escapeHtml(act.action)}</span>`;
         html += `</div>`;
-      }
-      if (data.sub) {
-        html += `<div class="sp-action">`;
-        html += `<span class="sp-label">行动二</span>`;
-        html += `<span class="sp-result">${escapeHtml(data.sub)}</span>`;
+        html += `<div class="sp-action-body">`;
+        html += `<span class="sp-result">${escapeHtml(act.result)}</span>`;
+        html += `<span class="sp-prestige">${escapeHtml(act.prestige)}</span>`;
         html += `</div>`;
-      }
-      if (data.react) {
-        html += `<div class="sp-action">`;
-        html += `<span class="sp-label">行动三</span>`;
-        html += `<span class="sp-result">${escapeHtml(data.react)}</span>`;
         html += `</div>`;
-      }
+      });
 
       html += `</div></div>`;
     });

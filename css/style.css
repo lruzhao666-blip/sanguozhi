@@ -14975,10 +14975,11 @@ html.tab-switching {
   padding: 0;
 }
 
+/* ── 行动卡片改版：双行结构 ── */
 .sp-action {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   padding: 9px 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.03);
   transition: background 0.12s;
@@ -15007,12 +15008,46 @@ html.tab-switching {
   line-height: 1.5;
 }
 
+/* 行动头部：标签 + 行动名 */
+.sp-action-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sp-action-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  flex: 1;
+}
+
+/* 行动正文：结果 + 威望 */
+.sp-action-body {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-left: 3.5em; /* 对齐标签宽度 */
+}
+
 .sp-result {
   font-size: 0.82rem;
   color: var(--text-sub);
   line-height: 1.55;
   flex: 1;
   word-break: break-word;
+}
+
+.sp-prestige {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  background: rgba(212, 168, 67, 0.08);
+  border: 1px solid rgba(212, 168, 67, 0.2);
+  border-radius: 3px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ── 机遇结算区（可选显示） ── */

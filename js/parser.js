@@ -2441,19 +2441,31 @@ if (/^产出△/.test(line)) {
 // ═══════════════════════════════════════════════════════════
 
 /**
- * 解析上回合结算段
+ * 解析结算段 — v6.5 新格式
  * 格式示例：
- * 📋 结算
- * 甲:主令(选A·攻城南皮·+12威望) 副令(选A·招贤·+1威望) 应变令(选机遇1·+10威望)
- * 乙:主令(选B·募兵·+0威望) 副令(选A·互市·+0威望) 应变令(放弃·+0威望)
- * 丙:主令(选C·自拟援救徐州·+2威望) 副令(选B·自拟·+1威望) 应变令(选机遇2·流拍)
- * 机遇1·关羽归附:甲得(距离最近)
- * 机遇2·夺取庐江:流拍(无人选)
+ * [结算]
+ * 甲:攻许昌:赵云阵亡·-8威 | +4威望
+ * 甲:招贤士:平原得郭图(谋86)·失败 | +0威望
+ * 甲:遣使乙:缔盟成功 | +1威望
+ * 乙:募兵邺:新兵+800 | +0威望
+ * 丙:自拟(援徐州):送粮800成功 | +2威望
+ *
+ * 输出结构：
+ * {
+ *   players: {
+ *     0: { actions: [] },
+ *     1: { actions: [] },
+ *     2: { actions: [] }
+ *   }
+ * }
  */
 function parseSettlement(text) {
   var settlement = {
-    players: { 0: null, 1: null, 2: null },
-    opportunities: []
+    players: {
+      0: { actions: [] },
+      1: { actions: [] },
+      2: { actions: [] }
+    }
   };
 
   if (!text) return settlement;
@@ -2465,31 +2477,22 @@ function parseSettlement(text) {
     var line = lines[i].trim();
     if (!line) continue;
 
-    // 解析玩家结算
-    var playerMatch = line.match(/^([甲乙丙]):(.+)$/);
-    if (playerMatch) {
-      var slot = slotMap[playerMatch[1]];
-      var content = playerMatch[2];
+    // 格式：甲:行动名:结果描述 | +N威望
+    var match = line.match(/^([甲乙丙]):([^:]+):(.+)\s*\|\s*(.+)$/);
+    if (match) {
+      var slotName = match[1];
+      var action = match[2].trim();
+      var result = match[3].trim();
+      var prestige = match[4].trim();
 
-      var mainMatch = content.match(/主令\(([^)]+)\)/);
-      var subMatch = content.match(/副令\(([^)]+)\)/);
-      var reactMatch = content.match(/应变令\(([^)]+)\)/);
-
-      settlement.players[slot] = {
-        main: mainMatch ? mainMatch[1] : '',
-        sub: subMatch ? subMatch[1] : '',
-        react: reactMatch ? reactMatch[1] : ''
-      };
-    }
-
-    // 解析机遇结算
-    var oppMatch = line.match(/^机遇(\d+)·([^:]+):(.+)$/);
-    if (oppMatch) {
-      settlement.opportunities.push({
-        id: parseInt(oppMatch[1]),
-        title: oppMatch[2],
-        result: oppMatch[3]
-      });
+      var slotIdx = slotMap[slotName];
+      if (slotIdx !== undefined) {
+        settlement.players[slotIdx].actions.push({
+          action: action,
+          result: result,
+          prestige: prestige
+        });
+      }
     }
   }
 
