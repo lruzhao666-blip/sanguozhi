@@ -2441,21 +2441,28 @@ if (/^产出△/.test(line)) {
 // ═══════════════════════════════════════════════════════════
 
 /**
- * 解析结算段 — v6.5 新格式
- * 格式示例：
+ * 解析结算段 — 兼容 v6.5 标准格式 + 混合格式
+ *
+ * 标准格式：
  * [结算]
  * 甲:攻许昌:赵云阵亡·-8威 | +4威望
  * 甲:招贤士:平原得郭图(谋86)·失败 | +0威望
- * 甲:遣使乙:缔盟成功 | +1威望
  * 乙:募兵邺:新兵+800 | +0威望
- * 丙:自拟(援徐州):送粮800成功 | +2威望
+ *
+ * 混合格式：
+ * [结算]
+ * 甲:
+ * - 成都受降:零损接管成都(...) | +15威望
+ * - 粮荒应对:待入成都后... | +0威望
+ * 乙:
+ * - 许昌接管:零损接管许昌(...) | +15威望
  *
  * 输出结构：
  * {
  *   players: {
- *     0: { actions: [] },
- *     1: { actions: [] },
- *     2: { actions: [] }
+ *     0: { actions: [{action:'攻许昌', result:'赵云阵亡·-8威', prestige:'+4威望'}] },
+ *     1: { actions: [{action:'募兵邺', result:'新兵+800', prestige:'+0威望'}] },
+ *     2: { actions: [{action:'自拟(援徐州)', result:'送粮800成功', prestige:'+2威望'}] }
  *   }
  * }
  */
@@ -2472,18 +2479,20 @@ function parseSettlement(text) {
 
   var lines = text.split('\n');
   var slotMap = { '甲': 0, '乙': 1, '丙': 2 };
+  var currentSlot = null; // 记录当前所属玩家（用于混合格式）
 
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i].trim();
     if (!line) continue;
 
-    // 格式：甲:行动名:结果描述 | +N威望
-    var match = line.match(/^([甲乙丙]):([^:]+):(.+)\s*\|\s*(.+)$/);
-    if (match) {
-      var slotName = match[1];
-      var action = match[2].trim();
-      var result = match[3].trim();
-      var prestige = match[4].trim();
+    // ═══ 格式1：标准格式 ═══
+    // 甲:行动名:结果描述 | +N威望
+    var standardMatch = line.match(/^([甲乙丙]):([^:]+):(.+)\s*\|\s*(.+)$/);
+    if (standardMatch) {
+      var slotName = standardMatch[1];
+      var action = standardMatch[2].trim();
+      var result = standardMatch[3].trim();
+      var prestige = standardMatch[4].trim();
 
       var slotIdx = slotMap[slotName];
       if (slotIdx !== undefined) {
@@ -2493,6 +2502,36 @@ function parseSettlement(text) {
           prestige: prestige
         });
       }
+      continue;
+    }
+
+    // ═══ 格式2：混合格式 — 玩家标记行 ═══
+    // 甲:
+    var slotHeaderMatch = line.match(/^([甲乙丙]):\s*$/);
+    if (slotHeaderMatch) {
+      currentSlot = slotMap[slotHeaderMatch[1]];
+      continue;
+    }
+
+    // ═══ 格式2：混合格式 — 行动条目行 ═══
+    // - 行动名:结果描述 | +N威望
+    var itemMatch = line.match(/^-\s*([^:]+):(.+)\s*\|\s*(.+)$/);
+    if (itemMatch && currentSlot !== null) {
+      var action = itemMatch[1].trim();
+      var result = itemMatch[2].trim();
+      var prestige = itemMatch[3].trim();
+
+      settlement.players[currentSlot].actions.push({
+        action: action,
+        result: result,
+        prestige: prestige
+      });
+      continue;
+    }
+
+    // ═══ NPC 行（忽略） ═══
+    if (line.indexOf('NPC:') === 0 || line.indexOf('- 曹操') === 0 || line.indexOf('- 吕布') === 0) {
+      continue;
     }
   }
 
