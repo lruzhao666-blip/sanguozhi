@@ -315,6 +315,7 @@ let lastSubmissionCheck = {};
       city_ownership_json: JSON.stringify(rd.parsed.cityOwnership || {}),
       // [secret-bureau-fix-A] 密报数据正本清源
       secrets_json:        JSON.stringify(rd.parsed.secrets       || []),
+      settlement_json:     JSON.stringify(rd.parsed.settlement    || null),
     };
     const existId = await findRoundId(rd.round);
     if (existId) {
