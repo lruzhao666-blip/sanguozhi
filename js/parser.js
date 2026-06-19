@@ -1390,11 +1390,11 @@ window.SGParser = (function () {
    */
   function parseSettlement(text) {
     var settlement = {
-      players: {
-        0: { actions: [] },
-        1: { actions: [] },
-        2: { actions: [] }
-      }
+      players: [
+        { slot: '甲', actions: [] },
+        { slot: '乙', actions: [] },
+        { slot: '丙', actions: [] }
+      ]
     };
 
     if (!text) return settlement;
