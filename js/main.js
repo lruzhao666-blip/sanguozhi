@@ -2486,7 +2486,10 @@ let lastSubmissionCheck = {};
     const settlement = rd.parsed.settlement;
 
     // 如果没有结算数据，隐藏整个板块
-    if (!settlement || (!settlement.players[0] && !settlement.players[1] && !settlement.players[2])) {
+    if (!settlement ||
+        (!settlement.players[0].actions.length &&
+         !settlement.players[1].actions.length &&
+         !settlement.players[2].actions.length)) {
       block.classList.add('hidden');
       return;
     }
