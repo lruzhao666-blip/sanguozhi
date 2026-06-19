@@ -2435,7 +2435,8 @@ let lastSubmissionCheck = {};
     const playerTotal   = Object.values(cm).filter(o => o.owner !== '' && o.owner !== 'npc').length;
     const namedNpcTotal = Object.values(cm).filter(o => o.owner === 'npc' && o.faction != null).length;
     // 群雄 = 总城数 - 玩家城 - 有名NPC势力城（faction有值的），无主/无名城归群雄
-    const qhCnt         = 60 - playerTotal - namedNpcTotal;
+    const totalCities   = Object.keys(cm).length;
+    const qhCnt         = totalCities - playerTotal - namedNpcTotal;
     html += `<span class="sgmap-legend-item">
       <span class="sgmap-legend-dot" style="background:#9a7c3e;box-shadow:0 0 4px #c09050"></span>
       <span style="color:#c09050;font-weight:700">群雄</span>
