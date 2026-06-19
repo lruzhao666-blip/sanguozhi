@@ -675,6 +675,11 @@ window.SGParser = (function () {
       result.prestige = _parsePrestige(blocks['威望']);
     }
 
+    // [结算]
+    if (blocks['结算']) {
+      result.settlement = parseSettlement(blocks['结算']);
+    }
+
     // [世界状态]
     // [世界状态]（v6.0 已废弃，遇到时静默解析，不报错）
     if (blocks['世界状态']) {
@@ -723,7 +728,7 @@ window.SGParser = (function () {
   //  按方括号标签切块
   // ─────────────────────────────────────────
   function _splitBlocks(text) {
-    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','调度','变动','驻城','威望','世界状态']);
+    const KNOWN = new Set(['回合','速递','甲','乙','丙','NPC','npc','战报','军报摘要','在途','调度','变动','驻城','威望','世界状态','结算']);
     const lines  = text.split('\n');
     const blocks = {};
     let curKey = null, curBuf = [];

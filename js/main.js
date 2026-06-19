@@ -2292,6 +2292,7 @@ let lastSubmissionCheck = {};
       const latest = state.rounds[state.rounds.length - 1];
       renderRoundBar(latest);
       renderDigest(latest);
+      renderSettlement(latest);
       renderPlayerCards();
 
 
@@ -2473,6 +2474,81 @@ let lastSubmissionCheck = {};
   //  战局动态：直接展示原文（rawDigest）
   //  对文本做基础格式化：段落换行、关键词高亮
   // ══════════════════════════════════════════
+
+  // ══════════════════════════════════════════
+  //  渲染结算板块（v6.5 新增）
+  // ══════════════════════════════════════════
+  function renderSettlement(rd) {
+    const block = document.getElementById('block-settlement');
+    const body = document.getElementById('settlement-body');
+    if (!block || !body) return;
+
+    const settlement = rd.parsed.settlement;
+
+    // 如果没有结算数据，隐藏整个板块
+    if (!settlement || (!settlement.players[0] && !settlement.players[1] && !settlement.players[2])) {
+      block.classList.add('hidden');
+      return;
+    }
+
+    block.classList.remove('hidden');
+
+    let html = '<div class="settlement-grid">';
+
+    // 三家玩家结算
+    ['甲', '乙', '丙'].forEach((slot, idx) => {
+      const data = settlement.players[idx];
+      if (!data) return;
+
+      const playerName = state.players[idx] ? state.players[idx].name : '城主' + slot;
+      const slotColor = idx === 0 ? 'p0' : idx === 1 ? 'p1' : 'p2';
+
+      html += `<div class="settlement-player sp-${slotColor}">`;
+      html += `<div class="sp-header">`;
+      html += `<span class="sp-slot">${slot}</span>`;
+      html += `<span class="sp-name">${escapeHtml(playerName)}</span>`;
+      html += `</div>`;
+      html += `<div class="sp-actions">`;
+
+      if (data.main) {
+        html += `<div class="sp-action">`;
+        html += `<span class="sp-label">行动一</span>`;
+        html += `<span class="sp-result">${escapeHtml(data.main)}</span>`;
+        html += `</div>`;
+      }
+      if (data.sub) {
+        html += `<div class="sp-action">`;
+        html += `<span class="sp-label">行动二</span>`;
+        html += `<span class="sp-result">${escapeHtml(data.sub)}</span>`;
+        html += `</div>`;
+      }
+      if (data.react) {
+        html += `<div class="sp-action">`;
+        html += `<span class="sp-label">行动三</span>`;
+        html += `<span class="sp-result">${escapeHtml(data.react)}</span>`;
+        html += `</div>`;
+      }
+
+      html += `</div></div>`;
+    });
+
+    html += '</div>';
+
+    // 机遇结算（如果有）
+    if (settlement.opportunities && settlement.opportunities.length) {
+      html += '<div class="settlement-opps">';
+      html += '<div class="so-header">机遇结算</div>';
+      settlement.opportunities.forEach(opp => {
+        html += `<div class="so-item">`;
+        html += `<span class="so-name">机遇${opp.id} · ${escapeHtml(opp.title)}</span>`;
+        html += `<span class="so-result">${escapeHtml(opp.result)}</span>`;
+        html += `</div>`;
+      });
+      html += '</div>';
+    }
+
+    body.innerHTML = html;
+  }
 
   function renderDigest(rd) {
     const p      = rd.parsed;
