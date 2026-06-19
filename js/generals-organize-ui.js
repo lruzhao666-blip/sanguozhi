@@ -61,6 +61,14 @@
     }, 2800);
   }
 
+  // ══════════════════════════════════════════
+  //  设备检测
+  // ══════════════════════════════════════════
+  function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+           || (window.innerWidth <= 768);
+  }
+
   function _getCurrentGenerals(slot) {
     var st = window.SGState;
     if (!st || !st.rounds || !st.rounds.length) return [];
@@ -409,15 +417,53 @@
   }
 
   // ══════════════════════════════════════════
-  //  武将胶囊点击复制
+  //  移动端长按复制武将名
   // ══════════════════════════════════════════
-  function onGeneralTagClick(e) {
-    var tag = e.target.closest('.gor-tag');
+  var _copyLongPressTimer = null;
+  var _copyTouchStartX = 0;
+  var _copyTouchStartY = 0;
+
+  function onGeneralTagTouchStart(e) {
+    // 只处理 .gor-tag 和 .gen-tag
+    var tag = e.target.closest('.gor-tag, .gen-tag');
     if (!tag) return;
 
-    // 避免拖拽模式下触发复制
+    // 避免拖拽模式下触发
     if (tag.classList.contains('gor-tag-draggable')) return;
 
+    // 记录起始位置
+    var touch = e.touches[0];
+    _copyTouchStartX = touch.clientX;
+    _copyTouchStartY = touch.clientY;
+
+    // 启动长按计时器（500ms）
+    _copyLongPressTimer = setTimeout(function() {
+      _copyLongPressTimer = null;
+      triggerCopy(tag);
+    }, 500);
+  }
+
+  function onGeneralTagTouchMove(e) {
+    if (!_copyLongPressTimer) return;
+
+    // 如果手指移动超过 10px，取消长按
+    var touch = e.touches[0];
+    var dx = Math.abs(touch.clientX - _copyTouchStartX);
+    var dy = Math.abs(touch.clientY - _copyTouchStartY);
+    if (dx > 10 || dy > 10) {
+      clearTimeout(_copyLongPressTimer);
+      _copyLongPressTimer = null;
+    }
+  }
+
+  function onGeneralTagTouchEnd(e) {
+    if (_copyLongPressTimer) {
+      clearTimeout(_copyLongPressTimer);
+      _copyLongPressTimer = null;
+    }
+  }
+
+  function triggerCopy(tag) {
     var fullName = tag.getAttribute('data-name');
     if (!fullName) return;
 
@@ -438,6 +484,22 @@
     } else {
       _toastFallback(cleanName);
     }
+  }
+
+  // ══════════════════════════════════════════
+  //  武将胶囊点击复制
+  // ══════════════════════════════════════════
+  function onGeneralTagClick(e) {
+    // 移动端不响应点击复制（改用长按）
+    if (isMobile()) return;
+
+    var tag = e.target.closest('.gor-tag, .gen-tag');
+    if (!tag) return;
+
+    // 避免拖拽模式下触发复制
+    if (tag.classList.contains('gor-tag-draggable')) return;
+
+    triggerCopy(tag);
   }
 
   function _toastFallback(name) {
@@ -475,8 +537,13 @@
     document.addEventListener('touchend', onTouchEnd);
     document.addEventListener('touchcancel', onTouchEnd);
 
-    // 武将胶囊点击复制
+    // 武将胶囊点击复制（桌面端）
     document.addEventListener('click', onGeneralTagClick);
+
+    // 移动端长按复制
+    document.addEventListener('touchstart', onGeneralTagTouchStart, { passive: true });
+    document.addEventListener('touchmove', onGeneralTagTouchMove, { passive: false });
+    document.addEventListener('touchend', onGeneralTagTouchEnd);
   }
 
   function init() {
