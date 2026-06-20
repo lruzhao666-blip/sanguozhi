@@ -580,3 +580,133 @@
 .col-panel.readonly .opt.other-submitted {
   opacity: 1; /* 只读面板中的其他人选择也要清晰可见 */
 }
+
+/* ══════════════════════════════════════════
+   输入框弹出功能样式 v1
+══════════════════════════════════════════ */
+
+/* 弹出按钮 */
+.pop-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-left: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pop-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.8);
+  transform: scale(1.1);
+}
+
+/* 备注区头部布局 */
+.remark-block {
+  margin-top: 8px;
+}
+
+.remark-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+/* 自定军令头部布局 */
+.zdjl-hd {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+
+/* 机遇决策头部布局 */
+.opp-decision-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+/* 浮动窗口 */
+.input-popup-win {
+  position: fixed;
+  z-index: 9999;
+  width: 360px;
+  background: linear-gradient(135deg, rgba(20,20,25,0.98), rgba(30,30,35,0.98));
+  border: 1px solid rgba(180,140,80,0.4);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(180,140,80,0.2);
+  backdrop-filter: blur(12px);
+}
+
+.input-popup-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(180,140,80,0.15);
+  border-bottom: 1px solid rgba(180,140,80,0.25);
+  cursor: move;
+  user-select: none;
+}
+
+.input-popup-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 0.5px;
+}
+
+.input-popup-close {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  color: rgba(255,255,255,0.6);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.input-popup-close:hover {
+  background: rgba(220,60,60,0.3);
+  border-color: rgba(220,60,60,0.5);
+  color: #fff;
+}
+
+.input-popup-body {
+  padding: 12px;
+}
+
+.input-popup-body textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  color: rgba(255,255,255,0.9);
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.input-popup-body textarea:focus {
+  outline: none;
+  border-color: rgba(180,140,80,0.5);
+  background: rgba(0,0,0,0.4);
+}
