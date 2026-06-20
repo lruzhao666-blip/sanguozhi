@@ -610,6 +610,13 @@
   transform: scale(1.1);
 }
 
+/* 移动端隐藏弹出按钮 */
+@media (max-width: 768px) {
+  .pop-btn {
+    display: none !important;
+  }
+}
+
 /* 备注区头部布局 */
 .remark-block {
   margin-top: 8px;
