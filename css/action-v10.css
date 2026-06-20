@@ -642,11 +642,21 @@
   position: fixed;
   z-index: 9999;
   width: 360px;
+  max-width: calc(100vw - 32px);
   background: linear-gradient(135deg, rgba(20,20,25,0.98), rgba(30,30,35,0.98));
   border: 1px solid rgba(180,140,80,0.4);
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(180,140,80,0.2);
   backdrop-filter: blur(12px);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .input-popup-win {
+    width: calc(100vw - 32px);
+    left: 16px !important;
+    right: 16px;
+  }
 }
 
 .input-popup-hd {

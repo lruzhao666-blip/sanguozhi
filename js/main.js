@@ -5706,9 +5706,15 @@ function showActionsEmptyHint() {
     var originalParent = ta.parentNode;
     body.appendChild(ta);
 
-    // 初始位置（屏幕中心偏右上）
-    win.style.left = (window.innerWidth / 2 + 100) + 'px';
-    win.style.top = '120px';
+    // 初始位置（移动端适配）
+    var isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      win.style.left = '16px';
+      win.style.top = '80px';
+    } else {
+      win.style.left = (window.innerWidth / 2 + 100) + 'px';
+      win.style.top = '120px';
+    }
 
     // 缓存
     _popupWindows[key] = {
@@ -5718,9 +5724,10 @@ function showActionsEmptyHint() {
       isDragging: false
     };
 
-    // 绑定拖拽
+    // 绑定拖拽（桌面端鼠标 + 移动端触摸）
     var hd = win.querySelector('.input-popup-hd');
     hd.addEventListener('mousedown', function(e) { _onDragStart(e, key); });
+    hd.addEventListener('touchstart', function(e) { _onTouchStart(e, key); }, { passive: false });
 
     // 绑定关闭按钮
     win.querySelector('.input-popup-close').addEventListener('click', function() {
@@ -5787,6 +5794,47 @@ function showActionsEmptyHint() {
 
   function _esc(s) {
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ══════════════════════════════════════════
+  //  移动端触摸拖拽
+  // ══════════════════════════════════════════
+  function _onTouchStart(e, key) {
+    e.preventDefault();
+    var popup = _popupWindows[key];
+    if (!popup) return;
+
+    var rect = popup.win.getBoundingClientRect();
+    var touch = e.touches[0];
+    _dragState = {
+      key: key,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      winX: rect.left,
+      winY: rect.top
+    };
+
+    document.addEventListener('touchmove', _onTouchMove, { passive: false });
+    document.addEventListener('touchend', _onTouchEnd);
+  }
+
+  function _onTouchMove(e) {
+    if (!_dragState) return;
+    e.preventDefault();
+    var touch = e.touches[0];
+    var dx = touch.clientX - _dragState.startX;
+    var dy = touch.clientY - _dragState.startY;
+    var popup = _popupWindows[_dragState.key];
+    if (popup) {
+      popup.win.style.left = (_dragState.winX + dx) + 'px';
+      popup.win.style.top = (_dragState.winY + dy) + 'px';
+    }
+  }
+
+  function _onTouchEnd() {
+    _dragState = null;
+    document.removeEventListener('touchmove', _onTouchMove);
+    document.removeEventListener('touchend', _onTouchEnd);
   }
 })();
 
