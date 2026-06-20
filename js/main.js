@@ -1378,7 +1378,13 @@ let lastSubmissionCheck = {};
     h += '</div>';
 
     // 备注区（选中此令后显示，不占额度）
-    h += '<div class="remark-block" id="act10-remark-' + slotIdx + '-' + lingIdx + '"><div class="remark-lbl">备注（可选，不占额度）</div><textarea class="remark-ta" rows="1" placeholder="对此行动的补充说明…"></textarea></div>';
+    h += '<div class="remark-block" id="act10-remark-' + slotIdx + '-' + lingIdx + '">';
+    h += '<div class="remark-hd">';
+    h += '<div class="remark-lbl">备注（可选，不占额度）</div>';
+    h += '<button class="pop-btn" data-target="remark" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" title="弹出输入框">📌</button>';
+    h += '</div>';
+    h += '<textarea class="remark-ta" rows="1" placeholder="对此行动的补充说明…"></textarea>';
+    h += '</div>';
 
     h += '</div>';
     return h;
@@ -1400,7 +1406,12 @@ let lastSubmissionCheck = {};
     h += '<div class="branch-list">';
     h += '<div class="opt zdjl-opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="custom">';
     h += '<div class="zdjl-top"><div class="rdot"></div><span class="zdjl-tag">④</span><span class="zdjl-nm">填写自定军令</span></div>';
-    h += '<div class="zdjl-wrap"><textarea class="zdjl-ta" rows="3" placeholder="请填写自定军令内容..."></textarea></div>';
+    h += '<div class="zdjl-wrap">';
+    h += '<div class="zdjl-hd">';
+    h += '<button class="pop-btn" data-target="zdjl" data-slot="' + slotIdx + '" title="弹出输入框">📌</button>';
+    h += '</div>';
+    h += '<textarea class="zdjl-ta" rows="3" placeholder="请填写自定军令内容..."></textarea>';
+    h += '</div>';
     h += '</div>';
     h += '</div>';
 
@@ -1430,7 +1441,10 @@ let lastSubmissionCheck = {};
 
     // ↓↓↓ 新增：机遇决策输入框 ↓↓↓
     h += '<div class="opp-decision-block">';
+    h += '<div class="opp-decision-hd">';
     h += '<div class="opp-decision-lbl">决策（可选，≤30字）</div>';
+    h += '<button class="pop-btn" data-target="opp-decision" data-slot="' + slotIdx + '" title="弹出输入框">📌</button>';
+    h += '</div>';
     h += '<textarea class="opp-decision-ta" rows="1" maxlength="30" placeholder="说明如何处理此机遇…"></textarea>';
     h += '</div>';
     // ↑↑↑ 新增结束 ↑↑↑
@@ -5625,6 +5639,156 @@ function showActionsEmptyHint() {
   });
 })();
 
+// ══════════════════════════════════════════
+//  输入框弹出功能 v1
+// ══════════════════════════════════════════
+(function() {
+  'use strict';
+
+  var _popupWindows = {}; // 缓存已弹出的窗口：{ key: { win, ta, originalParent, isDragging } }
+  var _dragState = null;  // { key, startX, startY, winX, winY }
+
+  // 事件委托：监听所有弹出按钮点击
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.pop-btn');
+    if (!btn) return;
+
+    e.stopPropagation();
+    var target = btn.dataset.target;
+    var slot = btn.dataset.slot;
+    var ling = btn.dataset.ling || '';
+    var key = target + '-' + slot + (ling ? '-' + ling : '');
+
+    if (_popupWindows[key]) {
+      // 已弹出，收回
+      _closePopup(key);
+    } else {
+      // 弹出
+      _openPopup(key, target, slot, ling, btn);
+    }
+  });
+
+  function _openPopup(key, target, slot, ling, btn) {
+    var ta;
+    var title;
+
+    // 定位原始输入框
+    if (target === 'remark') {
+      var remarkBlock = document.getElementById('act10-remark-' + slot + '-' + ling);
+      ta = remarkBlock ? remarkBlock.querySelector('.remark-ta') : null;
+      title = '备注';
+    } else if (target === 'zdjl') {
+      var panel = document.querySelector('.col-panel[data-slot="' + slot + '"]');
+      ta = panel ? panel.querySelector('.zdjl-ta') : null;
+      title = '自定军令';
+    } else if (target === 'opp-decision') {
+      var panel = document.querySelector('.col-panel[data-slot="' + slot + '"]');
+      ta = panel ? panel.querySelector('.opp-decision-ta') : null;
+      title = '机遇决策';
+    }
+
+    if (!ta) return;
+
+    // 创建浮动窗口
+    var win = document.createElement('div');
+    win.className = 'input-popup-win';
+    win.innerHTML =
+      '<div class="input-popup-hd">' +
+        '<span class="input-popup-title">' + _esc(title) + '</span>' +
+        '<button class="input-popup-close" data-key="' + key + '">×</button>' +
+      '</div>' +
+      '<div class="input-popup-body"></div>';
+
+    document.body.appendChild(win);
+
+    // 移动输入框到窗口内
+    var body = win.querySelector('.input-popup-body');
+    var originalParent = ta.parentNode;
+    body.appendChild(ta);
+
+    // 初始位置（屏幕中心偏右上）
+    win.style.left = (window.innerWidth / 2 + 100) + 'px';
+    win.style.top = '120px';
+
+    // 缓存
+    _popupWindows[key] = {
+      win: win,
+      ta: ta,
+      originalParent: originalParent,
+      isDragging: false
+    };
+
+    // 绑定拖拽
+    var hd = win.querySelector('.input-popup-hd');
+    hd.addEventListener('mousedown', function(e) { _onDragStart(e, key); });
+
+    // 绑定关闭按钮
+    win.querySelector('.input-popup-close').addEventListener('click', function() {
+      _closePopup(key);
+    });
+
+    // 聚焦输入框
+    setTimeout(function() { ta.focus(); }, 100);
+  }
+
+  function _closePopup(key) {
+    var popup = _popupWindows[key];
+    if (!popup) return;
+
+    // 输入框移回原位
+    popup.originalParent.appendChild(popup.ta);
+
+    // 移除窗口
+    popup.win.remove();
+
+    // 清除缓存
+    delete _popupWindows[key];
+  }
+
+  function _onDragStart(e, key) {
+    e.preventDefault();
+    var popup = _popupWindows[key];
+    if (!popup) return;
+
+    popup.isDragging = true;
+    var rect = popup.win.getBoundingClientRect();
+    _dragState = {
+      key: key,
+      startX: e.clientX,
+      startY: e.clientY,
+      winX: rect.left,
+      winY: rect.top
+    };
+
+    document.addEventListener('mousemove', _onDragMove);
+    document.addEventListener('mouseup', _onDragEnd);
+  }
+
+  function _onDragMove(e) {
+    if (!_dragState) return;
+    var dx = e.clientX - _dragState.startX;
+    var dy = e.clientY - _dragState.startY;
+    var popup = _popupWindows[_dragState.key];
+    if (popup) {
+      popup.win.style.left = (_dragState.winX + dx) + 'px';
+      popup.win.style.top = (_dragState.winY + dy) + 'px';
+    }
+  }
+
+  function _onDragEnd() {
+    if (_dragState) {
+      var popup = _popupWindows[_dragState.key];
+      if (popup) popup.isDragging = false;
+    }
+    _dragState = null;
+    document.removeEventListener('mousemove', _onDragMove);
+    document.removeEventListener('mouseup', _onDragEnd);
+  }
+
+  function _esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+})();
 
 // ══════════════════════════════════════════════════════════
 //  实时同步模块
