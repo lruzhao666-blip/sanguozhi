@@ -284,21 +284,16 @@ window.SGParser = (function () {
             if (presM) prestige = presM[1];
           }
 
-          // 从 body 提取标题和引言（原样保留）
+          // 从 body 提取标题和引言（原样保留，主持人输出什么就显示什么）
           // body 格式: "南下援汝南：「主公,曹仁势大...」——法正谏"
+          // 或:       "南下援汝南：率主力疾趋汝南"
           const colonIdx = body.search(/[：:]/);
           if (colonIdx > 0) {
             title = body.slice(0, colonIdx).trim();
             const afterColon = body.slice(colonIdx + 1).trim();
 
-            // 判断是否有引号开头（引号格式的引言）
-            if (/^[「"'']/.test(afterColon)) {
-              // 有引号，整段作为 quote（包括引号和后续内容）
-              quote = afterColon;
-            } else {
-              // 没有引号，作为 note
-              note = afterColon;
-            }
+            // 冒号后所有内容统一作为 quote，前端会统一斜体显示
+            quote = afterColon;
           } else {
             title = body;
           }
