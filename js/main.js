@@ -4793,11 +4793,13 @@ function getCurrentPlayerSlot() {
           '</div>' +
           '<div class="barracks-generals" id="barracks-generals"></div>' +
           '<div class="barracks-actions">' +
-            '<button class="barracks-action-btn" id="barracks-refresh-btn" title="刷新上下文，下次发消息将重新加载完整战局数据">' +
-              '🔄 刷新上下文' +
+            '<button class="barracks-action-chip" id="barracks-refresh-btn" title="刷新上下文">' +
+              '<span class="action-icon">🔄</span>' +
+              '<span class="action-label">刷新</span>' +
             '</button>' +
-            '<button class="barracks-action-btn barracks-clear-btn" id="barracks-clear-btn" title="清空与当前武将的所有对话记录">' +
-              '🗑️ 清空对话' +
+            '<button class="barracks-action-chip" id="barracks-clear-btn" title="清空对话">' +
+              '<span class="action-icon">🗑️</span>' +
+              '<span class="action-label">清空</span>' +
             '</button>' +
           '</div>' +
         '</div>' +
