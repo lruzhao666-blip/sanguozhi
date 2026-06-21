@@ -4832,8 +4832,7 @@ function getCurrentPlayerSlot() {
       return;
     }
     el.innerHTML = names.map(function(n) {
-      var disabledClass = (n === '昭公' || n === '高公' || n === '许公') ? ' disabled' : '';
-      return '<button class="barracks-gen-chip' + disabledClass + '" data-name="' + esc(n) + '">' + esc(n) + '</button>';
+      return '<button class="barracks-gen-chip" data-name="' + esc(n) + '">' + esc(n) + '</button>';
     }).join('');
 
     el.querySelectorAll('.barracks-gen-chip').forEach(function(chip) {
