@@ -4738,7 +4738,10 @@ function getCurrentPlayerSlot() {
     round: 0,
     generalName: '',
     chatHistory: [],   // [{role:'general'|'user', name?, text}]
-    loading: false
+    loading: false,
+    systemPromptSent: false,  // 🆕 标记：本次对话是否已发送过完整System Prompt
+    lastRound: 0,             // 🆕 记录上次发送时的回合数
+    lastGeneral: ''           // 🆕 记录上次的武将
   };
 
   // ── 打开军帐 ──
@@ -4766,6 +4769,9 @@ function getCurrentPlayerSlot() {
   }
 
   function closeBarracks() {
+    _barracksState.systemPromptSent = false;
+    _barracksState.lastRound = 0;
+    _barracksState.lastGeneral = '';
     var overlay = document.getElementById('barracks-overlay');
     if (!overlay) return;
     overlay.classList.remove('visible');
@@ -4845,6 +4851,10 @@ function getCurrentPlayerSlot() {
 
   // ── 选择武将 ──
   function selectBarracksGeneral(name) {
+    // 如果切换了武将，重置标记
+    if (_barracksState.generalName !== name) {
+      _barracksState.systemPromptSent = false;
+    }
     _barracksState.generalName = name;
     // 高亮
     document.querySelectorAll('#barracks-generals .barracks-gen-chip').forEach(function(c) {
@@ -4922,40 +4932,159 @@ function getCurrentPlayerSlot() {
 
   // ── 抓取局势数据(用于 prompt 与预设问题)──
   function extractBarracksSituation(slotIdx) {
-    var latest = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
-    var parsed = latest ? latest.parsed : {};
-    var slotKey = BARRACKS_SLOT_KEYS[slotIdx];
-    var player = state.players[slotIdx] || {};
+  var latest = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
+  var parsed = latest ? latest.parsed : {};
+  var slotKey = BARRACKS_SLOT_KEYS[slotIdx];
+  var player = state.players[slotIdx] || {};
 
-    // 威望
-    var myPrestige = null, prestigeRank = null;
-    var entries = (parsed.prestige && parsed.prestige.entries) || [];
-    entries.forEach(function(e, idx) {
-      if (e.name === slotKey) { myPrestige = e.score; prestigeRank = idx + 1; }
-    });
+  // ═══ 原有数据 ═══
 
-    // 行动选项
-    var myActions = (parsed.playerActions && parsed.playerActions[slotKey]) || {};
-    var actionItems = myActions.items || [];
+  // 威望
+  var myPrestige = null, prestigeRank = null;
+  var entries = (parsed.prestige && parsed.prestige.entries) || [];
+  entries.forEach(function(e, idx) {
+    if (e.name === slotKey) { myPrestige = e.score; prestigeRank = idx + 1; }
+  });
 
-    // 机遇
-    var opps = parsed.opportunities || [];
+  // 行动选项
+  var myActions = (parsed.playerActions && parsed.playerActions[slotKey]) || {};
+  var actionItems = myActions.items || [];
 
-    return {
-      round: latest ? latest.round : 0,
-      slotKey: slotKey,
-      name: player.name || ('城主' + slotKey),
-      gold: player.gold, food: player.food, troop: player.troop,
-      morale: player.morale, cities: player.cities,
-      generals: player.generals || [],
-      citiesList: player.cities_list || [],
-      prestige: myPrestige, prestigeRank: prestigeRank,
-      prestigeEntries: entries,
-      actionItems: actionItems,
-      opportunities: opps
-    };
+  // 机遇
+  var opps = parsed.opportunities || [];
+
+  // ═══ 新增：最近3回合局势段 ═══
+  var situationHistory = [];
+  var startIdx = Math.max(0, state.rounds.length - 3);
+  for (var i = startIdx; i < state.rounds.length; i++) {
+    var rd = state.rounds[i];
+    if (rd && rd.parsed && rd.parsed.situation) {
+      situationHistory.push({
+        round: rd.round,
+        situation: rd.parsed.situation
+      });
+    }
   }
 
+  // ═══ 新增：最近3回合事件（标题+▸影响）═══
+  var eventsHistory = [];
+  for (var i = startIdx; i < state.rounds.length; i++) {
+    var rd = state.rounds[i];
+    if (rd && rd.parsed && rd.parsed.rawDigest) {
+      var eventsText = rd.parsed.rawDigest;
+      var eventsList = [];
+
+      // 正则提取：📜 事件X · 标题 ... ▸ 影响:...
+      var eventMatches = eventsText.match(/📜\s*事件[^·]*·\s*([^\n]+)[\s\S]*?▸\s*影响[:：]([^\n]+)/g);
+      if (eventMatches) {
+        eventMatches.forEach(function(match) {
+          var titleMatch = match.match(/📜\s*事件[^·]*·\s*([^\n]+)/);
+          var impactMatch = match.match(/▸\s*影响[:：]([^\n]+)/);
+          if (titleMatch && impactMatch) {
+            eventsList.push({
+              title: titleMatch[1].trim(),
+              impact: impactMatch[1].trim()
+            });
+          }
+        });
+      }
+
+      if (eventsList.length > 0) {
+        eventsHistory.push({
+          round: rd.round,
+          events: eventsList
+        });
+      }
+    }
+  }
+
+  // ═══ 新增：当前回合战报 ═══
+  var battlesList = (parsed.battles || []).map(function(b) {
+    return {
+      attackerLabel: b.attackerLabel || '',
+      defenderLabel: b.defenderLabel || '',
+      attackerGenerals: b.attackerGenerals || '',
+      defenderGenerals: b.defenderGenerals || '',
+      attackerCity: b.attackerCity || '',
+      defenderCity: b.defenderCity || '',
+      outcome: b.outcome || '',
+      casualties: b.casualties || ''
+    };
+  });
+
+  // ═══ 新增：当前回合调度 ═══
+  var transitList = (parsed.transit || []).filter(function(t) {
+    return t.player === slotKey;
+  }).map(function(t) {
+    return {
+      generals: t.generals || '',
+      location: t.location || '',
+      troops: t.troops || '',
+      status: t.status || ''
+    };
+  });
+
+  // ═══ 新增：城池详情（含守将+兵力）═══
+  var citiesDetail = (player.cities_list || []).map(function(city) {
+    return {
+      name: city.name || '',
+      generals: city.generals || '',
+      troops: city.troops || ''
+    };
+  });
+
+  // ═══ 新增：机遇全文 ═══
+  var opportunitiesFullText = opps.map(function(o) {
+    var text = '机遇' + (o.id || '') + '·' + (o.title || '');
+    if (o.type) text += ' · ' + o.type;
+    if (o.description) text += '\n' + o.description;
+    if (o.note) text += '\n▸ ' + o.note;
+    return text;
+  });
+
+  // ═══ 新增：本回合军令全文 ═══
+  var myActionsFullText = actionItems.map(function(item) {
+    var text = (item.num || '') + ' ' + (item.title || '');
+    if (item.advisor) text += ': ' + item.advisor;
+    if (item.quote) text += ' 「' + item.quote + '」';
+    if (item.note) text += ' (' + item.note + ')';
+    if (item.branches && item.branches.length) {
+      text += '\n选项:';
+      item.branches.forEach(function(br) {
+        text += '\n  ' + (br.label || '') + '.' + (br.name || '');
+        if (br.description) text += ':' + br.description;
+      });
+    }
+    return text;
+  });
+
+  return {
+    round: latest ? latest.round : 0,
+    slotKey: slotKey,
+    name: player.name || ('城主' + slotKey),
+    gold: player.gold,
+    food: player.food,
+    troop: player.troop,
+    morale: player.morale,
+    cities: player.cities,
+    generals: player.generals || [],
+    citiesList: player.cities_list || [],
+    prestige: myPrestige,
+    prestigeRank: prestigeRank,
+    prestigeEntries: entries,
+    actionItems: actionItems,
+    opportunities: opps,
+
+    // ═══ 新增字段 ═══
+    situationHistory: situationHistory,
+    eventsHistory: eventsHistory,
+    battles: battlesList,
+    transit: transitList,
+    citiesDetail: citiesDetail,
+    opportunitiesFullText: opportunitiesFullText,
+    myActionsFullText: myActionsFullText
+  };
+}
   // ── 本地规则生成预设问题(按局势)──
   function _barracksBuildPresets(slotIdx) {
     var s = extractBarracksSituation(slotIdx);
@@ -5016,43 +5145,127 @@ function getCurrentPlayerSlot() {
   }
 
   // ── 组装 system prompt ──
-  function getBarracksSystemPrompt(generalName, slotIdx) {
-    var s = extractBarracksSituation(slotIdx);
-    var genStr = (s.generals || []).map(function(g) {
-      var st = (g && g.status && g.status !== '健康') ? '(' + g.status + ')' : '';
-      return (g && typeof g === 'object' ? g.name : g) + st;
-    }).join('、') || '无';
-    var cityStr = (s.citiesList || []).map(function(c) { return c.name; }).join('、') || '无';
-    var actStr = (s.actionItems || []).map(function(it) {
-      return (it.num || '') + (it.title || '');
-    }).join(' / ') || '无';
-    var oppStr = (s.opportunities || []).map(function(o) {
-      return '机遇' + o.id + '·' + o.title;
-    }).join(' / ') || '无';
+function getBarracksSystemPrompt(generalName, slotIdx) {
+  var s = extractBarracksSituation(slotIdx);
 
-    return [
-      '你是《三国志文字版》中的【' + generalName + '】,为主公效力。这是一款回合制三国战略推演游戏。',
-      '请根据你的历史人物性格和专长,为主公出谋划策。',
-      '谋士侧重战略、敌我态势、威望追赶;猛将侧重战术、兵力调配、攻城战法;内政官侧重经济民心、屯田工程。',
-      '',
-      '【当前局势】',
-      '回合:第' + s.round + '回合',
-      '主公:' + s.name + ' | 威望:' + (s.prestige != null ? s.prestige : '未知') +
-        (s.prestigeRank ? ' (排名第' + s.prestigeRank + ')' : ''),
-      '资源 金:' + s.gold + ' 粮:' + s.food + ' 兵:' + s.troop + ' 民心:' + s.morale + ' 城:' + s.cities,
-      '麾下武将:' + genStr,
-      '所辖城池:' + cityStr,
-      '本回合军令:' + actStr,
-      '公共机遇:' + oppStr,
-      '',
-      '【输出要求】',
-      '- 纯文本,不使用任何 Markdown(不要 **加粗**、## 标题、- 列表、表格)。',
-      '- 用古文书信口吻,如「主公,臣以为…」,符合' + generalName + '的性格。',
-      '- 字数 120-220 字。',
-      '- 给建议时须从上述「本回合军令」或自定军令中选择,不可编造不存在的行动。',
-      '- 不要跳出角色,不要使用现代词汇。'
-    ].join('\n');
+  // ═══ 武将列表（带状态）═══
+  var genStr = (s.generals || []).map(function(g) {
+    var st = (g && g.status && g.status !== '健康') ? '(' + g.status + ')' : '';
+    return (g && typeof g === 'object' ? g.name : g) + st;
+  }).join('、') || '无';
+
+  // ═══ 城池简略列表 ═══
+  var cityStr = (s.citiesList || []).map(function(c) { return c.name; }).join('、') || '无';
+
+  // ═══ 城池详情（含守将+兵力）═══
+  var citiesDetailStr = (s.citiesDetail || []).map(function(c) {
+    var line = '· ' + c.name;
+    if (c.generals) line += ':' + c.generals;
+    if (c.troops) line += ' | ' + c.troops;
+    return line;
+  }).join('\n') || '无详情';
+
+  // ═══ 战报摘要 ═══
+  var battlesStr = (s.battles || []).map(function(b) {
+    return '· ' + b.attackerLabel + '攻' + b.defenderLabel + ' ' +
+           b.outcome + (b.casualties ? ' 伤亡:' + b.casualties : '');
+  }).join('\n') || '本回合无战事';
+
+  // ═══ 调度摘要 ═══
+  var transitStr = (s.transit || []).map(function(t) {
+    return '· ' + t.generals + ' ' + t.location + ' ' + t.troops +
+           (t.status ? ' (' + t.status + ')' : '');
+  }).join('\n') || '无部队在途';
+
+  // ═══ 威望对比 ═══
+  var prestigeCompare = '';
+  if (s.prestigeRank === 1) {
+    var gap = s.prestige - (s.prestigeEntries[1] ? s.prestigeEntries[1].score : 0);
+    prestigeCompare = '(排名第1·领先第2名' + gap + '分)';
+  } else if (s.prestigeRank > 1) {
+    var topScore = s.prestigeEntries[0] ? s.prestigeEntries[0].score : 0;
+    var gap = topScore - s.prestige;
+    prestigeCompare = '(排名第' + s.prestigeRank + '·落后榜首' + gap + '分)';
   }
+
+  // ═══ 机遇全文 ═══
+  var oppsFullStr = (s.opportunitiesFullText || []).join('\n\n') || '无';
+
+  // ═══ 军令全文 ═══
+  var actionsFullStr = (s.myActionsFullText || []).join('\n\n') || '无';
+
+  // ═══ 最近3回合局势段 ═══
+  var situationHistoryStr = (s.situationHistory || []).map(function(sh) {
+    return '【第' + sh.round + '回合】\n' + sh.situation;
+  }).join('\n\n') || '（暂无历史局势）';
+
+  // ═══ 最近3回合事件（标题+影响）═══
+  var eventsHistoryStr = (s.eventsHistory || []).map(function(eh) {
+    var eventsLines = eh.events.map(function(evt) {
+      return '• ' + evt.title + ': ' + evt.impact;
+    }).join('\n');
+    return '【第' + eh.round + '回合】\n' + eventsLines;
+  }).join('\n\n') || '（暂无历史事件）';
+
+  return [
+    '你是《三国志文字版》中的【' + generalName + '】,为主公效力。',
+    '',
+    '【游戏机制】',
+    '这是一款回合制三国战略推演游戏,由AI主持人推演战局。',
+    '• 胜利条件:成为唯一统一天下的霸主,或威望登顶并保持统治',
+    '• 威望来源:征伐(攻城/破敌)、治政(经济民心)、人才(招募名将)、机遇(把握时机)',
+    '• 核心资源:金(募兵工程)、粮(远征消耗)、兵(战力基础)、民心(稳定根基)',
+    '• 战争规则:攻城需粮耗支撑,围城拖垮守军,强攻损兵惨重;武将受伤/疲劳影响战力;地利影响胜负(水战/险关/粮丰等)',
+    '• 回合节奏:每回合主公选择一条军令执行,部队调度需时间(1-2回合),远征需考虑补给线',
+    '• 机遇系统:公共机遇池,多家竞争,先手占优;有触发条件和成败后果',
+    '• 世界状态:Lv1割据期→Lv2兼并期→Lv3争霸期→Lv4终局期,阶段越高压力越大',
+    '',
+    '【你的角色定位】',
+    '你是历史上的【' + generalName + '】,请根据你的真实历史背景自主判断:',
+    '• 如果你擅长谋略:侧重战略分析、敌我态势、威望追赶路径、外交机遇判断',
+    '• 如果你擅长武勇:侧重战术建议、兵力调配、攻城战法、地利运用',
+    '• 如果你擅长内政:侧重经济规划、民心稳定、屯田工程、粮草筹措',
+    '• 如果你是多面手:综合以上角度,发挥你的历史特长',
+    '',
+    '【当前局势】',
+    '回合:第' + s.round + '回合',
+    '主公:' + s.name + ' | 威望:' + (s.prestige != null ? s.prestige : '未知') + ' ' + prestigeCompare,
+    '资源 金:' + s.gold + ' 粮:' + s.food + ' 兵:' + s.troop + ' 民心:' + s.morale + ' 城:' + s.cities,
+    '',
+    '【战局态势·最近3回合】',
+    situationHistoryStr,
+    '',
+    '【战局事件·最近3回合】',
+    eventsHistoryStr,
+    '',
+    '【本回合战报】',
+    battlesStr,
+    '',
+    '【我方调度】',
+    transitStr,
+    '',
+    '【城池详情】',
+    citiesDetailStr,
+    '',
+    '【麾下武将】',
+    genStr,
+    '',
+    '【本回合军令】',
+    actionsFullStr,
+    '',
+    '【公共机遇池】',
+    oppsFullStr,
+    '',
+    '【输出要求】',
+    '- 纯文本,不使用任何 Markdown(不要 **加粗**、## 标题、- 列表、表格)',
+    '- 古文书信口吻,如「主公,臣以为…」「依臣之见…」,符合【' + generalName + '】的历史性格和说话风格',
+    '- 字数 120-220 字,言简意赅',
+    '- **决策约束**:给建议时必须从上述「本回合军令」或「公共机遇池」中选择,不可编造不存在的行动或机遇',
+    '- **诚实原则**:若数据不足、情报不明、或不在你专长范围,须明确说「臣不知」「此非臣所长」,严禁臆测编造',
+    '- **沉浸感**:结合近期战局事件、当前态势、主公处境给出建议;可引用历史典故、战例类比;保持角色一致性,不跳戏,不用现代词汇',
+    '- **建议结构**:先判断形势(1-2句)→再给具体建议(选哪条军令/机遇+理由)→最后一句话总结或提醒风险'
+  ].join('\n');
+}
 
   // ── 调用 Edge Function ──
   function _barracksCallAI(messages, maxTokens) {
@@ -5078,49 +5291,76 @@ function getCurrentPlayerSlot() {
   }
 
   // ── 发送追问 ──
-  function sendBarracksMessage() {
-    var input = document.getElementById('barracks-input');
-    if (!input) return;
-    var text = input.value.trim();
-    if (!text) return;
-    if (!_barracksState.generalName) {
-      showToast('请先点选一位武将');
-      return;
-    }
-    if (_barracksState.loading) return;
+function sendBarracksMessage() {
+  var input = document.getElementById('barracks-input');
+  if (!input) return;
+  var text = input.value.trim();
+  if (!text) return;
+  if (!_barracksState.generalName) {
+    showToast('请先点选一位武将');
+    return;
+  }
+  if (_barracksState.loading) return;
 
-    var generalName = _barracksState.generalName;
-    var slotIdx = _barracksState.slotIdx;
+  var generalName = _barracksState.generalName;
+  var slotIdx = _barracksState.slotIdx;
+  var currentRound = state.rounds.length ? state.rounds[state.rounds.length - 1].round : 0;
 
-    _barracksState.chatHistory.push({ role: 'user', text: text });
-    input.value = '';
-    _barracksState.loading = true;
-    _barracksRenderChat();
+  _barracksState.chatHistory.push({ role: 'user', text: text });
+  input.value = '';
+  _barracksState.loading = true;
+  _barracksRenderChat();
 
-    // 组装 messages:system + 最近 6 条历史
-    var msgs = [{ role: 'system', content: getBarracksSystemPrompt(generalName, slotIdx) }];
-    var recent = _barracksState.chatHistory.slice(-6);
-    recent.forEach(function(m) {
-      msgs.push({
-        role: m.role === 'user' ? 'user' : 'assistant',
-        content: m.text
-      });
+  // ═══ Token优化：判断是否需要重新发送完整System Prompt ═══
+  var needFullPrompt =
+    !_barracksState.systemPromptSent ||           // 从未发送过
+    _barracksState.lastRound !== currentRound ||  // 回合变了
+    _barracksState.lastGeneral !== generalName;   // 换武将了
+
+  var msgs = [];
+
+  if (needFullPrompt) {
+    // 发送完整战局数据
+    msgs.push({
+      role: 'system',
+      content: getBarracksSystemPrompt(generalName, slotIdx)
     });
 
-    _barracksCallAI(msgs, 500).then(function(reply) {
-      _barracksState.loading = false;
-      _barracksState.chatHistory.push({ role: 'general', name: generalName, text: reply || '（无言）' });
-      saveBarracksChatHistory();
-      _barracksRenderChat();
-    }).catch(function(err) {
-      _barracksState.loading = false;
-      _barracksState.chatHistory.push({
-        role: 'general', name: generalName,
-        text: '❌ ' + generalName + '一时思绪受阻,请主公稍后再问…'
-      });
-      _barracksRenderChat();
+    // 更新标记
+    _barracksState.systemPromptSent = true;
+    _barracksState.lastRound = currentRound;
+    _barracksState.lastGeneral = generalName;
+  } else {
+    // 只发简短提示（节省Token）
+    msgs.push({
+      role: 'system',
+      content: '你是《三国志文字版》中的【' + generalName + '】,继续为主公解答。'
     });
   }
+
+  // 加上最近6条对话历史
+  var recent = _barracksState.chatHistory.slice(-6);
+  recent.forEach(function(m) {
+    msgs.push({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.text
+    });
+  });
+
+  _barracksCallAI(msgs, 500).then(function(reply) {
+    _barracksState.loading = false;
+    _barracksState.chatHistory.push({ role: 'general', name: generalName, text: reply || '（无言）' });
+    saveBarracksChatHistory();
+    _barracksRenderChat();
+  }).catch(function(err) {
+    _barracksState.loading = false;
+    _barracksState.chatHistory.push({
+      role: 'general', name: generalName,
+      text: '❌ ' + generalName + '一时思绪受阻,请主公稍后再问…'
+    });
+    _barracksRenderChat();
+  });
+}
 
   document.addEventListener('DOMContentLoaded', init);
 })();
