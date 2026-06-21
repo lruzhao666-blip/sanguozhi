@@ -5127,6 +5127,95 @@ function getCurrentPlayerSlot() {
     return text;
   });
 
+  // ═══ 新增：武将归属信息 ═══
+  var generalOwnership = {
+    players: {},
+    npcs: [],
+    free: []
+  };
+
+  ['甲', '乙', '丙'].forEach(function(slot, idx) {
+    var p = state.players[idx];
+    if (p && p.generals && p.generals.length) {
+      var genList = p.generals.map(function(g) {
+        return g && typeof g === 'object' ? g.name : g;
+      }).filter(Boolean);
+      generalOwnership.players[slot] = {
+        name: p.name || slot,
+        generals: genList
+      };
+    }
+  });
+
+  var npcGeneralsFromEvents = [];
+  var knownNpcGenerals = [
+    '曹操', '夏侯惇', '夏侯渊', '曹仁', '曹洪', '荀彧', '荀攸', '郭嘉', '程昱',
+    '袁绍', '袁术', '袁熙', '袁谭', '田丰', '沮授', '审配', '颜良', '文丑',
+    '孙权', '周瑜', '鲁肃', '太史慈', '周泰', '黄盖', '程普', '甘宁',
+    '刘表', '刘璋', '张鲁', '韩遂', '马腾', '公孙瓒'
+  ];
+
+  if (eventsHistory && eventsHistory.length) {
+    eventsHistory.forEach(function(eh) {
+      eh.events.forEach(function(evt) {
+        var text = evt.title + ' ' + evt.impact;
+        knownNpcGenerals.forEach(function(gen) {
+          if (text.indexOf(gen) > -1 && npcGeneralsFromEvents.indexOf(gen) === -1) {
+            npcGeneralsFromEvents.push(gen);
+          }
+        });
+      });
+    });
+  }
+
+  var npcHoldersMap = {};
+  if (parsed.npcCities && parsed.npcCities.length) {
+    parsed.npcCities.forEach(function(c) {
+      if (c.holders && c.holders.length) {
+        var factionName = c.faction || c.name || '未知势力';
+        if (!npcHoldersMap[factionName]) npcHoldersMap[factionName] = [];
+        c.holders.forEach(function(h) {
+          if (h && h !== '无' && h !== '未知' && npcHoldersMap[factionName].indexOf(h) === -1) {
+            npcHoldersMap[factionName].push(h);
+          }
+        });
+      }
+    });
+  }
+
+  Object.keys(npcHoldersMap).forEach(function(faction) {
+    var gens = npcHoldersMap[faction];
+    if (gens.length) {
+      generalOwnership.npcs.push({
+        name: faction,
+        generals: gens
+      });
+      gens.forEach(function(g) {
+        var idx = npcGeneralsFromEvents.indexOf(g);
+        if (idx > -1) npcGeneralsFromEvents.splice(idx, 1);
+      });
+    }
+  });
+
+  var allPlayerGenerals = [];
+  Object.keys(generalOwnership.players).forEach(function(slot) {
+    var info = generalOwnership.players[slot];
+    if (info && info.generals) {
+      allPlayerGenerals = allPlayerGenerals.concat(info.generals);
+    }
+  });
+
+  npcGeneralsFromEvents = npcGeneralsFromEvents.filter(function(gen) {
+    return allPlayerGenerals.indexOf(gen) === -1;
+  });
+
+  if (npcGeneralsFromEvents.length > 0) {
+    generalOwnership.npcs.push({
+      name: 'NPC势力',
+      generals: npcGeneralsFromEvents
+    });
+  }
+
   return {
     round: latest ? latest.round : 0,
     slotKey: slotKey,
@@ -5151,7 +5240,8 @@ function getCurrentPlayerSlot() {
     transit: transitList,
     citiesDetail: citiesDetail,
     opportunitiesFullText: opportunitiesFullText,
-    myActionsFullText: myActionsFullText
+    myActionsFullText: myActionsFullText,
+    generalOwnership: generalOwnership
   };
 }
   // ── 本地规则生成预设问题(按局势)──
@@ -5280,6 +5370,23 @@ function getBarracksSystemPrompt(generalName, slotIdx) {
     return '【第' + eh.round + '回合】\n' + eventsLines;
   }).join('\n\n') || '（暂无历史事件）';
 
+  // ═══ 天下武将归属 ═══
+  var ownershipLines = [];
+  if (s.generalOwnership) {
+    Object.keys(s.generalOwnership.players || {}).forEach(function(slot) {
+      var info = s.generalOwnership.players[slot];
+      if (info && info.generals && info.generals.length) {
+        ownershipLines.push('• ' + slot + '(' + info.name + '):' + info.generals.join('、'));
+      }
+    });
+    (s.generalOwnership.npcs || []).forEach(function(npc) {
+      if (npc.generals && npc.generals.length) {
+        ownershipLines.push('• ' + npc.name + ':' + npc.generals.join('、'));
+      }
+    });
+  }
+  var ownershipStr = ownershipLines.join('\n') || '（暂无详细信息）';
+
   return [
     '你是《三国志文字版》中的【' + generalName + '】,为主公【' + playerTitle + '】(' + playerSlotName + ')效力。',
     '',
@@ -5322,6 +5429,10 @@ function getBarracksSystemPrompt(generalName, slotIdx) {
     '',
     '【麾下武将】',
     genStr,
+    '',
+    '【天下武将归属】',
+    ownershipStr,
+    '**招募约束**:推荐招募武将时,必须确认该武将尚未被任何势力招募。上述已归属武将不可推荐。若不确定某武将归属,说明「臣不知此人下落」。',
     '',
     '【本回合军令】',
     actionsFullStr,
