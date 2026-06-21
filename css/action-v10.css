@@ -963,7 +963,64 @@
 
 /* 手机端 */
 @media (max-width:768px){
-  .barracks-panel{width:100vw;max-height:100vh;height:100vh;border-radius:0;border-top-width:3px;}
+  .barracks-panel{
+    width:100vw;
+    height:100dvh; /* 使用动态视口高度，自动适应键盘弹出 */
+    max-height:100dvh;
+    border-radius:0;
+    border-top-width:3px;
+    position:fixed;
+    top:0;
+    left:0;
+    transform:none;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* 确保内容区域可滚动 */
+  .barracks-body{
+    flex:1;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:env(safe-area-inset-bottom); /* 适配iPhone底部安全区 */
+  }
+
+  /* 固定底部输入区域 */
+  .barracks-footer{
+    flex-shrink:0;
+    position:sticky;
+    bottom:0;
+    background:rgba(16,10,10,.98);
+    z-index:10;
+    padding-bottom:env(safe-area-inset-bottom); /* 适配iPhone底部安全区 */
+  }
+
+  /* 头部固定 */
+  .barracks-header{
+    flex-shrink:0;
+    position:sticky;
+    top:0;
+    z-index:9;
+  }
+
+  /* 武将选择区固定在头部下方 */
+  .barracks-generals{
+    flex-shrink:0;
+    position:sticky;
+    top:60px; /* 头部高度 */
+    z-index:8;
+    background:rgba(10,5,5,.95);
+  }
+
+  /* 操作按钮栏固定 */
+  .barracks-actions{
+    flex-shrink:0;
+    position:sticky;
+    top:120px; /* 头部+武将区高度 */
+    z-index:7;
+    background:rgba(10,5,5,.95);
+  }
+
   .barracks-gen-chip{font-size:.74rem;padding:4px 10px;}
   .barracks-bubble{max-width:82%;}
   .barracks-avatar{width:28px;height:28px;font-size:.9rem;}
