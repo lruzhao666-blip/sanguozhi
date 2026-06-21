@@ -1274,6 +1274,7 @@ let lastSubmissionCheck = {};
       h += '<span class="col-name">' + _act10Esc(pn) + '</span>';
       h += '<span class="col-slot-tag">[' + sk + ']</span>';
       if (pp !== '') h += '<div class="col-pres-val"><span class="col-pres-num">' + pp + '</span><span class="col-pres-lbl"> 威望</span></div>';
+      h += '<button class="barracks-open-btn" data-slot="' + i + '" data-pcolor="' + i + '">💬 军帐</button>';
       h += '</div>';
 
       // 已提交摘要区（初始隐藏，加载提交数据后填充）
@@ -1668,6 +1669,15 @@ let lastSubmissionCheck = {};
     // ↑↑↑ 工单结束 ↑↑↑
 
     // v6.3: 移动端 tab 已删除，无需事件绑定
+
+    // ── 军帐按钮绑定 ──
+    root.querySelectorAll('.barracks-open-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var slotIdx = parseInt(this.dataset.slot, 10);
+        openBarracks(slotIdx);
+      });
+    });
   }
 
   function _act10UpdateBadge(si, total) {
@@ -4708,6 +4718,409 @@ function getCurrentPlayerSlot() {
 // ══════════════════════════════════════════
 //  身份识别模块结束
 // ══════════════════════════════════════════
+
+
+  // ══════════════════════════════════════════
+  //  军帐 AI 问策模块  #barracks-v1
+  //  - 三栏玩家卡各一个「💬 军帐」按钮
+  //  - 抽屉:武将芯片 + 对话气泡 + 预设问题标签 + 输入框
+  //  - AI 经 Supabase Edge Function 中转(带 anon key)
+  //  - 对话历史 localStorage 持久化(key 带 回合+slot+武将)
+  //  - 预设问题:本地规则按当前局势生成,点击填入输入框(不自动发送)
+  // ══════════════════════════════════════════
+
+  var BARRACKS_API_URL = 'https://smiifcbmmtolimtaxpip.supabase.co/functions/v1/barracks';
+  var BARRACKS_SLOT_KEYS = ['甲', '乙', '丙'];
+
+  // 当前军帐会话状态
+  var _barracksState = {
+    slotIdx: 0,
+    round: 0,
+    generalName: '',
+    chatHistory: [],   // [{role:'general'|'user', name?, text}]
+    loading: false
+  };
+
+  // ── 打开军帐 ──
+  function openBarracks(slotIdx) {
+    if (slotIdx == null || slotIdx < 0 || slotIdx > 2) return;
+    initBarracksDrawer();
+    _barracksState.slotIdx = slotIdx;
+    _barracksState.round = state.rounds.length
+      ? state.rounds[state.rounds.length - 1].round : 0;
+    _barracksState.generalName = '';
+    _barracksState.chatHistory = [];
+
+    // 身份色标记到抽屉根
+    var overlay = document.getElementById('barracks-overlay');
+    if (overlay) {
+      overlay.setAttribute('data-pcolor', slotIdx);
+      overlay.classList.remove('hidden');
+      requestAnimationFrame(function() { overlay.classList.add('visible'); });
+    }
+
+    renderBarracksGenerals(slotIdx);
+    _barracksRenderChat();      // 空态
+    _barracksRenderPresets();   // 局势预设问题
+    _barracksUpdateTitle(slotIdx);
+  }
+
+  function closeBarracks() {
+    var overlay = document.getElementById('barracks-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('visible');
+    setTimeout(function() { overlay.classList.add('hidden'); }, 200);
+  }
+
+  // ── 创建抽屉 DOM(幂等,只建一次)──
+  function initBarracksDrawer() {
+    if (document.getElementById('barracks-overlay')) return;
+    var ov = document.createElement('div');
+    ov.id = 'barracks-overlay';
+    ov.className = 'barracks-overlay hidden';
+    ov.innerHTML =
+      '<div class="barracks-panel">' +
+        '<div class="barracks-header">' +
+          '<div class="barracks-title-row">' +
+            '<span class="barracks-title">💬 军帐</span>' +
+            '<button class="barracks-close" id="barracks-close-btn">✕</button>' +
+          '</div>' +
+          '<div class="barracks-generals" id="barracks-generals"></div>' +
+        '</div>' +
+        '<div class="barracks-body" id="barracks-body"></div>' +
+        '<div class="barracks-presets" id="barracks-presets"></div>' +
+        '<div class="barracks-footer">' +
+          '<textarea class="barracks-input" id="barracks-input" rows="1" placeholder="点击上方武将后,向他问策…"></textarea>' +
+          '<button class="barracks-send" id="barracks-send-btn">发送</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+
+    // 点遮罩空白关闭
+    ov.addEventListener('click', function(e) {
+      if (e.target === ov) closeBarracks();
+    });
+    document.getElementById('barracks-close-btn').addEventListener('click', closeBarracks);
+    document.getElementById('barracks-send-btn').addEventListener('click', sendBarracksMessage);
+    document.getElementById('barracks-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendBarracksMessage();
+      }
+    });
+  }
+
+  function _barracksUpdateTitle(slotIdx) {
+    var titleEl = document.querySelector('#barracks-overlay .barracks-title');
+    if (!titleEl) return;
+    var pn = state.players[slotIdx] ? state.players[slotIdx].name : '城主' + BARRACKS_SLOT_KEYS[slotIdx];
+    titleEl.textContent = '💬 ' + pn + ' · 军帐';
+  }
+
+  // ── 渲染武将芯片 ──
+  function renderBarracksGenerals(slotIdx) {
+    var el = document.getElementById('barracks-generals');
+    if (!el) return;
+    var player = state.players[slotIdx];
+    var generals = (player && player.generals) || [];
+    var names = generals.map(function(g) {
+      return (g && typeof g === 'object') ? g.name : g;
+    }).filter(Boolean);
+
+    if (!names.length) {
+      el.innerHTML = '<span class="barracks-no-gen">主公麾下尚无武将</span>';
+      return;
+    }
+    el.innerHTML = names.map(function(n) {
+      return '<button class="barracks-gen-chip" data-name="' + esc(n) + '">' + esc(n) + '</button>';
+    }).join('');
+
+    el.querySelectorAll('.barracks-gen-chip').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        var name = this.dataset.name;
+        selectBarracksGeneral(name);
+      });
+    });
+  }
+
+  // ── 选择武将 ──
+  function selectBarracksGeneral(name) {
+    _barracksState.generalName = name;
+    // 高亮
+    document.querySelectorAll('#barracks-generals .barracks-gen-chip').forEach(function(c) {
+      c.classList.toggle('active', c.dataset.name === name);
+    });
+    // 读历史(不自动调 AI)
+    _barracksState.chatHistory = loadBarracksChatHistory(name);
+    _barracksRenderChat();
+    var input = document.getElementById('barracks-input');
+    if (input) {
+      input.placeholder = '向 ' + name + ' 问策…';
+      input.focus();
+    }
+  }
+
+  // ── localStorage key ──
+  function _barracksStorageKey(name) {
+    return 'barracks_round' + _barracksState.round +
+           '_slot' + _barracksState.slotIdx +
+           '_general' + name;
+  }
+  function loadBarracksChatHistory(name) {
+    try {
+      var raw = localStorage.getItem(_barracksStorageKey(name));
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+  function saveBarracksChatHistory() {
+    try {
+      localStorage.setItem(
+        _barracksStorageKey(_barracksState.generalName),
+        JSON.stringify(_barracksState.chatHistory)
+      );
+    } catch (e) {}
+  }
+
+  // ── 渲染对话区 ──
+  function _barracksRenderChat() {
+    var body = document.getElementById('barracks-body');
+    if (!body) return;
+    if (!_barracksState.generalName) {
+      body.innerHTML = '<div class="barracks-empty">点击上方武将,听取建议</div>';
+      return;
+    }
+    var h = '';
+    _barracksState.chatHistory.forEach(function(m) {
+      if (m.role === 'user') {
+        h += '<div class="barracks-msg user">' +
+               '<div class="barracks-bubble">' +
+                 '<div class="barracks-bname">主公</div>' +
+                 '<div class="barracks-btext">' + esc(m.text) + '</div>' +
+               '</div>' +
+               '<div class="barracks-avatar">👤</div>' +
+             '</div>';
+      } else {
+        h += '<div class="barracks-msg general">' +
+               '<div class="barracks-avatar">📜</div>' +
+               '<div class="barracks-bubble">' +
+                 '<div class="barracks-bname">' + esc(m.name || _barracksState.generalName) + '</div>' +
+                 '<div class="barracks-btext">' + esc(m.text) + '</div>' +
+               '</div>' +
+             '</div>';
+      }
+    });
+    if (_barracksState.loading) {
+      h += '<div class="barracks-msg general">' +
+             '<div class="barracks-avatar">📜</div>' +
+             '<div class="barracks-bubble"><div class="barracks-btext barracks-thinking">' +
+             esc(_barracksState.generalName) + '正在思量…</div></div>' +
+           '</div>';
+    }
+    body.innerHTML = h;
+    body.scrollTop = body.scrollHeight;
+  }
+
+  // ── 抓取局势数据(用于 prompt 与预设问题)──
+  function extractBarracksSituation(slotIdx) {
+    var latest = state.rounds.length ? state.rounds[state.rounds.length - 1] : null;
+    var parsed = latest ? latest.parsed : {};
+    var slotKey = BARRACKS_SLOT_KEYS[slotIdx];
+    var player = state.players[slotIdx] || {};
+
+    // 威望
+    var myPrestige = null, prestigeRank = null;
+    var entries = (parsed.prestige && parsed.prestige.entries) || [];
+    entries.forEach(function(e, idx) {
+      if (e.name === slotKey) { myPrestige = e.score; prestigeRank = idx + 1; }
+    });
+
+    // 行动选项
+    var myActions = (parsed.playerActions && parsed.playerActions[slotKey]) || {};
+    var actionItems = myActions.items || [];
+
+    // 机遇
+    var opps = parsed.opportunities || [];
+
+    return {
+      round: latest ? latest.round : 0,
+      slotKey: slotKey,
+      name: player.name || ('城主' + slotKey),
+      gold: player.gold, food: player.food, troop: player.troop,
+      morale: player.morale, cities: player.cities,
+      generals: player.generals || [],
+      citiesList: player.cities_list || [],
+      prestige: myPrestige, prestigeRank: prestigeRank,
+      prestigeEntries: entries,
+      actionItems: actionItems,
+      opportunities: opps
+    };
+  }
+
+  // ── 本地规则生成预设问题(按局势)──
+  function _barracksBuildPresets(slotIdx) {
+    var s = extractBarracksSituation(slotIdx);
+    var qs = [];
+
+    if (s.actionItems && s.actionItems.length) {
+      qs.push('本回合这几道军令,该如何取舍?');
+    }
+    if (s.opportunities && s.opportunities.length) {
+      qs.push('公共机遇值得去争吗?该选哪条?');
+    }
+    if (s.prestigeRank && s.prestigeRank > 1) {
+      qs.push('我威望暂时落后,如何追赶?');
+    }
+    if (s.food != null && s.food < 1000) {
+      qs.push('粮草吃紧,当如何筹措?');
+    }
+    if (s.troop != null && s.troop < 2000) {
+      qs.push('兵力单薄,该募兵还是固守?');
+    }
+    // 武将状态
+    var hasBadStatus = (s.generals || []).some(function(g) {
+      return g && g.status && g.status !== '健康' && g.status !== null;
+    });
+    if (hasBadStatus) {
+      qs.push('军中有将不在状态,要紧吗?');
+    }
+    // 通用兜底(总保证有几条)
+    qs.push('依眼下局势,我当务之急是什么?');
+    qs.push('三家之中,我该提防谁?');
+
+    // 去重 + 最多 5 条
+    var seen = {}, out = [];
+    qs.forEach(function(q) { if (!seen[q]) { seen[q] = 1; out.push(q); } });
+    return out.slice(0, 5);
+  }
+
+  function _barracksRenderPresets() {
+    var el = document.getElementById('barracks-presets');
+    if (!el) return;
+    var presets = _barracksBuildPresets(_barracksState.slotIdx);
+    if (!presets.length) { el.innerHTML = ''; return; }
+    el.innerHTML = presets.map(function(q, idx) {
+      return '<button class="barracks-preset-chip" style="--bp-delay:' + (idx * 60) + 'ms" data-q="' + esc(q) + '">' + esc(q) + '</button>';
+    }).join('');
+    el.querySelectorAll('.barracks-preset-chip').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        var input = document.getElementById('barracks-input');
+        if (!input) return;
+        if (!_barracksState.generalName) {
+          showToast('请先点选一位武将');
+          return;
+        }
+        input.value = this.dataset.q;   // 填入输入框,不自动发送
+        input.focus();
+      });
+    });
+  }
+
+  // ── 组装 system prompt ──
+  function getBarracksSystemPrompt(generalName, slotIdx) {
+    var s = extractBarracksSituation(slotIdx);
+    var genStr = (s.generals || []).map(function(g) {
+      var st = (g && g.status && g.status !== '健康') ? '(' + g.status + ')' : '';
+      return (g && typeof g === 'object' ? g.name : g) + st;
+    }).join('、') || '无';
+    var cityStr = (s.citiesList || []).map(function(c) { return c.name; }).join('、') || '无';
+    var actStr = (s.actionItems || []).map(function(it) {
+      return (it.num || '') + (it.title || '');
+    }).join(' / ') || '无';
+    var oppStr = (s.opportunities || []).map(function(o) {
+      return '机遇' + o.id + '·' + o.title;
+    }).join(' / ') || '无';
+
+    return [
+      '你是《三国志文字版》中的【' + generalName + '】,为主公效力。这是一款回合制三国战略推演游戏。',
+      '请根据你的历史人物性格和专长,为主公出谋划策。',
+      '谋士侧重战略、敌我态势、威望追赶;猛将侧重战术、兵力调配、攻城战法;内政官侧重经济民心、屯田工程。',
+      '',
+      '【当前局势】',
+      '回合:第' + s.round + '回合',
+      '主公:' + s.name + ' | 威望:' + (s.prestige != null ? s.prestige : '未知') +
+        (s.prestigeRank ? ' (排名第' + s.prestigeRank + ')' : ''),
+      '资源 金:' + s.gold + ' 粮:' + s.food + ' 兵:' + s.troop + ' 民心:' + s.morale + ' 城:' + s.cities,
+      '麾下武将:' + genStr,
+      '所辖城池:' + cityStr,
+      '本回合军令:' + actStr,
+      '公共机遇:' + oppStr,
+      '',
+      '【输出要求】',
+      '- 纯文本,不使用任何 Markdown(不要 **加粗**、## 标题、- 列表、表格)。',
+      '- 用古文书信口吻,如「主公,臣以为…」,符合' + generalName + '的性格。',
+      '- 字数 120-220 字。',
+      '- 给建议时须从上述「本回合军令」或自定军令中选择,不可编造不存在的行动。',
+      '- 不要跳出角色,不要使用现代词汇。'
+    ].join('\n');
+  }
+
+  // ── 调用 Edge Function ──
+  function _barracksCallAI(messages, maxTokens) {
+    return fetchWithTimeout(BARRACKS_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'apikey': SUPA_KEY
+      },
+      body: JSON.stringify({
+        messages: messages,
+        max_tokens: maxTokens || 600,
+        temperature: 0.8
+      })
+    }, 40000).then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function(data) {
+      if (data.error) throw new Error(data.error);
+      return data.reply || '';
+    });
+  }
+
+  // ── 发送追问 ──
+  function sendBarracksMessage() {
+    var input = document.getElementById('barracks-input');
+    if (!input) return;
+    var text = input.value.trim();
+    if (!text) return;
+    if (!_barracksState.generalName) {
+      showToast('请先点选一位武将');
+      return;
+    }
+    if (_barracksState.loading) return;
+
+    var generalName = _barracksState.generalName;
+    var slotIdx = _barracksState.slotIdx;
+
+    _barracksState.chatHistory.push({ role: 'user', text: text });
+    input.value = '';
+    _barracksState.loading = true;
+    _barracksRenderChat();
+
+    // 组装 messages:system + 最近 6 条历史
+    var msgs = [{ role: 'system', content: getBarracksSystemPrompt(generalName, slotIdx) }];
+    var recent = _barracksState.chatHistory.slice(-6);
+    recent.forEach(function(m) {
+      msgs.push({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.text
+      });
+    });
+
+    _barracksCallAI(msgs, 500).then(function(reply) {
+      _barracksState.loading = false;
+      _barracksState.chatHistory.push({ role: 'general', name: generalName, text: reply || '（无言）' });
+      saveBarracksChatHistory();
+      _barracksRenderChat();
+    }).catch(function(err) {
+      _barracksState.loading = false;
+      _barracksState.chatHistory.push({
+        role: 'general', name: generalName,
+        text: '❌ ' + generalName + '一时思绪受阻,请主公稍后再问…'
+      });
+      _barracksRenderChat();
+    });
+  }
 
   document.addEventListener('DOMContentLoaded', init);
 })();
