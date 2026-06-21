@@ -4792,6 +4792,14 @@ function getCurrentPlayerSlot() {
             '<button class="barracks-close" id="barracks-close-btn">✕</button>' +
           '</div>' +
           '<div class="barracks-generals" id="barracks-generals"></div>' +
+          '<div class="barracks-actions">' +
+            '<button class="barracks-action-btn" id="barracks-refresh-btn" title="刷新上下文，下次发消息将重新加载完整战局数据">' +
+              '🔄 刷新上下文' +
+            '</button>' +
+            '<button class="barracks-action-btn barracks-clear-btn" id="barracks-clear-btn" title="清空与当前武将的所有对话记录">' +
+              '🗑️ 清空对话' +
+            '</button>' +
+          '</div>' +
         '</div>' +
         '<div class="barracks-body" id="barracks-body"></div>' +
         '<div class="barracks-presets" id="barracks-presets"></div>' +
@@ -4814,6 +4822,61 @@ function getCurrentPlayerSlot() {
         sendBarracksMessage();
       }
     });
+
+    // 刷新上下文按钮
+    var refreshBtn = document.getElementById('barracks-refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function() {
+        if (!_barracksState.generalName) {
+          showToast('请先选择一位武将');
+          return;
+        }
+
+        // 重置Token优化标记
+        _barracksState.systemPromptSent = false;
+        _barracksState.lastRound = 0;
+        _barracksState.lastGeneral = '';
+
+        showToast('✅ 已刷新上下文，下次发消息将重新加载完整战局数据');
+      });
+    }
+
+    // 清空对话按钮
+    var clearBtn = document.getElementById('barracks-clear-btn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function() {
+        if (!_barracksState.generalName) {
+          showToast('请先选择一位武将');
+          return;
+        }
+
+        // 二次确认
+        if (!confirm('确定要清空与【' + _barracksState.generalName + '】的所有对话记录吗？\n\n此操作不可撤销。')) {
+          return;
+        }
+
+        // 清空聊天记录
+        _barracksState.chatHistory = [];
+
+        // 清空localStorage
+        var key = _barracksStorageKey(_barracksState.generalName);
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {
+          console.warn('Failed to clear chat history:', e);
+        }
+
+        // 重置Token优化标记
+        _barracksState.systemPromptSent = false;
+        _barracksState.lastRound = 0;
+        _barracksState.lastGeneral = '';
+
+        // 重新渲染
+        _barracksRenderChat();
+
+        showToast('✅ 已清空对话记录');
+      });
+    }
   }
 
   function _barracksUpdateTitle(slotIdx) {
@@ -4860,6 +4923,12 @@ function getCurrentPlayerSlot() {
     document.querySelectorAll('#barracks-generals .barracks-gen-chip').forEach(function(c) {
       c.classList.toggle('active', c.dataset.name === name);
     });
+
+    // 给弹窗添加class（显示操作按钮）
+    var panel = document.querySelector('.barracks-panel');
+    if (panel && name) {
+      panel.classList.add('has-general');
+    }
     // 读历史(不自动调 AI)
     _barracksState.chatHistory = loadBarracksChatHistory(name);
     _barracksRenderChat();
