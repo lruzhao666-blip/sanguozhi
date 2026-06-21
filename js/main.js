@@ -5148,6 +5148,10 @@ function getCurrentPlayerSlot() {
 function getBarracksSystemPrompt(generalName, slotIdx) {
   var s = extractBarracksSituation(slotIdx);
 
+  // ═══ 🆕 玩家身份信息 ═══
+  var playerSlotName = ['甲', '乙', '丙'][slotIdx] || '甲'; // 槽位：甲/乙/丙
+  var playerTitle = s.name || '主公'; // 名号：昭公/高公/许公
+
   // ═══ 武将列表（带状态）═══
   var genStr = (s.generals || []).map(function(g) {
     var st = (g && g.status && g.status !== '健康') ? '(' + g.status + ')' : '';
@@ -5208,7 +5212,7 @@ function getBarracksSystemPrompt(generalName, slotIdx) {
   }).join('\n\n') || '（暂无历史事件）';
 
   return [
-    '你是《三国志文字版》中的【' + generalName + '】,为主公效力。',
+    '你是《三国志文字版》中的【' + generalName + '】,为主公【' + playerTitle + '】(' + playerSlotName + ')效力。',
     '',
     '【游戏机制】',
     '这是一款回合制三国战略推演游戏,由AI主持人推演战局。',
@@ -5229,7 +5233,7 @@ function getBarracksSystemPrompt(generalName, slotIdx) {
     '',
     '【当前局势】',
     '回合:第' + s.round + '回合',
-    '主公:' + s.name + ' | 威望:' + (s.prestige != null ? s.prestige : '未知') + ' ' + prestigeCompare,
+    '主公:' + playerTitle + '(' + playerSlotName + ') | 威望:' + (s.prestige != null ? s.prestige : '未知') + ' ' + prestigeCompare,
     '资源 金:' + s.gold + ' 粮:' + s.food + ' 兵:' + s.troop + ' 民心:' + s.morale + ' 城:' + s.cities,
     '',
     '【战局态势·最近3回合】',
