@@ -4816,10 +4816,44 @@ function getCurrentPlayerSlot() {
     });
     document.getElementById('barracks-close-btn').addEventListener('click', closeBarracks);
     document.getElementById('barracks-send-btn').addEventListener('click', sendBarracksMessage);
-    document.getElementById('barracks-input').addEventListener('keydown', function(e) {
+    var barracksInput = document.getElementById('barracks-input');
+    barracksInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendBarracksMessage();
+      }
+    });
+
+    // 输入框焦点处理（解决移动端键盘遮挡问题）
+    barracksInput.addEventListener('focus', function() {
+      // 移动端检测
+      var isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        // 延迟执行，等待键盘弹出动画完成
+        setTimeout(function() {
+          // 滚动到输入框位置
+          barracksInput.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+
+          // 确保父容器也滚动到底部
+          var barracksBody = document.querySelector('.barracks-body');
+          if (barracksBody) {
+            barracksBody.scrollTop = barracksBody.scrollHeight;
+          }
+        }, 300);
+      }
+    });
+
+    // 输入时持续保持可见
+    barracksInput.addEventListener('input', function() {
+      var isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        var barracksBody = document.querySelector('.barracks-body');
+        if (barracksBody) {
+          barracksBody.scrollTop = barracksBody.scrollHeight;
+        }
       }
     });
 
@@ -7029,6 +7063,41 @@ document.addEventListener('DOMContentLoaded', function() {
   var actRoot = document.getElementById('act10-root');
   if (actRoot) {
     observer.observe(actRoot, { childList: true, subtree: true });
+  }
+
+  // 监听视口变化（键盘弹出/收起）
+  if (window.visualViewport) {
+    var lastViewportHeight = window.visualViewport.height;
+
+    window.visualViewport.addEventListener('resize', function() {
+      var currentHeight = window.visualViewport.height;
+      var isMobile = window.innerWidth <= 768;
+
+      if (isMobile) {
+        var barracksPanel = document.querySelector('.barracks-panel');
+        if (barracksPanel) {
+          // 键盘弹出时（视口高度变小）
+          if (currentHeight < lastViewportHeight) {
+            // 调整弹窗高度为当前可视高度
+            barracksPanel.style.height = currentHeight + 'px';
+
+            // 滚动到底部，确保输入框可见
+            setTimeout(function() {
+              var barracksBody = document.querySelector('.barracks-body');
+              if (barracksBody) {
+                barracksBody.scrollTop = barracksBody.scrollHeight;
+              }
+            }, 100);
+          }
+          // 键盘收起时（视口高度恢复）
+          else if (currentHeight > lastViewportHeight) {
+            barracksPanel.style.height = '100dvh';
+          }
+        }
+      }
+
+      lastViewportHeight = currentHeight;
+    });
   }
 });
 
