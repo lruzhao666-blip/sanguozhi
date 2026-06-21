@@ -172,7 +172,7 @@
 .act10 .col-panel[data-slot="2"] .col-head{background:linear-gradient(110deg,rgba(7,52,125,.55),rgba(4,24,62,.20));}
 .act10 .col-name{font-family:var(--font-serif);font-size:1rem;font-weight:700;color:var(--gold-light);letter-spacing:.04em;}
 .act10 .col-slot-tag{font-size:.62rem;color:var(--text-dim);background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.08);border-radius:3px;padding:1px 5px;flex-shrink:0;}
-.act10 .col-pres-val{margin-left:auto;display:flex;align-items:baseline;gap:3px;flex-shrink:0;}
+.act10 .col-pres-val{margin-left:auto;display:none !important;align-items:baseline;gap:3px;flex-shrink:0;}
 .act10 .col-pres-num{font-family:var(--font-serif);font-size:.9rem;font-weight:900;color:var(--gold-light);}
 .act10 .col-pres-lbl{font-size:.6rem;color:var(--text-dim);}
 .act10 .col-sel-badge{font-size:.62rem;padding:2px 7px;border-radius:3px;background:rgba(212,168,67,.07);border:1px solid rgba(212,168,67,.18);color:var(--text-dim);flex-shrink:0;}
@@ -767,13 +767,18 @@
   padding:3px 10px;
   font-size:.72rem;
   font-family:var(--font-serif);
-  color:var(--black-deep);
-  background:linear-gradient(135deg,var(--gold-light),var(--gold-dim));
-  border:none;border-radius:var(--r);
+  color:rgba(212,168,67,.85);
+  background:rgba(40,25,8,.45);
+  border:1px solid rgba(212,168,67,.28);
+  border-radius:var(--r);
   cursor:pointer;white-space:nowrap;
-  transition:filter .15s,transform .1s;
+  transition:all .2s;
 }
-.barracks-open-btn:hover{filter:brightness(1.12);}
+.barracks-open-btn:hover{
+  color:var(--gold-light);
+  border-color:rgba(212,168,67,.5);
+  background:rgba(60,35,10,.65);
+}
 .barracks-open-btn:active{transform:scale(.96);}
 
 /* 遮罩 */
@@ -910,22 +915,36 @@
 }
 .barracks-input{
   flex:1;resize:none;max-height:96px;
-  padding:8px 10px;font-size:.84rem;line-height:1.5;
-  font-family:var(--font-sans);
-  color:var(--text-main);
-  background:rgba(0,0,0,.4);
-  border:1px solid rgba(255,255,255,.1);border-radius:var(--r);
+  padding:10px 14px;font-size:.88rem;line-height:1.5;
+  font-family:var(--font-serif);
+  color:var(--text-light);
+  background:rgba(20,12,8,.65);
+  border:1px solid rgba(212,168,67,.22);
+  border-radius:var(--r);
   outline:none;
+  transition:all .2s;
 }
-.barracks-input:focus{border-color:var(--gold-dim);}
+.barracks-input:focus{
+  border-color:rgba(212,168,67,.55);
+  background:rgba(30,18,10,.75);
+  box-shadow:0 0 8px rgba(212,168,67,.12);
+}
 .barracks-send{
   flex:0 0 auto;padding:8px 16px;font-size:.82rem;
-  font-family:var(--font-serif);color:var(--black-deep);
-  background:linear-gradient(135deg,var(--gold-light),var(--gold-dim));
-  border:none;border-radius:var(--r);cursor:pointer;
+  font-family:var(--font-serif);
+  color:rgba(212,168,67,.85);
+  background:rgba(40,25,8,.45);
+  border:1px solid rgba(212,168,67,.28);
+  border-radius:var(--r);
+  cursor:pointer;
+  transition:all .2s;
 }
-.barracks-send:hover{filter:brightness(1.1);}
-.barracks-send:active{transform:scale(.97);}
+.barracks-send:hover{
+  color:var(--gold-light);
+  border-color:rgba(212,168,67,.5);
+  background:rgba(60,35,10,.65);
+}
+.barracks-send:active{transform:scale(.96);}
 
 /* 禁用态：输入框和发送按钮（当选中"昭公/高公/许公"时由JS添加.barracks-self-disabled类到.barracks-footer）*/
 .barracks-footer.barracks-self-disabled .barracks-input{
