@@ -4795,13 +4795,16 @@ function getCurrentPlayerSlot() {
               '<button class="barracks-close" id="barracks-close-btn">✕</button>' +
             '</div>' +
           '</div>' +
-          '<div class="barracks-generals" id="barracks-generals"></div>' +
         '</div>' +
+        '<div class="barracks-generals" id="barracks-generals"></div>' +
         '<div class="barracks-body" id="barracks-body"></div>' +
-        '<div class="barracks-presets" id="barracks-presets"></div>' +
         '<div class="barracks-footer">' +
-          '<textarea class="barracks-input" id="barracks-input" rows="1" placeholder="点击上方武将后,向他问策…"></textarea>' +
-          '<button class="barracks-send" id="barracks-send-btn">发送</button>' +
+          '<div class="barracks-presets" id="barracks-presets"></div>' +
+          '<div class="barracks-input-row">' +
+            '<textarea class="barracks-input" id="barracks-input" rows="1" placeholder="点击上方武将后,向他问策…"></textarea>' +
+            '<button class="barracks-toggle-preset" id="barracks-toggle-preset" title="预设问题">💡</button>' +
+            '<button class="barracks-send" id="barracks-send-btn">发送</button>' +
+          '</div>' +
         '</div>' +
       '</div>';
     document.body.appendChild(ov);
@@ -4847,6 +4850,10 @@ function getCurrentPlayerSlot() {
       });
     }
 
+    document.getElementById('barracks-toggle-preset').addEventListener('click', function () {
+      var pp = document.getElementById('barracks-presets');
+      if (pp) pp.classList.toggle('expanded');
+    });
     document.getElementById('barracks-send-btn').addEventListener('click', sendBarracksMessage);
     var barracksInput = document.getElementById('barracks-input');
     barracksInput.addEventListener('keydown', function(e) {
