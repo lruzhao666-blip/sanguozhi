@@ -1633,3 +1633,14 @@
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ═══ 预设问题区高度修复 · #barracks-presets-maxheight-v1 ═══ */
+.barracks-presets.expanded {
+  max-height: 180px;
+}
+
+@media (max-width: 768px) {
+  .barracks-presets.expanded {
+    max-height: 200px;
+  }
+}
