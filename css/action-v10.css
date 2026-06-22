@@ -1617,3 +1617,19 @@
     transform: scale(0.95);
   }
 }
+
+/* ═══ 输入栏 flex 容器 · #barracks-input-row-flex-v1 ═══ */
+.barracks-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 10px 16px 12px;
+}
+
+@media (max-width: 768px) {
+  .barracks-input-row {
+    gap: 6px;
+    padding: 10px 12px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+}
