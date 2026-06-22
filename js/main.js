@@ -52,6 +52,11 @@
     'Content-Type': 'application/json',
     'Prefer': 'return=representation',
   };
+
+  // 数据检查相关
+  var DATA_CHECK_API_URL = 'https://smiifcbmmtolimtaxpip.supabase.co/functions/v1/barracks'; // 复用军帐 API
+  var _dataCheckEnabled = true; // 默认开启
+  var _lastCheckRound = 0;
   const POLL_MS  = 30000;
   const MAX_ROWS = 100;
 
@@ -176,7 +181,95 @@ function updateBarracksVisibility(enabled) {
     bindActionTab();
     initIdentitySelector();
     initRealtime();
+    initDataCheck();
+  }
 
+  // 初始化数据检查交互
+  function initDataCheck() {
+    var modalClose = document.getElementById('modal-close');
+    var modalBtnClose = document.getElementById('modal-btn-close');
+    var modalBtnCopy = document.getElementById('modal-btn-copy');
+    var checkResultModal = document.getElementById('check-result-modal');
+    var gmTextarea = document.getElementById('gm-content');
+
+    if (modalClose) {
+      modalClose.addEventListener('click', function() {
+        checkResultModal.style.display = 'none';
+      });
+    }
+
+    if (modalBtnClose) {
+      modalBtnClose.addEventListener('click', function() {
+        checkResultModal.style.display = 'none';
+      });
+    }
+
+    if (modalBtnCopy) {
+      modalBtnCopy.addEventListener('click', function() {
+        var textarea = document.getElementById('fixed-data-zone');
+        textarea.select();
+        document.execCommand('copy');
+        showToast('✓ 已复制到剪贴板，请粘贴到 GM 录入台');
+        checkResultModal.style.display = 'none';
+      });
+    }
+
+    if (checkResultModal) {
+      checkResultModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+        }
+      });
+    }
+
+    if (gmTextarea) {
+      gmTextarea.addEventListener('paste', function(e) {
+        var text = (e.clipboardData || window.clipboardData).getData('text');
+
+        // 检测：是否是纯数据区（以 [回合] 开头且无 ====）
+        if (text.trim().startsWith('[回合]') && text.indexOf('====') === -1) {
+          e.preventDefault(); // 阻止默认粘贴
+
+          // 自动合并剧情区
+          _autoMergeDataZone(text);
+        }
+      });
+    }
+  }
+
+  // 自动合并数据区
+  function _autoMergeDataZone(newDataZone) {
+    // 获取最后一个回合的剧情区
+    var lastRound = state.rounds[state.rounds.length - 1];
+    if (!lastRound || !lastRound.rawContent) {
+      showToast('无法获取原剧情区，请手动合并');
+      return;
+    }
+
+    var rawContent = lastRound.rawContent;
+    var sepIndex = rawContent.indexOf('====================================');
+    var storyZone = sepIndex > -1 ? rawContent.slice(0, sepIndex).trim() : '';
+
+    if (!storyZone) {
+      showToast('无法提取原剧情区，请手动合并');
+      return;
+    }
+
+    // 合并：剧情区 + ==== + 新数据区
+    var merged = storyZone + '\n' + '====================================\n' + newDataZone;
+
+    // 填入文本框
+    var textarea = document.getElementById('gm-content');
+    textarea.value = merged;
+
+    // 自动触发预览
+    setTimeout(function() {
+      var btnPreview = document.getElementById('btn-preview');
+      if (btnPreview) btnPreview.click();
+    }, 100);
+
+    // 提示
+    showToast('🔧 数据已自动合并剧情区，请预览确认');
   }
 
   // #fog-of-war-main-v1: 战争迷雾开关逻辑
@@ -364,6 +457,10 @@ function updateBarracksVisibility(enabled) {
         body: JSON.stringify(payload),
       }, 12000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      // 发布成功后显示数据检查按钮
+      _showDataCheckButton(rd.round);
+
       return res.json();
     } else {
       // INSERT
@@ -373,8 +470,298 @@ function updateBarracksVisibility(enabled) {
         body: JSON.stringify(payload),
       }, 12000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      // 发布成功后显示数据检查按钮
+      _showDataCheckButton(rd.round);
+
       return res.json();
     }
+  }
+
+  // 显示数据检查按钮
+  function _showDataCheckButton(roundNum) {
+    var bar = document.getElementById('data-check-bar');
+    if (!bar) return;
+
+    bar.style.display = 'flex';
+    document.getElementById('check-title').textContent = '第 ' + roundNum + ' 回合已发布';
+    document.getElementById('check-hint').textContent = '点击检查数据正确性';
+    document.getElementById('check-icon').textContent = '🔍';
+
+    // 重置按钮状态
+    var btn = document.getElementById('btn-check-data');
+    btn.textContent = '检查数据';
+    btn.disabled = false;
+    btn.onclick = function() { _startDataCheck(roundNum); };
+
+    _lastCheckRound = roundNum;
+  }
+
+  // 开始数据检查
+  function _startDataCheck(roundNum) {
+    var btn = document.getElementById('btn-check-data');
+    btn.disabled = true;
+    btn.textContent = '检查中...';
+    document.getElementById('check-icon').textContent = '⏳';
+    document.getElementById('check-hint').textContent = 'DeepSeek 正在校验数据...';
+
+    // 提取数据
+    var checkData = _extractCheckData(roundNum);
+    if (!checkData) {
+      showToast('提取数据失败');
+      btn.disabled = false;
+      btn.textContent = '检查数据';
+      return;
+    }
+
+    // 调用 API
+    _callDataCheckAPI(checkData).then(function(result) {
+      _showCheckResult(result);
+    }).catch(function(err) {
+      console.error('数据检查失败:', err);
+      showToast('检查失败：' + err.message);
+      btn.disabled = false;
+      btn.textContent = '检查数据';
+      document.getElementById('check-icon').textContent = '🔍';
+    });
+  }
+
+  // 提取检查数据
+  function _extractCheckData(roundNum) {
+    var currentRound = state.rounds.find(function(r) { return r.round === roundNum; });
+    if (!currentRound) return null;
+
+    var prevRound = state.rounds.find(function(r) { return r.round === roundNum - 1; });
+
+    // 提取上回合资源
+    var prevData = {
+      甲: null,
+      乙: null,
+      丙: null
+    };
+
+    if (prevRound && prevRound.parsed && prevRound.parsed.players) {
+      prevRound.parsed.players.forEach(function(p) {
+        if (p && p.slot) {
+          var slotKey = ['甲', '乙', '丙'][p.slot];
+          prevData[slotKey] = {
+            金: p.gold || 0,
+            粮: p.food || 0,
+            兵: p.troop || 0,
+            民心: p.morale || 0,
+            城: p.cities || 0,
+            武将: (p.generals || []).map(function(g) {
+              return typeof g === 'object' ? g.name : g;
+            }).filter(Boolean)
+          };
+        }
+      });
+    }
+
+    // 提取本回合完整数据区（从原始内容中提取）
+    var rawContent = currentRound.rawContent || '';
+    var sepIndex = rawContent.indexOf('====================================');
+    var dataZone = sepIndex > -1 ? rawContent.slice(sepIndex + 36).trim() : '';
+
+    return {
+      round: roundNum,
+      prevData: prevData,
+      dataZone: dataZone
+    };
+  }
+
+  // 调用数据检查 API
+  function _callDataCheckAPI(checkData) {
+    var systemPrompt = _buildCheckSystemPrompt();
+    var userMessage = _buildCheckUserMessage(checkData);
+
+    var messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ];
+
+    return fetchWithTimeout(DATA_CHECK_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'apikey': SUPA_KEY
+      },
+      body: JSON.stringify({
+        messages: messages,
+        max_tokens: 4000,
+        temperature: 0.3
+      })
+    }, 60000).then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function(data) {
+      if (data.error) throw new Error(data.error);
+      return _parseCheckResult(data.reply || '');
+    });
+  }
+
+  // 构建检查 System Prompt
+  function _buildCheckSystemPrompt() {
+    return [
+      '你是《三国志文字版》数据校验助手。检查 GM 输出的数据区是否正确。',
+      '',
+      '【检查项目（按优先级）】',
+      'P0 严重错误（必须修复）：',
+      '1. 格式错误：缺少括号、分隔符、冒号等',
+      '2. 资源闭环：上回合资源 + 本回合变动△ = 本回合资源（允许±1误差）',
+      '3. 武将失踪：在册武将不在任何城池或调度中',
+      '4. 武将重复：武将列表中有重复',
+      '5. 城数不匹配：城池列表数量 ≠ 城:N',
+      '',
+      'P1 中等问题（建议修复）：',
+      '1. 兵力匹配：总兵 ≈ 城池兵力 + 调度兵力（允许±2%误差）',
+      '2. 战报格式：[攻方]武将(城名) → [守方]武将(城名) | 档位 | 伤亡:攻X守Y',
+      '3. 调度格式：甲 武将 出发→目的 兵种:数量 状态',
+      '4. 威望格式：甲 威望:N',
+      '',
+      '【输出格式】JSON 格式，包含以下字段：',
+      '{',
+      '  "status": "ok" 或 "error",',
+      '  "issues": [',
+      '    {',
+      '      "priority": "P0" 或 "P1",',
+      '      "type": "资源闭环" 或 "格式错误" 或 "武将失踪" 等,',
+      '      "location": "[甲]" 或 "[战报]" 等,',
+      '      "description": "具体问题描述",',
+      '      "original": "错误的原文",',
+      '      "fixed": "修正后的内容"',
+      '    }',
+      '  ],',
+      '  "fixedDataZone": "修复后的完整数据区（从 [回合] 到 [丙] 的所有内容）",',
+      '  "notes": ["需要人工确认的事项1", "需要人工确认的事项2"]',
+      '}',
+      '',
+      '【修复原则】',
+      '- 只修复明确的错误，不改变游戏数据本身',
+      '- 格式错误直接修正',
+      '- 资源闭环误差±1可忽略，>1则调整为正确值',
+      '- 武将重复删除第2个',
+      '- 武将失踪需在 notes 中说明（可能是 AI 主持人故意安排）',
+      '- 兵力匹配误差<2%可忽略',
+      '',
+      '【重要】',
+      '- 如果数据完全正确，返回 {"status": "ok"}',
+      '- fixedDataZone 必须是完整的、可直接粘贴的数据区',
+      '- 保持原有格式、缩进、空行'
+    ].join('\n');
+  }
+
+  // 构建检查 User Message
+  function _buildCheckUserMessage(checkData) {
+    var msg = '请检查第 ' + checkData.round + ' 回合数据：\n\n';
+    msg += '【上回合资源】\n';
+    msg += JSON.stringify(checkData.prevData, null, 2) + '\n\n';
+    msg += '【本回合数据区】\n';
+    msg += checkData.dataZone;
+    return msg;
+  }
+
+  // 解析检查结果
+  function _parseCheckResult(reply) {
+    try {
+      // 尝试提取 JSON（DeepSeek 可能会在前后加说明文字）
+      var jsonMatch = reply.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('返回格式错误');
+      return JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      console.error('解析检查结果失败:', e, reply);
+      throw new Error('解析失败');
+    }
+  }
+
+  // 显示检查结果
+  function _showCheckResult(result) {
+    var modal = document.getElementById('check-result-modal');
+    var successContent = document.getElementById('check-success-content');
+    var errorContent = document.getElementById('check-error-content');
+    var modalIcon = document.getElementById('modal-icon');
+    var modalTitle = document.getElementById('modal-title');
+    var copyBtn = document.getElementById('modal-btn-copy');
+
+    if (result.status === 'ok') {
+      // 检查通过
+      successContent.style.display = 'block';
+      errorContent.style.display = 'none';
+      modalIcon.textContent = '✓';
+      modalTitle.textContent = '数据检查通过';
+      copyBtn.style.display = 'none';
+
+      // 更新按钮区状态
+      document.getElementById('check-icon').textContent = '✓';
+      document.getElementById('check-title').textContent = '数据检查通过';
+      document.getElementById('check-hint').textContent = '第 ' + _lastCheckRound + ' 回合数据无误';
+      var btn = document.getElementById('btn-check-data');
+      btn.textContent = '重新检查';
+      btn.disabled = false;
+    } else {
+      // 发现问题
+      successContent.style.display = 'none';
+      errorContent.style.display = 'block';
+      modalIcon.textContent = '⚠️';
+      modalTitle.textContent = '发现 ' + (result.issues ? result.issues.length : 0) + ' 个数据问题';
+      copyBtn.style.display = 'inline-block';
+
+      // 渲染问题列表
+      var issuesList = document.getElementById('issues-list');
+      issuesList.innerHTML = (result.issues || []).map(function(issue, idx) {
+        return [
+          '<div style="background:rgba(231,111,81,0.08); border:1px solid rgba(231,111,81,0.25); border-radius:4px; padding:12px; margin-bottom:10px;">',
+          '  <div style="display:flex; gap:8px; margin-bottom:8px;">',
+          '    <span style="font-weight:700; color:#e76f51;">' + (idx + 1) + '.</span>',
+          '    <div style="flex:1;">',
+          '      <span style="display:inline-block; background:rgba(231,111,81,0.2); color:#e76f51; padding:2px 8px; border-radius:3px; font-size:0.7rem; font-weight:600; margin-bottom:6px;">' + (issue.type || '') + '</span>',
+          '      <div style="font-size:0.85rem; color:var(--text-main); margin-bottom:8px; line-height:1.5;">' + escapeHtml(issue.description || '') + '</div>',
+          '      <div style="font-size:0.8rem; color:var(--text-dim); padding-left:12px; border-left:2px solid rgba(212,165,116,0.3); line-height:1.4;">',
+          '        <span style="color:var(--gold); font-weight:600;">→ 建议修正：</span>' + escapeHtml(issue.fixed || '') + '',
+          '      </div>',
+          '    </div>',
+          '  </div>',
+          '</div>'
+        ].join('');
+      }).join('');
+
+      // 填充修复后的数据区
+      document.getElementById('fixed-data-zone').value = result.fixedDataZone || '';
+
+      // 显示备注（如果有）
+      var notesSection = document.getElementById('notes-section');
+      var notesContent = document.getElementById('notes-content');
+      if (result.notes && result.notes.length > 0) {
+        notesSection.style.display = 'block';
+        notesContent.innerHTML = result.notes.map(function(note) {
+          return '• ' + escapeHtml(note);
+        }).join('<br>');
+      } else {
+        notesSection.style.display = 'none';
+      }
+
+      // 更新按钮区状态
+      document.getElementById('check-icon').textContent = '⚠️';
+      document.getElementById('check-title').textContent = '发现 ' + (result.issues ? result.issues.length : 0) + ' 个数据问题';
+      document.getElementById('check-hint').textContent = '点击查看详情';
+      var btn = document.getElementById('btn-check-data');
+      btn.textContent = '查看详情';
+      btn.disabled = false;
+      btn.onclick = function() {
+        modal.style.display = 'flex';
+      };
+    }
+
+    // 显示弹窗
+    modal.style.display = 'flex';
+  }
+
+  // HTML 转义
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   async function deleteRoundById(apiId) {

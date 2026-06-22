@@ -370,6 +370,19 @@
           <button id="btn-publish" class="btn-publish">🚀 发布回合</button>
           <button id="btn-clear-all" class="btn-danger">🗑️ 清空全部记录</button>
         </div>
+
+        <!-- 数据检查按钮区（发布后显示） -->
+        <div class="data-check-bar" id="data-check-bar" style="display:none; margin-top:16px; padding:12px 16px; background:rgba(70,130,180,0.1); border:1px solid rgba(70,130,180,0.3); border-radius:6px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span id="check-icon" style="font-size:1.2rem;">🔍</span>
+            <div style="flex:1;">
+              <div id="check-title" style="font-size:0.9rem; font-weight:600; color:var(--text-main);">第 N 回合已发布</div>
+              <div id="check-hint" style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">点击检查数据正确性</div>
+            </div>
+            <button id="btn-check-data" style="padding:8px 16px; font-size:0.85rem; background:rgba(70,130,180,0.2); border:1px solid rgba(70,130,180,0.4); color:var(--text-main); border-radius:4px; cursor:pointer;">检查数据</button>
+          </div>
+        </div>
+
       </div>
 
       <div class="gm-copy-actions-bar" id="gm-copy-actions-bar">
@@ -423,6 +436,57 @@
 
 
 
+
+<!-- 检查结果弹窗 -->
+<div id="check-result-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--black-card); border:1px solid var(--border-gold); border-radius:8px; max-width:700px; width:100%; max-height:80vh; display:flex; flex-direction:column;">
+    <!-- 弹窗头部 -->
+    <div id="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--border-gold); display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span id="modal-icon" style="font-size:1.3rem;">✓</span>
+        <span id="modal-title" style="font-size:1.05rem; font-weight:700; color:var(--gold-light);">数据检查通过</span>
+      </div>
+      <button id="modal-close" style="background:none; border:none; color:var(--text-dim); font-size:1.5rem; cursor:pointer; padding:0; width:30px; height:30px;">✕</button>
+    </div>
+
+    <!-- 弹窗内容 -->
+    <div id="modal-body" style="padding:20px; overflow-y:auto; flex:1;">
+      <!-- 通过时显示 -->
+      <div id="check-success-content" style="display:none; text-align:center;">
+        <div style="font-size:3rem; color:#7ac47f; margin-bottom:16px;">✓</div>
+        <div style="font-size:1rem; color:var(--text-main); margin-bottom:8px;">数据检查通过</div>
+        <div style="font-size:0.8rem; color:var(--text-dim);">资源闭环、格式、武将落位、兵力匹配均无误</div>
+      </div>
+
+      <!-- 有问题时显示 -->
+      <div id="check-error-content" style="display:none;">
+        <!-- 问题列表 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:0.8rem; font-weight:600; color:var(--gold); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">发现的问题</div>
+          <div id="issues-list"></div>
+        </div>
+
+        <!-- 修复后的数据区 -->
+        <div>
+          <div style="font-size:0.8rem; font-weight:600; color:var(--gold); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">修复后的数据区</div>
+          <textarea id="fixed-data-zone" readonly style="width:100%; height:200px; background:rgba(0,0,0,0.3); border:1px solid var(--border-gold); border-radius:4px; color:var(--text-main); padding:10px; font-family:monospace; font-size:0.8rem; resize:vertical;"></textarea>
+        </div>
+
+        <!-- 备注区 -->
+        <div id="notes-section" style="display:none; margin-top:16px; padding:12px; background:rgba(255,200,100,0.1); border:1px solid rgba(255,200,100,0.3); border-radius:4px;">
+          <div style="font-size:0.75rem; font-weight:600; color:#f0c060; margin-bottom:6px;">⚠️ 需要人工确认</div>
+          <div id="notes-content" style="font-size:0.75rem; color:var(--text-sub); line-height:1.6;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 弹窗底部 -->
+    <div style="padding:12px 20px; border-top:1px solid var(--border-gold); display:flex; gap:10px; justify-content:flex-end;">
+      <button id="modal-btn-close" style="padding:8px 16px; background:rgba(255,255,255,0.1); border:1px solid var(--border-gold); color:var(--text-main); border-radius:4px; cursor:pointer; font-size:0.85rem;">关闭</button>
+      <button id="modal-btn-copy" style="display:none; padding:8px 16px; background:var(--gold); color:var(--black-deep); border:none; border-radius:4px; cursor:pointer; font-size:0.85rem; font-weight:600;">📋 复制修复后的数据区</button>
+    </div>
+  </div>
+</div>
 
 <script src="js/parser.js?v=20260618neg"></script>
 <script src="js/map.js?v=20261111a"></script>
