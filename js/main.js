@@ -92,6 +92,43 @@ let lastSubmissionCheck = {};
     ];
   }
 
+// ══════════════════════════════════════════
+//  GM控制面板 - 功能开关
+// ══════════════════════════════════════════
+
+function initGMControls() {
+  var barracksToggle = document.getElementById('gm-barracks-toggle');
+  if (!barracksToggle) return;
+
+  // 从localStorage读取上次的状态
+  var savedState = localStorage.getItem('gm_barracks_enabled');
+  var isEnabled = savedState === null ? true : savedState === 'true';
+
+  barracksToggle.checked = isEnabled;
+  updateBarracksVisibility(isEnabled);
+
+  // 监听开关变化
+  barracksToggle.addEventListener('change', function() {
+    var enabled = this.checked;
+    updateBarracksVisibility(enabled);
+
+    // 保存状态到localStorage
+    localStorage.setItem('gm_barracks_enabled', enabled);
+
+    // 提示
+    showToast(enabled ? '✅ 军帐功能已开启' : '❌ 军帐功能已关闭');
+  });
+}
+
+function updateBarracksVisibility(enabled) {
+  var body = document.body;
+  if (enabled) {
+    body.classList.remove('barracks-hidden');
+  } else {
+    body.classList.add('barracks-hidden');
+  }
+}
+
   // ══════════════════════════════════════════
   //  初始化
 
@@ -131,6 +168,7 @@ let lastSubmissionCheck = {};
     applyGMGate();
     bindNav();
     bindGMPanel();
+    initGMControls();
     initParticles();
     initTipsCard();
     bindFogToggle();
