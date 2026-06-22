@@ -4789,22 +4789,13 @@ function getCurrentPlayerSlot() {
         '<div class="barracks-header">' +
           '<div class="barracks-title-row">' +
             '<span class="barracks-title">💬 军帐</span>' +
-            '<button class="barracks-close" id="barracks-close-btn">✕</button>' +
-          '</div>' +
-          '<div class="barracks-generals" id="barracks-generals"></div>' +
-          '<div class="barracks-actions">' +
-            '<div class="barracks-menu-trigger" id="barracks-menu-trigger"></div>' +
-            '<div class="barracks-dropdown">' +
-              '<div class="barracks-dropdown-item" id="barracks-refresh-btn">' +
-                '<span class="icon">🔄</span>' +
-                '<span>刷新上下文</span>' +
-              '</div>' +
-              '<div class="barracks-dropdown-item" id="barracks-clear-btn">' +
-                '<span class="icon">🗑️</span>' +
-                '<span>清空对话</span>' +
-              '</div>' +
+            '<div class="barracks-toolbar">' +
+              '<button class="barracks-tool-btn" id="barracks-refresh-btn" title="刷新上下文">🔄</button>' +
+              '<button class="barracks-tool-btn" id="barracks-clear-btn" title="清空对话">🗑️</button>' +
+              '<button class="barracks-close" id="barracks-close-btn">✕</button>' +
             '</div>' +
           '</div>' +
+          '<div class="barracks-generals" id="barracks-generals"></div>' +
         '</div>' +
         '<div class="barracks-body" id="barracks-body"></div>' +
         '<div class="barracks-presets" id="barracks-presets"></div>' +
@@ -4821,22 +4812,6 @@ function getCurrentPlayerSlot() {
     });
     document.getElementById('barracks-close-btn').addEventListener('click', closeBarracks);
 
-    // 菜单触发器
-    var menuTrigger = document.getElementById('barracks-menu-trigger');
-    if (menuTrigger) {
-      menuTrigger.addEventListener('click', function(e) {
-        e.stopPropagation();
-        this.classList.toggle('active');
-      });
-
-      // 点击外部关闭菜单
-      document.addEventListener('click', function() {
-        if (menuTrigger.classList.contains('active')) {
-          menuTrigger.classList.remove('active');
-        }
-      });
-    }
-
     // 刷新按钮
     var refreshBtn = document.getElementById('barracks-refresh-btn');
     if (refreshBtn) {
@@ -4849,7 +4824,6 @@ function getCurrentPlayerSlot() {
         _barracksState.lastRound = 0;
         _barracksState.lastGeneral = '';
         showToast('✅ 已刷新上下文');
-        if (menuTrigger) menuTrigger.classList.remove('active');
       });
     }
 
@@ -4870,7 +4844,6 @@ function getCurrentPlayerSlot() {
         _barracksState.systemPromptSent = false;
         _barracksRenderChat();
         showToast('✅ 已清空对话记录');
-        if (menuTrigger) menuTrigger.classList.remove('active');
       });
     }
 
