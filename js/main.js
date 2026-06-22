@@ -518,8 +518,9 @@ function updateBarracksVisibility(enabled) {
     _callDataCheckAPI(checkData).then(function(result) {
       _showCheckResult(result);
     }).catch(function(err) {
-      console.error('数据检查失败:', err);
-      showToast('检查失败：' + err.message);
+      console.error('数据检查异常:', err);
+      // Fallback for unexpected errors not handled inside _callDataCheckAPI
+      showToast('检查发生异常：' + err.message);
       btn.disabled = false;
       btn.textContent = '检查数据';
       document.getElementById('check-icon').textContent = '🔍';
@@ -598,6 +599,26 @@ function updateBarracksVisibility(enabled) {
     }).then(function(data) {
       if (data.error) throw new Error(data.error);
       return _parseCheckResult(data.reply || '');
+    }).catch(function(err) {
+      console.error('数据检查失败:', err);
+
+      // 返回友好的错误结果
+      return {
+        status: 'error',
+        issues: [{
+          priority: 'P0',
+          type: 'API 调用失败',
+          location: '系统',
+          description: 'DeepSeek API 调用失败：' + err.message,
+          original: '',
+          fixed: ''
+        }],
+        fixedDataZone: '',
+        notes: [
+          '可能原因：网络超时、API 配额不足、服务异常',
+          '请稍后重试，或检查控制台查看详细错误信息'
+        ]
+      };
     });
   }
 
@@ -620,7 +641,9 @@ function updateBarracksVisibility(enabled) {
       '3. 调度格式：甲 武将 出发→目的 兵种:数量 状态',
       '4. 威望格式：甲 威望:N',
       '',
-      '【输出格式】JSON 格式，包含以下字段：',
+      '【输出格式】**重要：必须直接返回纯 JSON，不要包含任何 Markdown 代码块标记、说明文字或其他内容**',
+      '',
+      'JSON 格式如下（必须严格遵守）：',
       '{',
       '  "status": "ok" 或 "error",',
       '  "issues": [',
@@ -636,6 +659,12 @@ function updateBarracksVisibility(enabled) {
       '  "fixedDataZone": "修复后的完整数据区（从 [回合] 到 [丙] 的所有内容）",',
       '  "notes": ["需要人工确认的事项1", "需要人工确认的事项2"]',
       '}',
+      '',
+      '**示例 1（检查通过）：**',
+      '{"status": "ok"}',
+      '',
+      '**示例 2（发现问题）：**',
+      '{"status": "error", "issues": [{"priority": "P0", "type": "资源闭环", "location": "[甲]", "description": "金不匹配", "original": "金:20794", "fixed": "金:20795"}], "fixedDataZone": "[回合]\\n第 83 回合\\n...", "notes": []}',
       '',
       '【修复原则】',
       '- 只修复明确的错误，不改变游戏数据本身',
@@ -665,13 +694,69 @@ function updateBarracksVisibility(enabled) {
   // 解析检查结果
   function _parseCheckResult(reply) {
     try {
-      // 尝试提取 JSON（DeepSeek 可能会在前后加说明文字）
+      // 1. 尝试直接解析（如果 DeepSeek 直接返回 JSON）
+      try {
+        return JSON.parse(reply);
+      } catch (e) {
+        // 继续尝试其他方式
+      }
+
+      // 2. 尝试提取 Markdown 代码块中的 JSON
+      var codeBlockMatch = reply.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (codeBlockMatch) {
+        return JSON.parse(codeBlockMatch[1]);
+      }
+
+      // 3. 尝试提取第一个完整的 JSON 对象（贪婪匹配）
       var jsonMatch = reply.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('返回格式错误');
-      return JSON.parse(jsonMatch[0]);
+      if (jsonMatch) {
+        // 尝试找到最外层的完整 JSON
+        var text = jsonMatch[0];
+        var depth = 0;
+        var start = -1;
+        var end = -1;
+
+        for (var i = 0; i < text.length; i++) {
+          if (text[i] === '{') {
+            if (depth === 0) start = i;
+            depth++;
+          } else if (text[i] === '}') {
+            depth--;
+            if (depth === 0) {
+              end = i + 1;
+              break;
+            }
+          }
+        }
+
+        if (start >= 0 && end > start) {
+          var jsonStr = text.slice(start, end);
+          return JSON.parse(jsonStr);
+        }
+      }
+
+      throw new Error('返回格式错误');
     } catch (e) {
-      console.error('解析检查结果失败:', e, reply);
-      throw new Error('解析失败');
+      console.error('解析检查结果失败:', e);
+      console.error('DeepSeek 原始返回:', reply);
+
+      // 返回一个友好的错误结果，而不是直接抛出异常
+      return {
+        status: 'error',
+        issues: [{
+          priority: 'P0',
+          type: '解析失败',
+          location: '系统',
+          description: 'DeepSeek 返回内容无法解析，可能是 API 异常或返回格式不符合预期。',
+          original: '',
+          fixed: ''
+        }],
+        fixedDataZone: '',
+        notes: [
+          '请检查 F12 控制台查看 DeepSeek 原始返回内容',
+          '如果问题持续，可能需要调整 System Prompt 或检查 API 配置'
+        ]
+      };
     }
   }
 
@@ -705,7 +790,17 @@ function updateBarracksVisibility(enabled) {
       errorContent.style.display = 'block';
       modalIcon.textContent = '⚠️';
       modalTitle.textContent = '发现 ' + (result.issues ? result.issues.length : 0) + ' 个数据问题';
-      copyBtn.style.display = 'inline-block';
+
+      // 检查是否是解析失败
+      var isParseError = result.issues && result.issues.length > 0 &&
+                         result.issues[0].type === '解析失败';
+
+      // 如果是解析失败，隐藏复制按钮
+      if (isParseError) {
+        copyBtn.style.display = 'none';
+      } else {
+        copyBtn.style.display = 'inline-block';
+      }
 
       // 渲染问题列表
       var issuesList = document.getElementById('issues-list');
@@ -726,8 +821,15 @@ function updateBarracksVisibility(enabled) {
         ].join('');
       }).join('');
 
-      // 填充修复后的数据区
-      document.getElementById('fixed-data-zone').value = result.fixedDataZone || '';
+      // 填充修复后的数据区（如果有）
+      var fixedTextarea = document.getElementById('fixed-data-zone');
+      if (isParseError || !result.fixedDataZone) {
+        // 解析失败或无修复数据时，隐藏数据区
+        fixedTextarea.parentElement.style.display = 'none';
+      } else {
+        fixedTextarea.parentElement.style.display = 'block';
+        fixedTextarea.value = result.fixedDataZone || '';
+      }
 
       // 显示备注（如果有）
       var notesSection = document.getElementById('notes-section');
