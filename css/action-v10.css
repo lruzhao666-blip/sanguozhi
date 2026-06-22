@@ -829,25 +829,77 @@
 }
 .barracks-close:hover{color:var(--text-main);border-color:var(--border-gold);}
 
-/* 武将芯片区 */
-.barracks-generals{
-  display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;
+/* ═══ 武将芯片区 - 横向滚动 ═══ */
+.barracks-generals {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(212,168,67,.15);
+  background: rgba(0,0,0,.15);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212,168,67,.3) transparent;
 }
-.barracks-gen-chip{
-  padding:4px 12px;font-size:.78rem;
-  font-family:var(--font-serif);
-  color:var(--text-sub);
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(212,168,67,.25);border-radius:14px;
-  cursor:pointer;transition:all .15s;
+
+.barracks-generals::-webkit-scrollbar {
+  height: 4px;
 }
-.barracks-gen-chip:hover{color:var(--text-main);border-color:var(--gold-dim);}
-.barracks-gen-chip.active{
-  color:var(--gold-light);
-  background:rgba(212,168,67,.12);
-  border-color:var(--gold);
+
+.barracks-generals::-webkit-scrollbar-track {
+  background: rgba(0,0,0,.2);
 }
+
+.barracks-generals::-webkit-scrollbar-thumb {
+  background: rgba(212,168,67,.3);
+  border-radius: 2px;
+}
+
+.barracks-gen-chip {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  color: rgba(240,230,211,.7);
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(212,168,67,.25);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+
+.barracks-gen-chip:hover {
+  color: rgba(240,230,211,.95);
+  border-color: rgba(212,168,67,.5);
+}
+
+.barracks-gen-chip.active {
+  color: rgba(212,168,67,.95);
+  background: rgba(212,168,67,.12);
+  border-color: rgba(212,168,67,.65);
+}
+
 .barracks-no-gen{font-size:.78rem;color:var(--text-dim);padding:6px 2px;}
+
+/* 手机端 */
+@media (max-width:768px) {
+  .barracks-generals {
+    padding: 8px 12px;
+    gap: 5px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .barracks-generals::-webkit-scrollbar {
+    display: none;
+  }
+
+  .barracks-gen-chip {
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
 
 /* 对话区 */
 /* ═══════════════════════════════════════════════
@@ -1090,64 +1142,212 @@
   background: rgba(212,168,67,.5);
 }
 
-/* 预设问题区 */
-.barracks-presets{
-  display:flex;flex-wrap:wrap;gap:6px;
-  padding:8px 16px;
-  border-top:1px solid rgba(255,255,255,.04);
+/* ═══ 预设问题区 - 可折叠 ═══ */
+.barracks-presets {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+  border-bottom: 1px solid rgba(212,168,67,.12);
 }
-.barracks-preset-chip{
-  padding:4px 10px;font-size:.72rem;
-  color:var(--text-sub);
-  background:rgba(255,255,255,.02);
-  border:1px dashed rgba(212,168,67,.25);border-radius:12px;
-  cursor:pointer;
-  opacity:0;transform:translateY(4px);
-  animation:barracksPresetIn .35s ease forwards;
-  animation-delay:var(--bp-delay,0ms);
-  transition:color .15s,border-color .15s;
-}
-.barracks-preset-chip:hover{color:var(--gold-light);border-color:var(--gold-dim);}
-@keyframes barracksPresetIn{to{opacity:1;transform:translateY(0);}}
 
-/* 底部输入 */
-.barracks-footer{
-  display:flex;gap:8px;align-items:flex-end;
-  padding:10px 16px 12px;
-  border-top:1px solid var(--border-gold);
+.barracks-presets.expanded {
+  max-height: 60px;
 }
-.barracks-input{
-  flex:1;resize:none;max-height:96px;
-  padding:10px 14px;font-size:.88rem;line-height:1.5;
-  font-family:var(--font-serif);
-  color:var(--text-light);
-  background:rgba(20,12,8,.65);
-  border:1px solid rgba(212,168,67,.22);
-  border-radius:var(--r);
-  outline:none;
-  transition:all .2s;
+
+.barracks-presets-scroll {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212,168,67,.3) transparent;
 }
-.barracks-input:focus{
-  border-color:rgba(212,168,67,.55);
-  background:rgba(30,18,10,.75);
-  box-shadow:0 0 8px rgba(212,168,67,.12);
+
+.barracks-presets-scroll::-webkit-scrollbar {
+  height: 4px;
 }
-.barracks-send{
-  flex:0 0 auto;padding:8px 16px;font-size:.82rem;
-  font-family:var(--font-serif);
-  color:rgba(212,168,67,.85);
-  background:rgba(40,25,8,.45);
-  border:1px solid rgba(212,168,67,.28);
-  border-radius:var(--r);
-  cursor:pointer;
-  transition:all .2s;
+
+.barracks-presets-scroll::-webkit-scrollbar-track {
+  background: rgba(0,0,0,.2);
 }
-.barracks-send:hover{
-  color:var(--gold-light);
-  border-color:rgba(212,168,67,.5);
-  background:rgba(60,35,10,.65);
+
+.barracks-presets-scroll::-webkit-scrollbar-thumb {
+  background: rgba(212,168,67,.3);
+  border-radius: 2px;
 }
-.barracks-send:active{transform:scale(.96);}
+
+.barracks-preset-chip {
+  display: inline-block;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  color: rgba(240,230,211,.7);
+  background: rgba(255,255,255,.02);
+  border: 1px dashed rgba(212,168,67,.25);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all .15s;
+  flex-shrink: 0;
+  opacity: 1;
+  transform: translateY(0);
+  animation: none;
+}
+
+.barracks-preset-chip:hover {
+  color: rgba(212,168,67,.95);
+  border-color: rgba(212,168,67,.5);
+  border-style: solid;
+}
+
+/* 手机端 */
+@media (max-width:768px) {
+  .barracks-presets.expanded {
+    max-height: 70px;
+  }
+
+  .barracks-presets-scroll {
+    padding: 8px 12px;
+    gap: 5px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .barracks-presets-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .barracks-preset-chip {
+    font-size: 0.72rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .barracks-preset-chip:active {
+    color: rgba(212,168,67,.95);
+    border-color: rgba(212,168,67,.5);
+    border-style: solid;
+    transform: scale(0.97);
+  }
+}
+
+/* ═══ 底部输入区 ═══ */
+.barracks-input {
+  flex: 1;
+  resize: none;
+  max-height: 96px;
+  min-height: 40px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  font-family: var(--font-serif);
+  color: var(--text-light);
+  background: rgba(20,12,8,.65);
+  border: 1px solid rgba(212,168,67,.22);
+  border-radius: var(--r);
+  outline: none;
+  transition: all .2s;
+}
+
+.barracks-input:focus {
+  border-color: rgba(212,168,67,.55);
+  background: rgba(30,18,10,.75);
+  box-shadow: 0 0 8px rgba(212,168,67,.12);
+}
+
+/* 灯泡按钮 */
+.barracks-toggle-preset {
+  width: 40px;
+  height: 40px;
+  background: rgba(40,25,8,.45);
+  border: 1px solid rgba(212,168,67,.28);
+  border-radius: var(--r);
+  color: rgba(212,168,67,.85);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+
+.barracks-toggle-preset:hover {
+  background: rgba(60,35,10,.65);
+  border-color: rgba(212,168,67,.5);
+  color: rgba(212,168,67,.95);
+}
+
+/* 发送按钮 */
+.barracks-send {
+  width: 60px;
+  height: 40px;
+  padding: 0;
+  font-size: 0.85rem;
+  font-family: var(--font-serif);
+  color: rgba(212,168,67,.85);
+  background: rgba(40,25,8,.45);
+  border: 1px solid rgba(212,168,67,.28);
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.barracks-send:hover {
+  color: var(--gold-light);
+  border-color: rgba(212,168,67,.5);
+  background: rgba(60,35,10,.65);
+}
+
+.barracks-send:active {
+  transform: scale(.96);
+}
+
+/* 手机端 */
+@media (max-width:768px) {
+  .barracks-input {
+    min-height: 44px;
+    max-height: 120px;
+    padding: 11px 12px;
+    font-size: 0.87rem;
+    -webkit-appearance: none;
+  }
+
+  .barracks-input:focus {
+    border-color: rgba(231,76,60,.55);
+    box-shadow: 0 0 8px rgba(231,76,60,.12);
+  }
+
+  .barracks-toggle-preset {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .barracks-toggle-preset:active {
+    background: rgba(60,35,10,.65);
+    border-color: rgba(212,168,67,.5);
+    transform: scale(0.95);
+  }
+
+  .barracks-send {
+    width: 56px;
+    height: 44px;
+    font-size: 0.85rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .barracks-send:active {
+    color: rgba(212,168,67,.95);
+    border-color: rgba(212,168,67,.5);
+    background: rgba(60,35,10,.65);
+    transform: scale(0.97);
+  }
+}
 
 /* 禁用态：输入框和发送按钮（当选中"昭公/高公/许公"时由JS添加.barracks-self-disabled类到.barracks-footer）*/
 .barracks-footer.barracks-self-disabled .barracks-input{
@@ -1206,26 +1406,29 @@
     height: 30px;
   }
 
-  /* 聊天内容 */
+  /* 聊天内容区 */
   .barracks-body {
     padding: 16px 12px;
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: env(safe-area-inset-bottom, 20px);
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .barracks-body::-webkit-scrollbar {
+    display: none;
   }
 
   /* 用户消息 */
   .barracks-msg-user .msg-content {
-    max-width: 85%;
+    max-width: 75%;
   }
 
   .barracks-msg-user .msg-bubble {
-    padding: 8px 12px;
+    padding: 9px 12px;
   }
 
   .barracks-msg-user .msg-text {
-    font-size: 0.85rem;
-    line-height: 1.4;
+    font-size: 0.87rem;
+    line-height: 1.5;
   }
 
   .barracks-msg-user .msg-avatar {
@@ -1236,7 +1439,7 @@
 
   /* AI消息 */
   .barracks-msg-ai .msg-content {
-    max-width: 90%;
+    max-width: 82%;
   }
 
   .barracks-msg-ai .msg-bubble {
@@ -1248,8 +1451,8 @@
   }
 
   .barracks-msg-ai .msg-text {
-    font-size: 0.82rem;
-    line-height: 1.6;
+    font-size: 0.85rem;
+    line-height: 1.65;
   }
 
   .barracks-msg-ai .msg-avatar {
@@ -1258,30 +1461,14 @@
     font-size: 0.65rem;
   }
 
-  /* 底部输入 */
+  /* 底部输入区 */
   .barracks-footer {
+    background: rgba(10,5,5,.98);
+  }
+
+  .barracks-input-row {
     padding: 10px 12px;
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-    position: sticky;
-    bottom: 0;
-    background: rgba(10,5,5,.98);
-    flex-shrink: 0;
-  }
-
-  .barracks-input {
-    padding: 9px 12px;
-    font-size: 0.85rem;
-  }
-
-  .barracks-send {
-    padding: 7px 14px;
-    font-size: 0.8rem;
-  }
-
-  /* 输入框聚焦时确保可见 */
-  .barracks-input:focus {
-    position: relative;
-    z-index: 10;
   }
 }
 
@@ -1386,96 +1573,47 @@
   box-shadow: 0 0 8px rgba(52,152,219,.12);
 }
 
-/* ═══ 操作菜单（三点下拉）═══ */
-.barracks-actions {
-  display: none;
-  position: relative;
-}
-
-.barracks-panel.has-general .barracks-actions {
-  display: block;
-}
-
-.barracks-menu-trigger {
-  position: absolute;
-  top: 16px;
-  right: 50px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(40,25,8,.35);
-  border: 1px solid rgba(212,168,67,.22);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all .2s;
-  z-index: 100;
-}
-
-.barracks-menu-trigger:hover {
-  border-color: rgba(212,168,67,.5);
-  background: rgba(60,35,10,.55);
-}
-
-.barracks-menu-trigger::before {
-  content: '⋮';
-  font-size: 1.2rem;
-  color: rgba(212,168,67,.8);
-  line-height: 1;
-}
-
-/* 下拉菜单 */
-.barracks-dropdown {
-  position: absolute;
-  top: 45px;
-  right: 0;
-  min-width: 140px;
-  background: rgba(20,12,8,.98);
-  border: 1px solid rgba(212,168,67,.3);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.5);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: all .2s;
-  z-index: 101;
-}
-
-.barracks-menu-trigger.active + .barracks-dropdown {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.barracks-dropdown-item {
+/* ═══ 工具栏（替代三点菜单）═══ */
+.barracks-toolbar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px;
-  font-size: 0.8rem;
-  color: rgba(232,224,213,.85);
+}
+
+.barracks-tool-btn {
+  width: 32px;
+  height: 32px;
+  background: rgba(0,0,0,.28);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,.6);
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: background .15s;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  font-family: inherit;
 }
 
-.barracks-dropdown-item:first-child {
-  border-radius: 6px 6px 0 0;
-}
-
-.barracks-dropdown-item:last-child {
-  border-radius: 0 0 6px 6px;
-}
-
-.barracks-dropdown-item:hover {
+.barracks-tool-btn:hover {
   background: rgba(212,168,67,.15);
+  border-color: rgba(212,168,67,.4);
+  color: rgba(212,168,67,.9);
 }
 
-.barracks-dropdown-item .icon {
-  font-size: 0.85rem;
-  filter: grayscale(.3);
-}
-
-.barracks-dropdown-item:hover .icon {
-  filter: grayscale(0);
+/* 手机端 */
+@media (max-width:768px) {
+  .barracks-tool-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 0.95rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .barracks-tool-btn:active {
+    background: rgba(212,168,67,.15);
+    border-color: rgba(212,168,67,.4);
+    transform: scale(0.95);
+  }
 }
