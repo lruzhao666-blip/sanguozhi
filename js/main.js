@@ -927,7 +927,7 @@ let lastSubmissionCheck = {};
   /**
    * HTML转义工具函数
    */
-  function escapeHtml(text) {
+  function esc(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
@@ -2535,7 +2535,7 @@ let lastSubmissionCheck = {};
       html += `<div class="settlement-player sp-${slotColor}">`;
       html += `<div class="sp-header">`;
       html += `<span class="sp-slot">${slot}</span>`;
-      html += `<span class="sp-name">${escapeHtml(playerName)}</span>`;
+      html += `<span class="sp-name">${esc(playerName)}</span>`;
       html += `</div>`;
       html += `<div class="sp-actions">`;
 
@@ -2545,11 +2545,11 @@ let lastSubmissionCheck = {};
         html += `<div class="sp-action">`;
         html += `<div class="sp-action-header">`;
         html += `<span class="sp-label">${labelText}</span>`;
-        html += `<span class="sp-action-name">${escapeHtml(act.action)}</span>`;
+        html += `<span class="sp-action-name">${esc(act.action)}</span>`;
         html += `</div>`;
         html += `<div class="sp-action-body">`;
-        html += `<span class="sp-result">${escapeHtml(act.result)}</span>`;
-        html += `<span class="sp-prestige">${escapeHtml(act.prestige)}</span>`;
+        html += `<span class="sp-result">${esc(act.result)}</span>`;
+        html += `<span class="sp-prestige">${esc(act.prestige)}</span>`;
         html += `</div>`;
         html += `</div>`;
       });
@@ -2565,8 +2565,8 @@ let lastSubmissionCheck = {};
       html += '<div class="so-header">机遇结算</div>';
       settlement.opportunities.forEach(opp => {
         html += `<div class="so-item">`;
-        html += `<span class="so-name">机遇${opp.id} · ${escapeHtml(opp.title)}</span>`;
-        html += `<span class="so-result">${escapeHtml(opp.result)}</span>`;
+        html += `<span class="so-name">机遇${opp.id} · ${esc(opp.title)}</span>`;
+        html += `<span class="so-result">${esc(opp.result)}</span>`;
         html += `</div>`;
       });
       html += '</div>';
@@ -4793,14 +4793,17 @@ function getCurrentPlayerSlot() {
           '</div>' +
           '<div class="barracks-generals" id="barracks-generals"></div>' +
           '<div class="barracks-actions">' +
-            '<button class="barracks-action-chip" id="barracks-refresh-btn" title="刷新上下文">' +
-              '<span class="action-icon">🔄</span>' +
-              '<span class="action-label">刷新</span>' +
-            '</button>' +
-            '<button class="barracks-action-chip" id="barracks-clear-btn" title="清空对话">' +
-              '<span class="action-icon">🗑️</span>' +
-              '<span class="action-label">清空</span>' +
-            '</button>' +
+            '<div class="barracks-menu-trigger" id="barracks-menu-trigger"></div>' +
+            '<div class="barracks-dropdown">' +
+              '<div class="barracks-dropdown-item" id="barracks-refresh-btn">' +
+                '<span class="icon">🔄</span>' +
+                '<span>刷新上下文</span>' +
+              '</div>' +
+              '<div class="barracks-dropdown-item" id="barracks-clear-btn">' +
+                '<span class="icon">🗑️</span>' +
+                '<span>清空对话</span>' +
+              '</div>' +
+            '</div>' +
           '</div>' +
         '</div>' +
         '<div class="barracks-body" id="barracks-body"></div>' +
@@ -4817,6 +4820,60 @@ function getCurrentPlayerSlot() {
       if (e.target === ov) closeBarracks();
     });
     document.getElementById('barracks-close-btn').addEventListener('click', closeBarracks);
+
+    // 菜单触发器
+    var menuTrigger = document.getElementById('barracks-menu-trigger');
+    if (menuTrigger) {
+      menuTrigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        this.classList.toggle('active');
+      });
+
+      // 点击外部关闭菜单
+      document.addEventListener('click', function() {
+        if (menuTrigger.classList.contains('active')) {
+          menuTrigger.classList.remove('active');
+        }
+      });
+    }
+
+    // 刷新按钮
+    var refreshBtn = document.getElementById('barracks-refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function() {
+        if (!_barracksState.generalName) {
+          showToast('请先选择一位武将');
+          return;
+        }
+        _barracksState.systemPromptSent = false;
+        _barracksState.lastRound = 0;
+        _barracksState.lastGeneral = '';
+        showToast('✅ 已刷新上下文');
+        if (menuTrigger) menuTrigger.classList.remove('active');
+      });
+    }
+
+    // 清空按钮
+    var clearBtn = document.getElementById('barracks-clear-btn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function() {
+        if (!_barracksState.generalName) {
+          showToast('请先选择一位武将');
+          return;
+        }
+        if (!confirm('确定要清空与【' + _barracksState.generalName + '】的所有对话记录吗？')) {
+          return;
+        }
+        _barracksState.chatHistory = [];
+        var key = _barracksStorageKey(_barracksState.generalName);
+        try { localStorage.removeItem(key); } catch (e) {}
+        _barracksState.systemPromptSent = false;
+        _barracksRenderChat();
+        showToast('✅ 已清空对话记录');
+        if (menuTrigger) menuTrigger.classList.remove('active');
+      });
+    }
+
     document.getElementById('barracks-send-btn').addEventListener('click', sendBarracksMessage);
     var barracksInput = document.getElementById('barracks-input');
     barracksInput.addEventListener('keydown', function(e) {
@@ -4998,42 +5055,58 @@ function getCurrentPlayerSlot() {
 
   // ── 渲染对话区 ──
   function _barracksRenderChat() {
-    var body = document.getElementById('barracks-body');
-    if (!body) return;
-    if (!_barracksState.generalName) {
-      body.innerHTML = '<div class="barracks-empty">点击上方武将,听取建议</div>';
-      return;
+    var container = document.getElementById('barracks-chat-container');
+    if (!container) {
+      container = document.getElementById('barracks-body');
     }
-    var h = '';
-    _barracksState.chatHistory.forEach(function(m) {
-      if (m.role === 'user') {
-        h += '<div class="barracks-msg user">' +
-               '<div class="barracks-bubble">' +
-                 '<div class="barracks-bname">主公</div>' +
-                 '<div class="barracks-btext">' + esc(m.text) + '</div>' +
-               '</div>' +
-               '<div class="barracks-avatar">👤</div>' +
-             '</div>';
-      } else {
-        h += '<div class="barracks-msg general">' +
-               '<div class="barracks-avatar">📜</div>' +
-               '<div class="barracks-bubble">' +
-                 '<div class="barracks-bname">' + esc(m.name || _barracksState.generalName) + '</div>' +
-                 '<div class="barracks-btext">' + esc(m.text) + '</div>' +
-               '</div>' +
-             '</div>';
-      }
-    });
-    if (_barracksState.loading) {
-      h += '<div class="barracks-msg general">' +
-             '<div class="barracks-avatar">📜</div>' +
-             '<div class="barracks-bubble"><div class="barracks-btext barracks-thinking">' +
-             esc(_barracksState.generalName) + '正在思量…</div></div>' +
-           '</div>';
+    if (!container) return;
+
+    var html = '';
+
+    if (!_barracksState.chatHistory || _barracksState.chatHistory.length === 0) {
+      html = '<div class="barracks-empty">点击上方武将,听取建议</div>';
+    } else {
+      _barracksState.chatHistory.forEach(function(msg) {
+        if (msg.role === 'user') {
+          // 用户消息
+          html += '<div class="barracks-msg-user">';
+          html += '  <div class="msg-content">';
+          html += '    <div class="msg-bubble">';
+          html += '      <div class="msg-text">' + esc(msg.text) + '</div>';
+          html += '    </div>';
+          html += '    <div class="msg-avatar">👤</div>';
+          html += '  </div>';
+          html += '</div>';
+        } else if (msg.role === 'general') {
+          // AI消息
+          var isThinking = msg.text.indexOf('思量中') > -1 || msg.text.indexOf('...') === msg.text.length - 3;
+
+          html += '<div class="barracks-msg-ai">';
+          html += '  <div class="msg-content">';
+          html += '    <div class="msg-avatar">📜</div>';
+          html += '    <div class="msg-bubble">';
+          html += '      <div class="msg-name">' + esc(msg.name || '武将') + '</div>';
+
+          if (isThinking) {
+            html += '      <div class="barracks-msg-thinking">';
+            html += '        <span></span><span></span><span></span>';
+            html += '      </div>';
+          } else {
+            html += '      <div class="msg-text">' + esc(msg.text) + '</div>';
+          }
+
+          html += '    </div>';
+          html += '  </div>';
+          html += '</div>';
+        }
+      });
     }
-    body.innerHTML = h;
-    body.scrollTop = body.scrollHeight;
+
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
   }
+
+
 
   // ── 抓取局势数据(用于 prompt 与预设问题)──
   function extractBarracksSituation(slotIdx) {
@@ -5527,6 +5600,8 @@ function sendBarracksMessage() {
   var currentRound = state.rounds.length ? state.rounds[state.rounds.length - 1].round : 0;
 
   _barracksState.chatHistory.push({ role: 'user', text: text });
+  _barracksState.chatHistory.push({ role: 'general', name: generalName, text: '思量中...' });
+
   input.value = '';
   _barracksState.loading = true;
   _barracksRenderChat();
@@ -5569,11 +5644,13 @@ function sendBarracksMessage() {
 
   _barracksCallAI(msgs, 500).then(function(reply) {
     _barracksState.loading = false;
+    _barracksState.chatHistory.pop(); // 移除思量中
     _barracksState.chatHistory.push({ role: 'general', name: generalName, text: reply || '（无言）' });
     saveBarracksChatHistory();
     _barracksRenderChat();
-  }).catch(function(err) {
+    }).catch(function(err) {
     _barracksState.loading = false;
+    _barracksState.chatHistory.pop();
     _barracksState.chatHistory.push({
       role: 'general', name: generalName,
       text: '❌ ' + generalName + '一时思绪受阻,请主公稍后再问…'
