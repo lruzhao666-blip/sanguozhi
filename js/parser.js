@@ -1146,36 +1146,66 @@ window.SGParser = (function () {
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
     if (lines.length === 1 && /无在途|无调度|本回合无调度部队/.test(lines[0])) return [];
     const result = [];
-    // v18 (#parser-transit-multitroop-v1):
-    //   兵种段从单兵种放宽到多兵种同行,语法 兵种:数量(,兵种:数量)*
-    //   状态白名单维持 4 种(剩N/攻城中/交战中/客驻),
-    //   旧词归一化保留兼容(围攻中/对峙中/撤退中/驻屯中)。
-    const re = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]:\d+(?:,[步弓骑水蛮]:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
 
-    // 状态归一化映射:旧词 → 新白名单
+    // 位移态: 甲 武将 出发→目的 兵种:数量 状态
+    const reMove = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]:\d+(?:,[步弓骑水蛮]:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
+
+    // 驻扎态: 甲 武将 位置 兵种:数量 状态
+    const reStay = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)\s+([步弓骑水蛮]:\d+(?:,[步弓骑水蛮]:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
+
+    // 状态归一化映射
     const STATUS_NORMALIZE = {
       '围攻中': '攻城中',
       '对峙中': '交战中',
       '驻屯中': '交战中',
-      // '撤退中' 单独处理(归一化为 剩N,见下方)
     };
 
     for (const line of lines) {
-      const m = line.match(re);
+      // 先尝试位移态
+      let m = line.match(reMove);
+      let isStationary = false;
+
+      // 如果不是位移态，尝试驻扎态
       if (!m) {
-        // 容错日志:让玩家在 F12 控制台能看到 GM 写错的行
+        m = line.match(reStay);
+        if (m) {
+          isStationary = true;
+        }
+      }
+
+      if (!m) {
+        // 容错日志
         /* #parser-silence-warns-v1 silenced */
         continue;
       }
+
       const factionRaw = m[1];
       const slot = factionRaw === '甲' ? 0 :
                    factionRaw === '乙' ? 1 :
                    factionRaw === '丙' ? 2 : null;
-      // 注:status 归一化与 troops 解析已合并到下方 result.push 块前,
-      //    捕获组编号因兵种段合并已前移(m[6]=status, m[7]=note)。
 
-      // 兵种段解析:m[5] 形如 "步:3550,骑:50"
-      const troopsStr = m[5];
+      // 驻扎态和位移态的捕获组编号不同
+      let general, from, to, troopsStr, status, note;
+
+      if (isStationary) {
+        // 驻扎态: m[1]=阵营 m[2]=武将 m[3]=位置 m[4]=兵种 m[5]=状态 m[6]=备注
+        general = m[2];
+        from = '';
+        to = m[3];
+        troopsStr = m[4];
+        status = m[5];
+        note = m[6] || '';
+      } else {
+        // 位移态: m[1]=阵营 m[2]=武将 m[3]=出发 m[4]=目的 m[5]=兵种 m[6]=状态 m[7]=备注
+        general = m[2];
+        from = m[3];
+        to = m[4];
+        troopsStr = m[5];
+        status = m[6];
+        note = m[7] || '';
+      }
+
+      // 兵种段解析
       const troops = {};
       const troopEntries = [];
       troopsStr.split(',').forEach(seg => {
@@ -1187,34 +1217,29 @@ window.SGParser = (function () {
           troopEntries.push({ type: t, count: n });
         }
       });
-      // 向后兼容:troopType/troopCount 取第一个兵种回填,
-      // 让 main.js renderPlayerTransit / renderJunbao / _renderWorldMil
-      // 等旧渲染路径零修改即可继续工作。
       const firstEntry = troopEntries[0] || { type: '', count: 0 };
 
-      // m[7] 现在是状态(原来是 m[7]),m[8] 现在是 note(原来也是 m[8]),
-      // 因为兵种段从两个捕获组合并为一个,后续捕获组编号相应前移。
-      let status = m[6];
-      // v20260609-fengyan: 保留旧词归一化兼容，新词直接透传
+      // 状态归一化
       if (status === '撤退中') {
         status = '剩1';
       } else if (STATUS_NORMALIZE[status]) {
         status = STATUS_NORMALIZE[status];
       }
-      // 其他任意状态文本直接透传，不过滤
 
+      // 输出数据
       result.push({
         faction: factionRaw,
         slot,
-        general: m[2],
-        from: m[3],
-        to: m[4],
-        troops,                          // #parser-transit-multitroop-v1 新增
-        troopEntries,                    // #parser-transit-multitroop-v1 新增,保序数组形式
-        troopType: firstEntry.type,      // 向后兼容:取第一个兵种
-        troopCount: firstEntry.count,    // 向后兼容:取第一个兵种数量
+        general: general,
+        from: from,
+        to: to,
+        troops,
+        troopEntries,
+        troopType: firstEntry.type,
+        troopCount: firstEntry.count,
         status,
-        note: m[7] ? m[7].trim() : '',
+        note: note ? note.trim() : '',
+        isStationary: isStationary  // 新增标记
       });
     }
     return result;
