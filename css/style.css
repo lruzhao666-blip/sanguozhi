@@ -15131,3 +15131,142 @@ html.tab-switching {
     font-size: 0.79rem;
   }
 }
+
+/* ═══════════════════════════════════════
+   空地 Tooltip 样式
+═══════════════════════════════════════ */
+
+/* 头部 - 暗褐色系 */
+.sgt-header-empty {
+  background: linear-gradient(135deg, rgba(60,50,35,0.95), rgba(45,38,28,0.95));
+  border-bottom: 1px solid rgba(180,150,90,0.4);
+  padding: 10px 14px;
+}
+
+.sget-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(220,190,140,0.95);
+  letter-spacing: 0.5px;
+}
+
+/* 内容区 */
+.sget-content {
+  padding: 12px 14px;
+  background: rgba(30,26,20,0.92);
+}
+
+.sget-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.sget-label {
+  font-size: 0.8rem;
+  color: rgba(180,155,110,0.85);
+  font-weight: 600;
+  min-width: 36px;
+  flex-shrink: 0;
+}
+
+/* 地形标签 */
+.sget-terrains {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sget-terrain-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(100,80,50,0.4);
+  border: 1px solid rgba(180,150,90,0.35);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: rgba(220,195,150,0.9);
+  white-space: nowrap;
+}
+
+/* 位置描述 */
+.sget-position {
+  font-size: 0.8rem;
+  color: rgba(200,180,145,0.9);
+  line-height: 1.5;
+}
+
+/* 可用地点 */
+.sget-locations-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(180,155,110,0.85);
+  margin: 12px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(180,150,90,0.25);
+}
+
+.sget-locations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sget-location {
+  padding: 8px 10px;
+  background: rgba(50,42,30,0.6);
+  border-left: 2px solid rgba(180,150,90,0.5);
+  border-radius: 4px;
+}
+
+.sget-loc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.sget-loc-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(220,190,140,0.95);
+}
+
+.sget-loc-troops {
+  font-size: 0.75rem;
+  color: rgba(180,160,120,0.8);
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+.sget-loc-desc {
+  font-size: 0.75rem;
+  color: rgba(180,165,135,0.85);
+  line-height: 1.4;
+}
+
+/* 战术评估 */
+.sget-tactics {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(180,150,90,0.25);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.sget-tactics-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(180,155,110,0.85);
+  min-width: 64px;
+  flex-shrink: 0;
+}
+
+.sget-tactics-text {
+  font-size: 0.8rem;
+  color: rgba(200,180,145,0.9);
+  line-height: 1.5;
+}
