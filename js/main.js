@@ -675,24 +675,26 @@ function updateBarracksVisibility(enabled) {
       '      "priority": "P0",  // 或 "P1"',
       '      "type": "资源闭环错误",  // 错误类型简述',
       '      "location": "甲 金",  // 错误位置',
-      '      "description": "上回合1200 + 变动+150 = 1350，但数据区显示1360",',
-      '      "original": "金:1360",  // 当前错误值',
-      '      "fixed": "金:1350"  // 正确值',
+      '      "description": "上回合金1200，本回合变动+150，应该等于1350，但你写成了1360。请把「金:1360」改为「金:1350」",',
+      '      "howToFix": "找到 [甲] 段落，将「金:1360」改为「金:1350」"  // 修改指导（自然语气）',
       '    }',
       '  ],',
-      '  "fixedDataZone": "",  // 完整修正后的数据区。如果无错误则为空字符串 ""',
-      '  "notes": []  // 可选的补充说明',
+      '  "summary": ""  // 总结性建议（自然语气，如"发现 3 个错误，主要是资源闭环问题，建议重新核对变动△的计算"）',
       '}',
       '',
       '━━━ 检查规则 ━━━',
       '',
       '· status="ok" 当且仅当 issues 为空数组',
-      '· P0 错误必须在 fixedDataZone 中提供完整修正',
-      '· fixedDataZone 必须保持原数据区的完整结构',
-      '· 只修正错误值，不改动正确内容',
-      '· 如果数据量过大无法完整输出，在 fixedDataZone 中尽量输出，并在 notes 说明',
+      '· 每个错误都要提供清晰的修改指导（howToFix），用自然语气告诉 GM 怎么改',
+      '· description 要说明错误原因和正确值应该是什么',
+      '· 如果有多个错误，在 summary 中给出总体建议',
+      '· 不要输出完整的修正数据区，只需要告诉 GM 哪里错了、怎么改',
       '',
       '━━━ 重要提醒 ━━━',
+      '',
+      '· 你的任务是检查并指导修改，不是替 GM 重写整个数据区',
+      '· 用自然语气，就像在和 GM 对话："你这里算错了，应该是 X"',
+      '· 如果错误很多，优先指出最严重的 P0 错误',
       '',
       '数据区格式示例：',
       '[回合]第5回合·荆襄逐鹿',
@@ -849,16 +851,22 @@ function updateBarracksVisibility(enabled) {
           '  <div style="display:flex; gap:8px; margin-bottom:8px;">',
           '    <span style="font-weight:700; color:#e76f51;">' + (idx + 1) + '.</span>',
           '    <div style="flex:1;">',
-          '      <span style="display:inline-block; background:rgba(231,111,81,0.2); color:#e76f51; padding:2px 8px; border-radius:3px; font-size:0.7rem; font-weight:600; margin-bottom:6px;">' + (issue.type || '') + '</span>',
-          '      <div style="font-size:0.85rem; color:var(--text-main); margin-bottom:8px; line-height:1.5;">' + escapeHtml(issue.description || '') + '</div>',
-          '      <div style="font-size:0.8rem; color:var(--text-dim); padding-left:12px; border-left:2px solid rgba(212,165,116,0.3); line-height:1.4;">',
-          '        <span style="color:var(--gold); font-weight:600;">→ 建议修正：</span>' + escapeHtml(issue.fixed || '') + '',
+          '      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">',
+          '        <span style="display:inline-block; background:rgba(231,111,81,0.2); color:#e76f51; padding:2px 8px; border-radius:3px; font-size:0.7rem; font-weight:600;">' + (issue.priority || 'P0') + '</span>',
+          '        <span style="font-size:0.85rem; color:#999;">位置：' + escapeHtml(issue.location || '') + '</span>',
           '      </div>',
+          '      <div style="font-size:0.9rem; color:var(--text-main); margin-bottom:8px; line-height:1.6;">' + escapeHtml(issue.description || '') + '</div>',
+          (issue.howToFix ? '<div style="background:rgba(46,160,67,0.08); border-left:3px solid #2ea043; padding:8px 12px; font-size:0.85rem; color:var(--text-main); line-height:1.5; border-radius:3px;">💡 ' + escapeHtml(issue.howToFix) + '</div>' : ''),
           '    </div>',
           '  </div>',
           '</div>'
         ].join('');
       }).join('');
+
+      // 如果有总结，显示在列表后
+      if (result.summary) {
+        issuesList.innerHTML += '<div style="background:rgba(100,149,237,0.08); border:1px solid rgba(100,149,237,0.25); border-radius:4px; padding:12px; margin-top:16px; font-size:0.9rem; color:var(--text-main); line-height:1.6;">📌 ' + escapeHtml(result.summary) + '</div>';
+      }
 
       var importantNotice = document.getElementById('important-notice');
       if (importantNotice) {
