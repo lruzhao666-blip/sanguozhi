@@ -579,7 +579,19 @@ function updateBarracksVisibility(enabled) {
       return res.json();
     }).then(function(data) {
       if (data.error) throw new Error(data.error);
-      return _parseCheckResult(data.reply || '');
+
+      // 正确解析 DeepSeek API 响应格式
+      var content = '';
+      if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+        content = data.choices[0].message.content;
+      } else if (data.reply) {
+        // 向后兼容旧格式
+        content = data.reply;
+      } else {
+        throw new Error('API 返回数据格式异常');
+      }
+
+      return _parseCheckResult(content);
     }).catch(function(err) {
       console.error('数据检查失败:', err);
 
