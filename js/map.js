@@ -20,7 +20,7 @@
  * v22 (2026-05): 战况层重做 — 燕尾旗 + 六边形虚线光环,
  *                删除行军虚线/旧 marker
  *
- * ✦ 66 座城池，十二大州区
+ * ✦ 72 座城池，十二大州区
  * ✦ flat-top 六边形，整个矩形网格完整铺满（无空白）
  * ✦ 空地按地形显示淡色底色，城池格在地形底色上叠加主体
  * ✦ 城池格：玩家彩色渐变 / NPC 金棕 / 空城半透暗色
@@ -176,6 +176,7 @@ const CITY_TIER_MAP = {
   '江州':'郡城','武都':'县城','剑阁':'县城','葭萌关':'县城','阳平关':'县城',
   '建宁':'郡城','云南':'县城','永昌':'县城','交趾':'郡城',
   '阳翟':'郡城','琅琊':'郡城','平阳':'县城','巴丘':'县城','夷陵':'郡城',
+  'yuyang':'郡城','zhongshan':'郡城','handan':'郡城','xihe':'郡城','zhuojun':'郡城','dongjun':'郡城',
 };
 
 // v15 城等基础产出
@@ -200,95 +201,103 @@ const BONUS_MULT = {
 
   const CITIES = [
     /* ══ 幽州 ══ */
-    { id:'xiangping', name:'襄平',  region:'幽州', hx:19, hy:0,  tier:'郡城', bonusKey:'偏远', bonusKeys:['偏远','骑兵强'],  terrain:'山地', npcGuard:'公孙度', terrainDesc:'辽东孤城，北接鲜卑，骑兵之利冠绝北疆。' },
-    { id:'beiping',   name:'北平',  region:'幽州', hx:17, hy:1,  tier:'郡城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','骑兵强'],   terrain:'山地', npcGuard:'公孙瓒', terrainDesc:'燕山脚下雄关，白马义从所出之地。' },
-    { id:'ji',        name:'蓟县',  region:'幽州', hx:15, hy:1,  tier:'州治', bonusKey:'骑兵强', bonusKeys:['骑兵强','谋略+'],terrain:'苦寒', npcGuard:'刘虞',   terrainDesc:'幽州治所，渔阳沃野，百姓殷实。' },
+    { id:'xiangping', name:'襄平',  region:'幽州', hx:19, hy:0,  tier:'郡城', bonusKey:'偏远', bonusKeys:['偏远','骑兵强'],  terrain:'山地', npcGuard:'', terrainDesc:'辽东孤城，北接鲜卑，骑兵之利冠绝北疆。' },
+    { id:'beiping',   name:'北平',  region:'幽州', hx:17, hy:1,  tier:'郡城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','骑兵强'],   terrain:'山地', npcGuard:'', terrainDesc:'燕山脚下雄关，白马义从所出之地。' },
+    { id:'ji',        name:'蓟县',  region:'幽州', hx:15, hy:1,  tier:'州治', bonusKey:'骑兵强', bonusKeys:['骑兵强','谋略+'],terrain:'苦寒', npcGuard:'',   terrainDesc:'幽州治所，渔阳沃野，百姓殷实。' },
 
     /* ══ 冀州 ══ */
-    { id:'nanpi',     name:'南皮',  region:'冀州', hx:16, hy:2,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],    terrain:'平原', npcGuard:'袁谭',   terrainDesc:'渤海郡治，水陆码头，袁氏起家之所。' },
-    { id:'pingyuan',  name:'平原',  region:'冀州', hx:15, hy:3,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],    terrain:'平原', npcGuard:'管亥',   terrainDesc:'黄河故道，一马平川，刘备曾在此为相。' },
-    { id:'ye',        name:'邺城',  region:'冀州', hx:14, hy:2,  tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+','防御+'],   terrain:'平原', npcGuard:'袁尚',   terrainDesc:'冀州治所，河北第一坚城。' },
+    { id:'nanpi',     name:'南皮',  region:'冀州', hx:16, hy:2,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],    terrain:'平原', npcGuard:'',   terrainDesc:'渤海郡治，水陆码头，袁氏起家之所。' },
+    { id:'pingyuan',  name:'平原',  region:'冀州', hx:15, hy:3,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],    terrain:'平原', npcGuard:'',   terrainDesc:'黄河故道，一马平川，刘备曾在此为相。' },
+    { id:'ye',        name:'邺城',  region:'冀州', hx:14, hy:2,  tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+','防御+'],   terrain:'平原', npcGuard:'',   terrainDesc:'冀州治所，河北第一坚城。' },
 
     /* ══ 并州 ══ */
-    { id:'jinyang',   name:'晋阳',  region:'并州', hx:12, hy:2,  tier:'州治', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','骑兵强'],  terrain:'山地', npcGuard:'高干',   terrainDesc:'太原郡治，并州铁骑出没之地。' },
-    { id:'shangdang', name:'上党',  region:'并州', hx:13, hy:3,  tier:'郡城', bonusKey:'险关', bonusKeys:['险关','防御+'],   terrain:'山地', npcGuard:'郭援',   terrainDesc:'天下之脊，群山环抱，兵家必争之地。' },
+    { id:'jinyang',   name:'晋阳',  region:'并州', hx:12, hy:2,  tier:'州治', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','骑兵强'],  terrain:'山地', npcGuard:'',   terrainDesc:'太原郡治，并州铁骑出没之地。' },
+    { id:'shangdang', name:'上党',  region:'并州', hx:13, hy:3,  tier:'郡城', bonusKey:'险关', bonusKeys:['险关','防御+'],   terrain:'山地', npcGuard:'',   terrainDesc:'天下之脊，群山环抱，兵家必争之地。' },
 
     /* ══ 青州 ══ */
-    { id:'beihai',    name:'北海',  region:'青州', hx:17, hy:3,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],  terrain:'水域', npcGuard:'孔融',   terrainDesc:'青州治所，东临大海，渔盐之利甲于天下。' },
-    { id:'jinan',     name:'济南',  region:'青州', hx:16, hy:4,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','金丰'],    terrain:'平原', npcGuard:'田楷',   terrainDesc:'泰山之北，济水之南，土地肥沃。' },
+    { id:'beihai',    name:'北海',  region:'青州', hx:17, hy:3,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],  terrain:'水域', npcGuard:'',   terrainDesc:'青州治所，东临大海，渔盐之利甲于天下。' },
+    { id:'jinan',     name:'济南',  region:'青州', hx:16, hy:4,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','金丰'],    terrain:'平原', npcGuard:'',   terrainDesc:'泰山之北，济水之南，土地肥沃。' },
 
     /* ══ 司隶 ══ */
-    { id:'henei',     name:'河内',  region:'司隶', hx:13, hy:4,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+'],    terrain:'平原', npcGuard:'张杨',   terrainDesc:'黄河北岸，沃野千里，洛阳屏障。' },
-    { id:'luoyang',   name:'洛阳',  region:'司隶', hx:12, hy:5,  tier:'雄都', bonusKey:'金丰', bonusKeys:['金丰','谋略+','防御+'],   terrain:'平原', npcGuard:'华雄',   terrainDesc:'九朝古都，八关锁钥，虎牢函谷拱卫。' },
-    { id:'hongnong',  name:'弘农',  region:'司隶', hx:11, hy:5,  tier:'郡城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'段煨',   terrainDesc:'函谷关下，西通关中，东接洛阳。' },
-    { id:'huguan',    name:'虎牢关',region:'司隶', hx:13, hy:5,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'华雄',   terrainDesc:'天下第一雄关，扼守洛阳东大门。' },
-    { id:'tongguan',  name:'潼关',  region:'司隶', hx:11, hy:6,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'李蒙',   terrainDesc:'关中东大门，崤函险道之锁钥。' },
+    { id:'henei',     name:'河内',  region:'司隶', hx:13, hy:4,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+'],    terrain:'平原', npcGuard:'',   terrainDesc:'黄河北岸，沃野千里，洛阳屏障。' },
+    { id:'luoyang',   name:'洛阳',  region:'司隶', hx:12, hy:5,  tier:'雄都', bonusKey:'金丰', bonusKeys:['金丰','谋略+','防御+'],   terrain:'平原', npcGuard:'',   terrainDesc:'九朝古都，八关锁钥，虎牢函谷拱卫。' },
+    { id:'hongnong',  name:'弘农',  region:'司隶', hx:11, hy:5,  tier:'郡城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'',   terrainDesc:'函谷关下，西通关中，东接洛阳。' },
+    { id:'huguan',    name:'虎牢关',region:'司隶', hx:13, hy:5,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'',   terrainDesc:'天下第一雄关，扼守洛阳东大门。' },
+    { id:'tongguan',  name:'潼关',  region:'司隶', hx:11, hy:6,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'',   terrainDesc:'关中东大门，崤函险道之锁钥。' },
 
     /* ══ 雍凉 ══ */
-    { id:'changan',   name:'长安',  region:'雍凉', hx:10, hy:6,  tier:'雄都', bonusKey:'金丰', bonusKeys:['金丰','谋略+','防御+'],  terrain:'平原', npcGuard:'李傕',   terrainDesc:'前汉旧都，关中沃野，八百里秦川。' },
+    { id:'changan',   name:'长安',  region:'雍凉', hx:10, hy:6,  tier:'雄都', bonusKey:'金丰', bonusKeys:['金丰','谋略+','防御+'],  terrain:'平原', npcGuard:'',   terrainDesc:'前汉旧都，关中沃野，八百里秦川。' },
     { id:'chencang',  name:'陈仓',  region:'雍凉', hx:9,  hy:6,  tier:'郡城', bonusKey:'险关', bonusKeys:['粮丰','险关'],  terrain:'关隘', npcGuard:'',       terrainDesc:'关中西陲门户，陈仓古道天险，屯粮重镇。' },
-    { id:'anding',    name:'安定',  region:'雍凉', hx:9,  hy:5,  tier:'郡城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产'],  terrain:'山地', npcGuard:'梁兴',   terrainDesc:'泾水之畔，黄土高原，胡笳声不绝。' },
-    { id:'jietingx',  name:'街亭',  region:'雍凉', hx:8,  hy:5,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'马遵',   terrainDesc:'陇右门户，失此则陇道断绝。' },
-    { id:'tianshui',  name:'天水',  region:'雍凉', hx:8,  hy:6,  tier:'郡城', bonusKey:'骑兵强', bonusKeys:['骑兵强'],   terrain:'山地', npcGuard:'姜冏',   terrainDesc:'陇右重镇，胡汉杂居，出名马良将。' },
-    { id:'wuwei',     name:'武威',  region:'雍凉', hx:5,  hy:5,  tier:'郡城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','骑兵强','偏远'],  terrain:'平原', npcGuard:'韩遂',   terrainDesc:'河西走廊咽喉，大漠孤烟，长河落日。' },
-    { id:'xiping',    name:'西平',  region:'雍凉', hx:3,  hy:6,  tier:'县城', bonusKey:'偏远', bonusKeys:['偏远','骑兵强'],terrain:'苦寒', npcGuard:'麴演',   terrainDesc:'湟水之滨，羌氐聚居，雪山在望。' },
+    { id:'anding',    name:'安定',  region:'雍凉', hx:9,  hy:5,  tier:'郡城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产'],  terrain:'山地', npcGuard:'',   terrainDesc:'泾水之畔，黄土高原，胡笳声不绝。' },
+    { id:'jietingx',  name:'街亭',  region:'雍凉', hx:8,  hy:5,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'',   terrainDesc:'陇右门户，失此则陇道断绝。' },
+    { id:'tianshui',  name:'天水',  region:'雍凉', hx:8,  hy:6,  tier:'郡城', bonusKey:'骑兵强', bonusKeys:['骑兵强'],   terrain:'山地', npcGuard:'',   terrainDesc:'陇右重镇，胡汉杂居，出名马良将。' },
+    { id:'wuwei',     name:'武威',  region:'雍凉', hx:5,  hy:5,  tier:'郡城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','骑兵强','偏远'],  terrain:'平原', npcGuard:'',   terrainDesc:'河西走廊咽喉，大漠孤烟，长河落日。' },
+    { id:'xiping',    name:'西平',  region:'雍凉', hx:3,  hy:6,  tier:'县城', bonusKey:'偏远', bonusKeys:['偏远','骑兵强'],terrain:'苦寒', npcGuard:'',   terrainDesc:'湟水之滨，羌氐聚居，雪山在望。' },
 
     /* ══ 兖豫 ══ */
-    { id:'puyang',    name:'濮阳',  region:'兖豫', hx:14, hy:4,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'吕旷',   terrainDesc:'黄河南岸要冲，曹操与吕布鏖战之地。' },
-    { id:'chenliu',   name:'陈留',  region:'兖豫', hx:14, hy:5,  tier:'州治', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+'],    terrain:'平原', npcGuard:'张邈',   terrainDesc:'曹操起兵之地，中原通衢。' },
-    { id:'xuchang',   name:'许昌',  region:'兖豫', hx:13, hy:6,  tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','金丰','谋略+'],   terrain:'平原', npcGuard:'夏侯惇', terrainDesc:'颍川之地，人才渊薮，天子所在。' },
-    { id:'qiao',      name:'谯郡',  region:'兖豫', hx:14, hy:7,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'夏侯渊', terrainDesc:'曹氏故乡，沛国精兵，民风彪悍。' },
-    { id:'runan',     name:'汝南',  region:'兖豫', hx:13, hy:7,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'刘辟',   terrainDesc:'袁氏根基，门生故吏遍天下。' },
+    { id:'puyang',    name:'濮阳',  region:'兖豫', hx:14, hy:4,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'',   terrainDesc:'黄河南岸要冲，曹操与吕布鏖战之地。' },
+    { id:'chenliu',   name:'陈留',  region:'兖豫', hx:14, hy:5,  tier:'州治', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+'],    terrain:'平原', npcGuard:'',   terrainDesc:'曹操起兵之地，中原通衢。' },
+    { id:'xuchang',   name:'许昌',  region:'兖豫', hx:13, hy:6,  tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','金丰','谋略+'],   terrain:'平原', npcGuard:'', terrainDesc:'颍川之地，人才渊薮，天子所在。' },
+    { id:'qiao',      name:'谯郡',  region:'兖豫', hx:14, hy:7,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'', terrainDesc:'曹氏故乡，沛国精兵，民风彪悍。' },
+    { id:'runan',     name:'汝南',  region:'兖豫', hx:13, hy:7,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'',   terrainDesc:'袁氏根基，门生故吏遍天下。' },
 
     /* ══ 徐州 ══ */
-    { id:'xiaopei',   name:'小沛',  region:'徐州', hx:14, hy:6,  tier:'县城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'陈宫',   terrainDesc:'沛县小城，刘备数度寄居，交通要冲。' },
-    { id:'xiapi',     name:'下邳',  region:'徐州', hx:16, hy:5,  tier:'州治', bonusKey:'粮丰', bonusKeys:['粮丰','金丰'],   terrain:'平原', npcGuard:'臧霸',   terrainDesc:'徐州治所，泗水绕城，吕布殒命处。' },
-    { id:'guangling', name:'广陵',  region:'徐州', hx:17, hy:5,  tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强'],  terrain:'水域', npcGuard:'陈登',   terrainDesc:'长江北岸，与江东隔水相望。' },
+    { id:'xiaopei',   name:'小沛',  region:'徐州', hx:14, hy:6,  tier:'县城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'',   terrainDesc:'沛县小城，刘备数度寄居，交通要冲。' },
+    { id:'xiapi',     name:'下邳',  region:'徐州', hx:16, hy:5,  tier:'州治', bonusKey:'粮丰', bonusKeys:['粮丰','金丰'],   terrain:'平原', npcGuard:'',   terrainDesc:'徐州治所，泗水绕城，吕布殒命处。' },
+    { id:'guangling', name:'广陵',  region:'徐州', hx:17, hy:5,  tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强'],  terrain:'水域', npcGuard:'',   terrainDesc:'长江北岸，与江东隔水相望。' },
 
     /* ══ 荆襄 ══ */
-    { id:'wan',       name:'宛城',  region:'荆襄', hx:12, hy:7,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+'],   terrain:'关隘', npcGuard:'张绣',   terrainDesc:'南阳郡治，北扼洛阳，南通襄阳。' },
-    { id:'xinye',     name:'新野',  region:'荆襄', hx:12, hy:8,  tier:'县城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'刘磐',   terrainDesc:'南阳南境小城，刘备屯兵之所。' },
-    { id:'xiangyang', name:'襄阳',  region:'荆襄', hx:12, hy:9,  tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','水战强','防御+'],  terrain:'水域', npcGuard:'蔡瑁',   terrainDesc:'汉水之滨，荆州治所，水陆要冲。' },
-    { id:'jiangxia',  name:'江夏',  region:'荆襄', hx:14, hy:9,  tier:'州治', bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'黄祖',   terrainDesc:'长江汉水交汇，水军重镇。' },
-    { id:'jiangling', name:'江陵',  region:'荆襄', hx:12, hy:10, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强','粮丰'],    terrain:'平原', npcGuard:'文聘',   terrainDesc:'南郡治所，荆州粮仓军械所在。' },
-    { id:'wuling',    name:'武陵',  region:'荆襄', hx:10, hy:11, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远'],  terrain:'瘴林', npcGuard:'金旋',   terrainDesc:'湘西群山，五溪蛮聚居，瘴气弥漫。' },
-    { id:'changsha',  name:'长沙',  region:'荆襄', hx:13, hy:11, tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'森林', npcGuard:'韩玄',   terrainDesc:'湘江之滨，荆南重镇，黄忠坐镇。' },
-    { id:'guiyang',   name:'桂阳',  region:'荆襄', hx:14, hy:12, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远'],    terrain:'山地', npcGuard:'赵范',   terrainDesc:'湘南矿藏丰饶，金银铜铁皆出于此。' },
-    { id:'lingling',  name:'零陵',  region:'荆襄', hx:11, hy:12, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远','粮丰'],   terrain:'森林', npcGuard:'刘度',   terrainDesc:'湘江上游，山林幽深，隐士辈出。' },
+    { id:'wan',       name:'宛城',  region:'荆襄', hx:12, hy:7,  tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','谋略+'],   terrain:'关隘', npcGuard:'',   terrainDesc:'南阳郡治，北扼洛阳，南通襄阳。' },
+    { id:'xinye',     name:'新野',  region:'荆襄', hx:12, hy:8,  tier:'县城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'平原', npcGuard:'',   terrainDesc:'南阳南境小城，刘备屯兵之所。' },
+    { id:'xiangyang', name:'襄阳',  region:'荆襄', hx:12, hy:9,  tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','水战强','防御+'],  terrain:'水域', npcGuard:'',   terrainDesc:'汉水之滨，荆州治所，水陆要冲。' },
+    { id:'jiangxia',  name:'江夏',  region:'荆襄', hx:14, hy:9,  tier:'州治', bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'',   terrainDesc:'长江汉水交汇，水军重镇。' },
+    { id:'jiangling', name:'江陵',  region:'荆襄', hx:12, hy:10, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强','粮丰'],    terrain:'平原', npcGuard:'',   terrainDesc:'南郡治所，荆州粮仓军械所在。' },
+    { id:'wuling',    name:'武陵',  region:'荆襄', hx:10, hy:11, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远'],  terrain:'瘴林', npcGuard:'',   terrainDesc:'湘西群山，五溪蛮聚居，瘴气弥漫。' },
+    { id:'changsha',  name:'长沙',  region:'荆襄', hx:13, hy:11, tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰'],   terrain:'森林', npcGuard:'',   terrainDesc:'湘江之滨，荆南重镇，黄忠坐镇。' },
+    { id:'guiyang',   name:'桂阳',  region:'荆襄', hx:14, hy:12, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远'],    terrain:'山地', npcGuard:'',   terrainDesc:'湘南矿藏丰饶，金银铜铁皆出于此。' },
+    { id:'lingling',  name:'零陵',  region:'荆襄', hx:11, hy:12, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远','粮丰'],   terrain:'森林', npcGuard:'',   terrainDesc:'湘江上游，山林幽深，隐士辈出。' },
 
     /* ══ 扬州 ══ */
-    { id:'shouchun',  name:'寿春',  region:'扬州', hx:15, hy:8,  tier:'州治', bonusKey:'粮丰', bonusKeys:['粮丰','水战强'],    terrain:'平原', npcGuard:'纪灵',   terrainDesc:'淮南重镇，袁术僭号之地。' },
-    { id:'hefei',     name:'合肥',  region:'扬州', hx:15, hy:9,  tier:'郡城', bonusKey:'防御+', bonusKeys:['防御+','水战强'],   terrain:'水域', npcGuard:'刘馥',   terrainDesc:'淮南门户，东吴无数次北伐折戟之地。' },
-    { id:'lujiang',   name:'庐江',  region:'扬州', hx:15, hy:10, tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','水战强'],  terrain:'水域', npcGuard:'陆康',   terrainDesc:'大别山东麓，长江北岸，陆氏世居之地。' },
-    { id:'jianye',    name:'建业',  region:'扬州', hx:16, hy:10, tier:'雄都', bonusKey:'水战强', bonusKeys:['水战强','金丰','粮丰'],   terrain:'水域', npcGuard:'凌操',   terrainDesc:'钟山龙蟠，石城虎踞，孙氏江东根基。' },
-    { id:'wu',        name:'吴郡',  region:'扬州', hx:17, hy:10, tier:'州治', bonusKey:'金丰', bonusKeys:['金丰','水战强'],    terrain:'水域', npcGuard:'朱治',   terrainDesc:'太湖之滨，鱼米之乡，丝绸织造甲天下。' },
-    { id:'chaisang',  name:'柴桑',  region:'扬州', hx:15, hy:11, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强'],  terrain:'水域', npcGuard:'太史慈', terrainDesc:'鄱阳湖口，周瑜操练水军之所。' },
-    { id:'kuaiji',    name:'会稽',  region:'扬州', hx:18, hy:12, tier:'郡城', bonusKey:'金丰', bonusKeys:['金丰','水战强'],  terrain:'水域', npcGuard:'王朗',   terrainDesc:'钱塘潮涌，稽山如黛，百越遗风犹存。' },
-    { id:'luling',    name:'庐陵',  region:'扬州', hx:16, hy:12, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远','粮丰'],  terrain:'森林', npcGuard:'贺齐',   terrainDesc:'赣江之畔，山越聚居，山民骁勇。' },
+    { id:'shouchun',  name:'寿春',  region:'扬州', hx:15, hy:8,  tier:'州治', bonusKey:'粮丰', bonusKeys:['粮丰','水战强'],    terrain:'平原', npcGuard:'',   terrainDesc:'淮南重镇，袁术僭号之地。' },
+    { id:'hefei',     name:'合肥',  region:'扬州', hx:15, hy:9,  tier:'郡城', bonusKey:'防御+', bonusKeys:['防御+','水战强'],   terrain:'水域', npcGuard:'',   terrainDesc:'淮南门户，东吴无数次北伐折戟之地。' },
+    { id:'lujiang',   name:'庐江',  region:'扬州', hx:15, hy:10, tier:'郡城', bonusKey:'粮丰', bonusKeys:['粮丰','水战强'],  terrain:'水域', npcGuard:'',   terrainDesc:'大别山东麓，长江北岸，陆氏世居之地。' },
+    { id:'jianye',    name:'建业',  region:'扬州', hx:16, hy:10, tier:'雄都', bonusKey:'水战强', bonusKeys:['水战强','金丰','粮丰'],   terrain:'水域', npcGuard:'',   terrainDesc:'钟山龙蟠，石城虎踞，孙氏江东根基。' },
+    { id:'wu',        name:'吴郡',  region:'扬州', hx:17, hy:10, tier:'州治', bonusKey:'金丰', bonusKeys:['金丰','水战强'],    terrain:'水域', npcGuard:'',   terrainDesc:'太湖之滨，鱼米之乡，丝绸织造甲天下。' },
+    { id:'chaisang',  name:'柴桑',  region:'扬州', hx:15, hy:11, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强'],  terrain:'水域', npcGuard:'', terrainDesc:'鄱阳湖口，周瑜操练水军之所。' },
+    { id:'kuaiji',    name:'会稽',  region:'扬州', hx:18, hy:12, tier:'郡城', bonusKey:'金丰', bonusKeys:['金丰','水战强'],  terrain:'水域', npcGuard:'',   terrainDesc:'钱塘潮涌，稽山如黛，百越遗风犹存。' },
+    { id:'luling',    name:'庐陵',  region:'扬州', hx:16, hy:12, tier:'县城', bonusKey:'偏远', bonusKeys:['偏远','粮丰'],  terrain:'森林', npcGuard:'',   terrainDesc:'赣江之畔，山越聚居，山民骁勇。' },
 
     /* ══ 益州 ══ */
-    { id:'wudu',      name:'武都',  region:'益州', hx:6,  hy:8,  tier:'县城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','偏远'],    terrain:'山地', npcGuard:'杨秋',   terrainDesc:'陇南山地，氐羌杂居，雪山阻隔。' },
-    { id:'yangpingg', name:'阳平关',region:'益州', hx:8,  hy:8,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'杨任',   terrainDesc:'汉中西大门，扼守褒斜道入口。' },
-    { id:'hanzhong',  name:'汉中',  region:'益州', hx:9,  hy:8,  tier:'州治', bonusKey:'险关', bonusKeys:['险关','粮丰'],    terrain:'关隘', npcGuard:'张鲁',   terrainDesc:'秦岭巴山之间，五斗米道圣地。' },
-    { id:'shangyong', name:'上庸',  region:'益州', hx:11, hy:9,  tier:'郡城', bonusKey:'险关', bonusKeys:['险关','偏远'],   terrain:'山地', npcGuard:'申耽',   terrainDesc:'汉水中游，群山环抱。' },
-    { id:'jiange',    name:'剑阁',  region:'益州', hx:6,  hy:9,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'费诗',   terrainDesc:'剑门七十二峰，蜀道之天险。' },
-    { id:'jiameng',   name:'葭萌关',region:'益州', hx:7,  hy:9,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'孟达',   terrainDesc:'入蜀要冲，益州北大门。' },
-    { id:'zitong',    name:'梓潼',  region:'益州', hx:7,  hy:10, tier:'郡城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'刘璝',   terrainDesc:'剑阁之北，蜀道咽喉。' },
-    { id:'chengdu',   name:'成都',  region:'益州', hx:6,  hy:11, tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','金丰','谋略+'],    terrain:'平原', npcGuard:'刘璋',   terrainDesc:'天府之国，锦江绕城，蜀锦甲天下。' },
-    { id:'jiangzhou', name:'江州',  region:'益州', hx:8,  hy:11, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'费观',   terrainDesc:'嘉陵江与长江交汇，水路辐辏。' },
-    { id:'yongan',    name:'永安',  region:'益州', hx:9,  hy:11, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强','险关'],    terrain:'关隘', npcGuard:'严颜',   terrainDesc:'三峡咽喉，白帝城高，益州东大门。' },
+    { id:'wudu',      name:'武都',  region:'益州', hx:6,  hy:8,  tier:'县城', bonusKey:'苦寒减产', bonusKeys:['苦寒减产','偏远'],    terrain:'山地', npcGuard:'',   terrainDesc:'陇南山地，氐羌杂居，雪山阻隔。' },
+    { id:'yangpingg', name:'阳平关',region:'益州', hx:8,  hy:8,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'',   terrainDesc:'汉中西大门，扼守褒斜道入口。' },
+    { id:'hanzhong',  name:'汉中',  region:'益州', hx:9,  hy:8,  tier:'州治', bonusKey:'险关', bonusKeys:['险关','粮丰'],    terrain:'关隘', npcGuard:'',   terrainDesc:'秦岭巴山之间，五斗米道圣地。' },
+    { id:'shangyong', name:'上庸',  region:'益州', hx:11, hy:9,  tier:'郡城', bonusKey:'险关', bonusKeys:['险关','偏远'],   terrain:'山地', npcGuard:'',   terrainDesc:'汉水中游，群山环抱。' },
+    { id:'jiange',    name:'剑阁',  region:'益州', hx:6,  hy:9,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'',   terrainDesc:'剑门七十二峰，蜀道之天险。' },
+    { id:'jiameng',   name:'葭萌关',region:'益州', hx:7,  hy:9,  tier:'县城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'',   terrainDesc:'入蜀要冲，益州北大门。' },
+    { id:'zitong',    name:'梓潼',  region:'益州', hx:7,  hy:10, tier:'郡城', bonusKey:'险关', bonusKeys:['险关'],    terrain:'关隘', npcGuard:'',   terrainDesc:'剑阁之北，蜀道咽喉。' },
+    { id:'chengdu',   name:'成都',  region:'益州', hx:6,  hy:11, tier:'雄都', bonusKey:'粮丰', bonusKeys:['粮丰','金丰','谋略+'],    terrain:'平原', npcGuard:'',   terrainDesc:'天府之国，锦江绕城，蜀锦甲天下。' },
+    { id:'jiangzhou', name:'江州',  region:'益州', hx:8,  hy:11, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强','粮丰'],  terrain:'水域', npcGuard:'',   terrainDesc:'嘉陵江与长江交汇，水路辐辏。' },
+    { id:'yongan',    name:'永安',  region:'益州', hx:9,  hy:11, tier:'郡城', bonusKey:'水战强', bonusKeys:['水战强','险关'],    terrain:'关隘', npcGuard:'',   terrainDesc:'三峡咽喉，白帝城高，益州东大门。' },
 
     /* ══ 南中 ══ */
-    { id:'jianning',  name:'建宁',  region:'南中', hx:7,  hy:13, tier:'郡城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],  terrain:'瘴林', npcGuard:'雍闿',   terrainDesc:'南中腹地，滇池之畔，瘴气弥漫。' },
-    { id:'yunnan',    name:'云南',  region:'南中', hx:5,  hy:14, tier:'县城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],    terrain:'瘴林', npcGuard:'高定',   terrainDesc:'苍山洱海，瘴疠不绝，蛮兵以毒箭见长。' },
-    { id:'yongchang', name:'永昌',  region:'南中', hx:3,  hy:14, tier:'县城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],    terrain:'苦寒', npcGuard:'吕凯',   terrainDesc:'化外极西，产琥珀翡翠香料，路途艰险。' },
-    { id:'jiaozhi',   name:'交趾',  region:'南中', hx:13, hy:14, tier:'郡城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],  terrain:'水域', npcGuard:'士燮',   terrainDesc:'南海之滨，海舶云集，珠玳犀象堆积。' },
+    { id:'jianning',  name:'建宁',  region:'南中', hx:7,  hy:13, tier:'郡城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],  terrain:'瘴林', npcGuard:'',   terrainDesc:'南中腹地，滇池之畔，瘴气弥漫。' },
+    { id:'yunnan',    name:'云南',  region:'南中', hx:5,  hy:14, tier:'县城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],    terrain:'瘴林', npcGuard:'',   terrainDesc:'苍山洱海，瘴疠不绝，蛮兵以毒箭见长。' },
+    { id:'yongchang', name:'永昌',  region:'南中', hx:3,  hy:14, tier:'县城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],    terrain:'苦寒', npcGuard:'',   terrainDesc:'化外极西，产琥珀翡翠香料，路途艰险。' },
+    { id:'jiaozhi',   name:'交趾',  region:'南中', hx:13, hy:14, tier:'郡城', bonusKey:'瘴气', bonusKeys:['瘴气','蛮兵强','偏远'],  terrain:'水域', npcGuard:'',   terrainDesc:'南海之滨，海舶云集，珠玳犀象堆积。' },
     /* ══ 新增 5 城（工单 #map-add-5cities-v1）══ */
-    { id:'yangzhai', name:'阳翟', region:'兖豫', hx:12, hy:6,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰'],          terrain:'平原', npcGuard:'李典', terrainDesc:'颍川郡治,北望洛阳,南通宛许,中原腹心之地。' },
-    { id:'langya',   name:'琅琊', region:'徐州', hx:17, hy:4,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰','偏远'],   terrain:'平原', npcGuard:'臧霸', terrainDesc:'东海之滨,沂蒙余脉,诸葛氏与琅琊王氏故里。' },
-    { id:'pingyang', name:'平阳', region:'并州', hx:11, hy:4,  tier:'县城', bonusKey:'粮丰',   bonusKeys:['粮丰','苦寒减产'],terrain:'山地', npcGuard:'徐晃', terrainDesc:'汾水之畔,河东屏障,匈奴南庭旧地。' },
-    { id:'baqiu',    name:'巴丘', region:'荆襄', hx:14, hy:10, tier:'县城', bonusKey:'水战强', bonusKeys:['水战强','粮丰'], terrain:'水域', npcGuard:'黄盖', terrainDesc:'洞庭湖口,大江南岸,扼荆湘入江东之水路。' },
-    { id:'yiling',   name:'夷陵', region:'荆襄', hx:11, hy:10, tier:'郡城', bonusKey:'险关',   bonusKeys:['险关','水战强'], terrain:'关隘', npcGuard:'文聘', terrainDesc:'长江三峡之口,西控巴蜀,东接荆襄,夷陵鏖兵处。' },
+    { id:'yangzhai', name:'阳翟', region:'兖豫', hx:12, hy:6,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰'],          terrain:'平原', npcGuard:'', terrainDesc:'颍川郡治,北望洛阳,南通宛许,中原腹心之地。' },
+    { id:'langya',   name:'琅琊', region:'徐州', hx:17, hy:4,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰','偏远'],   terrain:'平原', npcGuard:'', terrainDesc:'东海之滨,沂蒙余脉,诸葛氏与琅琊王氏故里。' },
+    { id:'pingyang', name:'平阳', region:'并州', hx:11, hy:4,  tier:'县城', bonusKey:'粮丰',   bonusKeys:['粮丰','苦寒减产'],terrain:'山地', npcGuard:'', terrainDesc:'汾水之畔,河东屏障,匈奴南庭旧地。' },
+    { id:'baqiu',    name:'巴丘', region:'荆襄', hx:14, hy:10, tier:'县城', bonusKey:'水战强', bonusKeys:['水战强','粮丰'], terrain:'水域', npcGuard:'', terrainDesc:'洞庭湖口,大江南岸,扼荆湘入江东之水路。' },
+    { id:'yiling',   name:'夷陵', region:'荆襄', hx:11, hy:10, tier:'郡城', bonusKey:'险关',   bonusKeys:['险关','水战强'], terrain:'关隘', npcGuard:'', terrainDesc:'长江三峡之口,西控巴蜀,东接荆襄,夷陵鏖兵处。' },
+
+    /* ══ 新增 6 城（工单 #map-add-6cities-v1）══ */
+    { id:'yuyang',     name:'渔阳', region:'幽州', hx:16, hy:1,  tier:'郡城', bonusKey:'骑兵强', bonusKeys:['骑兵强','粮丰'],      terrain:'平原', npcGuard:'', terrainDesc:'渔阳突骑天下闻名，公孙瓒白马义从出处，幽州军事重镇。' },
+    { id:'zhongshan',  name:'中山', region:'冀州', hx:14, hy:1,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰'],              terrain:'平原', npcGuard:'', terrainDesc:'中山国故地，公孙瓒与袁绍争锋前线，刘备曾任中山相。' },
+    { id:'handan',     name:'邯郸', region:'冀州', hx:12, hy:4,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰','谋略+'],      terrain:'平原', npcGuard:'', terrainDesc:'赵国旧都，战国七雄遗风犹存，冀州南部门户。' },
+    { id:'xihe',       name:'西河', region:'并州', hx:11, hy:3,  tier:'郡城', bonusKey:'骑兵强', bonusKeys:['骑兵强','苦寒减产'],terrain:'山地', npcGuard:'', terrainDesc:'吕布故乡，并州西陲，胡汉杂处，民风彪悍。' },
+    { id:'zhuojun',    name:'涿郡', region:'幽州', hx:15, hy:2,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰'],              terrain:'平原', npcGuard:'', terrainDesc:'刘备故里，幽州南部门户，连通燕赵之地。' },
+    { id:'dongjun',    name:'东郡', region:'兖豫', hx:15, hy:5,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰'],              terrain:'平原', npcGuard:'', terrainDesc:'兖州腹心，曹操起兵征讨之地，黄河要津。' },
   ];
 
   /* ─────────────────────────────────
@@ -338,6 +347,15 @@ const BONUS_MULT = {
     ['pingyang','henei'],['pingyang','shangdang'],['pingyang','luoyang'],
     ['baqiu','jiangxia'],['baqiu','changsha'],['baqiu','jiangling'],
     ['yiling','jiangling'],['yiling','yongan'],['yiling','shangyong'],
+
+
+    /* 新增 6 城道路（工单 #map-add-6cities-v1）*/
+    ['yuyang','beiping'],['yuyang','ji'],['yuyang','nanpi'],['yuyang','zhuojun'],
+    ['zhongshan','ji'],['zhongshan','ye'],['zhongshan','zhuojun'],
+    ['handan','ye'],['handan','shangdang'],['handan','henei'],['handan','pingyang'],
+    ['xihe','jinyang'],['xihe','pingyang'],['xihe','shangdang'],
+    ['zhuojun','ji'],['zhuojun','zhongshan'],['zhuojun','yuyang'],['zhuojun','nanpi'],
+    ['dongjun','puyang'],['dongjun','chenliu'],['dongjun','xiapi'],['dongjun','guangling'],
   ];
 
   /* ─────────────────────────────────
