@@ -680,7 +680,7 @@ function _esc(str) {
           ` data-col="${col}" data-row="${row}"` +
           ` fill="rgba(0,0,0,0.15)"` +
           ` stroke="rgba(180,150,90,0.35)" stroke-width="0.8"` +
-          ` style="filter:blur(0.3px);cursor:pointer;transition:stroke 0.2s,stroke-width 0.2s"/>`
+          ` style="filter:blur(0.3px);transition:stroke 0.2s,stroke-width 0.2s"/>`
         );
       }
     }
