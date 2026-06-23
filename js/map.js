@@ -128,8 +128,8 @@ const NPC_FACTION_COLORS = [
 
   // ═══ 新增颜色 ═══
 
-  // 索引 12 — 青蓝（吕布）H:240°
-  { fill:'rgba(18,28,72,0.82)',   film:'rgba(55,85,185,0.22)',  stroke:'rgba(75,110,215,0.70)', glow:'#4a6bc8', text:'#e0e8ff' },
+  // 索引 12 — 酒红（吕布）H:340°
+  { fill:'rgba(72,18,28,0.82)',   film:'rgba(185,55,80,0.22)',  stroke:'rgba(215,75,105,0.72)', glow:'#c8485a', text:'#ffe0e5' },
 
   // 索引 13 — 橙赭（刘焉）H:35°
   { fill:'rgba(88,48,15,0.82)',   film:'rgba(195,135,60,0.22)',  stroke:'rgba(225,165,85,0.72)', glow:'#d89545', text:'#fff5e5' },
