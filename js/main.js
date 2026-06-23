@@ -458,8 +458,14 @@ function updateBarracksVisibility(enabled) {
       }, 12000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      // 发布成功后显示数据检查按钮
-      _showDataCheckButton(rd.round);
+      // 发布成功后，启用检查按钮
+      var btn = document.getElementById('btn-check-data');
+      if (btn) {
+        btn.disabled = false;
+        btn.title = '点击检查最新回合数据';
+        btn.onclick = function() { _startDataCheck(rd.round); };
+      }
+      _lastCheckRound = rd.round;
 
       return res.json();
     } else {
@@ -471,46 +477,32 @@ function updateBarracksVisibility(enabled) {
       }, 12000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      // 发布成功后显示数据检查按钮
-      _showDataCheckButton(rd.round);
+      // 发布成功后，启用检查按钮
+      var btn = document.getElementById('btn-check-data');
+      if (btn) {
+        btn.disabled = false;
+        btn.title = '点击检查最新回合数据';
+        btn.onclick = function() { _startDataCheck(rd.round); };
+      }
+      _lastCheckRound = rd.round;
 
       return res.json();
     }
   }
 
-  // 显示数据检查按钮
-  function _showDataCheckButton(roundNum) {
-    var bar = document.getElementById('data-check-bar');
-    if (!bar) return;
-
-    bar.style.display = 'flex';
-    document.getElementById('check-title').textContent = '第 ' + roundNum + ' 回合已发布';
-    document.getElementById('check-hint').textContent = '点击检查数据正确性';
-    document.getElementById('check-icon').textContent = '🔍';
-
-    // 重置按钮状态
-    var btn = document.getElementById('btn-check-data');
-    btn.textContent = '检查数据';
-    btn.disabled = false;
-    btn.onclick = function() { _startDataCheck(roundNum); };
-
-    _lastCheckRound = roundNum;
-  }
 
   // 开始数据检查
   function _startDataCheck(roundNum) {
     var btn = document.getElementById('btn-check-data');
     btn.disabled = true;
-    btn.textContent = '检查中...';
-    document.getElementById('check-icon').textContent = '⏳';
-    document.getElementById('check-hint').textContent = 'DeepSeek 正在校验数据...';
+    btn.textContent = '⏳ 检查中...';
 
     // 提取数据
     var checkData = _extractCheckData(roundNum);
     if (!checkData) {
       showToast('提取数据失败');
       btn.disabled = false;
-      btn.textContent = '检查数据';
+      btn.textContent = '🔍 检查数据';
       return;
     }
 
@@ -522,8 +514,7 @@ function updateBarracksVisibility(enabled) {
       // Fallback for unexpected errors not handled inside _callDataCheckAPI
       showToast('检查发生异常：' + err.message);
       btn.disabled = false;
-      btn.textContent = '检查数据';
-      document.getElementById('check-icon').textContent = '🔍';
+      btn.textContent = '🔍 检查数据';
     });
   }
 
@@ -625,35 +616,121 @@ function updateBarracksVisibility(enabled) {
   // 构建检查 System Prompt
   function _buildCheckSystemPrompt() {
     return [
-      '你是《三国志文字版》数据校验助手。检查 GM 输出的数据区是否正确。',
+      '你是《三国志文字版》的数据校验助手，负责检查 GM 输出的数据区是否符合规则书规范。',
       '',
+      '━━━━━━━━━━━━━━━━━━━━',
       '【检查项目（按优先级）】',
-      'P0 严重错误（必须修复）：',
-      '1. 格式错误：缺少括号、分隔符、冒号等',
-      '2. 资源闭环：上回合资源 + 本回合变动△ = 本回合资源（允许±1误差）',
-      '3. 武将失踪：在册武将不在任何城池或调度中',
-      '4. 武将重复：武将列表中有重复',
-      '5. 城数不匹配：城池列表数量 ≠ 城:N',
+      '━━━━━━━━━━━━━━━━━━━━',
       '',
-      'P1 中等问题（建议修复）：',
-      '1. 兵力匹配：总兵 ≈ 城池兵力 + 调度兵力（允许±2%误差）',
-      '2. 战报格式：[攻方]武将(城名) → [守方]武将(城名) | 档位 | 伤亡:攻X守Y',
-      '3. 调度格式：甲 武将 出发→目的 兵种:数量 状态',
-      '4. 威望格式：甲 威望:N',
+      '═ P0 严重错误（必须修复） ═',
       '',
-      '【输出格式】**重要：必须直接返回纯 JSON，不要包含任何 Markdown 代码块标记、说明文字或其他内容**',
+      '1. 格式错误',
+      '   - 缺少必需的括号、分隔符、冒号',
+      '   - 段落标签错误或缺失（[回合][NPC][战报][威望][调度][变动][甲][乙][丙]）',
+      '   - 数据区段落顺序错误（必须严格按：回合→NPC→战报→威望→调度→变动→甲乙丙）',
       '',
-      'JSON 格式如下（必须严格遵守）：',
+      '2. 资源闭环',
+      '   - 上回合资源 + 本回合变动△ = 本回合资源',
+      '   - 金粮兵民心城五项逐一核对',
+      '   - 允许±1误差（四舍五入容差），>1视为错误',
+      '',
+      '3. 武将失踪',
+      '   - 在册武将（上回合存在且未阵亡）不在任何城池或调度中',
+      '   - 注意：如果武将标记"阵亡"则不算失踪',
+      '',
+      '4. 武将重复',
+      '   - 同一武将出现在多个城池或调度中',
+      '',
+      '5. 城数不匹配',
+      '   - 城池列表数量 ≠ 城:N',
+      '',
+      '6. 武将状态白名单（新增）',
+      '   - 合法值：健康(空) / 疲劳 / 受伤 / 患病 / 阵亡',
+      '   - 非法值：重伤 / 轻伤 / 生病 / 死亡 / 其他任何词',
+      '   - 示例错误：马超(重伤) → 应改为：马超(受伤)',
+      '',
+      '7. 战报档位白名单（新增）',
+      '   - 合法值：大胜 / 小胜 / 惨胜 / 平局 / 小负 / 大败 / 胜',
+      '   - 非法值：全胜 / 完胜 / 险胜 / 惨败 / 其他任何词',
+      '   - 示例错误：| 险胜 | → 应改为：| 小胜 | 或 | 惨胜 |',
+      '',
+      '8. 兵种白名单（新增）',
+      '   - 合法值：步 / 弓 / 骑 / 水 / 蛮',
+      '   - 非法值：枪 / 盾 / 重步 / 轻骑 / 其他任何词',
+      '   - 示例错误：枪:1000 → 应改为：步:1000',
+      '',
+      '9. 调度状态白名单（新增）',
+      '   - 位移态（有"剩N"的）：剩N / 攻城中 / 交战中 / 客驻',
+      '   - 驻扎态（无"剩N"的）：巡防 / 围城中 / 伏兵 / 客驻 / 封锁 / 警戒',
+      '   - 已废弃词汇（需归一化）：',
+      '     · 对峙中 → 交战中',
+      '     · 撤退中 → 剩1',
+      '     · 驻屯中 → 巡防',
+      '   - 示例错误：对峙中 剩2 → 应改为：交战中 剩2',
+      '',
+      '═ P1 中等问题（建议修复） ═',
+      '',
+      '10. 兵力匹配',
+      '    - 总兵 ≈ 城池兵力 + 调度兵力',
+      '    - 允许±2%误差（行军损耗、降兵入库等）',
+      '    - 超过2%视为异常',
+      '',
+      '11. 战报格式',
+      '    - 标准格式：[攻方]武将(城名) → [守方]武将(城名) | 档位 | 伤亡:攻X守Y',
+      '    - 检查是否缺少阵营标签、城名、档位',
+      '',
+      '12. 调度格式',
+      '    - 标准格式：甲 武将 出发→目的 兵种:数量 状态',
+      '    - 位移态必须有"剩N"，驻扎态不能有',
+      '',
+      '13. 威望格式',
+      '    - 标准格式：甲 威望:N',
+      '',
+      '14. 产出公式校验（新增）',
+      '    - 单城产出 = 城等基础 × 地利标签（累乘）× 民心修正',
+      '    - 城等基础：县60金120粮 / 郡120金250粮 / 州治200金400粮 / 雄都300金600粮',
+      '    - 地利标签：金丰×1.5 / 粮丰×1.5 / 苦寒×0.8 / 偏远×0.9 / 瘴气×0.8',
+      '    - 民心修正：≥75→×1.1 / 40-74→×1.0 / ≤39→×0.9',
+      '    - 允许±5%误差（GM直觉微调容差）',
+      '    - 示例：武威（郡城+苦寒+偏远，民心65）→ 金:86（120×0.8×0.9=86.4）',
+      '',
+      '15. 维护费校验（新增）',
+      '    - 金维护 = 城数 × 25',
+      '    - 粮维护 = 按城等分档（县70 / 郡140 / 州治210 / 雄都280）',
+      '    - 允许±10%误差（GM直觉微调容差）',
+      '    - 示例：7城（5县+2郡）→ 粮维护-630（5×70+2×140=630）',
+      '',
+      '16. 城等白名单（新增）',
+      '    - 合法值：县城 / 郡城 / 州治 / 雄都',
+      '    - 非法值：小城 / 大城 / 要塞 / 其他任何词',
+      '',
+      '17. [变动]段格式',
+      '    - 四栏顺序：产出 / 战利 / 行动 / 维护',
+      '    - 行动栏禁止分拆（如"行动+100,行动-50"应合并为"行动+50"）',
+      '    - 零值省略规则：分项为0整行省略；总变化行△0保留',
+      '',
+      '18. [NPC]行格式',
+      '    - 标准格式：城名[阵营主公](...)',
+      '    - 检查方括号是否完整、守将是否存在',
+      '',
+      '19. 数据区段落顺序',
+      '    - 严格顺序：[回合] → [NPC] → [战报] → [威望] → [调度] → [变动] → [甲][乙][丙]',
+      '    - 任何顺序错误都报错',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━',
+      '【输出格式（严格 JSON）】',
+      '━━━━━━━━━━━━━━━━━━━━',
+      '',
       '{',
       '  "status": "ok" 或 "error",',
       '  "issues": [',
       '    {',
       '      "priority": "P0" 或 "P1",',
-      '      "type": "资源闭环" 或 "格式错误" 或 "武将失踪" 等,',
-      '      "location": "[甲]" 或 "[战报]" 等,',
-      '      "description": "具体问题描述",',
-      '      "original": "错误的原文",',
-      '      "fixed": "修正后的内容"',
+      '      "type": "错误类型（如：资源闭环 / 武将状态白名单 / 产出公式）",',
+      '      "location": "错误位置（如：[甲] / [战报] / [调度]行3）",',
+      '      "description": "具体错误描述",',
+      '      "original": "错误的原始内容",',
+      '      "fixed": "修复后的内容"',
       '    }',
       '  ],',
       '  "fixedDataZone": "修复后的完整数据区（从 [回合] 到 [丙] 的所有内容）",',
@@ -664,20 +741,31 @@ function updateBarracksVisibility(enabled) {
       '{"status": "ok"}',
       '',
       '**示例 2（发现问题）：**',
-      '{"status": "error", "issues": [{"priority": "P0", "type": "资源闭环", "location": "[甲]", "description": "金不匹配", "original": "金:20794", "fixed": "金:20795"}], "fixedDataZone": "[回合]\\n第 83 回合\\n...", "notes": []}',
+      '{"status": "error", "issues": [{"priority": "P0", "type": "资源闭环", "location": "[甲]", "description": "金不匹配：上回合20794 + 变动+1 = 20795，实际写20794", "original": "金:20794", "fixed": "金:20795"}], "fixedDataZone": "[回合]\\n第 83 回合\\n...", "notes": ["产出公式按标准计算，实际可能有GM微调"]}',
       '',
+      '━━━━━━━━━━━━━━━━━━━━',
       '【修复原则】',
+      '━━━━━━━━━━━━━━━━━━━━',
+      '',
       '- 只修复明确的错误，不改变游戏数据本身',
       '- 格式错误直接修正',
       '- 资源闭环误差±1可忽略，>1则调整为正确值',
-      '- 武将重复删除第2个',
-      '- 武将失踪需在 notes 中说明（可能是 AI 主持人故意安排）',
+      '- 武将重复删除第2个出现',
+      '- 武将失踪需在 notes 中说明（可能是 AI 主持人故意安排的剧情）',
       '- 兵力匹配误差<2%可忽略',
+      '- 产出/维护费误差在容差范围内可忽略，超出则在 notes 中提示"建议复核"',
+      '- 白名单错误（状态/档位/兵种/调度状态）直接修正为最接近的合法值',
+      '- 已废弃词汇自动归一化为新词汇',
       '',
-      '【重要】',
-      '- 如果数据完全正确，返回 {"status": "ok"}',
-      '- fixedDataZone 必须是完整的、可直接粘贴的数据区',
-      '- 保持原有格式、缩进、空行'
+      '━━━━━━━━━━━━━━━━━━━━',
+      '【重要提醒】',
+      '━━━━━━━━━━━━━━━━━━━━',
+      '',
+      '1. 你的输出必须是纯 JSON，不要有任何其他文字',
+      '2. 如果检查通过，只返回 {"status": "ok"}',
+      '3. 如果有问题，issues 数组必须完整，fixedDataZone 必须包含完整修复后的数据区',
+      '4. fixedDataZone 中的换行用 \\n 表示',
+      '5. 不确定的问题放入 notes，不要强行修复'
     ].join('\n');
   }
 
@@ -778,12 +866,11 @@ function updateBarracksVisibility(enabled) {
       copyBtn.style.display = 'none';
 
       // 更新按钮区状态
-      document.getElementById('check-icon').textContent = '✓';
-      document.getElementById('check-title').textContent = '数据检查通过';
-      document.getElementById('check-hint').textContent = '第 ' + _lastCheckRound + ' 回合数据无误';
       var btn = document.getElementById('btn-check-data');
-      btn.textContent = '重新检查';
-      btn.disabled = false;
+      if (btn) {
+        btn.textContent = '✓ 数据无误';
+        btn.disabled = false;
+      }
     } else {
       // 发现问题
       successContent.style.display = 'none';
@@ -844,15 +931,14 @@ function updateBarracksVisibility(enabled) {
       }
 
       // 更新按钮区状态
-      document.getElementById('check-icon').textContent = '⚠️';
-      document.getElementById('check-title').textContent = '发现 ' + (result.issues ? result.issues.length : 0) + ' 个数据问题';
-      document.getElementById('check-hint').textContent = '点击查看详情';
       var btn = document.getElementById('btn-check-data');
-      btn.textContent = '查看详情';
-      btn.disabled = false;
-      btn.onclick = function() {
-        modal.style.display = 'flex';
-      };
+      if (btn) {
+        btn.textContent = '⚠️ 查看发现的 ' + (result.issues ? result.issues.length : 0) + ' 个问题';
+        btn.disabled = false;
+        btn.onclick = function() {
+          modal.style.display = 'flex';
+        };
+      }
     }
 
     // 显示弹窗
