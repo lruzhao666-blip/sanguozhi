@@ -300,6 +300,156 @@ const BONUS_MULT = {
     { id:'dongjun',    name:'东郡', region:'兖豫', hx:15, hy:5,  tier:'郡城', bonusKey:'粮丰',   bonusKeys:['粮丰'],              terrain:'平原', npcGuard:'', terrainDesc:'兖州腹心，曹操起兵征讨之地，黄河要津。' },
   ];
 
+
+  /* ═══════════════════════════════════════
+     空地区域数据（首批10区域）
+  ═══════════════════════════════════════ */
+  const EMPTY_REGIONS = [
+    {
+      name: '陇右山谷',
+      terrain: ['山地', '河谷', '要道'],
+      icons: ['🏔', '💧', '🛤'],
+      position: '东近天水，西接街亭，陇右门户',
+      locations: [
+        { name: '北岭高地', desc: '防守优势，视野开阔', troops: '≤1500兵' },
+        { name: '谷地营盘', desc: '水源充足，适合主力', troops: '3000-5000兵' },
+        { name: '陇道哨卡', desc: '扼守要冲，伏兵理想', troops: '≤2000兵' }
+      ],
+      tactics: '攻守兼备，补给尚可，战略要地',
+      matchArea: { colMin: 7, colMax: 9, rowMin: 5, rowMax: 7 }
+    },
+    {
+      name: '伊洛平野',
+      terrain: ['平原', '大道'],
+      icons: ['🌾', '🛤'],
+      position: '洛阳东北，虎牢西侧，四战之地',
+      locations: [
+        { name: '大道驿站', desc: '行军迅速，补给便利', troops: '≤3000兵' },
+        { name: '开阔地', desc: '骑兵驰骋，列阵排兵', troops: '5000+兵' }
+      ],
+      tactics: '骑兵优势，无险可守，适合快速调度',
+      matchArea: { colMin: 11, colMax: 13, rowMin: 4, rowMax: 6 }
+    },
+    {
+      name: '函谷险道',
+      terrain: ['关隘', '山地'],
+      icons: ['⛰️', '🏔'],
+      position: '潼关东侧，洛阳西门，关中要冲',
+      locations: [
+        { name: '关道哨所', desc: '一夫当关，扼守要道', troops: '≤1000兵' },
+        { name: '崤函高地', desc: '居高临下，伏兵绝地', troops: '≤2000兵' }
+      ],
+      tactics: '防守天险，进攻不利，补给艰难',
+      matchArea: { colMin: 10, colMax: 11, rowMin: 5, rowMax: 6 }
+    },
+    {
+      name: '汉水两岸',
+      terrain: ['水域', '平原'],
+      icons: ['💧', '🌾'],
+      position: '襄阳东侧，江夏西望，水路要津',
+      locations: [
+        { name: '水滨营地', desc: '近水立营，舟楫便利', troops: '3000-5000兵' },
+        { name: '渡口要地', desc: '控制水路，南北通衢', troops: '≤2000兵' }
+      ],
+      tactics: '水战优势，陆路平坦，补给充足',
+      matchArea: { colMin: 12, colMax: 13, rowMin: 9, rowMax: 10 }
+    },
+    {
+      name: '江陵泽国',
+      terrain: ['水域', '沼泽'],
+      icons: ['💧', '🌾'],
+      position: '江陵南侧，洞庭北岸，水网纵横',
+      locations: [
+        { name: '水寨营盘', desc: '舟船云集，水军要地', troops: '≤4000兵' },
+        { name: '泽畔高地', desc: '避水扎营，控制水道', troops: '≤2000兵' }
+      ],
+      tactics: '水战绝佳，骑兵不利，陆路泥泞',
+      matchArea: { colMin: 12, colMax: 14, rowMin: 10, rowMax: 11 }
+    },
+    {
+      name: '淮南平原',
+      terrain: ['平原', '水域'],
+      icons: ['🌾', '💧'],
+      position: '寿春南侧，合肥北望，淮水之滨',
+      locations: [
+        { name: '淮畔营地', desc: '水源充足，平坦开阔', troops: '5000+兵' },
+        { name: '津渡哨所', desc: '扼守渡口，南北要道', troops: '≤2000兵' }
+      ],
+      tactics: '补给便利，骑兵适宜，攻守平衡',
+      matchArea: { colMin: 15, colMax: 16, rowMin: 8, rowMax: 9 }
+    },
+    {
+      name: '太行山麓',
+      terrain: ['山地', '苦寒'],
+      icons: ['🏔', '❄️'],
+      position: '晋阳东侧，上党北望，太行余脉',
+      locations: [
+        { name: '山隘营寨', desc: '易守难攻，寒风凛冽', troops: '≤1500兵' },
+        { name: '山麓据点', desc: '屯兵守险，补给艰难', troops: '≤3000兵' }
+      ],
+      tactics: '防守优势，苦寒难耐，不宜久驻',
+      matchArea: { colMin: 12, colMax: 13, rowMin: 2, rowMax: 3 }
+    },
+    {
+      name: '河北平原',
+      terrain: ['平原', '粮田'],
+      icons: ['🌾', '🌾'],
+      position: '邺城北侧，南皮西望，沃野千里',
+      locations: [
+        { name: '平野大营', desc: '开阔平坦，适合主力', troops: '8000+兵' },
+        { name: '村寨据点', desc: '就近征粮，补给便利', troops: '3000-5000兵' }
+      ],
+      tactics: '骑兵驰骋，粮草丰足，无险可守',
+      matchArea: { colMin: 14, colMax: 16, rowMin: 2, rowMax: 3 }
+    },
+    {
+      name: '蜀道险途',
+      terrain: ['关隘', '山地'],
+      icons: ['⛰️', '🏔'],
+      position: '剑门之北，葭萌之南，蜀道咽喉',
+      locations: [
+        { name: '栈道哨所', desc: '扼守蜀道，天险之地', troops: '≤1000兵' },
+        { name: '山隘营寨', desc: '进退维谷，补给断绝', troops: '≤1500兵' }
+      ],
+      tactics: '防守绝佳，进攻艰难，粮道险阻',
+      matchArea: { colMin: 6, colMax: 7, rowMin: 9, rowMax: 10 }
+    },
+    {
+      name: '长江南岸',
+      terrain: ['水域', '平原'],
+      icons: ['💧', '🌾'],
+      position: '建业西侧，柴桑东望，长江之滨',
+      locations: [
+        { name: '江畔水寨', desc: '水军云集，舟船往来', troops: '≤5000兵' },
+        { name: '江南营地', desc: '依江立营，进退自如', troops: '3000-5000兵' }
+      ],
+      tactics: '水战优势，补给便利，北望中原',
+      matchArea: { colMin: 15, colMax: 16, rowMin: 10, rowMax: 11 }
+    }
+  ];
+
+  /* 根据坐标匹配区域 */
+  function _getRegionByCoord(col, row) {
+    for (const region of EMPTY_REGIONS) {
+      const { colMin, colMax, rowMin, rowMax } = region.matchArea;
+      if (col >= colMin && col <= colMax && row >= rowMin && row <= rowMax) {
+        return region;
+      }
+    }
+    // 未匹配到区域，返回默认
+    const terrain = _emptyTerrain(col, row);
+    return {
+      name: terrain + '地带',
+      terrain: [terrain],
+      icons: ['🗺️'],
+      position: '荒野之地，人迹罕至',
+      locations: [
+        { name: '野外空地', desc: '可临时驻扎', troops: '≤3000兵' }
+      ],
+      tactics: '战略价值较低，不宜久驻'
+    };
+  }
+
   /* ─────────────────────────────────
      道路连接
   ───────────────────────────────── */
@@ -700,9 +850,10 @@ const BONUS_MULT = {
         const pts = hexPoints(x, y, R);
         parts.push(
           `<polygon class="sgmap-neutral-hex" points="${pts}"` +
+          ` data-col="${col}" data-row="${row}"` +
           ` fill="rgba(0,0,0,0.15)"` +
           ` stroke="rgba(180,150,90,0.35)" stroke-width="0.8"` +
-          ` style="filter:blur(0.3px);pointer-events:none"/>`
+          ` style="filter:blur(0.3px);cursor:pointer;transition:stroke 0.2s,stroke-width 0.2s"/>`
         );
       }
     }
@@ -885,13 +1036,43 @@ const BONUS_MULT = {
       }, { passive: false });
     });
     document.addEventListener('touchstart', e => {
-      if (!e.target.closest('.sgmap-city') && !e.target.closest('#sgmap-tooltip')) {
+      if (!e.target.closest('.sgmap-city') && !e.target.closest('.sgmap-neutral-hex') && !e.target.closest('#sgmap-tooltip')) {
         _hideTip();
         container.querySelectorAll('.sgmap-city-ring').forEach(r => {
           r.style.opacity = '0';
           r.classList.remove('sgmap-ring-pulse');
         });
+        container.querySelectorAll('.sgmap-neutral-hex').forEach(hexEl => {
+          hexEl.style.stroke = 'rgba(180,150,90,0.35)';
+          hexEl.style.strokeWidth = '0.8';
+        });
       }
+    });
+
+    // 空地格子事件绑定
+    container.querySelectorAll('.sgmap-neutral-hex').forEach(hexEl => {
+      hexEl.addEventListener('mouseenter', e => {
+        _showEmptyTip(hexEl, e);
+        hexEl.style.stroke = 'rgba(220,190,120,0.75)';
+        hexEl.style.strokeWidth = '1.8';
+      });
+
+      hexEl.addEventListener('mousemove', e => _moveTip(e));
+
+      hexEl.addEventListener('mouseleave', () => {
+        _hideTip();
+        hexEl.style.stroke = 'rgba(180,150,90,0.35)';
+        hexEl.style.strokeWidth = '0.8';
+      });
+
+      hexEl.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const t = e.touches[0];
+        _showEmptyTip(hexEl, { clientX: t.clientX, clientY: t.clientY });
+        _moveTip({ clientX: t.clientX, clientY: t.clientY });
+        hexEl.style.stroke = 'rgba(220,190,120,0.75)';
+        hexEl.style.strokeWidth = '1.8';
+      }, { passive: false });
     });
 }
 
@@ -1210,6 +1391,59 @@ const BONUS_MULT = {
     if (ty < PAD) ty = PAD;
     _tooltip.style.left = lx + 'px';
     _tooltip.style.top  = ty + 'px';
+  }
+
+
+  function _showEmptyTip(hexEl, e) {
+    if (!_tooltip) return;
+
+    const col = parseInt(hexEl.dataset.col);
+    const row = parseInt(hexEl.dataset.row);
+    const region = _getRegionByCoord(col, row);
+
+    // 地形标签（图标+文字）
+    const terrainTags = region.terrain.map((t, i) =>
+      `<span class="sget-terrain-tag">${region.icons[i] || '🗺️'} ${_esc(t)}</span>`
+    ).join('');
+
+    // 可用地点列表
+    const locationsHtml = region.locations.map(loc => `
+      <div class="sget-location">
+        <div class="sget-loc-header">
+          <span class="sget-loc-name">• ${_esc(loc.name)}</span>
+          <span class="sget-loc-troops">${_esc(loc.troops)}</span>
+        </div>
+        <div class="sget-loc-desc">${_esc(loc.desc)}</div>
+      </div>
+    `).join('');
+
+    const html = `
+      <div class="sgt-header sgt-header-empty">
+        <div class="sgt-identity">
+          <span class="sget-title">【${_esc(region.name)}】</span>
+        </div>
+      </div>
+      <div class="sgt-section sget-content">
+        <div class="sget-row">
+          <span class="sget-label">地形</span>
+          <div class="sget-terrains">${terrainTags}</div>
+        </div>
+        <div class="sget-row">
+          <span class="sget-label">位置</span>
+          <span class="sget-position">${_esc(region.position)}</span>
+        </div>
+        <div class="sget-locations-title">可用地点</div>
+        <div class="sget-locations">${locationsHtml}</div>
+        <div class="sget-tactics">
+          <span class="sget-tactics-label">战术评估</span>
+          <span class="sget-tactics-text">${_esc(region.tactics)}</span>
+        </div>
+      </div>
+    `;
+
+    _tooltip.innerHTML = html;
+    _tooltip.classList.add('show');
+    _moveTip(e);
   }
 
   function _hideTip() {
