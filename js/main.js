@@ -1504,6 +1504,9 @@ function updateBarracksVisibility(enabled) {
       // 清除该回合的所有草稿，避免新回合加载旧选择
       _clearRoundDrafts(roundNum);
 
+      // 清除该回合的所有行动提交数据，避免显示旧提交
+      await _act10ClearRoundSubmissions(roundNum);
+
       /* [legacy v1] showToast(`✅ 第 ${roundNum} 回合已发布！`); */
       /* #gm-data-only-mode-v1: 区分两种模式的成功提示 */
       showToast(isDataOnly
@@ -2674,6 +2677,33 @@ function updateBarracksVisibility(enabled) {
       console.error('[act10] 加载提交状态失败:', e);
     }
   }
+
+  // ↓↓↓ 在这里添加新函数 ↓↓↓
+  // 清理指定回合的所有行动提交数据
+  async function _act10ClearRoundSubmissions(roundNum) {
+    if (!roundNum) return;
+
+    try {
+      // 删除该回合的所有提交记录
+      var res = await fetchWithTimeout(
+        ACT10_SUPA_URL + '?round=eq.' + roundNum,
+        {
+          method: 'DELETE',
+          headers: SUPA_HEADERS
+        },
+        8000
+      );
+
+      if (res.ok) {
+        console.log('[act10] 已清理第 ' + roundNum + ' 回合的旧提交数据');
+      } else {
+        console.warn('[act10] 清理提交数据失败: HTTP ' + res.status);
+      }
+    } catch (e) {
+      console.warn('[act10] 清理提交数据异常:', e);
+    }
+  }
+  // ↑↑↑ 新函数结束 ↑↑↑
 
   // ══════════════════════════════════════════
   //  行动提交实时变更回调
