@@ -112,8 +112,8 @@ const NPC_FACTION_COLORS = [
   // 索引 7 — 古铜（马腾/马超）H:30°
   { fill:'rgba(72,45,18,0.82)',   film:'rgba(165,125,65,0.22)',  stroke:'rgba(195,155,90,0.70)', glow:'#b58a48', text:'#fef8e8' },
 
-  // 索引 8 — 墨绿（张鲁）H:150°
-  { fill:'rgba(18,48,35,0.82)',   film:'rgba(55,125,90,0.20)',   stroke:'rgba(75,155,115,0.68)', glow:'#3a7a5a', text:'#e0f5ea' },
+  // 索引 8 — 深橄榄绿（张鲁）H:75°
+  { fill:'rgba(42,52,18,0.82)',   film:'rgba(125,145,55,0.22)',  stroke:'rgba(145,170,75,0.70)', glow:'#788a3a', text:'#f0f5e0' },
 
   // 索引 9 — 靛蓝（公孙瓒）H:210°
   { fill:'rgba(22,38,65,0.82)',   film:'rgba(70,105,165,0.22)',  stroke:'rgba(95,135,195,0.70)', glow:'#5577aa', text:'#e5edf8' },
