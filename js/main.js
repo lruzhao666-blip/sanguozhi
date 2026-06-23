@@ -188,7 +188,6 @@ function updateBarracksVisibility(enabled) {
   function initDataCheck() {
     var modalClose = document.getElementById('modal-close');
     var modalBtnClose = document.getElementById('modal-btn-close');
-    var modalBtnCopy = document.getElementById('modal-btn-copy');
     var checkResultModal = document.getElementById('check-result-modal');
     var gmTextarea = document.getElementById('gm-content');
 
@@ -204,15 +203,6 @@ function updateBarracksVisibility(enabled) {
       });
     }
 
-    if (modalBtnCopy) {
-      modalBtnCopy.addEventListener('click', function() {
-        var textarea = document.getElementById('fixed-data-zone');
-        textarea.select();
-        document.execCommand('copy');
-        showToast('✓ 已复制到剪贴板，请粘贴到 GM 录入台');
-        checkResultModal.style.display = 'none';
-      });
-    }
 
     if (checkResultModal) {
       checkResultModal.addEventListener('click', function(e) {
