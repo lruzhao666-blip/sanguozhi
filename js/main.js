@@ -855,7 +855,7 @@ function updateBarracksVisibility(enabled) {
     var errorContent = document.getElementById('check-error-content');
     var modalIcon = document.getElementById('modal-icon');
     var modalTitle = document.getElementById('modal-title');
-    var copyBtn = document.getElementById('modal-btn-copy');
+    var copyReportBtn = document.getElementById('modal-btn-copy-report');
 
     if (result.status === 'ok') {
       // 检查通过
@@ -863,7 +863,7 @@ function updateBarracksVisibility(enabled) {
       errorContent.style.display = 'none';
       modalIcon.textContent = '✓';
       modalTitle.textContent = '数据检查通过';
-      copyBtn.style.display = 'none';
+      if (copyReportBtn) copyReportBtn.style.display = 'none';
 
       // 更新按钮区状态
       var btn = document.getElementById('btn-check-data');
@@ -871,8 +871,6 @@ function updateBarracksVisibility(enabled) {
         btn.textContent = '✓ 数据无误';
         btn.disabled = false;
       }
-      var btnApplyFix = document.getElementById('modal-btn-apply-fix');
-      if (btnApplyFix) btnApplyFix.style.display = 'none';
     } else {
       // 发现问题
       successContent.style.display = 'none';
@@ -884,23 +882,14 @@ function updateBarracksVisibility(enabled) {
       var isParseError = result.issues && result.issues.length > 0 &&
                          result.issues[0].type === '解析失败';
 
-      var btnApplyFix = document.getElementById('modal-btn-apply-fix');
-
-      // 如果是解析失败，隐藏复制按钮
-      if (isParseError) {
-        copyBtn.style.display = 'none';
-        if (btnApplyFix) btnApplyFix.style.display = 'none';
-      } else {
-        copyBtn.style.display = 'inline-block';
-        if (btnApplyFix && result.fixedDataZone) {
-          btnApplyFix.style.display = 'inline-block';
-          btnApplyFix.disabled = false;
-          btnApplyFix.textContent = '✅ 一键应用修复';
-          btnApplyFix.onclick = function() {
-            _confirmAndApplyFix(result.fixedDataZone, _lastCheckRound);
+      if (copyReportBtn) {
+        if (isParseError) {
+          copyReportBtn.style.display = 'none';
+        } else {
+          copyReportBtn.style.display = 'inline-block';
+          copyReportBtn.onclick = function() {
+            _copyCheckReport(result, _lastCheckRound);
           };
-        } else if (btnApplyFix) {
-          btnApplyFix.style.display = 'none';
         }
       }
 
@@ -923,6 +912,37 @@ function updateBarracksVisibility(enabled) {
         ].join('');
       }).join('');
 
+      var importantNotice = document.getElementById('important-notice');
+      if (importantNotice) {
+        importantNotice.innerHTML = [
+          '<div style="background:rgba(231,111,81,0.1); border:1px solid rgba(231,111,81,0.3); border-radius:6px; padding:16px; margin:16px 0;">',
+          '  <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">',
+          '    <span style="font-size:1.3rem;">⚠️</span>',
+          '    <span style="font-weight:700; color:#e76f51; font-size:0.95rem;">重要提示</span>',
+          '  </div>',
+          '  <div style="font-size:0.85rem; line-height:1.6; color:var(--text-main); margin-bottom:12px;">',
+          '    请将上述问题报告<strong style="color:var(--gold);">发给 AI 主持人</strong>，让主持人重新输出修正后的数据。',
+          '  </div>',
+          '  <div style="font-size:0.85rem; line-height:1.6; color:var(--text-main);">',
+          '    <strong style="color:#e76f51;">不要直接在网站上修复</strong>，否则 AI 主持人会继续使用错误数据推演下一回合。',
+          '  </div>',
+          '</div>',
+          '',
+          '<div style="background:rgba(212,165,116,0.08); border:1px solid rgba(212,165,116,0.25); border-radius:6px; padding:16px; margin:16px 0;">',
+          '  <div style="font-weight:700; color:var(--gold); font-size:0.9rem; margin-bottom:10px;">📋 操作建议</div>',
+          '  <div style="font-size:0.85rem; line-height:1.6; color:var(--text-main);">',
+          '    <strong>方案 A（少量错误，1-3 个）：</strong><br>',
+          '    告诉 AI 主持人具体哪些字段需要修改，主持人单独输出修正值。',
+          '  </div>',
+          '  <div style="font-size:0.85rem; line-height:1.6; color:var(--text-main); margin-top:10px;">',
+          '    <strong>方案 B（大量错误，4+ 个）：</strong><br>',
+          '    让 AI 主持人重新输出完整数据区（从 [回合] 到 [丙]）。',
+          '  </div>',
+          '</div>'
+        ].join('');
+        importantNotice.style.display = 'block';
+      }
+
       // 填充修复后的数据区（如果有）
       var fixedTextarea = document.getElementById('fixed-data-zone');
       if (isParseError || !result.fixedDataZone) {
@@ -930,6 +950,7 @@ function updateBarracksVisibility(enabled) {
         fixedTextarea.parentElement.style.display = 'none';
       } else {
         fixedTextarea.parentElement.style.display = 'block';
+        fixedTextarea.previousElementSibling.textContent = 'Deepseek 建议的修复内容（仅供参考，请发给 AI 主持人）';
         fixedTextarea.value = result.fixedDataZone || '';
       }
 
@@ -961,119 +982,129 @@ function updateBarracksVisibility(enabled) {
   }
 
   /**
-   * 二次确认并应用修复
-   * @param {string} fixedDataZone - 修复后的完整数据区（从 [回合] 到 [丙]）
+   * 复制检查报告（格式化的文本，方便发给 AI 主持人）
+   * @param {object} result - Deepseek 检查结果
    * @param {number} roundNum - 回合号
    */
-  function _confirmAndApplyFix(fixedDataZone, roundNum) {
-    // 二次确认
-    if (!confirm('确定要应用修复吗？\n\n此操作将覆盖第 ' + roundNum + ' 回合的数据区（剧情区不受影响）。\n\n修复后将自动刷新显示。')) {
+  function _copyCheckReport(result, roundNum) {
+    if (!result || !result.issues || result.issues.length === 0) {
+      showToast('没有问题需要报告');
       return;
     }
 
-    // 禁用按钮，防止重复点击
-    var btnApplyFix = document.getElementById('modal-btn-apply-fix');
-    if (btnApplyFix) {
-      btnApplyFix.disabled = true;
-      btnApplyFix.textContent = '修复中...';
+    // 构建报告文本
+    var report = [
+      '【第 ' + roundNum + ' 回合 Deepseek 检查报告】',
+      '',
+      '发现 ' + result.issues.length + ' 个问题，需要修正：',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━'
+    ];
+
+    // 按优先级分组
+    var p0Issues = result.issues.filter(function(i) { return i.priority === 'P0'; });
+    var p1Issues = result.issues.filter(function(i) { return i.priority === 'P1'; });
+
+    if (p0Issues.length > 0) {
+      report.push('P0 严重错误');
+      report.push('━━━━━━━━━━━━━━━━━━━━');
+      report.push('');
+
+      p0Issues.forEach(function(issue, idx) {
+        report.push((idx + 1) + '. ' + (issue.type || '未知错误') + ' — ' + (issue.location || ''));
+        if (issue.original) {
+          report.push('   当前值：' + issue.original);
+        }
+        if (issue.fixed) {
+          report.push('   正确值：' + issue.fixed);
+        }
+        if (issue.description) {
+          report.push('   原因：' + issue.description);
+        }
+        report.push('');
+      });
     }
 
-    // 执行修复
-    _applyFix(fixedDataZone, roundNum).then(function() {
-      showToast('数据已修复并更新');
+    if (p1Issues.length > 0) {
+      report.push('━━━━━━━━━━━━━━━━━━━━');
+      report.push('P1 中等问题');
+      report.push('━━━━━━━━━━━━━━━━━━━━');
+      report.push('');
 
-      // 恢复按钮状态
-      if (btnApplyFix) {
-        btnApplyFix.disabled = false;
-        btnApplyFix.textContent = '✅ 一键应用修复';
-      }
+      p1Issues.forEach(function(issue, idx) {
+        report.push((idx + 1) + '. ' + (issue.type || '未知错误') + ' — ' + (issue.location || ''));
+        if (issue.original) {
+          report.push('   当前值：' + issue.original);
+        }
+        if (issue.fixed) {
+          report.push('   正确值：' + issue.fixed);
+        }
+        if (issue.description) {
+          report.push('   原因：' + issue.description);
+        }
+        report.push('');
+      });
+    }
 
-      // 保留弹窗，让用户查看修复详情
-      // 如果要关闭弹窗，取消注释下行：
-      // _hideCheckResultModal();
-    }).catch(function(err) {
-      console.error('应用修复失败:', err);
-      showToast('修复失败：' + err.message);
+    report.push('━━━━━━━━━━━━━━━━━━━━');
+    report.push('请修正上述问题后重新输出');
+    report.push('━━━━━━━━━━━━━━━━━━━━');
+    report.push('');
 
-      // 恢复按钮状态
-      if (btnApplyFix) {
-        btnApplyFix.disabled = false;
-        btnApplyFix.textContent = '✅ 一键应用修复';
-      }
-    });
+    var issueCount = result.issues.length;
+    if (issueCount <= 3) {
+      report.push('【建议】错误较少（' + issueCount + ' 个），可以只输出修正值：');
+      report.push('');
+      result.issues.forEach(function(issue) {
+        if (issue.fixed) {
+          report.push('  ' + (issue.location || '') + ' ' + issue.fixed);
+        }
+      });
+    } else {
+      report.push('【建议】错误较多（' + issueCount + ' 个），请重新输出完整数据区（从 [回合] 到 [丙]）。');
+    }
+
+    if (result.notes && result.notes.length > 0) {
+      report.push('');
+      report.push('━━━━━━━━━━━━━━━━━━━━');
+      report.push('需要人工确认的事项');
+      report.push('━━━━━━━━━━━━━━━━━━━━');
+      result.notes.forEach(function(note) {
+        report.push('• ' + note);
+      });
+    }
+
+    var reportText = report.join('\n');
+
+    // 复制到剪贴板
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(reportText).then(function() {
+        showToast('✓ 报告已复制，可发给 AI 主持人');
+      }).catch(function(err) {
+        console.error('复制失败:', err);
+        _fallbackCopyText(reportText);
+      });
+    } else {
+      _fallbackCopyText(reportText);
+    }
   }
 
-  /**
-   * 应用修复数据
-   * @param {string} fixedDataZone - 修复后的完整数据区
-   * @param {number} roundNum - 回合号
-   * @returns {Promise}
-   */
-  function _applyFix(fixedDataZone, roundNum) {
-    return new Promise(function(resolve, reject) {
-      // 1. 获取当前回合的完整数据
-      var currentRound = state.rounds.find(function(r) { return r.round === roundNum; });
-      if (!currentRound) {
-        return reject(new Error('找不到第 ' + roundNum + ' 回合数据'));
-      }
-
-      // 2. 提取剧情区（数据区从 [回合] 开始）
-      var rawContent = currentRound.raw || '';
-      var dataZoneStart = rawContent.indexOf('[回合]');
-
-      var storyZone = '';
-      if (dataZoneStart > 0) {
-        storyZone = rawContent.substring(0, dataZoneStart);
-      }
-
-      // 3. 拼接：剧情区 + 修复后的数据区
-      var fixedFullContent = storyZone + fixedDataZone;
-
-      // 4. 预检：重新解析，验证修复后的数据是否有效
-      var parsed;
-      try {
-        parsed = SGParser.parse(fixedFullContent);
-        if (!parsed || parsed.round !== roundNum) {
-          throw new Error('修复后的数据解析失败或回合号不匹配');
-        }
-      } catch (e) {
-        return reject(new Error('修复数据格式异常：' + e.message));
-      }
-
-      // 5. 更新数据库（复用发布回合的逻辑）
-      fetch(SUPA_URL + '?round=eq.' + roundNum, {
-        method: 'PATCH',
-        headers: SUPA_HEADERS,
-        body: JSON.stringify({
-          raw: fixedFullContent,
-          parsed: parsed,
-          updated_at: new Date().toISOString()
-        })
-      })
-      .then(function(res) {
-        if (!res.ok) throw new Error('数据库更新失败：HTTP ' + res.status);
-        // GET/PATCH generally return an array when using postgrest
-        return res.json();
-      })
-      .then(function(data) {
-        if (!data || (Array.isArray(data) && data.length === 0)) {
-          // If the backend doesn't return data on PATCH, this is fine as long as status was 2xx.
-          // But to strictly follow the instructions, we'll continue.
-        }
-
-        // 6. 更新本地 state
-        currentRound.raw = fixedFullContent;
-        currentRound.parsed = parsed;
-
-        // 7. 刷新前端显示
-        _build(roundNum);
-
-        resolve();
-      })
-      .catch(function(err) {
-        reject(err);
-      });
-    });
+  // 降级复制方法
+  function _fallbackCopyText(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      showToast('✓ 报告已复制，可发给 AI 主持人');
+    } catch (err) {
+      console.error('复制失败:', err);
+      showToast('复制失败，请手动选择复制');
+    }
+    document.body.removeChild(textarea);
   }
 
   function _hideCheckResultModal() {
