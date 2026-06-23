@@ -15253,3 +15253,13 @@ html.tab-switching {
 /* ─── 战术评估块（复用 sgt-prod-block，无需新增） ─── */
 /* 已存在的 .sgt-prod-block 样式自动适用 */
 
+
+/* 一键应用修复按钮状态 */
+#modal-btn-apply-fix:hover {
+  background: var(--gold-light);
+}
+
+#modal-btn-apply-fix:disabled {
+  background: rgba(180,150,90,0.3);
+  cursor: not-allowed;
+}

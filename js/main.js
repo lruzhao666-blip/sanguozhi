@@ -871,6 +871,8 @@ function updateBarracksVisibility(enabled) {
         btn.textContent = '✓ 数据无误';
         btn.disabled = false;
       }
+      var btnApplyFix = document.getElementById('modal-btn-apply-fix');
+      if (btnApplyFix) btnApplyFix.style.display = 'none';
     } else {
       // 发现问题
       successContent.style.display = 'none';
@@ -882,11 +884,24 @@ function updateBarracksVisibility(enabled) {
       var isParseError = result.issues && result.issues.length > 0 &&
                          result.issues[0].type === '解析失败';
 
+      var btnApplyFix = document.getElementById('modal-btn-apply-fix');
+
       // 如果是解析失败，隐藏复制按钮
       if (isParseError) {
         copyBtn.style.display = 'none';
+        if (btnApplyFix) btnApplyFix.style.display = 'none';
       } else {
         copyBtn.style.display = 'inline-block';
+        if (btnApplyFix && result.fixedDataZone) {
+          btnApplyFix.style.display = 'inline-block';
+          btnApplyFix.disabled = false;
+          btnApplyFix.textContent = '✅ 一键应用修复';
+          btnApplyFix.onclick = function() {
+            _confirmAndApplyFix(result.fixedDataZone, _lastCheckRound);
+          };
+        } else if (btnApplyFix) {
+          btnApplyFix.style.display = 'none';
+        }
       }
 
       // 渲染问题列表
@@ -943,6 +958,129 @@ function updateBarracksVisibility(enabled) {
 
     // 显示弹窗
     modal.style.display = 'flex';
+  }
+
+  /**
+   * 二次确认并应用修复
+   * @param {string} fixedDataZone - 修复后的完整数据区（从 [回合] 到 [丙]）
+   * @param {number} roundNum - 回合号
+   */
+  function _confirmAndApplyFix(fixedDataZone, roundNum) {
+    // 二次确认
+    if (!confirm('确定要应用修复吗？\n\n此操作将覆盖第 ' + roundNum + ' 回合的数据区（剧情区不受影响）。\n\n修复后将自动刷新显示。')) {
+      return;
+    }
+
+    // 禁用按钮，防止重复点击
+    var btnApplyFix = document.getElementById('modal-btn-apply-fix');
+    if (btnApplyFix) {
+      btnApplyFix.disabled = true;
+      btnApplyFix.textContent = '修复中...';
+    }
+
+    // 执行修复
+    _applyFix(fixedDataZone, roundNum).then(function() {
+      showToast('数据已修复并更新');
+
+      // 恢复按钮状态
+      if (btnApplyFix) {
+        btnApplyFix.disabled = false;
+        btnApplyFix.textContent = '✅ 一键应用修复';
+      }
+
+      // 保留弹窗，让用户查看修复详情
+      // 如果要关闭弹窗，取消注释下行：
+      // _hideCheckResultModal();
+    }).catch(function(err) {
+      console.error('应用修复失败:', err);
+      showToast('修复失败：' + err.message);
+
+      // 恢复按钮状态
+      if (btnApplyFix) {
+        btnApplyFix.disabled = false;
+        btnApplyFix.textContent = '✅ 一键应用修复';
+      }
+    });
+  }
+
+  /**
+   * 应用修复数据
+   * @param {string} fixedDataZone - 修复后的完整数据区
+   * @param {number} roundNum - 回合号
+   * @returns {Promise}
+   */
+  function _applyFix(fixedDataZone, roundNum) {
+    return new Promise(function(resolve, reject) {
+      // 1. 获取当前回合的完整数据
+      var currentRound = state.rounds.find(function(r) { return r.round === roundNum; });
+      if (!currentRound) {
+        return reject(new Error('找不到第 ' + roundNum + ' 回合数据'));
+      }
+
+      // 2. 提取剧情区（数据区从 [回合] 开始）
+      var rawContent = currentRound.raw || '';
+      var dataZoneStart = rawContent.indexOf('[回合]');
+
+      var storyZone = '';
+      if (dataZoneStart > 0) {
+        storyZone = rawContent.substring(0, dataZoneStart);
+      }
+
+      // 3. 拼接：剧情区 + 修复后的数据区
+      var fixedFullContent = storyZone + fixedDataZone;
+
+      // 4. 预检：重新解析，验证修复后的数据是否有效
+      var parsed;
+      try {
+        parsed = SGParser.parse(fixedFullContent);
+        if (!parsed || parsed.round !== roundNum) {
+          throw new Error('修复后的数据解析失败或回合号不匹配');
+        }
+      } catch (e) {
+        return reject(new Error('修复数据格式异常：' + e.message));
+      }
+
+      // 5. 更新数据库（复用发布回合的逻辑）
+      fetch(SUPA_URL + '?round=eq.' + roundNum, {
+        method: 'PATCH',
+        headers: SUPA_HEADERS,
+        body: JSON.stringify({
+          raw: fixedFullContent,
+          parsed: parsed,
+          updated_at: new Date().toISOString()
+        })
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error('数据库更新失败：HTTP ' + res.status);
+        // GET/PATCH generally return an array when using postgrest
+        return res.json();
+      })
+      .then(function(data) {
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+          // If the backend doesn't return data on PATCH, this is fine as long as status was 2xx.
+          // But to strictly follow the instructions, we'll continue.
+        }
+
+        // 6. 更新本地 state
+        currentRound.raw = fixedFullContent;
+        currentRound.parsed = parsed;
+
+        // 7. 刷新前端显示
+        _build(roundNum);
+
+        resolve();
+      })
+      .catch(function(err) {
+        reject(err);
+      });
+    });
+  }
+
+  function _hideCheckResultModal() {
+    var modal = document.getElementById('check-result-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
   }
 
   // HTML 转义
