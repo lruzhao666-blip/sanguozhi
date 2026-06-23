@@ -578,13 +578,14 @@ function updateBarracksVisibility(enabled) {
     }).then(function(data) {
       if (data.error) throw new Error(data.error);
 
-      // 正确解析 DeepSeek API 响应格式
+      // 解析 API 响应格式（优先读取实际返回的格式）
       var content = '';
-      if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-        content = data.choices[0].message.content;
-      } else if (data.reply) {
-        // 向后兼容旧格式
+      if (data.reply) {
+        // 当前 Edge Function 返回格式
         content = data.reply;
+      } else if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+        // 标准 OpenAI 格式兼容
+        content = data.choices[0].message.content;
       } else {
         throw new Error('API 返回数据格式异常');
       }
