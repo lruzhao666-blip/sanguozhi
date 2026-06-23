@@ -2575,10 +2575,12 @@ function updateBarracksVisibility(enabled) {
     var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
     if (!currentRound) { showToast('当前无回合数据'); return; }
 
-    // 校验：总额度3，机遇占1（可选），令占剩余
+    // 校验：常规行动最多3个，机遇最多1个（不占常规额度）
     var reasons = [];
     var lingCount = 0;
     var zdjlEmpty = false;
+
+    // 统计常规行动
     panel.querySelectorAll('.ling').forEach(function(ling) {
       var reg = ling.querySelector('.opt:not(.zdjl-opt).checked');
       if (reg) { lingCount++; return; }
@@ -2588,16 +2590,25 @@ function updateBarracksVisibility(enabled) {
         (ta && ta.value.trim()) ? lingCount++ : (zdjlEmpty = true);
       }
     });
+
+    // 统计机遇
     var oppChecked = panel.querySelector('.opp-opt-row.checked');
     var oppCount = oppChecked ? 1 : 0;
-    var totalUsed = lingCount + oppCount;
-    if (totalUsed < 3) {
-      var need = 3 - totalUsed;
-      reasons.push('还需选择 <b>' + need + '</b> 个行动（已用 ' + totalUsed + ' / 3 额度）');
-    } else if (totalUsed > 3) {
-      reasons.push('行动额度已超（已选 ' + totalUsed + ' / 3 额度）。机遇占1个额度，请减少选择');
+
+    // 验证规则
+    if (lingCount > 3) {
+      reasons.push('常规行动最多选 3 个（当前已选 ' + lingCount + ' 个）');
     }
-    if (zdjlEmpty) reasons.push('已勾选「自定军令」但内容为空，请填写后再提交');
+    if (oppCount > 1) {
+      reasons.push('公共机遇最多选 1 个');
+    }
+    if (lingCount === 0 && oppCount === 0) {
+      reasons.push('请至少选择 1 个行动（常规行动或公共机遇）');
+    }
+    if (zdjlEmpty) {
+      reasons.push('已勾选「自定军令」但内容为空，请填写后再提交');
+    }
+
     if (reasons.length) { _act10ShowToast(slotIdx, reasons); return; }
     _act10HideToast(slotIdx);
 
