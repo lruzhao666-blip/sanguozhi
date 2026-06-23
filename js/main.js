@@ -448,13 +448,6 @@ function updateBarracksVisibility(enabled) {
       }, 12000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      // 发布成功后，启用检查按钮
-      var btn = document.getElementById('btn-check-data');
-      if (btn) {
-        btn.disabled = false;
-        btn.title = '点击检查最新回合数据';
-        btn.onclick = function() { _startDataCheck(rd.round); };
-      }
       _lastCheckRound = rd.round;
 
       return res.json();
@@ -467,13 +460,6 @@ function updateBarracksVisibility(enabled) {
       }, 12000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      // 发布成功后，启用检查按钮
-      var btn = document.getElementById('btn-check-data');
-      if (btn) {
-        btn.disabled = false;
-        btn.title = '点击检查最新回合数据';
-        btn.onclick = function() { _startDataCheck(rd.round); };
-      }
       _lastCheckRound = rd.round;
 
       return res.json();
@@ -510,8 +496,21 @@ function updateBarracksVisibility(enabled) {
 
   // 提取检查数据
   function _extractCheckData(roundNum) {
+    // 优先从已发布回合中提取
     var currentRound = state.rounds.find(function(r) { return r.round === roundNum; });
-    if (!currentRound) return null;
+    var rawContent = null;
+
+    if (currentRound) {
+      rawContent = currentRound.rawContent || '';
+    } else {
+      // 如果回合未发布，从 GM 输入框提取
+      var gmInput = document.getElementById('gm-content');
+      if (gmInput && gmInput.value.trim()) {
+        rawContent = gmInput.value.trim();
+      } else {
+        return null;
+      }
+    }
 
     var prevRound = state.rounds.find(function(r) { return r.round === roundNum - 1; });
 
@@ -541,7 +540,6 @@ function updateBarracksVisibility(enabled) {
     }
 
     // 提取本回合完整数据区（从原始内容中提取）
-    var rawContent = currentRound.rawContent || '';
     var sepIndex = rawContent.indexOf('====================================');
     var dataZone = sepIndex > -1 ? rawContent.slice(sepIndex + 36).trim() : '';
 
@@ -1396,6 +1394,24 @@ function updateBarracksVisibility(enabled) {
     document.getElementById('btn-publish').addEventListener('click', onPublish);
     document.getElementById('btn-clear-all').addEventListener('click', onClearAll);
     document.getElementById('btn-undo').addEventListener('click', onUndo);
+
+    // 绑定检查数据按钮
+    document.getElementById('btn-check-data').addEventListener('click', function() {
+      var raw = document.getElementById('gm-content').value.trim();
+      if (!raw) {
+        showToast('⚠️ 请先粘贴 AI 输出内容');
+        return;
+      }
+
+      // 解析输入内容
+      var parsed = SGParser.parse(raw);
+      if (!parsed || !parsed.round) {
+        showToast('⚠️ 无法识别回合号，请检查格式');
+        return;
+      }
+
+      _startDataCheck(parsed.round);
+    });
 
     // 初始化 GM 复制按钮为 disabled（等三家全提交后启用）
     const gmCopyBtn2 = document.getElementById('btn-gm-copy-all-actions');
