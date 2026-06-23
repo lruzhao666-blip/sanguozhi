@@ -1084,8 +1084,8 @@ function _esc(str) {
     container.querySelectorAll('.sgmap-neutral-hex').forEach(hexEl => {
       hexEl.addEventListener('mouseenter', e => {
         _showEmptyTip(hexEl, e);
-        // 微妙高亮：只提升透明度，不变色不变粗
-        hexEl.style.stroke = 'rgba(180,150,90,0.50)';
+        hexEl.style.stroke = 'rgba(220,190,120,0.75)';
+        hexEl.style.strokeWidth = '1.8';
       });
 
       hexEl.addEventListener('mousemove', e => _moveTip(e));
@@ -1101,12 +1101,8 @@ function _esc(str) {
         const t = e.touches[0];
         _showEmptyTip(hexEl, { clientX: t.clientX, clientY: t.clientY });
         _moveTip({ clientX: t.clientX, clientY: t.clientY });
-
-        // 短暂高亮：100ms 后自动恢复
-        hexEl.style.stroke = 'rgba(180,150,90,0.50)';
-        setTimeout(() => {
-          hexEl.style.stroke = 'rgba(180,150,90,0.35)';
-        }, 100);
+        hexEl.style.stroke = 'rgba(220,190,120,0.75)';
+        hexEl.style.strokeWidth = '1.8';
       }, { passive: false });
     });
 }
