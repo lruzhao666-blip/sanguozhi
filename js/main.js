@@ -1536,6 +1536,10 @@ function updateBarracksVisibility(enabled) {
       document.getElementById('parse-preview').classList.add('hidden');
 
       updateUndoBtn();
+
+      // 清除该回合的所有草稿，避免新回合加载旧选择
+      _clearRoundDrafts(roundNum);
+
       /* [legacy v1] showToast(`✅ 第 ${roundNum} 回合已发布！`); */
       /* #gm-data-only-mode-v1: 区分两种模式的成功提示 */
       showToast(isDataOnly
@@ -2400,6 +2404,22 @@ function updateBarracksVisibility(enabled) {
       } catch (e) {
         console.warn('[act10] 草稿保存失败:', e);
       }
+    }
+
+    // 清除指定回合的所有草稿
+    function _clearRoundDrafts(roundNum) {
+      if (!roundNum) return;
+
+      // 清除三个槽位（甲/乙/丙）的草稿
+      [0, 1, 2].forEach(function(slot) {
+        var key = 'sg_draft_r' + roundNum + '_s' + slot;
+        try {
+          localStorage.removeItem(key);
+          console.log('[act10] 草稿已清除:', key);
+        } catch (e) {
+          console.warn('[act10] 草稿清除失败:', key, e);
+        }
+      });
     }
 
     // 加载草稿函数（在渲染完成后调用）
