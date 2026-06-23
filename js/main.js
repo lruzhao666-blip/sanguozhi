@@ -935,6 +935,29 @@ function updateBarracksVisibility(enabled) {
 
     // 显示弹窗
     modal.style.display = 'flex';
+
+    // 重新绑定关闭事件（确保每次显示时都能正确关闭）
+    var modalClose = document.getElementById('modal-close');
+    var modalBtnClose = document.getElementById('modal-btn-close');
+
+    if (modalClose) {
+      modalClose.onclick = function() {
+        modal.style.display = 'none';
+      };
+    }
+
+    if (modalBtnClose) {
+      modalBtnClose.onclick = function() {
+        modal.style.display = 'none';
+      };
+    }
+
+    // 点击弹窗背景也可以关闭
+    modal.onclick = function(e) {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    };
   }
 
   /**
