@@ -69,7 +69,7 @@ window.SGMap = (function () {
 
   /* ─────────────────────────────────
      每格对应地形（以 "col,row" 为键）
-     未在此 Map 中的格子用 _emptyTerrain() 函数判断
+     未在此 Map 中的格子目前不需要额外判断地形
   ───────────────────────────────── */
 
   /* ─────────────────────────────────
@@ -301,176 +301,6 @@ const BONUS_MULT = {
   ];
 
 
-  /* ═══════════════════════════════════════
-   空地区域数据（首批10区域）
-   v1.0 (2026-06-23): 工单#empty-hex-tooltip-v1
-═══════════════════════════════════════ */
-const EMPTY_REGIONS = [
-  {
-    name: '陇右山谷',
-    terrain: [
-      { label: '山地', icon: '🏔', class: 'terrain-mountain' },
-      { label: '河谷', icon: '💧', class: 'terrain-water' },
-      { label: '要道', icon: '🛤', class: 'terrain-pass' }
-    ],
-    position: '东近天水，西接街亭，陇右门户',
-    locations: [
-      { name: '北岭高地', desc: '防守优势，视野开阔', troops: '≤1500兵' },
-      { name: '谷地营盘', desc: '水源充足，适合主力', troops: '3000-5000兵' },
-      { name: '陇道哨卡', desc: '扼守要冲，伏兵理想', troops: '≤2000兵' }
-    ],
-    tactics: '攻守兼备，补给尚可，战略要地',
-    matchArea: { colMin: 7, colMax: 9, rowMin: 5, rowMax: 7 }
-  },
-  {
-    name: '伊洛平野',
-    terrain: [
-      { label: '平原', icon: '🌾', class: 'terrain-plain' },
-      { label: '大道', icon: '🛤', class: 'terrain-pass' }
-    ],
-    position: '洛阳东北，虎牢西侧，四战之地',
-    locations: [
-      { name: '大道驿站', desc: '行军迅速，补给便利', troops: '≤3000兵' },
-      { name: '开阔地', desc: '骑兵驰骋，列阵排兵', troops: '5000+兵' }
-    ],
-    tactics: '骑兵优势，无险可守，适合快速调度',
-    matchArea: { colMin: 11, colMax: 13, rowMin: 4, rowMax: 6 }
-  },
-  {
-    name: '函谷险道',
-    terrain: [
-      { label: '关隘', icon: '⛰️', class: 'terrain-pass' },
-      { label: '山地', icon: '🏔', class: 'terrain-mountain' }
-    ],
-    position: '潼关东侧，洛阳西门，关中要冲',
-    locations: [
-      { name: '关道哨所', desc: '一夫当关，扼守要道', troops: '≤1000兵' },
-      { name: '崤函高地', desc: '居高临下，伏兵绝地', troops: '≤2000兵' }
-    ],
-    tactics: '防守天险，进攻不利，补给艰难',
-    matchArea: { colMin: 10, colMax: 11, rowMin: 5, rowMax: 6 }
-  },
-  {
-    name: '汉水两岸',
-    terrain: [
-      { label: '水域', icon: '💧', class: 'terrain-water' },
-      { label: '平原', icon: '🌾', class: 'terrain-plain' }
-    ],
-    position: '襄阳东侧，江夏西望，水路要津',
-    locations: [
-      { name: '水滨营地', desc: '近水立营，舟楫便利', troops: '3000-5000兵' },
-      { name: '渡口要地', desc: '控制水路，南北通衢', troops: '≤2000兵' }
-    ],
-    tactics: '水战优势，陆路平坦，补给充足',
-    matchArea: { colMin: 12, colMax: 13, rowMin: 9, rowMax: 10 }
-  },
-  {
-    name: '江陵泽国',
-    terrain: [
-      { label: '水域', icon: '💧', class: 'terrain-water' },
-      { label: '沼泽', icon: '🌾', class: 'terrain-plain' }
-    ],
-    position: '江陵南侧，洞庭北岸，水网纵横',
-    locations: [
-      { name: '水寨营盘', desc: '舟船云集，水军要地', troops: '≤4000兵' },
-      { name: '泽畔高地', desc: '避水扎营，控制水道', troops: '≤2000兵' }
-    ],
-    tactics: '水战绝佳，骑兵不利，陆路泥泞',
-    matchArea: { colMin: 12, colMax: 14, rowMin: 10, rowMax: 11 }
-  },
-  {
-    name: '淮南平原',
-    terrain: [
-      { label: '平原', icon: '🌾', class: 'terrain-plain' },
-      { label: '水域', icon: '💧', class: 'terrain-water' }
-    ],
-    position: '寿春南侧，合肥北望，淮水之滨',
-    locations: [
-      { name: '淮畔营地', desc: '水源充足，平坦开阔', troops: '5000+兵' },
-      { name: '津渡哨所', desc: '扼守渡口，南北要道', troops: '≤2000兵' }
-    ],
-    tactics: '补给便利，骑兵适宜，攻守平衡',
-    matchArea: { colMin: 15, colMax: 16, rowMin: 8, rowMax: 9 }
-  },
-  {
-    name: '太行山麓',
-    terrain: [
-      { label: '山地', icon: '🏔', class: 'terrain-mountain' },
-      { label: '苦寒', icon: '❄️', class: 'terrain-cold' }
-    ],
-    position: '晋阳东侧，上党北望，太行余脉',
-    locations: [
-      { name: '山隘营寨', desc: '易守难攻，寒风凛冽', troops: '≤1500兵' },
-      { name: '山麓据点', desc: '屯兵守险，补给艰难', troops: '≤3000兵' }
-    ],
-    tactics: '防守优势，苦寒难耐，不宜久驻',
-    matchArea: { colMin: 12, colMax: 13, rowMin: 2, rowMax: 3 }
-  },
-  {
-    name: '河北平原',
-    terrain: [
-      { label: '平原', icon: '🌾', class: 'terrain-plain' },
-      { label: '粮田', icon: '🌾', class: 'terrain-plain' }
-    ],
-    position: '邺城北侧，南皮西望，沃野千里',
-    locations: [
-      { name: '平野大营', desc: '开阔平坦，适合主力', troops: '8000+兵' },
-      { name: '村寨据点', desc: '就近征粮，补给便利', troops: '3000-5000兵' }
-    ],
-    tactics: '骑兵驰骋，粮草丰足，无险可守',
-    matchArea: { colMin: 14, colMax: 16, rowMin: 2, rowMax: 3 }
-  },
-  {
-    name: '蜀道险途',
-    terrain: [
-      { label: '关隘', icon: '⛰️', class: 'terrain-pass' },
-      { label: '山地', icon: '🏔', class: 'terrain-mountain' }
-    ],
-    position: '剑门之北，葭萌之南，蜀道咽喉',
-    locations: [
-      { name: '栈道哨所', desc: '扼守蜀道，天险之地', troops: '≤1000兵' },
-      { name: '山隘营寨', desc: '进退维谷，补给断绝', troops: '≤1500兵' }
-    ],
-    tactics: '防守绝佳，进攻艰难，粮道险阻',
-    matchArea: { colMin: 6, colMax: 7, rowMin: 9, rowMax: 10 }
-  },
-  {
-    name: '长江南岸',
-    terrain: [
-      { label: '水域', icon: '💧', class: 'terrain-water' },
-      { label: '平原', icon: '🌾', class: 'terrain-plain' }
-    ],
-    position: '建业西侧，柴桑东望，长江之滨',
-    locations: [
-      { name: '江畔水寨', desc: '水军云集，舟船往来', troops: '≤5000兵' },
-      { name: '江南营地', desc: '依江立营，进退自如', troops: '3000-5000兵' }
-    ],
-    tactics: '水战优势，补给便利，北望中原',
-    matchArea: { colMin: 15, colMax: 16, rowMin: 10, rowMax: 11 }
-  }
-];
-
-  /* 根据坐标匹配区域 */
-  function _getRegionByCoord(col, row) {
-  for (const region of EMPTY_REGIONS) {
-    const { colMin, colMax, rowMin, rowMax } = region.matchArea;
-    if (col >= colMin && col <= colMax && row >= rowMin && row <= rowMax) {
-      return region;
-    }
-  }
-  // 未匹配到区域，返回默认
-  const terrain = _emptyTerrain(col, row);
-  return {
-    name: terrain + '地带',
-    terrain: [{ label: terrain, icon: '🗺️', class: '' }],
-    position: '荒野之地，人迹罕至',
-    locations: [
-      { name: '野外空地', desc: '可临时驻扎', troops: '≤3000兵' }
-    ],
-    tactics: '战略价值较低，不宜久驻'
-  };
-}
-
 /* HTML 转义 */
 function _esc(str) {
   return String(str || '')
@@ -538,40 +368,6 @@ function _esc(str) {
     ['zhuojun','ji'],['zhuojun','zhongshan'],['zhuojun','yuyang'],['zhuojun','nanpi'],
     ['dongjun','puyang'],['dongjun','chenliu'],['dongjun','xiapi'],['dongjun','guangling'],
   ];
-
-  /* ─────────────────────────────────
-     空地地形分区（按列row判断）
-     规则：先判断边缘/特殊区，再按大区域
-  ───────────────────────────────── */
-  function _emptyTerrain(col, row) {
-    // 极西苦寒（西域方向）
-    if (col <= 2 && row <= 8) return '苦寒';
-    if (col <= 1) return '苦寒';
-    // 西平/永昌方向苦寒
-    if (col <= 4 && row >= 12) return '苦寒';
-    // 东北沿海（幽州/青州海域）
-    if (col >= 18 && row >= 2) return '水域';
-    if (col >= 19) return '水域';
-    // 东南扬州水域
-    if (col >= 16 && row >= 9) return '水域';
-    if (col >= 17 && row >= 6) return '水域';
-    // 北方苦寒（幽州北部）
-    if (row <= 0 && col >= 12) return '苦寒';
-    if (row <= 1 && col >= 15) return '苦寒';
-    // 并州/雍凉山地
-    if (col >= 9 && col <= 14 && row <= 3) return '山地';
-    if (col >= 5 && col <= 9 && row <= 5) return '山地';
-    // 益州山地（蜀道群山）
-    if (col >= 4 && col <= 9 && row >= 7 && row <= 12) return '山地';
-    // 南中瘴林
-    if (col >= 4 && col <= 10 && row >= 12) return '瘴林';
-    if (col <= 6 && row >= 10) return '瘴林';
-    // 荆南森林
-    if (col >= 10 && col <= 14 && row >= 11) return '森林';
-    // 中原/平原（默认）
-    return '平原';
-  }
-
   /* 坐标转换：六边形网格 → SVG 像素（支持网格裁剪偏移） */
   function hexToXY(col, row) {
     const c = col - GRID_COL_START;
@@ -1067,44 +863,16 @@ function _esc(str) {
       }, { passive: false });
     });
     document.addEventListener('touchstart', e => {
-      if (!e.target.closest('.sgmap-city') && !e.target.closest('.sgmap-neutral-hex') && !e.target.closest('#sgmap-tooltip')) {
+      if (!e.target.closest('.sgmap-city') && !e.target.closest('#sgmap-tooltip')) {
         _hideTip();
         container.querySelectorAll('.sgmap-city-ring').forEach(r => {
           r.style.opacity = '0';
           r.classList.remove('sgmap-ring-pulse');
         });
-        container.querySelectorAll('.sgmap-neutral-hex').forEach(hexEl => {
-          hexEl.style.stroke = 'rgba(180,150,90,0.35)';
-          hexEl.style.strokeWidth = '0.8';
-        });
       }
     });
 
-    // 空地格子事件绑定
-    container.querySelectorAll('.sgmap-neutral-hex').forEach(hexEl => {
-      hexEl.addEventListener('mouseenter', e => {
-        _showEmptyTip(hexEl, e);
-        hexEl.style.stroke = 'rgba(220,190,120,0.75)';
-        hexEl.style.strokeWidth = '1.8';
-      });
 
-      hexEl.addEventListener('mousemove', e => _moveTip(e));
-
-      hexEl.addEventListener('mouseleave', () => {
-        _hideTip();
-        hexEl.style.stroke = 'rgba(180,150,90,0.35)';
-        hexEl.style.strokeWidth = '0.8';
-      });
-
-      hexEl.addEventListener('touchstart', e => {
-        e.preventDefault();
-        const t = e.touches[0];
-        _showEmptyTip(hexEl, { clientX: t.clientX, clientY: t.clientY });
-        _moveTip({ clientX: t.clientX, clientY: t.clientY });
-        hexEl.style.stroke = 'rgba(220,190,120,0.75)';
-        hexEl.style.strokeWidth = '1.8';
-      }, { passive: false });
-    });
 }
 
   function _activateRing(g) {
@@ -1423,55 +1191,6 @@ function _esc(str) {
     _tooltip.style.left = lx + 'px';
     _tooltip.style.top  = ty + 'px';
   }
-
-
-  function _showEmptyTip(hexEl, e) {
-  if (!_tooltip) return;
-
-  const col = parseInt(hexEl.dataset.col);
-  const row = parseInt(hexEl.dataset.row);
-  const region = _getRegionByCoord(col, row);
-
-  // 地形 badges
-  const terrainBadges = region.terrain.map(t =>
-    `<span class="sgt-badge ${t.class}">${t.icon} ${_esc(t.label)}</span>`
-  ).join('');
-
-  // 可用地点列表
-  const locationsHtml = region.locations.map(loc => `
-    <div class="sgt-location-card">
-      <div class="sgt-loc-header">
-        <span class="sgt-loc-name">• ${_esc(loc.name)}</span>
-        <span class="sgt-loc-troops">${_esc(loc.troops)}</span>
-      </div>
-      <div class="sgt-loc-desc">${_esc(loc.desc)}</div>
-    </div>
-  `).join('');
-
-  const html = `
-    <div class="sgt-header">
-      <span class="sgt-name">${_esc(region.name)}</span>
-      <div class="sgt-badges">${terrainBadges}</div>
-    </div>
-    <div class="sgt-section">
-      <div class="sgt-row">
-        <span class="sgt-lbl">位置</span>
-        <span class="sgt-val">${_esc(region.position)}</span>
-      </div>
-      <div class="sgt-section-title">可用地点</div>
-      ${locationsHtml}
-      <div class="sgt-prod-block">
-        <div class="sgt-prod-block-title">战术评估</div>
-        <div class="sgt-prod-val">${_esc(region.tactics)}</div>
-      </div>
-    </div>
-  `;
-
-  _tooltip.innerHTML = html;
-  _tooltip.classList.add('show');
-  _moveTip(e);
-}
-
   function _hideTip() {
     if (_tooltip) _tooltip.classList.remove('visible');
   }
