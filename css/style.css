@@ -15133,123 +15133,140 @@ html.tab-switching {
 }
 
 /* ═══════════════════════════════════════
-   空地 Tooltip 专属样式
-   v1.0 (2026-06-23): 工单#empty-hex-tooltip-v1
-   设计语言：完全复用城池 tooltip 基础样式
+   空地 Tooltip 样式
 ═══════════════════════════════════════ */
 
-/* ─── 地形 badges 颜色变体 ─── */
-.sgmap-tooltip .sgt-badge.terrain-mountain {
-  border-color: rgba(140,120,100,.35);
-  background: rgba(140,120,100,.10);
-  color: #9a8870;
+/* 头部 - 暗褐色系 */
+.sgt-header-empty {
+  background: linear-gradient(135deg, rgba(60,50,35,0.95), rgba(45,38,28,0.95));
+  border-bottom: 1px solid rgba(180,150,90,0.4);
+  padding: 10px 14px;
 }
 
-.sgmap-tooltip .sgt-badge.terrain-water {
-  border-color: rgba(100,140,180,.35);
-  background: rgba(100,140,180,.10);
-  color: #7a9ab8;
+.sget-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(220,190,140,0.95);
+  letter-spacing: 0.5px;
 }
 
-.sgmap-tooltip .sgt-badge.terrain-plain {
-  border-color: rgba(200,170,90,.35);
-  background: rgba(200,170,90,.10);
-  color: #b8a060;
+/* 内容区 */
+.sget-content {
+  padding: 12px 14px;
+  background: rgba(30,26,20,0.92);
 }
 
-.sgmap-tooltip .sgt-badge.terrain-pass {
-  border-color: rgba(180,140,70,.40);
-  background: rgba(180,140,70,.12);
-  color: #a88850;
-}
-
-.sgmap-tooltip .sgt-badge.terrain-forest {
-  border-color: rgba(90,120,70,.35);
-  background: rgba(90,120,70,.10);
-  color: #6a8858;
-}
-
-.sgmap-tooltip .sgt-badge.terrain-cold {
-  border-color: rgba(120,160,200,.35);
-  background: rgba(120,160,200,.10);
-  color: #7a98b8;
-}
-
-.sgmap-tooltip .sgt-badge.terrain-miasma {
-  border-color: rgba(130,100,140,.35);
-  background: rgba(130,100,140,.10);
-  color: #8a7098;
-}
-
-/* ─── 可用地点分隔标题 ─── */
-.sgmap-tooltip .sgt-section-title {
-  font-size: .62rem;
-  color: #a07830;
-  letter-spacing: .14em;
-  margin: 10px 0 6px;
-  font-family: 'Noto Sans SC', sans-serif;
-  font-weight: 600;
+.sget-row {
   display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.sget-label {
+  font-size: 0.8rem;
+  color: rgba(180,155,110,0.85);
+  font-weight: 600;
+  min-width: 36px;
+  flex-shrink: 0;
+}
+
+/* 地形标签 */
+.sget-terrains {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sget-terrain-tag {
+  display: inline-flex;
   align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(100,80,50,0.4);
+  border: 1px solid rgba(180,150,90,0.35);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: rgba(220,195,150,0.9);
+  white-space: nowrap;
+}
+
+/* 位置描述 */
+.sget-position {
+  font-size: 0.8rem;
+  color: rgba(200,180,145,0.9);
+  line-height: 1.5;
+}
+
+/* 可用地点 */
+.sget-locations-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(180,155,110,0.85);
+  margin: 12px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(180,150,90,0.25);
+}
+
+.sget-locations {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.sgmap-tooltip .sgt-section-title::before,
-.sgmap-tooltip .sgt-section-title::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(180,148,68,.20), transparent);
-}
-
-.sgmap-tooltip .sgt-section-title::before {
-  background: linear-gradient(90deg, transparent, rgba(180,148,68,.20));
-}
-
-/* ─── 地点卡片 ─── */
-.sgmap-tooltip .sgt-location-card {
+.sget-location {
   padding: 8px 10px;
-  background: rgba(0,0,0,.22);
-  border-left: 2px solid rgba(180,148,68,.35);
+  background: rgba(50,42,30,0.6);
+  border-left: 2px solid rgba(180,150,90,0.5);
   border-radius: 4px;
-  margin-bottom: 5px;
 }
 
-.sgmap-tooltip .sgt-location-card:last-of-type {
-  margin-bottom: 0;
-}
-
-.sgmap-tooltip .sgt-loc-header {
+.sget-loc-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   margin-bottom: 4px;
-  gap: 8px;
 }
 
-.sgmap-tooltip .sgt-loc-name {
-  font-size: .82rem;
+.sget-loc-name {
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #e0d0b8;
-  font-family: 'Noto Serif SC', serif;
-  letter-spacing: .02em;
+  color: rgba(220,190,140,0.95);
 }
 
-.sgmap-tooltip .sgt-loc-troops {
-  font-size: .68rem;
-  color: #a07830;
-  font-weight: 600;
-  flex-shrink: 0;
+.sget-loc-troops {
+  font-size: 0.75rem;
+  color: rgba(180,160,120,0.8);
   font-family: 'Noto Sans SC', sans-serif;
 }
 
-.sgmap-tooltip .sgt-loc-desc {
-  font-size: .72rem;
-  color: #958570;
+.sget-loc-desc {
+  font-size: 0.75rem;
+  color: rgba(180,165,135,0.85);
   line-height: 1.4;
-  letter-spacing: .02em;
 }
 
-/* ─── 战术评估块（复用 sgt-prod-block，无需新增） ─── */
-/* 已存在的 .sgt-prod-block 样式自动适用 */
+/* 战术评估 */
+.sget-tactics {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(180,150,90,0.25);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
 
+.sget-tactics-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(180,155,110,0.85);
+  min-width: 64px;
+  flex-shrink: 0;
+}
+
+.sget-tactics-text {
+  font-size: 0.8rem;
+  color: rgba(200,180,145,0.9);
+  line-height: 1.5;
+}
