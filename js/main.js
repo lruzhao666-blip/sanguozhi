@@ -2022,13 +2022,25 @@ function updateBarracksVisibility(enabled) {
         headerHtml += '<button class="opp-drawer-close">✕</button>';
 
         var bodyHtml = '';
+        // ↓↓↓ 修改2：优化详情弹窗布局 ↓↓↓
+        // 1. 预告段（剧情描述）
         if (opp.desc) {
+          bodyHtml += '<div class="opp-drawer-section">';
           bodyHtml += '<div class="opp-drawer-desc">' + _act10Esc(opp.desc).replace(/\n/g, '<br>') + '</div>';
+          bodyHtml += '</div>';
         }
+
+        // 2. 条件行（以 ▸ 开头的详情）
         if (opp.detail) {
+          bodyHtml += '<div class="opp-drawer-section opp-drawer-detail-section">';
           bodyHtml += '<div class="opp-drawer-detail">' + _act10Esc(opp.detail).replace(/\n/g, '<br>') + '</div>';
+          bodyHtml += '</div>';
         }
-        bodyHtml += '<div class="opp-drawer-prestige">预估 ' + _act10WrapPrestige(String(opp.prestige)) + ' 威望</div>';
+
+        // 3. 威望预估（仅在有值时显示）
+        if (opp.prestige && String(opp.prestige).trim()) {
+          bodyHtml += '<div class="opp-drawer-prestige">预估 ' + _act10WrapPrestige(String(opp.prestige)) + ' 威望</div>';
+        }
 
         overlay.querySelector('.opp-drawer-header').innerHTML = headerHtml;
         overlay.querySelector('.opp-drawer-body').innerHTML = bodyHtml;
