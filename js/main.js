@@ -1872,32 +1872,11 @@ function updateBarracksVisibility(enabled) {
     var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
     var h = '';
     opps.forEach(function(o) {
-      var cls = TM[o.type] || 'ot-qiyu'; // 默认奇遇
-      var typeLabel = TT[o.type] || '奇遇';
-      var typeIcon = TI[o.type] || '🎭';
-
-      // 截断预告段为简短钩子（最多40字）
-      var shortDesc = (o.desc || '').substring(0, 40);
-      if ((o.desc || '').length > 40) {
-        shortDesc += '...';
-      }
-
+      var cls = TM[o.type] || 'ot-qiyu';
       h += '<div class="opp-display ' + cls + '" data-opp-id="' + o.id + '" data-opp-type="' + o.type + '">';
-
-      // 标题行
-      h += '<div class="opp-top">';
-      h += '<span class="opp-type-icon">' + typeIcon + '</span>';
-      h += '<span class="opp-id">机遇' + o.id + '</span>';
-      h += '<span class="opp-name">' + _act10Esc(o.title) + '</span>';
-      h += '<span class="opp-type-label">' + typeLabel + '</span>';
-      h += '</div>';
-
-      // 简短钩子
-      h += '<div class="opp-desc-short">' + _act10Esc(shortDesc) + '</div>';
-
-      // 展开按钮
-      h += '<div class="opp-expand-hint">展开详情 ▼</div>';
-
+      h += '<div class="opp-top"><span class="opp-id">机遇' + o.id + '</span><span class="opp-name">' + _act10Esc(o.title) + '</span><span class="opp-type-icon">' + (TI[o.type] || '🎭') + '</span></div>';
+      h += '<div class="opp-desc">' + _act10Esc(o.desc) + '</div>';
+      h += '<div class="opp-foot"><span class="opp-pres">预估 ' + _act10WrapPrestige(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '奇遇') + '</span></div>';
       h += '</div>';
     });
     el.innerHTML = h;
@@ -1933,33 +1912,15 @@ function updateBarracksVisibility(enabled) {
         var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
         var cls = TM[opp.type] || 'ot-qiyu';
 
-        var typeLabel = TT[opp.type] || '奇遇';
-        var typeIcon = TI[opp.type] || '🎭';
-
-        var html = '<div class="opp-tooltip-inner">';
-
-        // 标题行
+        var html = '';
         html += '<div class="opp-tooltip-header">';
-        html += '<span class="opp-type-icon">' + typeIcon + '</span>';
+        html += '<span class="opp-tooltip-icon">' + (TI[opp.type] || '🎭') + '</span>';
         html += '<span class="opp-tooltip-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
-        html += '<span class="opp-type-badge">' + typeLabel + '</span>';
+        html += '<span class="chip chip-' + cls + '">' + (TT[opp.type] || '奇遇') + '</span>';
         html += '</div>';
-
-        // 完整预告段
-        html += '<div class="opp-tooltip-desc">' + _act10Esc(opp.desc || '').replace(/\n/g, '<br>') + '</div>';
-
-        // 条件行
-        if (opp.detail) {
-          var detailLines = opp.detail.split('\n');
-          html += '<div class="opp-tooltip-detail">';
-          detailLines.forEach(function(line) {
-            if (line.trim()) {
-              html += '<div class="opp-detail-line">' + _act10Esc(line) + '</div>';
-            }
-          });
-          html += '</div>';
-        }
-
+        html += '<div class="opp-tooltip-body">';
+        html += _act10Esc(opp.detail).replace(/\n/g, '<br>');
+        html += '<div class="opp-tooltip-prestige">预估 ' + _act10WrapPrestige(String(opp.prestige)) + ' 威望</div>';
         html += '</div>';
 
         tooltip.innerHTML = html;
@@ -2040,40 +2001,18 @@ function updateBarracksVisibility(enabled) {
         var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
         var cls = TM[opp.type] || 'ot-qiyu';
 
-        var typeLabel = TT[opp.type] || '奇遇';
-        var typeIcon = TI[opp.type] || '🎭';
-        var typeClass = TM[opp.type] || 'ot-qiyu';
-
-        // 标题区
-        var headerHtml = '<div class="opp-drawer-header ' + typeClass + '">';
-        headerHtml += '<span class="opp-type-icon">' + typeIcon + '</span>';
+        var headerHtml = '';
+        headerHtml += '<span class="opp-drawer-icon">' + (TI[opp.type] || '🎭') + '</span>';
         headerHtml += '<span class="opp-drawer-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
-        headerHtml += '<span class="opp-type-badge">' + typeLabel + '</span>';
+        headerHtml += '<span class="chip chip-' + cls + '">' + (TT[opp.type] || '奇遇') + '</span>';
         headerHtml += '<button class="opp-drawer-close">✕</button>';
-        headerHtml += '</div>';
 
-        // 内容区
-        var bodyHtml = '<div class="opp-drawer-body">';
+        var bodyHtml = '';
+        bodyHtml += _act10Esc(opp.detail).replace(/\n/g, '<br>');
+        bodyHtml += '<div class="opp-drawer-prestige">预估 ' + _act10WrapPrestige(String(opp.prestige)) + ' 威望</div>';
 
-        // 完整预告段
-        bodyHtml += '<div class="opp-drawer-desc">' + _act10Esc(opp.desc || '').replace(/\n/g, '<br>') + '</div>';
-
-        // 条件行
-        if (opp.detail) {
-          var detailLines = opp.detail.split('\n');
-          bodyHtml += '<div class="opp-drawer-detail">';
-          detailLines.forEach(function(line) {
-            if (line.trim()) {
-              bodyHtml += '<div class="opp-detail-line">' + _act10Esc(line) + '</div>';
-            }
-          });
-          bodyHtml += '</div>';
-        }
-
-        bodyHtml += '</div>';
-
-        overlay.querySelector('.opp-drawer-header').outerHTML = headerHtml;
-        overlay.querySelector('.opp-drawer-body').outerHTML = bodyHtml;
+        overlay.querySelector('.opp-drawer-header').innerHTML = headerHtml;
+        overlay.querySelector('.opp-drawer-body').innerHTML = bodyHtml;
         overlay.classList.add('show');
 
         // 绑定关闭按钮
