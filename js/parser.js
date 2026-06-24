@@ -158,12 +158,12 @@ window.SGParser = (function () {
     if (oppBlockMatch) {
       const oppText = oppBlockMatch[1] || oppBlockMatch[0];
       const EMOJI_TYPE_MAP = {
-        '🏆': 'epic', '⚔': 'compete', '⚔️': 'compete',
-        '🤝': 'cooperate', '🎲': 'gamble'
+        '🎭': 'encounter', '🏮': 'bond',
+        '🎲': 'gamble', '🐴': 'recruit'
       };
       const KEYWORD_TYPE_MAP = {
-        '史诗': 'epic', '争夺': 'compete',
-        '协力': 'cooperate', '赌博': 'gamble'
+        '奇遇': 'encounter', '交谊': 'bond',
+        '赌局': 'gamble', '投奔': 'recruit'
       };
 
       // 按机遇头行切分块

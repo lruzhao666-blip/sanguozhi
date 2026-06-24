@@ -1867,16 +1867,16 @@ function updateBarracksVisibility(enabled) {
       el.innerHTML = '<div class="opp-empty" style="grid-column:1/-1;text-align:center;padding:18px;color:var(--text-dim);font-size:.76rem;">本回合无公共机遇</div>';
       return;
     }
-    var TM = { compete: 'ot-jing', cooperate: 'ot-xie', epic: 'ot-shi', gamble: 'ot-du' };
-    var TI = { compete: '⚔️', cooperate: '🤝', epic: '🏆', gamble: '🎲' };
-    var TT = { compete: '竞争', cooperate: '协力', epic: '史诗', gamble: '赌博' };
+    var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
+    var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
+    var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
     var h = '';
     opps.forEach(function(o) {
-      var cls = TM[o.type] || 'ot-jing';
+      var cls = TM[o.type] || 'ot-qiyu';
       h += '<div class="opp-display ' + cls + '" data-opp-id="' + o.id + '" data-opp-type="' + o.type + '">';
-      h += '<div class="opp-top"><span class="opp-id">机遇' + o.id + '</span><span class="opp-name">' + _act10Esc(o.title) + '</span><span class="opp-type-icon">' + (TI[o.type] || '⚔️') + '</span></div>';
+      h += '<div class="opp-top"><span class="opp-id">机遇' + o.id + '</span><span class="opp-name">' + _act10Esc(o.title) + '</span><span class="opp-type-icon">' + (TI[o.type] || '🎭') + '</span></div>';
       h += '<div class="opp-desc">' + _act10Esc(o.desc) + '</div>';
-      h += '<div class="opp-foot"><span class="opp-pres">预估 ' + _act10WrapPrestige(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '竞争') + '</span></div>';
+      h += '<div class="opp-foot"><span class="opp-pres">预估 ' + _act10WrapPrestige(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '奇遇') + '</span></div>';
       h += '</div>';
     });
     el.innerHTML = h;
@@ -1907,16 +1907,16 @@ function updateBarracksVisibility(enabled) {
         var opp = opps.find(function(o) { return o.id === oppId; });
         if (!opp || !opp.detail) return;
 
-        var TI = { compete: '⚔️', cooperate: '🤝', epic: '🏆', gamble: '🎲' };
-        var TT = { compete: '竞争', cooperate: '协力', epic: '史诗', gamble: '赌博' };
-        var TM = { compete: 'ot-jing', cooperate: 'ot-xie', epic: 'ot-shi', gamble: 'ot-du' };
-        var cls = TM[opp.type] || 'ot-jing';
+        var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
+        var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
+        var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
+        var cls = TM[opp.type] || 'ot-qiyu';
 
         var html = '';
         html += '<div class="opp-tooltip-header">';
-        html += '<span class="opp-tooltip-icon">' + (TI[opp.type] || '⚔️') + '</span>';
+        html += '<span class="opp-tooltip-icon">' + (TI[opp.type] || '🎭') + '</span>';
         html += '<span class="opp-tooltip-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
-        html += '<span class="opp-tooltip-type chip chip-' + cls + '">' + (TT[opp.type] || '竞争') + '</span>';
+        html += '<span class="chip chip-' + cls + '">' + (TT[opp.type] || '奇遇') + '</span>';
         html += '</div>';
         html += '<div class="opp-tooltip-body">';
         html += _act10Esc(opp.detail).replace(/\n/g, '<br>');
@@ -1996,15 +1996,15 @@ function updateBarracksVisibility(enabled) {
         var opp = opps.find(function(o) { return o.id === oppId; });
         if (!opp || !opp.detail) return;
 
-        var TI = { compete: '⚔️', cooperate: '🤝', epic: '🏆', gamble: '🎲' };
-        var TT = { compete: '竞争', cooperate: '协力', epic: '史诗', gamble: '赌博' };
-        var TM = { compete: 'ot-jing', cooperate: 'ot-xie', epic: 'ot-shi', gamble: 'ot-du' };
-        var cls = TM[opp.type] || 'ot-jing';
+        var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
+        var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
+        var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
+        var cls = TM[opp.type] || 'ot-qiyu';
 
         var headerHtml = '';
-        headerHtml += '<span class="opp-drawer-icon">' + (TI[opp.type] || '⚔️') + '</span>';
+        headerHtml += '<span class="opp-drawer-icon">' + (TI[opp.type] || '🎭') + '</span>';
         headerHtml += '<span class="opp-drawer-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
-        headerHtml += '<span class="opp-drawer-type chip chip-' + cls + '">' + (TT[opp.type] || '竞争') + '</span>';
+        headerHtml += '<span class="chip chip-' + cls + '">' + (TT[opp.type] || '奇遇') + '</span>';
         headerHtml += '<button class="opp-drawer-close">✕</button>';
 
         var bodyHtml = '';
@@ -2208,9 +2208,9 @@ function updateBarracksVisibility(enabled) {
 
   // ── 构建机遇选取区 ──
   function _act10BuildOppSelect(opps, slotIdx) {
-    var TI = { compete: '⚔️', cooperate: '🤝', epic: '🏆', gamble: '🎲' };
-    var TT = { compete: '竞争', cooperate: '协力', epic: '史诗', gamble: '赌博' };
-    var TC = { compete: 'chip-ot-jing', cooperate: 'chip-ot-xie', epic: 'chip-ot-shi', gamble: 'chip-ot-du' };
+    var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
+    var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
+    var TC = { encounter: 'chip-ot-qiyu', bond: 'chip-ot-jiaoyi', gamble: 'chip-ot-duji', recruit: 'chip-ot-touben' };
     var grp = 'opp-g' + slotIdx;
     var h = '<div class="opp-select-block">';
     h += '<div class="opp-select-hd"><span class="chip chip-opp" style="font-size:.6rem;">机遇</span><span class="opp-select-title">选取机遇（可选）</span><span class="opp-select-hint">占1个行动额度</span></div>';
@@ -2218,10 +2218,10 @@ function updateBarracksVisibility(enabled) {
     opps.forEach(function(o) {
       h += '<div class="opp-opt-row" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-opp-id="' + o.id + '">';
       h += '<div class="opp-rdot"></div>';
-      h += '<span class="opp-opt-icon">' + (TI[o.type] || '⚔️') + '</span>';
+      h += '<span class="opp-opt-icon">' + (TI[o.type] || '🎭') + '</span>';
       h += '<span class="opp-opt-name">机遇' + o.id + ' · ' + _act10Esc(o.title) + '</span>';
       h += '<span class="opp-opt-pres">' + _act10WrapPrestige(String(o.prestige)) + '</span>';
-      h += '<span class="chip ' + (TC[o.type] || 'chip-ot-jing') + '" style="margin-left:2px;">' + (TT[o.type] || '竞争') + '</span>';
+      h += '<span class="chip ' + (TC[o.type] || 'chip-ot-qiyu') + '" style="margin-left:2px;">' + (TT[o.type] || '奇遇') + '</span>';
       h += '</div>';
     });
     h += '<div class="opp-no-sel-note">占1个行动额度 · 每人每回合最多选1条</div>';

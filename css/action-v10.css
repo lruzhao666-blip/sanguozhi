@@ -14,10 +14,10 @@
 .act10 .chip-s{color:#7dd87d;background:rgba(0,55,20,.25);border:1px solid rgba(61,190,108,.32);}
 .act10 .chip-m{color:#e8c560;background:rgba(58,40,0,.25);border:1px solid rgba(200,155,0,.32);}
 .act10 .chip-r{color:#e87060;background:rgba(58,8,0,.25);border:1px solid rgba(220,80,40,.32);}
-.act10 .chip-ot-shi{color:#d4c070;background:rgba(120,100,10,.2);border:1px solid rgba(180,150,20,.32);}
-.act10 .chip-ot-jing{color:#e07060;background:rgba(100,20,10,.2);border:1px solid rgba(180,60,40,.32);}
-.act10 .chip-ot-xie{color:#70b8f0;background:rgba(10,50,120,.2);border:1px solid rgba(40,100,200,.32);}
-.act10 .chip-ot-du{color:#c080e8;background:rgba(80,20,130,.2);border:1px solid rgba(140,60,200,.32);}
+.act10 .chip-ot-qiyu{color:#ff9822;background:rgba(255,152,34,.2);border:1px solid rgba(255,152,34,.32);}
+.act10 .chip-ot-jiaoyi{color:#50b48c;background:rgba(80,180,140,.2);border:1px solid rgba(80,180,140,.32);}
+.act10 .chip-ot-duji{color:#dc3c3c;background:rgba(220,60,60,.2);border:1px solid rgba(220,60,60,.32);}
+.act10 .chip-ot-touben{color:#6478dc;background:rgba(100,120,220,.2);border:1px solid rgba(100,120,220,.32);}
 
 /* ── panel base ── */
 .act10 .panel{
@@ -123,10 +123,7 @@
   user-select:none;
 }
 .act10 .opp-display::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
-.act10 .ot-jing::before{background:linear-gradient(180deg,#e07060,#a03020);}
-.act10 .ot-xie::before{background:linear-gradient(180deg,#60a8e0,#2070b0);}
-.act10 .ot-shi::before{background:linear-gradient(180deg,#e8c560,#a08030);}
-.act10 .ot-du::before{background:linear-gradient(180deg,#b070d8,#703098);}
+/* (已在 style.css 中使用全局 ot-qiyu/ot-jiaoyi/ot-duji/ot-touben 的 border-left 实现，如有需要亦可保留此处旧类名适配或清空，按需清理以防冲突，这里清空旧的渐变) */
 .act10 .opp-top{display:flex;align-items:center;gap:5px;margin-bottom:2px;}
 .act10 .opp-id{font-family:var(--font-serif);font-size:.65rem;font-weight:700;color:var(--text-dim);flex-shrink:0;}
 .act10 .opp-name{font-size:.84rem;font-weight:700;color:var(--text-main);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
