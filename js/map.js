@@ -128,14 +128,14 @@ const NPC_FACTION_COLORS = [
 
   // ═══ 新增颜色 ═══
 
-  // 索引 12 — 酒红（吕布）H:340°
-  { fill:'rgba(72,18,28,0.82)',   film:'rgba(185,55,80,0.22)',  stroke:'rgba(215,75,105,0.72)', glow:'#c8485a', text:'#ffe0e5' },
+  // 索引 12 — 暗紫红（吕布）H:305°
+  { fill:'rgba(72,18,55,0.85)',   film:'rgba(175,50,130,0.22)', stroke:'rgba(205,70,145,0.72)', glow:'#c84585', text:'#ffe0f2' },
 
   // 索引 13 — 橙赭（刘焉）H:35°
   { fill:'rgba(88,48,15,0.82)',   film:'rgba(195,135,60,0.22)',  stroke:'rgba(225,165,85,0.72)', glow:'#d89545', text:'#fff5e5' },
 
-  // 索引 14 — 暗红（张绣）H:5°
-  { fill:'rgba(72,25,18,0.82)',   film:'rgba(175,70,55,0.22)',   stroke:'rgba(205,95,75,0.70)', glow:'#b8523d', text:'#ffe8e3' },
+  // 索引 14 — 赭褐（张绣）H:12°
+  { fill:'rgba(68,32,20,0.88)',   film:'rgba(165,80,55,0.20)',   stroke:'rgba(195,105,70,0.68)', glow:'#b86840', text:'#ffe8dd' },
 
   // 索引 15 — 黄绿（张角/黄巾）H:55°
   { fill:'rgba(62,68,15,0.82)',   film:'rgba(155,175,55,0.22)',  stroke:'rgba(185,205,75,0.72)', glow:'#a8b848', text:'#f8fce5' },
@@ -152,14 +152,14 @@ const NPC_FACTION_COLORS = [
   // 索引 19 — 海青（孔融）H:188°
   { fill:'rgba(15,62,68,0.82)',   film:'rgba(50,155,170,0.22)',  stroke:'rgba(70,185,200,0.70)', glow:'#3ba0b5', text:'#d8f8fc' },
 
-  // 索引 20 — 枫红（何进）H:0°
-  { fill:'rgba(75,18,18,0.82)',   film:'rgba(185,55,55,0.22)',   stroke:'rgba(215,80,80,0.72)', glow:'#c83838', text:'#ffe0e0' },
+  // 索引 20 — 砖红（何进）H:3°
+  { fill:'rgba(62,22,18,0.88)',   film:'rgba(155,60,50,0.20)',   stroke:'rgba(185,80,65,0.68)', glow:'#a84835', text:'#ffddd5' },
 
   // 索引 21 — 墨紫（李傕/郭汜）H:285°
   { fill:'rgba(52,22,58,0.82)',   film:'rgba(125,65,145,0.22)',  stroke:'rgba(155,90,175,0.70)', glow:'#8d4aa0', text:'#f0e3f8' },
 
-  // 索引 22 — 朱褐（南蛮/孟获）H:20°
-  { fill:'rgba(82,38,18,0.82)',   film:'rgba(185,105,60,0.22)',  stroke:'rgba(215,130,80,0.72)', glow:'#c87840', text:'#ffeee0' },
+  // 索引 22 — 土褐（南蛮/孟获）H:18°
+  { fill:'rgba(78,40,20,0.82)',   film:'rgba(175,100,60,0.20)',  stroke:'rgba(205,125,75,0.68)', glow:'#c87845', text:'#ffeedd' },
 
   // 索引 23 — 银灰（其他/未分配）H:215°
   { fill:'rgba(32,38,48,0.82)',   film:'rgba(90,105,130,0.20)',  stroke:'rgba(115,130,160,0.68)', glow:'#6a7590', text:'#e5eaf0' },
