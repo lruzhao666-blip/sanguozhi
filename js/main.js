@@ -1885,12 +1885,18 @@ function updateBarracksVisibility(enabled) {
     var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
     var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
     var h = '';
-    opps.forEach(function(o) {
+    opps.forEach(function (o) {
       var cls = TM[o.type] || 'ot-qiyu';
+      var condBrief = (o.conditions && o.conditions.length) ? o.conditions[0] : '';
       h += '<div class="opp-display ' + cls + '" data-opp-id="' + o.id + '" data-opp-type="' + o.type + '">';
-      h += '<div class="opp-top"><span class="opp-id">机遇' + o.id + '</span><span class="opp-name">' + _act10Esc(o.title) + '</span><span class="opp-type-icon">' + (TI[o.type] || '🎭') + '</span></div>';
+      h += '<div class="opp-top">';
+      h += '<span class="opp-type-icon">' + (TI[o.type] || '🎭') + '</span>';
+      h += '<span class="opp-id">机遇' + o.id + '</span>';
+      h += '<span class="opp-name">' + _act10Esc(o.title) + '</span>';
+      h += '<span class="chip chip-' + cls + ' opp-type-chip">' + (TT[o.type] || '奇遇') + '</span>';
+      h += '</div>';
       h += '<div class="opp-desc">' + _act10Esc(o.desc) + '</div>';
-      h += '<div class="opp-foot"><span class="opp-pres">预估 ' + _act10WrapPrestige(String(o.prestige)) + ' 威望</span><span class="chip chip-' + cls + '">' + (TT[o.type] || '奇遇') + '</span></div>';
+      h += '<div class="opp-foot"><span class="opp-cond-brief">' + _act10Esc(condBrief) + '</span></div>';
       h += '</div>';
     });
     el.innerHTML = h;
@@ -1919,7 +1925,7 @@ function updateBarracksVisibility(enabled) {
       card.addEventListener('mouseenter', function(e) {
         var oppId = parseInt(this.dataset.oppId);
         var opp = opps.find(function(o) { return o.id === oppId; });
-        if (!opp || !opp.detail) return;
+        if (!opp) return;
 
         var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
         var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
@@ -1927,14 +1933,32 @@ function updateBarracksVisibility(enabled) {
         var cls = TM[opp.type] || 'ot-qiyu';
 
         var html = '';
-        html += '<div class="opp-tooltip-header">';
-        html += '<span class="opp-tooltip-icon">' + (TI[opp.type] || '🎭') + '</span>';
-        html += '<span class="opp-tooltip-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
+        html += '<div class="opp-tt-header">';
+        html += '<span class="opp-tt-icon">' + (TI[opp.type] || '🎭') + '</span>';
+        html += '<span class="opp-tt-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
         html += '<span class="chip chip-' + cls + '">' + (TT[opp.type] || '奇遇') + '</span>';
         html += '</div>';
-        html += '<div class="opp-tooltip-body">';
-        html += _act10Esc(opp.detail).replace(/\n/g, '<br>');
-        html += '<div class="opp-tooltip-prestige">预估 ' + _act10WrapPrestige(String(opp.prestige)) + ' 威望</div>';
+        html += '<div class="opp-tt-body">';
+        if (opp.desc) {
+          html += '<div class="opp-tt-desc">' + _act10Esc(opp.desc) + '</div>';
+        }
+        if (opp.conditions && opp.conditions.length) {
+          html += '<div class="opp-tt-conditions">';
+          opp.conditions.forEach(function (c) {
+            html += '<div class="opp-tt-cond-row">' + _act10Esc(c) + '</div>';
+          });
+          html += '</div>';
+        }
+        if (opp.options && opp.options.length) {
+          html += '<div class="opp-tt-options"><div class="opp-tt-opts-title">选项</div>';
+          opp.options.forEach(function (op) {
+            html += '<div class="opp-tt-opt"><span class="opp-tt-opt-num">' + _act10Esc(op.num) + '</span>';
+            html += '<span class="opp-tt-opt-name">' + _act10Esc(op.name) + '</span>';
+            if (op.desc) html += '<span class="opp-tt-opt-desc">' + _act10Esc(op.desc) + '</span>';
+            html += '</div>';
+          });
+          html += '</div>';
+        }
         html += '</div>';
 
         tooltip.innerHTML = html;
@@ -2022,24 +2046,24 @@ function updateBarracksVisibility(enabled) {
         headerHtml += '<button class="opp-drawer-close">✕</button>';
 
         var bodyHtml = '';
-        // ↓↓↓ 修改2：优化详情弹窗布局 ↓↓↓
-        // 1. 预告段（剧情描述）
         if (opp.desc) {
-          bodyHtml += '<div class="opp-drawer-section">';
-          bodyHtml += '<div class="opp-drawer-desc">' + _act10Esc(opp.desc).replace(/\n/g, '<br>') + '</div>';
-          bodyHtml += '</div>';
+          bodyHtml += '<div class="opp-drawer-section"><div class="opp-drawer-desc">' + _act10Esc(opp.desc).replace(/\n/g, '<br>') + '</div></div>';
         }
-
-        // 2. 条件行（以 ▸ 开头的详情）
-        if (opp.detail) {
+        if (opp.conditions && opp.conditions.length) {
           bodyHtml += '<div class="opp-drawer-section opp-drawer-detail-section">';
-          bodyHtml += '<div class="opp-drawer-detail">' + _act10Esc(opp.detail).replace(/\n/g, '<br>') + '</div>';
+          opp.conditions.forEach(function (c) {
+            bodyHtml += '<div class="opp-tt-cond-row">' + _act10Esc(c) + '</div>';
+          });
           bodyHtml += '</div>';
         }
-
-        // 3. 威望预估（仅在有值时显示）
-        if (opp.prestige && String(opp.prestige).trim()) {
-          bodyHtml += '<div class="opp-drawer-prestige">预估 ' + _act10WrapPrestige(String(opp.prestige)) + ' 威望</div>';
+        if (opp.options && opp.options.length) {
+          bodyHtml += '<div class="opp-drawer-section opp-tt-options"><div class="opp-tt-opts-title">选项</div>';
+          opp.options.forEach(function (op) {
+            bodyHtml += '<div class="opp-tt-opt"><span class="opp-tt-opt-num">' + _act10Esc(op.num) + '</span><span class="opp-tt-opt-name">' + _act10Esc(op.name) + '</span>';
+            if (op.desc) bodyHtml += '<span class="opp-tt-opt-desc">' + _act10Esc(op.desc) + '</span>';
+            bodyHtml += '</div>';
+          });
+          bodyHtml += '</div>';
         }
 
         overlay.querySelector('.opp-drawer-header').innerHTML = headerHtml;
@@ -7263,278 +7287,6 @@ function sendBarracksMessage() {
     }
   }
 
-// ══════════════════════════════════════════
-//  三令提交界面渲染 v4.0
-// ══════════════════════════════════════════
-
-/**
- * 渲染三令提交界面
- * @param {Object} parsed - 解析后的回合数据
- */
-function renderActionsPanel(parsed) {
-  if (!parsed) return;
-
-  // 渲染公共机遇
-  renderOpportunities(parsed.opportunities || []);
-
-  // 获取当前登录身份
-  const currentRole = (window.SGRole && window.SGRole.get) ? window.SGRole.get() : null;
-  if (!currentRole) {
-    // 未登录：显示提示
-    showActionsLoginHint();
-    return;
-  }
-
-  // 渲染当前玩家的三令选项
-  const playerActions = parsed.playerActions?.[currentRole];
-  if (playerActions) {
-    renderSanling(playerActions, parsed.opportunities || []);
-  } else {
-    showActionsEmptyHint();
-  }
-}
-
-/**
- * 渲染公共机遇面板
- * @param {Array} opportunities - 机遇数组
- */
-function renderOpportunities(opportunities) {
-  const bodyEl = document.getElementById('opp-body');
-  if (!bodyEl) return;
-
-  if (!opportunities || opportunities.length === 0) {
-    bodyEl.innerHTML = '<div class="opp-empty">本回合无公共机遇</div>';
-    return;
-  }
-
-  bodyEl.innerHTML = '';
-  opportunities.forEach(opp => {
-    const card = document.createElement('div');
-    card.className = `opp-card ${opp.type}`;
-
-    const typeText = opp.type === 'compete' ? '争夺型' : '协力型';
-    const typeClass = opp.type;
-    const icon = opp.type === 'compete' ? '⚔️' : '🤝';
-
-    card.innerHTML = `
-      <div class="opp-card-icon">${icon}</div>
-      <div class="opp-card-content">
-        <div class="opp-card-head">
-          <span class="opp-card-title">机遇${opp.id} · ${esc(opp.title)}</span>
-          <span class="opp-card-type ${typeClass}">${typeText}</span>
-        </div>
-        <div class="opp-card-desc">${esc(opp.desc)}</div>
-        <div class="opp-card-foot">
-          <span class="opp-card-prestige">预估 ${_act10WrapPrestige('+' + opp.prestige)} 威望</span>
-        </div>
-      </div>
-      <div class="opp-card-actions">
-        <button class="opp-select-btn ${typeClass}" data-opp-id="${opp.id}">
-          选此机遇
-        </button>
-      </div>
-    `;
-
-    bodyEl.appendChild(card);
-  });
-
-  // 绑定"选此机遇"按钮
-  bodyEl.querySelectorAll('.opp-select-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const oppId = btn.dataset.oppId;
-      selectOpportunity(oppId);
-    });
-  });
-}
-
-/**
- * 渲染三令选项
- * @param {Object} playerActions - 当前玩家的三令数据 { wu, wen, ce }
- * @param {Array} opportunities - 公共机遇（用于策令改选机遇）
- */
-function renderSanling(playerActions, opportunities) {
-  // 渲染武令
-  renderLingOptions('wu', playerActions.wu);
-  // 渲染文令
-  renderLingOptions('wen', playerActions.wen);
-  // 渲染策令（含机遇选项）
-  renderLingOptions('ce', playerActions.ce, opportunities);
-
-  // 绑定自拟输入框交互
-  bindCustomInputs();
-}
-
-/**
- * 渲染单个令的 A/B 选项
- * @param {String} lingType - 'wu' | 'wen' | 'ce'
- * @param {Object} lingData - { a: {...}, b: {...} }
- * @param {Array} opportunities - 公共机遇（仅策令需要）
- */
-function renderLingOptions(lingType, lingData, opportunities) {
-  if (!lingData) return;
-
-  // 渲染 A 选项
-  if (lingData.a) {
-    fillLingOption(lingType, 'a', lingData.a);
-  }
-
-  // 渲染 B 选项
-  if (lingData.b) {
-    fillLingOption(lingType, 'b', lingData.b);
-  }
-
-  // 策令：渲染改选机遇选项
-  if (lingType === 'ce' && opportunities && opportunities.length > 0) {
-    const oppSelectEl = document.getElementById('ce-opp-select');
-    const oppListEl = document.getElementById('ce-opp-list');
-    if (oppSelectEl && oppListEl) {
-      // 启用"改选机遇"单选按钮
-      const oppRadio = oppSelectEl.querySelector('input[type="radio"][value="opp"]');
-      if (oppRadio) oppRadio.disabled = false;
-
-      // 动态渲染机遇选项
-      oppListEl.innerHTML = '';
-      opportunities.forEach(opp => {
-        const label = document.createElement('label');
-        label.className = 'ling-opp-item';
-        label.innerHTML = `
-          <input type="radio" name="ce-opp" value="${opp.id}">
-          <span>机遇 ${opp.id} · ${esc(opp.title)}</span>
-        `;
-        oppListEl.appendChild(label);
-      });
-
-      // 启用机遇子选项
-      oppListEl.querySelectorAll('input[type="radio"]').forEach(r => {
-        r.disabled = false;
-      });
-    }
-  }
-}
-
-/**
- * 填充单个令选项的内容
- * @param {String} lingType - 'wu' | 'wen' | 'ce'
- * @param {String} option - 'a' | 'b'
- * @param {Object} data - { name, desc, risk, prestige }
- */
-function fillLingOption(lingType, option, data) {
-  const nameEl = document.getElementById(`${lingType}-${option}-name`);
-  const descEl = document.getElementById(`${lingType}-${option}-desc`);
-  const riskEl = document.getElementById(`${lingType}-${option}-risk`);
-  const prestigeEl = document.getElementById(`${lingType}-${option}-prestige`);
-
-  if (nameEl) nameEl.textContent = data.name || '—';
-  if (descEl) descEl.textContent = data.desc || '—';
-
-  if (riskEl) {
-    riskEl.textContent = data.risk || '—';
-    // 设置风险等级样式
-    riskEl.className = 'ling-risk-tag';
-    if (data.risk === '稳') riskEl.classList.add('stable');
-    else if (data.risk === '中') riskEl.classList.add('medium');
-    else if (data.risk === '险') riskEl.classList.add('risky');
-  }
-
-  if (prestigeEl) {
-    prestigeEl.innerHTML = `预估 <strong>${_act10WrapPrestige('+' + data.prestige)}</strong> 威望`;
-  }
-}
-
-/**
- * 绑定自拟输入框交互
- */
-function bindCustomInputs() {
-  ['wu', 'wen', 'ce'].forEach(lingType => {
-    const customRadio = document.querySelector(`input[name="${lingType}-ling"][value="custom"]`);
-    const customInput = document.getElementById(`${lingType}-custom-input`);
-    const customCount = document.getElementById(`${lingType}-custom-count`);
-
-    if (!customRadio || !customInput) return;
-
-    // 选中"自拟"时启用输入框
-    customRadio.addEventListener('change', () => {
-      if (customRadio.checked) {
-        customInput.disabled = false;
-        customInput.focus();
-      }
-    });
-
-    // 其他选项选中时禁用输入框
-    document.querySelectorAll(`input[name="${lingType}-ling"]:not([value="custom"])`).forEach(radio => {
-      radio.addEventListener('change', () => {
-        if (radio.checked) {
-          customInput.disabled = true;
-          customInput.value = '';
-          if (customCount) customCount.textContent = '0';
-        }
-      });
-    });
-
-    // 字数计数
-    if (customInput && customCount) {
-      customInput.addEventListener('input', () => {
-        customCount.textContent = customInput.value.length;
-      });
-    }
-  });
-}
-
-/**
- * 选择公共机遇（点击"选此机遇"按钮）
- * @param {String} oppId - 机遇 ID
- */
-function selectOpportunity(oppId) {
-  // 自动勾选策令的"改选机遇"选项
-  const oppRadio = document.querySelector('input[name="ce-ling"][value="opp"]');
-  if (oppRadio) {
-    oppRadio.checked = true;
-    // 触发 change 事件
-    oppRadio.dispatchEvent(new Event('change'));
-  }
-
-  // 勾选对应的机遇子选项
-  const oppSubRadio = document.querySelector(`input[name="ce-opp"][value="${oppId}"]`);
-  if (oppSubRadio) {
-    oppSubRadio.checked = true;
-  }
-
-  // 滚动到策令区域
-  const ceLingCard = document.querySelector('.ce-ling');
-  if (ceLingCard) {
-    ceLingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-}
-
-/**
- * 显示未登录提示
- */
-function showActionsLoginHint() {
-  const panelEl = document.getElementById('sanling-panel');
-  if (panelEl) {
-    panelEl.innerHTML = `
-      <div class="actions-login-hint">
-        <div class="hint-icon">🔐</div>
-        <div class="hint-text">请先登录身份后查看专属行动令</div>
-      </div>
-    `;
-  }
-}
-
-/**
- * 显示空态提示
- */
-function showActionsEmptyHint() {
-  const panelEl = document.getElementById('sanling-panel');
-  if (panelEl) {
-    panelEl.innerHTML = `
-      <div class="actions-empty-hint">
-        <div class="hint-icon">📜</div>
-        <div class="hint-text">等待 GM 给出本回合行动令</div>
-      </div>
-    `;
-  }
-}
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', applyRoleGate);
@@ -7543,17 +7295,6 @@ function showActionsEmptyHint() {
   }
   window.addEventListener('sg-role-changed', applyRoleGate);
 
-  // 监听身份切换事件，重新渲染三令界面
-  document.addEventListener('sg-role-changed', () => {
-    if (state.rounds.length > 0) {
-      const latest = state.rounds[state.rounds.length - 1];
-      if (latest && latest.parsed) {
-        if (typeof renderActionsPanel === 'function') {
-          renderActionsPanel(latest.parsed);
-        }
-      }
-    }
-  });
 })();
 
 // ══════════════════════════════════════════

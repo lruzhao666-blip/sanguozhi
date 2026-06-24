@@ -1707,3 +1707,91 @@
 .barracks-hidden .barracks-open-btn {
   display: none !important;
 }
+
+/* ════════════════════════════════════════════
+   #opp-pool-v2  机遇池紧凑卡片 + 悬浮卡（方案B）
+   新规则后写覆盖,不动旧 .opp-display 基础规则
+   ──────────────────────────────────────────── */
+
+/* 卡片顶部：emoji 前置 · 机遇N · 标题 · 类型chip右上 */
+.act10 .opp-display .opp-top{display:flex;align-items:center;gap:5px;margin-bottom:6px;}
+.act10 .opp-display .opp-type-icon{font-size:.95rem;line-height:1;flex-shrink:0;order:0;}
+.act10 .opp-display .opp-id{order:1;}
+.act10 .opp-display .opp-name{order:2;flex:1;min-width:0;}
+.act10 .opp-display .opp-type-chip{order:3;margin-left:auto;flex-shrink:0;}
+
+/* 描述：单行截断（覆盖旧的 -webkit-line-clamp 多行） */
+.act10 .opp-display .opp-desc{
+  -webkit-line-clamp:1 !important;
+  display:block !important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  margin-bottom:5px;
+  flex:none !important;
+}
+
+/* 底部条件简述 */
+.act10 .opp-display .opp-foot{display:flex;align-items:center;margin-top:auto;}
+.act10 .opp-display .opp-cond-brief{
+  font-size:.65rem;color:var(--text-dim);line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ── 悬浮卡 #opp-tooltip（补全此前缺失的样式） ── */
+#opp-tooltip{
+  position:fixed;z-index:9999;width:380px;max-width:calc(100vw - 24px);max-height:62vh;
+  background:rgba(16,10,10,.98);
+  border:1.5px solid rgba(212,168,67,.38);
+  border-radius:6px;
+  box-shadow:0 12px 48px rgba(0,0,0,.85),0 0 0 1px rgba(212,168,67,.12);
+  opacity:0;pointer-events:none;transition:opacity .18s ease;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#opp-tooltip.show{opacity:1;}
+#opp-tooltip .opp-tt-header{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+  background:linear-gradient(110deg,rgba(90,60,20,.35),rgba(40,25,10,.25));
+  border-bottom:1px solid rgba(212,168,67,.18);flex-shrink:0;
+}
+#opp-tooltip .opp-tt-icon{font-size:1rem;flex-shrink:0;}
+#opp-tooltip .opp-tt-title{
+  font-family:var(--font-serif);font-size:.88rem;font-weight:700;
+  color:var(--gold-light);flex:1;min-width:0;
+}
+#opp-tooltip .opp-tt-body{padding:13px 14px;overflow-y:auto;flex:1;}
+#opp-tooltip .opp-tt-body::-webkit-scrollbar{width:5px;}
+#opp-tooltip .opp-tt-body::-webkit-scrollbar-thumb{background:rgba(212,168,67,.3);border-radius:3px;}
+#opp-tooltip .opp-tt-desc{
+  font-size:.82rem;color:var(--text-main);line-height:1.65;margin-bottom:11px;
+}
+#opp-tooltip .opp-tt-conditions{
+  padding:9px 10px;background:rgba(0,0,0,.25);
+  border:1px solid rgba(255,255,255,.06);border-radius:4px;
+  margin-bottom:11px;
+}
+#opp-tooltip .opp-tt-cond-row{
+  font-size:.76rem;color:var(--text-sub);line-height:1.55;
+}
+#opp-tooltip .opp-tt-cond-row + .opp-tt-cond-row{margin-top:5px;}
+#opp-tooltip .opp-tt-options{margin-top:4px;}
+#opp-tooltip .opp-tt-opts-title{
+  font-family:var(--font-serif);font-size:.7rem;color:var(--gold-dim);
+  font-weight:700;letter-spacing:.08em;
+  margin-bottom:8px;padding-bottom:5px;
+  border-bottom:1px solid rgba(212,168,67,.15);
+}
+#opp-tooltip .opp-tt-opt{
+  display:flex;align-items:baseline;gap:7px;
+  padding:6px 9px;margin-bottom:5px;
+  background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);border-radius:4px;
+}
+#opp-tooltip .opp-tt-opt-num{
+  font-size:.78rem;font-weight:700;color:var(--gold-dim);flex-shrink:0;
+}
+#opp-tooltip .opp-tt-opt-name{font-size:.78rem;color:var(--text-main);font-weight:600;flex-shrink:0;}
+#opp-tooltip .opp-tt-opt-desc{font-size:.72rem;color:var(--text-sub);line-height:1.5;}
+
+/* 手机端抽屉内复用 opp-tt-cond-row / opp-tt-opt 的间距微调 */
+.opp-drawer .opp-tt-cond-row{font-size:.8rem;color:var(--text-sub);line-height:1.6;}
+.opp-drawer .opp-tt-cond-row + .opp-tt-cond-row{margin-top:6px;}
