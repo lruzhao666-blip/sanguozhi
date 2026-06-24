@@ -108,8 +108,8 @@ const NPC_FACTION_COLORS = [
   // 索引 5 — 紫檀（董卓）H:280°
   { fill:'rgba(52,20,58,0.82)',   film:'rgba(125,60,145,0.22)',  stroke:'rgba(155,85,175,0.70)', glow:'#7d3d8a', text:'#f0e0f5' },
 
-  // 索引 6 — 深玫红（袁术）H:348°
-  { fill:'rgba(72,20,35,0.85)',   film:'rgba(175,55,85,0.22)',   stroke:'rgba(205,75,105,0.70)', glow:'#c84865', text:'#ffe0e8' },
+  // 索引 6 — 芥末黄（袁术）H:65°
+  { fill:'rgba(58,58,18,0.82)',   film:'rgba(155,155,55,0.22)',  stroke:'rgba(185,185,75,0.70)', glow:'#a8a848', text:'#f8f8e5' },
 
   // 索引 7 — 古铜（马腾/马超）H:30°
   { fill:'rgba(72,45,18,0.82)',   film:'rgba(165,125,65,0.22)',  stroke:'rgba(195,155,90,0.70)', glow:'#b58a48', text:'#fef8e8' },
