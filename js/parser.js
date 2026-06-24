@@ -168,7 +168,7 @@ window.SGParser = (function () {
 
       // 按机遇头行切分块
       const oppLines = oppText.split('\n');
-      const OPP_HEAD_RE = /^机遇(\d+)\s*·\s*([^·\n]+?)\s*·\s*([🎭🏮🎲🐴])\s*(\[限[甲乙丙]\])?/;
+      const OPP_HEAD_RE = /^机遇(\d+)\s*·\s*([^·\n]+?)\s*·\s*([🎭🏮🎲🐴]\uFE0F?)\s*(\[限[甲乙丙]\])?/;
       let currentOpp = null;
       const flushOpp = () => {
         if (currentOpp) {
@@ -189,7 +189,8 @@ window.SGParser = (function () {
           flushOpp();
           const oppId = parseInt(m[1]);
           const title = m[2].trim();
-          const emoji = m[3]; // 🎭🏮🎲🐴
+          // 去掉变体选择符 \uFE0F 后再查表，避免 '🏮\uFE0F' 查不到 fallback 成奇遇
+          const emoji = (m[3] || '').replace(/\uFE0F/g, '');
           const restrict = m[4] ? m[4].replace(/[\[\]]/g, '').replace('限', '') : ''; // 提取甲乙丙
 
           // 根据emoji确定类型
