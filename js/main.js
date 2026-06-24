@@ -2008,7 +2008,7 @@ function updateBarracksVisibility(enabled) {
       card.addEventListener('click', function() {
         var oppId = parseInt(this.dataset.oppId);
         var opp = opps.find(function(o) { return o.id === oppId; });
-        if (!opp || !opp.detail) return;
+        if (!opp) return;
 
         var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
         var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
@@ -2018,11 +2018,16 @@ function updateBarracksVisibility(enabled) {
         var headerHtml = '';
         headerHtml += '<span class="opp-drawer-icon">' + (TI[opp.type] || '🎭') + '</span>';
         headerHtml += '<span class="opp-drawer-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
-        headerHtml += '<span class="chip chip-' + cls + '">' + (TT[opp.type] || '奇遇') + '</span>';
+        headerHtml += '<span class="opp-drawer-type chip chip-' + cls + '">' + (TT[opp.type] || '奇遇') + '</span>';
         headerHtml += '<button class="opp-drawer-close">✕</button>';
 
         var bodyHtml = '';
-        bodyHtml += _act10Esc(opp.detail).replace(/\n/g, '<br>');
+        if (opp.desc) {
+          bodyHtml += '<div class="opp-drawer-desc">' + _act10Esc(opp.desc).replace(/\n/g, '<br>') + '</div>';
+        }
+        if (opp.detail) {
+          bodyHtml += '<div class="opp-drawer-detail">' + _act10Esc(opp.detail).replace(/\n/g, '<br>') + '</div>';
+        }
         bodyHtml += '<div class="opp-drawer-prestige">预估 ' + _act10WrapPrestige(String(opp.prestige)) + ' 威望</div>';
 
         overlay.querySelector('.opp-drawer-header').innerHTML = headerHtml;
