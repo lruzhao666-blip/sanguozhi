@@ -168,7 +168,7 @@ window.SGParser = (function () {
 
       // 按机遇头行切分块
       const oppLines = oppText.split('\n');
-      const OPP_HEAD_RE = /^机遇(\d+)\s*·\s*(.+?)\s*[—–-]\s*(.+?)\s*[（(]([^）)]*?)([+-]?\d+(?:[~～][+-]?\d+)?)\s*威望\s*[）)]/;
+      const OPP_HEAD_RE = /^机遇(\d+)\s*·\s*([^·\n]+?)\s*·\s*([🎭🏮🎲🐴])\s*(\[限[甲乙丙]\])?/;
       let currentOpp = null;
       const flushOpp = () => {
         if (currentOpp) {
@@ -187,39 +187,48 @@ window.SGParser = (function () {
         const m = t.match(OPP_HEAD_RE);
         if (m) {
           flushOpp();
-          const rawTitle = m[2].trim();
-          const paren = m[4] || '';
-          let type = 'compete';
-          for (const [kw, tp] of Object.entries(KEYWORD_TYPE_MAP)) {
-            if (paren.includes(kw)) { type = tp; break; }
-          }
-          if (type === 'compete') {
-            for (const [emo, tp] of Object.entries(EMOJI_TYPE_MAP)) {
-              if (t.includes(emo)) { type = tp; break; }
-            }
-          }
-          const cleanTitle = rawTitle
-            .replace(/\s*·\s*(?:🏆|⚔️?|🤝|🎲)\uFE0F?\s*$/, '')
-            .trim();
+          const oppId = parseInt(m[1]);
+          const title = m[2].trim();
+          const emoji = m[3]; // 🎭🏮🎲🐴
+          const restrict = m[4] ? m[4].replace(/[\[\]]/g, '').replace('限', '') : ''; // 提取甲乙丙
+
+          // 根据emoji确定类型
+          let type = EMOJI_TYPE_MAP[emoji] || 'encounter';
+
           currentOpp = {
-            id: parseInt(m[1]),
-            title: cleanTitle || rawTitle,
-            desc: m[3].trim(),
-            emoji: '',
+            id: oppId,
+            title: title,
+            desc: '',        // 预告段，下面行收集
+            emoji: emoji,
             type: type,
-            prestige: _normalizePrestige(m[5].trim()),
-            detail: ''
+            prestige: '',    // 新格式无标题行威望
+            detail: '',      // 详情区
+            restrict: restrict // 限定标记（甲/乙/丙/空）
           };
         } else if (currentOpp) {
-          // 非头行 → 详情文本
-          // 过滤分隔符 --- 和 ===
+          // 非头行 → 收集预告段和条件行
+          // 跳过分隔符
           if (/^[-—]{3,}$/.test(t) || /^═{3,}$/.test(t)) {
-            // 跳过分隔符行
             continue;
           }
-          currentOpp.detail = currentOpp.detail
-            ? currentOpp.detail + '\n' + t
-            : t;
+
+          // 条件行（以 ▸ 开头）
+          if (t.startsWith('▸')) {
+            currentOpp.detail = currentOpp.detail
+              ? currentOpp.detail + '\n' + t
+              : t;
+          }
+          // 预告段（普通文本）
+          else {
+            if (!currentOpp.desc) {
+              currentOpp.desc = t; // 第一行为预告段
+            } else {
+              // 后续行追加到detail
+              currentOpp.detail = currentOpp.detail
+                ? currentOpp.detail + '\n' + t
+                : t;
+            }
+          }
         }
       }
       flushOpp();
