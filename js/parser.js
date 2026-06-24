@@ -198,32 +198,48 @@ window.SGParser = (function () {
           currentOpp = {
             id: oppId,
             title: title,
-            desc: '',        // 预告段，下面行收集
+            desc: '',
             emoji: emoji,
             type: type,
-            prestige: '',    // 新格式无标题行威望
-            detail: '',      // 详情区
-            restrict: restrict // 限定标记（甲/乙/丙/空）
+            prestige: '',
+            detail: '',
+            restrict: restrict,
+            conditions: [],
+            options: []
           };
         } else if (currentOpp) {
-          // 非头行 → 收集预告段和条件行
+          // 选项行 ①②③④⑤⑥ → options 数组
+          var _optM = t.match(/^([①②③④⑤⑥])\s*([^:：]+)[:：]?\s*(.*)$/);
+          if (_optM) {
+            currentOpp.options.push({
+              num: _optM[1],
+              name: _optM[2].trim(),
+              desc: (_optM[3] || '').trim()
+            });
+            continue;
+          }
           // 跳过分隔符
           if (/^[-—]{3,}$/.test(t) || /^═{3,}$/.test(t)) {
             continue;
           }
-
-          // 条件行（以 ▸ 开头）
+          // 条件行（以 ▸ 开头）：原 detail 收集 + 新增按 | 切 conditions
           if (t.startsWith('▸')) {
             currentOpp.detail = currentOpp.detail
               ? currentOpp.detail + '\n' + t
               : t;
+            var _condBody = t.replace(/^▸\s*/, '').trim();
+            if (_condBody) {
+              _condBody.split('|').forEach(function (seg) {
+                var s = seg.trim();
+                if (s) currentOpp.conditions.push(s);
+              });
+            }
           }
           // 预告段（普通文本）
           else {
             if (!currentOpp.desc) {
-              currentOpp.desc = t; // 第一行为预告段
+              currentOpp.desc = t;
             } else {
-              // 后续行追加到detail
               currentOpp.detail = currentOpp.detail
                 ? currentOpp.detail + '\n' + t
                 : t;
@@ -2330,367 +2346,15 @@ if (/^产出△/.test(line)) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  /**
-   * v20260610a 工单#decision-ref-v1
-   * 解析威望段 [威望]
-   * 返回 { players: [{conquest, govern, talent, goal, total}], npcHighest: {name, score} }
-   */
-  function parsePrestige(text) {
-    const result = {
-      players: [
-        {conquest: 0, govern: 0, talent: 0, goal: 0, total: 0},
-        {conquest: 0, govern: 0, talent: 0, goal: 0, total: 0},
-        {conquest: 0, govern: 0, talent: 0, goal: 0, total: 0}
-      ],
-      npcHighest: {name: '', score: 0}
-    };
-
-    const lines = text.split('\n');
-    let inPrestigeBlock = false;
-
-    for (let line of lines) {
-      line = line.trim();
-
-      if (line === '[威望]') {
-        inPrestigeBlock = true;
-        continue;
-      }
-
-      if (inPrestigeBlock) {
-        // 匹配玩家行：甲 征伐:20 治政:12 人才:8 目标:5 合计:45
-        const playerMatch = line.match(/^([甲乙丙])\s+征伐:(\d+)\s+治政:(\d+)\s+人才:(\d+)\s+目标:(\d+)\s+合计:(\d+)/);
-        if (playerMatch) {
-          const slot = {'甲': 0, '乙': 1, '丙': 2}[playerMatch[1]];
-          if (slot !== undefined) {
-            result.players[slot] = {
-              conquest: parseInt(playerMatch[2]),
-              govern: parseInt(playerMatch[3]),
-              talent: parseInt(playerMatch[4]),
-              goal: parseInt(playerMatch[5]),
-              total: parseInt(playerMatch[6])
-            };
-          }
-          continue;
-        }
-
-        // 匹配NPC最高：NPC最高:{名}:{分数}
-        const npcMatch = line.match(/^NPC最高:([^:]+):(\d+)/);
-        if (npcMatch) {
-          result.npcHighest = {
-            name: npcMatch[1].trim(),
-            score: parseInt(npcMatch[2])
-          };
-          continue;
-        }
-
-        // 遇到下一个方括号块，退出
-        if (line.startsWith('[') && line !== '[威望]') {
-          break;
-        }
-      }
     }
 
     return result;
   }
-
-  /**
-   * v20260610a 工单#decision-ref-v1
-   * 解析先手权：本回合先手:{玩家名}
-   */
-  function parseFirstMover(text) {
-    const match = text.match(/本回合先手[:：]\s*([^\s\n]+)/);
-    return match ? match[1].trim() : '';
-  }
-
-  /**
-   * v20260610b 工单#opportunities-panel-v1
-   * 解析公共机遇
-   * 格式：机遇1 · {标题} — {描述}(⚔争夺/🤝协力·预估+{N}威望)
-   * 返回 [{id, title, desc, type, prestige}]
-   */
-  function parseOpportunities(text) {
-    const result = [];
-    const lines = text.split('\n');
-
-    for (let line of lines) {
-      line = line.trim();
-
-      // 匹配：⚔ 公共机遇(选则占用策令):
-      if (line.includes('公共机遇')) {
-        continue;
-      }
-
-      // 匹配机遇行：机遇1 · 招降张郃 — 描述内容(⚔争夺·预估+6威望)
-      const oppMatch = line.match(/机遇(\d+)\s*[·•]\s*([^—]+)\s*—\s*([^(]+)\(([⚔🤝])(争夺|协力)[·•]预估\+(\d+)威望\)/);
-
-      if (oppMatch) {
-        const id = parseInt(oppMatch[1]);
-        const title = oppMatch[2].trim();
-        const desc = oppMatch[3].trim();
-        const typeIcon = oppMatch[4];
-        const typeText = oppMatch[5];
-        const prestige = parseInt(oppMatch[6]);
-
-        result.push({
-          id: id,
-          title: title,
-          desc: desc,
-          type: typeText === '争夺' ? 'compete' : 'cooperate',
-          prestige: prestige
-        });
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * v20260610c 工单#sanling-options-v1
-   * 解析三令选项
-   * 格式：武令|A.强攻合肥:集结主力猛攻...(险·+5威望)
-   * 返回 { wu: [{label, name, desc, risk, prestige}], wen: [...], ce: [...] }
-   */
-  function parseActionOptions(text) {
-    const result = {
-      wu: [],
-      wen: [],
-      ce: []
-    };
-
-    const lines = text.split('\n');
-    let currentPlayer = null;
-
-    for (let line of lines) {
-      line = line.trim();
-
-      // 检测玩家名号行：玩家名号 [甲]:(威望:N) 或 玩家名号[甲]:(威望:N)
-      // 改动：要求方括号槽位标记
-      if (line.match(/\[([甲乙丙])\]\s*[:：]\s*[（(]威望[:：]\d+[）)]/)) {
-        currentPlayer = line;
-        continue;
-      }
-
-      // 如果没有进入玩家区域，跳过
-      if (!currentPlayer) continue;
-
-      // 匹配武令|A.标题:描述(风险·+N威望) 或 (风险·+N~M威望)
-      // 改动：威望区间用 [\d~～\-+] 字符类，兼容 +2 / +2~3 / +2-3
-      const wuMatch = line.match(/^武令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
-      if (wuMatch) {
-        result.wu.push({
-          label: wuMatch[1],
-          name: wuMatch[2].trim(),
-          desc: wuMatch[3].trim(),
-          risk: wuMatch[4].trim(),
-          prestige: _normalizePrestige(wuMatch[5].trim())
-        });
-        continue;
-      }
-
-      const wenMatch = line.match(/^文令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
-      if (wenMatch) {
-        result.wen.push({
-          label: wenMatch[1],
-          name: wenMatch[2].trim(),
-          desc: wenMatch[3].trim(),
-          risk: wenMatch[4].trim(),
-          prestige: _normalizePrestige(wenMatch[5].trim())
-        });
-        continue;
-      }
-
-      const ceMatch = line.match(/^策令\s*[|｜]\s*([AB])\s*[.．、]\s*([^:：]+?)\s*[:：]\s*([^(（]+?)\s*[（(]([^·]+?)\s*·\s*(?:预估)?\s*\+?([\d~～\-+]+?)\s*威望[）)]/);
-      if (ceMatch) {
-        result.ce.push({
-          label: ceMatch[1],
-          name: ceMatch[2].trim(),
-          desc: ceMatch[3].trim(),
-          risk: ceMatch[4].trim(),
-          prestige: _normalizePrestige(ceMatch[5].trim())
-        });
-        continue;
-      }
-
-      // 遇到玩家分隔线，重置当前玩家（半角 --- 或全角 ═══）
-      if (/^[-—]{3,}$/.test(line) || /^═{3,}$/.test(line)) {
-        currentPlayer = null;
-        continue;
-      }
-    }
-
-    return result;
-  }
-
-  // 暴露给全局
-  window.SGParser = window.SGParser || {};
-  window.SGParser.parsePrestige = parsePrestige;
-  window.SGParser.parseFirstMover = parseFirstMover;
-  window.SGParser.parseOpportunities = parseOpportunities;
-  window.SGParser.parseActionOptions = parseActionOptions;
 
     // ── #parser-expose-fix-v1 START ──
     // 修复:原 return 语句会覆盖 window.SGParser,把上面 4 个挂载抹掉。
     // 新策略:把 4 个函数纳入 return 对象,让 IIFE 返回值同时包含它们。
-    return {
-      parse, summarize, formatTroops, TROOP_TYPES,
-      parsePrestige,
-      parseFirstMover,
-      parseOpportunities,
-      parseActionOptions,
-    };
+    return { parse, summarize, formatTroops, TROOP_TYPES };
     // ── END #parser-expose-fix-v1 ──
 })();
-
-// ═══════════════════════════════════════════════════════════
-// #action-panel-step1 行动板块数据解析
-// ═══════════════════════════════════════════════════════════
-
-/**
- * 解析结算段 — 兼容 v6.5 标准格式 + 混合格式
- *
- * 标准格式：
- * [结算]
- * 甲:攻许昌:赵云阵亡·-8威 | +4威望
- * 甲:招贤士:平原得郭图(谋86)·失败 | +0威望
- * 乙:募兵邺:新兵+800 | +0威望
- *
- * 混合格式：
- * [结算]
- * 甲:
- * - 成都受降:零损接管成都(...) | +15威望
- * - 粮荒应对:待入成都后... | +0威望
- * 乙:
- * - 许昌接管:零损接管许昌(...) | +15威望
- *
- * 输出结构：
- * {
- *   players: {
- *     0: { actions: [{action:'攻许昌', result:'赵云阵亡·-8威', prestige:'+4威望'}] },
- *     1: { actions: [{action:'募兵邺', result:'新兵+800', prestige:'+0威望'}] },
- *     2: { actions: [{action:'自拟(援徐州)', result:'送粮800成功', prestige:'+2威望'}] }
- *   }
- * }
- */
-
-
-/**
- * 解析公共机遇池
- * 格式示例：
- * 公共机遇池(选则占用应变令):
- * 机遇1 · 招降关羽 · 🏆 — 关云长困下邳,需魅≥8武将+声望≥中,可说降(预估+12威望)
- * 机遇2 · 夺取庐江 · ⚔️ — 庐江太守战败出逃,距最近者零损接管(预估+5威望)
- * 机遇3 · 联合讨董 · 🤝 — 董卓暴政,需≥2家共同出兵讨伐(预估每人+5威望)
- */
-function parseOpportunities(text) {
-  var opportunities = [];
-  if (!text) return opportunities;
-
-  var lines = text.split('\n');
-  var emojiMap = { '🏆': 'epic', '⚔️': 'compete', '🤝': 'coop', '🎲': 'gamble' };
-
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i].trim();
-    if (!line || line.indexOf('机遇') !== 0) continue;
-
-    var match = line.match(/^机遇(\d+)\s*·\s*([^·]+)\s*·\s*([🏆⚔️🤝🎲])\s*—\s*(.+)\(预估\+?(\d+)威望\)$/);
-    if (match) {
-      opportunities.push({
-        id: parseInt(match[1]),
-        title: match[2].trim(),
-        type: emojiMap[match[3]] || 'compete',
-        emoji: match[3],
-        desc: match[4].trim(),
-        prestige: parseInt(match[5])
-      });
-    }
-  }
-
-  return opportunities;
-}
-
-/**
- * 解析行动令选项
- * 格式示例：
- * {玩家名号} [甲]:(威望:{N})
- *
- * 主令|A.攻城南皮:{≤35字}(稳·预估+6威望)
- * 主令|B.募兵强军:{≤35字}(稳·预估+0威望)
- * 主令|C.自拟行动:{≤35字}(中·预估+N威望)
- *
- * 副令|A.招贤访士:{≤30字}(中·预估+1威望)
- * 副令|B.自拟行动:{≤30字}
- *
- * 应变令|A.选机遇1:{≤30字}(险·预估+12威望)
- * 应变令|B.自拟策略:{≤30字}
- */
-function parseActionOptions(text) {
-  var actions = {
-    0: { name: '', prestige: 0, main: [], sub: [], react: [] },
-    1: { name: '', prestige: 0, main: [], sub: [], react: [] },
-    2: { name: '', prestige: 0, main: [], sub: [], react: [] }
-  };
-
-  if (!text) return actions;
-
-  var lines = text.split('\n');
-  var currentSlot = -1;
-  var slotMap = { '[甲]': 0, '[乙]': 1, '[丙]': 2 };
-
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i].trim();
-    if (!line) continue;
-
-    // 检测玩家槽位头
-    for (var key in slotMap) {
-      if (line.indexOf(key) !== -1) {
-        currentSlot = slotMap[key];
-        var nameMatch = line.match(/^([^\[]+)\s*\[/);
-        if (nameMatch) {
-          actions[currentSlot].name = nameMatch[1].trim();
-        }
-        var prestigeMatch = line.match(/威望:(\d+)/);
-        if (prestigeMatch) {
-          actions[currentSlot].prestige = parseInt(prestigeMatch[1]);
-        }
-        break;
-      }
-    }
-
-    if (currentSlot === -1) continue;
-
-    // 解析选项：主令|A.标题:描述(风险·预估+N威望)
-    var optMatch = line.match(/^(主令|副令|应变令)\|([A-C])\.(([^:]+)):([^(]+)(?:\(([^·)]+)·预估\+(\d+)威望\))?/);
-    if (optMatch) {
-      var lingType = optMatch[1];
-      var option = {
-        label: optMatch[2],
-        title: optMatch[3].trim(),
-        desc: optMatch[5].trim(),
-        risk: optMatch[6] ? optMatch[6].trim() : '稳',
-        prestige: optMatch[7] ? parseInt(optMatch[7]) : 0,
-        isCustom: optMatch[3].indexOf('自拟') !== -1
-      };
-
-      if (lingType === '主令') {
-        actions[currentSlot].main.push(option);
-      } else if (lingType === '副令') {
-        actions[currentSlot].sub.push(option);
-      } else if (lingType === '应变令') {
-        actions[currentSlot].react.push(option);
-      }
-    }
-  }
-
-  return actions;
-}
-
-/**
- * 解析先手权
- * 格式：本回合先手:{威望最低玩家名}
- */
-function parseFirstMover(text) {
-  if (!text) return null;
-  var match = text.match(/本回合先手:([^\s]+)/);
-  return match ? match[1].trim() : null;
-}
 
