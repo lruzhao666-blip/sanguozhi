@@ -2346,11 +2346,6 @@ if (/^产出△/.test(line)) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-    }
-
-    return result;
-  }
-
     // ── #parser-expose-fix-v1 START ──
     // 修复:原 return 语句会覆盖 window.SGParser,把上面 4 个挂载抹掉。
     // 新策略:把 4 个函数纳入 return 对象,让 IIFE 返回值同时包含它们。
