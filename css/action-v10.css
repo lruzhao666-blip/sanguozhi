@@ -117,7 +117,6 @@
   padding:9px 11px 9px 14px;
   background:rgba(16,7,4,.55);
   border:1px solid rgba(255,255,255,.06);
-  border-left:none;
   border-radius:var(--r);
   overflow:hidden;
   user-select:none;
