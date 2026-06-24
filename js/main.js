@@ -1518,11 +1518,24 @@ function updateBarracksVisibility(enabled) {
 
     state.publishing = true;
     const btn = document.getElementById('btn-publish');
-    btn.disabled = true; btn.textContent = isDataOnly ? '⏳ 修复数据中…' : '⏳ 发布中…';
+    btn.disabled = true; btn.textContent = '⏳ 发布中…';
 
+    // ↓↓↓ 修改2：拆分发布和后续操作，精准捕获发布失败 ↓↓↓
+    let publishSuccess = false;
     try {
       const rd = { round: roundNum, roundTitle: '', parsed, rawContent: finalRaw };
       await publishRound(rd);
+      publishSuccess = true;  // 标记发布成功
+    } catch (e) {
+      console.error('[SG] 发布回合到数据库失败:', e);
+      showToast(isDataOnly ? '❌ 修复失败,请重试' : '❌ 发布失败,请检查网络');
+      state.publishing = false;
+      btn.disabled = false; btn.textContent = '🚀 发布回合';
+      return;  // 发布失败，直接返回
+    }
+
+    // 发布成功后的后续操作
+    try {
       await fetchAllRounds();
       renderAll();
       switchTab('arena');
@@ -1538,19 +1551,20 @@ function updateBarracksVisibility(enabled) {
       // 清除该回合的所有行动提交数据，避免显示旧提交
       await _act10ClearRoundSubmissions(roundNum);
 
+      // ↓↓↓ 修改1：清空行动面板 UI 状态，避免显示上一回合的内容 ↓↓↓
+      _act10ResetUIAfterPublish();
+
       /* [legacy v1] showToast(`✅ 第 ${roundNum} 回合已发布！`); */
       /* #gm-data-only-mode-v1: 区分两种模式的成功提示 */
       showToast(isDataOnly
         ? `🔧 第 ${roundNum} 回合数据已修复(剧情区保留)`
         : `✅ 第 ${roundNum} 回合已发布！`);
     } catch (e) {
-      console.error('[SG] 发布失败:', e);
-      /* [legacy v1] showToast('❌ 发布失败，请检查网络'); */
-      /* #gm-data-only-mode-v1 */
-      showToast(isDataOnly ? '❌ 修复失败,请重试' : '❌ 发布失败,请检查网络');
+      console.error('[SG] 发布后刷新数据失败:', e);
+      // 发布已成功，只是刷新失败，提示用户手动刷新
+      showToast('⚠️ 发布成功，但刷新失败，请手动刷新页面', 'warning', 4000);
     } finally {
       state.publishing = false;
-      /* [legacy v1] btn.textContent = '🚀 发布回合'; */
       btn.disabled = false; btn.textContent = '🚀 发布回合';
     }
   }
@@ -2736,6 +2750,49 @@ function updateBarracksVisibility(enabled) {
   }
   // ↑↑↑ 新函数结束 ↑↑↑
 
+  // ↓↓↓ 修改1：新增函数 — 发布新回合后重置行动面板 UI ↓↓↓
+  function _act10ResetUIAfterPublish() {
+    console.log('[act10] 重置行动面板 UI');
+
+    // 清空所有玩家的输入框
+    for (var i = 0; i < 3; i++) {
+      var slot = ACT10_SLOT_NAMES[i];
+
+      // 清空行动输入框
+      var textarea = document.getElementById('act10-ta-' + slot);
+      if (textarea) textarea.value = '';
+
+      // 清空机遇选择
+      var oppSelect = document.getElementById('act10-opp-' + slot);
+      if (oppSelect) oppSelect.value = '';
+
+      // 隐藏"已提交"标识
+      var badge = document.getElementById('act10-submitted-badge-' + slot);
+      if (badge) badge.classList.add('hidden');
+
+      // 重置提交按钮状态
+      var submitBtn = document.getElementById('act10-submit-' + slot);
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '✅ 提交行动';
+      }
+
+      // 移除面板高亮状态
+      var panel = document.querySelector('.col-panel[data-slot="' + i + '"]');
+      if (panel) panel.classList.remove('submitted');
+    }
+
+    // 重置全局提交数据缓存
+    window._act10Submitted = {};
+    window._act10AllSubmittedNotified = false;
+
+    // 禁用 GM 复制按钮
+    var gmCopyBtn = document.getElementById('btn-gm-copy-all-actions');
+    if (gmCopyBtn) gmCopyBtn.disabled = true;
+
+    console.log('[act10] UI 重置完成');
+  }
+
   // ══════════════════════════════════════════
   //  行动提交实时变更回调
   // ══════════════════════════════════════════
@@ -2757,6 +2814,15 @@ function updateBarracksVisibility(enabled) {
 
     // ← 修改：强化高亮更新 + Toast 提示
     _act10UpdateAllPanelsHighlight();
+
+    // ↓↓↓ 修改3：强制更新 GM 复制按钮状态（兜底机制） ↓↓↓
+    var submitted = window._act10Submitted || {};
+    var allDone = ACT10_SLOT_NAMES.every(function(s) { return !!submitted[s]; });
+    var gmCopyBtn = document.getElementById('btn-gm-copy-all-actions');
+    if (gmCopyBtn) {
+      gmCopyBtn.disabled = !allDone;
+      console.log('[act10] 强制更新复制按钮状态:', allDone ? '已启用' : '已禁用');
+    }
 
     // 提示：哪个玩家刚刚提交/修改了
     if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
