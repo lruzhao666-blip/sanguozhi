@@ -1720,6 +1720,10 @@
 .act10 .opp-display .opp-name{order:2;flex:1;min-width:0;}
 .act10 .opp-display .opp-type-chip{order:3;margin-left:auto;flex-shrink:0;}
 
+/* #opp-strip-fix-v1: 确保左色条始终在内容之上,不被 emoji/标题遮挡 */
+.act10 .opp-display::before{ z-index:3; }
+.act10 .opp-display > *{ position:relative; z-index:1; }
+
 /* 描述：单行截断（覆盖旧的 -webkit-line-clamp 多行） */
 .act10 .opp-display .opp-desc{
   -webkit-line-clamp:1 !important;
