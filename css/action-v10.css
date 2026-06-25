@@ -56,16 +56,33 @@
    面板卡片
 ════════════════════════════════ */
 .act10 .col-panel {
-  background: #141010;
-  border: 1px solid rgba(200,155,60,.4);
+  background: rgba(10,5,5,.92);
+  border: 1px solid rgba(180,140,55,.25);
+  border-left: 3px solid rgba(180,140,55,.5);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 14px rgba(0,0,0,.45);
 }
-.act10 .col-panel[data-slot="0"] { border-color: rgba(200,60,45,.55); box-shadow: 0 0 14px rgba(180,40,30,.18); }
-.act10 .col-panel[data-slot="1"] { border-color: rgba(50,180,90,.48); box-shadow: 0 0 14px rgba(30,150,70,.14); }
-.act10 .col-panel[data-slot="2"] { border-color: rgba(48,140,220,.48); box-shadow: 0 0 14px rgba(30,100,200,.14); }
+/* slot-0 昭公：红色  #e74c3c  rgb(231,76,60)  */
+.act10 .col-panel[data-slot="0"] {
+  border-color: rgba(231,76,60,.32);
+  border-left-color: var(--p0-color, #e74c3c);
+  box-shadow: 0 2px 14px rgba(0,0,0,.45);
+}
+/* slot-1 高公：绿色  #3dbe6c  rgb(61,190,108) */
+.act10 .col-panel[data-slot="1"] {
+  border-color: rgba(61,190,108,.32);
+  border-left-color: var(--p1-color, #3dbe6c);
+  box-shadow: 0 2px 14px rgba(0,0,0,.45);
+}
+/* slot-2 许顾楠：蓝色 #3498db  rgb(52,152,219) */
+.act10 .col-panel[data-slot="2"] {
+  border-color: rgba(52,152,219,.32);
+  border-left-color: var(--p2-color, #3498db);
+  box-shadow: 0 2px 14px rgba(0,0,0,.45);
+}
 
 /* 面板头 */
 .act10 .col-head {
@@ -73,19 +90,19 @@
   align-items: center;
   gap: 8px;
   padding: 11px 14px;
-  border-bottom: 1px solid rgba(200,155,60,.22);
+  border-bottom: 1px solid rgba(255,255,255,.05);
 }
 .act10 .col-panel[data-slot="0"] .col-head {
-  background: linear-gradient(110deg, rgba(120,22,12,.80), rgba(55,8,4,.50));
-  border-bottom-color: rgba(200,60,45,.3);
+  background: linear-gradient(110deg, rgba(120,15,8,.5), rgba(60,5,2,.18));
+  border-bottom-color: rgba(231,76,60,.18);
 }
 .act10 .col-panel[data-slot="1"] .col-head {
-  background: linear-gradient(110deg, rgba(12,90,35,.75), rgba(6,36,14,.50));
-  border-bottom-color: rgba(50,180,90,.28);
+  background: linear-gradient(110deg, rgba(10,88,38,.5), rgba(5,44,18,.18));
+  border-bottom-color: rgba(61,190,108,.18);
 }
 .act10 .col-panel[data-slot="2"] .col-head {
-  background: linear-gradient(110deg, rgba(12,50,120,.75), rgba(6,20,60,.50));
-  border-bottom-color: rgba(48,140,220,.28);
+  background: linear-gradient(110deg, rgba(8,52,120,.5), rgba(4,26,65,.18));
+  border-bottom-color: rgba(52,152,219,.18);
 }
 
 .act10 .col-name     { font-size: 1.05rem; font-weight: 700; color: #ffe082; letter-spacing: .06em; }
@@ -93,19 +110,7 @@
 .act10 .col-pres-val { margin-left: auto; display: flex; align-items: baseline; gap: 3px; }
 .act10 .col-pres-num { font-size: 1.15rem; font-weight: 700; color: #ffb74d; }
 .act10 .col-pres-lbl { font-size: .7rem; color: #a09070; }
-.act10 .barracks-open-btn {
-  margin-left: 6px;
-  padding: 3px 9px;
-  font-size: .7rem;
-  background: rgba(200,155,60,.14);
-  border: 1px solid rgba(200,155,60,.35);
-  border-radius: 4px;
-  color: #c8a84a;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all .15s;
-}
-.act10 .barracks-open-btn:hover { background: rgba(200,155,60,.26); color: #ffe082; }
+/* 军帐按钮已移除 */
 
 /* 面板体 */
 .act10 .col-body {
@@ -114,6 +119,7 @@
   flex-direction: column;
   gap: 8px;
   flex: 1;
+  background: #0f0c09;
 }
 
 /* 已提交摘要区 */
@@ -165,18 +171,14 @@
 ════════════════════════════════ */
 .act10 .act-cat {
   border-radius: 6px;
-  border: 1px solid rgba(200,155,60,.22);
-  background: #1a1410;
+  border: 1px solid rgba(180,140,55,.20);
+  background: #161210;
   overflow: hidden;
   transition: border-color .2s, box-shadow .2s;
 }
-.act10 .act-cat:hover { border-color: rgba(200,155,60,.45); box-shadow: 0 1px 8px rgba(0,0,0,.25); }
+.act10 .act-cat:hover { border-color: rgba(180,140,55,.42); box-shadow: 0 1px 10px rgba(0,0,0,.35); }
 
-/* 四色分类左侧边条 */
-.act10 .cat-mil { border-left: 3px solid #c84040; }
-.act10 .cat-gov { border-left: 3px solid #3daa5c; }
-.act10 .cat-tal { border-left: 3px solid #9966cc; }
-.act10 .cat-dip { border-left: 3px solid #3388cc; }
+/* 左侧边条已移除，通过标题颜色和背景渐变区分类别 */
 
 /* 大类头 — flex-wrap 允许谏言换行 */
 .act10 .act-cat-hd {
@@ -202,10 +204,10 @@
 .act10 .cat-tal .act-cat-num  { color: #c084e8; }
 .act10 .cat-dip .act-cat-num  { color: #5aaeee; }
 
-.act10 .cat-mil .act-cat-hd   { background: linear-gradient(90deg, rgba(200,40,30,.26), transparent); }
-.act10 .cat-gov .act-cat-hd   { background: linear-gradient(90deg, rgba(30,160,70,.22), transparent); }
-.act10 .cat-tal .act-cat-hd   { background: linear-gradient(90deg, rgba(140,60,210,.20), transparent); }
-.act10 .cat-dip .act-cat-hd   { background: linear-gradient(90deg, rgba(40,110,220,.20), transparent); }
+.act10 .cat-mil .act-cat-hd   { background: linear-gradient(90deg, rgba(180,35,25,.32), transparent); }
+.act10 .cat-gov .act-cat-hd   { background: linear-gradient(90deg, rgba(25,140,60,.28), transparent); }
+.act10 .cat-tal .act-cat-hd   { background: linear-gradient(90deg, rgba(120,50,195,.25), transparent); }
+.act10 .cat-dip .act-cat-hd   { background: linear-gradient(90deg, rgba(35,95,200,.25), transparent); }
 
 .act10 .act-cat-name {
   font-size: .9rem;
