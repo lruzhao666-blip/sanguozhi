@@ -292,7 +292,8 @@ window.SGParser = (function () {
         const raw = lines[li];
         const t = raw.trimEnd();
 
-        // 建议行: ① 南下援汝南：「主公,曹仁势大...」率主力疾趋汝南（中·预估+3~+6威望）
+        // 建议行: ① 军事扩张(中·预估+8威望): 关羽「...」
+        //   或旧格式: ① 南下援汝南：「...」（中·预估+3威望）
         const lingM = t.match(LING_NUM_RE);
         if (lingM) {
           // 保存上一个 item
@@ -301,33 +302,49 @@ window.SGParser = (function () {
           const num = lingM[1];
           const rest = lingM[2].trim();
 
-          // 解析标题、引言、补注、风险、威望
-          // 格式: 标题：「引言」补注（风险·预估+N威望）
-          // 或:   标题：「引言」补注（风险·预估+N~+M威望）
+          // 解析标题、引言、风险、威望
+          // 新格式: 标题(风险·预估+N威望): 武将「谏言」
+          // 旧格式: 标题：「引言」（风险·预估+N威望）
           let title = '', quote = '', note = '', risk = '', prestige = '';
 
-          // 先提取尾部括号: （中·预估+3~+6威望）或（稳·预估+2威望）
+          // 尝试1：尾部括号（旧格式）
           const tailM = rest.match(/[（(]([^）)]+)[）)]$/);
-          let body = tailM ? rest.slice(0, rest.length - tailM[0].length).trim() : rest;
+          let body;
+          let bracketContent = '';
 
           if (tailM) {
-            const inner = tailM[1]; // "中·预估+3~+6威望"
-            const riskM = inner.match(/^(稳|中|险)\s*[·]/);
-            if (riskM) risk = riskM[1];
-            const presM = inner.match(/预估\s*\+?\s*([\d~～\-+]+)\s*威望/);
-            if (presM) prestige = presM[1];
+            bracketContent = tailM[1];
+            body = rest.slice(0, rest.length - tailM[0].length).trim();
+          } else {
+            // 尝试2：新格式 — 括号在标题后、冒号前
+            // 匹配: 标题(内容): 后续  →  提取标题前的括号
+            const headBracketM = rest.match(/^([^（(:：]+)[（(]([^）)]+)[）)]\s*[:：](.*)$/);
+            if (headBracketM) {
+              // headBracketM[1]=标题部分, [2]=括号内, [3]=冒号后
+              bracketContent = headBracketM[2];
+              body = headBracketM[1].trim() + ': ' + headBracketM[3].trim();
+            } else {
+              body = rest;
+            }
           }
 
-          // 从 body 提取标题和引言（原样保留，主持人输出什么就显示什么）
-          // body 格式: "南下援汝南：「主公,曹仁势大...」——法正谏"
-          // 或:       "南下援汝南：率主力疾趋汝南"
+          if (bracketContent) {
+            const riskM = bracketContent.match(/^(稳|中|险)\s*[·]/);
+            if (riskM) risk = riskM[1];
+            const presM = bracketContent.match(/预估\s*\+?\s*([\d~～\-+]+)\s*威望/);
+            if (presM) prestige = presM[1];
+            // 短格式: ·+N
+            if (!prestige) {
+              const pMb = bracketContent.match(/[··]\s*([+-]?\d+)/);
+              if (pMb) prestige = pMb[1].replace(/^\+/, '');
+            }
+          }
+
+          // 从 body 提取标题和引言
           const colonIdx = body.search(/[：:]/);
           if (colonIdx > 0) {
             title = body.slice(0, colonIdx).trim();
-            const afterColon = body.slice(colonIdx + 1).trim();
-
-            // 冒号后所有内容统一作为 quote，前端会统一斜体显示
-            quote = afterColon;
+            quote = body.slice(colonIdx + 1).trim();
           } else {
             title = body;
           }
@@ -389,16 +406,24 @@ window.SGParser = (function () {
           // 新 BRANCH_RE: 捕获组3=括号内容, 4=冒号后描述
           const inlineBracket = branchM[3] ? branchM[3].trim() : '';
           let   optDesc  = branchM[4] ? branchM[4].trim() : '';
-          let   optRisk  = '', optPres = '';
+          let   optRisk  = '', optPres = '', optCond = '';
 
-          // 从行内括号 (险·+12) 或 (中·预估+8威望) 解析风险/威望
+          // 从行内括号 (险·+12) 或 (中·预估+8威望) 或 (条件:需XXX·+N) 解析
           if (inlineBracket) {
             const rM3 = inlineBracket.match(/^(稳|中|险)/); if (rM3) optRisk = rM3[1];
             // 格式1: 预估+N威望
             const pM3a = inlineBracket.match(/预估\s*\+?([\d~～\-+]+)\s*威望/); if (pM3a) optPres = pM3a[1];
-            // 格式2: 风险·+N 简短格式
+            // 格式2: ·+N 简短格式
             if (!optPres) {
               const pM3b = inlineBracket.match(/[··]\s*([+-]?\d+)/); if (pM3b) optPres = pM3b[1].replace(/^\+/, '');
+            }
+            // 条件解析：支持「条件:需XXX」「需:XXX」「需XXX」三种写法
+            const cM = inlineBracket.match(/(?:条件[:：]\s*需?|需[:：])\s*([^·\d+\-\s][^·]+?)(?:\s*[·]|$)/);
+            if (cM) { optCond = cM[1].trim(); }
+            else {
+              // 无冒号写法: 需XXX·+N
+              const cM2 = inlineBracket.match(/^需([^·\d+\-\s][^·]*?)(?:\s*[·]|$)/);
+              if (cM2) optCond = cM2[1].trim();
             }
           }
 
@@ -415,7 +440,7 @@ window.SGParser = (function () {
             }
           }
 
-          const newOpt = { label: optLabel, name: optName, desc: optDesc, risk: optRisk, prestige: optPres, sub: [] };
+          const newOpt = { label: optLabel, name: optName, desc: optDesc, risk: optRisk, prestige: optPres, cond: optCond, sub: [] };
           currentItem.options.push(newOpt);
           currentOpt = newOpt;
           continue;
