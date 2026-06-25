@@ -2824,6 +2824,24 @@ function updateBarracksVisibility(enabled) {
       // 移除面板高亮状态
       var panel = document.querySelector('.col-panel[data-slot="' + i + '"]');
       if (panel) panel.classList.remove('submitted');
+
+      // 清除所有行动选项的选中状态
+      if (panel) {
+        panel.querySelectorAll('.opt.checked').forEach(function(opt) {
+          opt.classList.remove('checked');
+        });
+        panel.querySelectorAll('.opp-opt-row.checked').forEach(function(row) {
+          row.classList.remove('checked');
+        });
+        // 清空自定军令和备注输入框
+        panel.querySelectorAll('.zdjl-ta').forEach(function(ta) {
+          ta.value = '';
+        });
+        panel.querySelectorAll('.remark-ta').forEach(function(ta) {
+          ta.value = '';
+          ta.classList.remove('visible');
+        });
+      }
     }
 
     // 重置全局提交数据缓存
