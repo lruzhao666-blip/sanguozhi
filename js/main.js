@@ -1954,9 +1954,6 @@ function updateBarracksVisibility(enabled) {
           lingItems.forEach(function(item, li) {
             h += _act10BuildCat(item, li, i);
           });
-          if (lingItems.length < 4) {
-            h += _act10BuildCustomOrder(i);
-          }
         } else {
           var lingKeys = ['wu', 'wen', 'ce'];
           lingKeys.forEach(function(key, li) {
@@ -1964,8 +1961,9 @@ function updateBarracksVisibility(enabled) {
             if (!ling) return;
             h += _act10BuildCat(ling, li, i);
           });
-          h += _act10BuildCustomOrder(i);
         }
+        // ⑤ 自定军令 — 始终显示
+        h += _act10BuildCustomOrder(i);
 
         // 机遇选取区
         h += _act10BuildOppSelect(opps, i);

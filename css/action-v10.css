@@ -3,42 +3,7 @@
    深黑基底：全面暗化背景，贴合网站暗色风格
 ═══════════════════════════════════════════════════════ */
 
-/* ════════════════════════════════
-   回合信息条
-════════════════════════════════ */
-.act10 .round-strip {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  margin-bottom: 12px;
-  background: linear-gradient(90deg, rgba(110,16,8,.88), rgba(40,6,3,.72));
-  border: 1px solid rgba(210,80,50,.45);
-  border-radius: var(--rl, 6px);
-  overflow: hidden;
-}
-.act10 .rs-block {
-  padding: 10px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex-shrink: 0;
-}
-.act10 .rs-block + .rs-block { border-left: 1px solid rgba(255,255,255,.08); }
-.act10 .rs-label { font-size: .64rem; color: var(--text-dim); letter-spacing: .08em; text-transform: uppercase; }
-.act10 .rs-val   { font-family: var(--font-serif); font-size: 1.1rem; font-weight: 900; color: #ffe082; letter-spacing: .04em; line-height: 1.1; }
-.act10 .rs-val.small  { font-size: .88rem; font-weight: 600; color: var(--text-sub); }
-.act10 .rs-val.season { font-size: .88rem; font-weight: 700; color: #ffd54f; letter-spacing: .08em; }
-.act10 .rs-spacer { flex: 1; min-width: 0; }
-.act10 .rs-rule {
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  flex-wrap: wrap;
-}
-.act10 .rs-rule-item { font-size: .72rem; color: var(--text-dim); }
-.act10 .rs-rule-item strong { color: #ffb74d; }
-@media (max-width: 768px) { .act10 .round-strip { flex-wrap: wrap; } }
+/* 回合信息条已移除 */
 
 /* ════════════════════════════════
    三列布局
@@ -58,7 +23,6 @@
 .act10 .col-panel {
   background: rgba(4,2,2,.98);
   border: 1px solid rgba(180,140,55,.22);
-  border-left: 3px solid rgba(180,140,55,.45);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
@@ -68,19 +32,16 @@
 /* slot-0 昭公：红色  #e74c3c  rgb(231,76,60)  */
 .act10 .col-panel[data-slot="0"] {
   border-color: rgba(231,76,60,.30);
-  border-left-color: var(--p0-color, #e74c3c);
   box-shadow: 0 2px 18px rgba(0,0,0,.7);
 }
 /* slot-1 高公：绿色  #3dbe6c  rgb(61,190,108) */
 .act10 .col-panel[data-slot="1"] {
   border-color: rgba(61,190,108,.30);
-  border-left-color: var(--p1-color, #3dbe6c);
   box-shadow: 0 2px 18px rgba(0,0,0,.7);
 }
 /* slot-2 许顾楠：蓝色 #3498db  rgb(52,152,219) */
 .act10 .col-panel[data-slot="2"] {
   border-color: rgba(52,152,219,.30);
-  border-left-color: var(--p2-color, #3498db);
   box-shadow: 0 2px 18px rgba(0,0,0,.7);
 }
 
