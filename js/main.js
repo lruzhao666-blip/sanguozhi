@@ -1555,6 +1555,7 @@ function updateBarracksVisibility(enabled) {
       // ↓↓↓ 修改1：清空行动面板 UI 状态，避免显示上一回合的内容 ↓↓↓
       _act10ResetUIAfterPublish();
     [legacy end] */
+    /* [legacy start]
     try {
       await fetchAllRounds();
 
@@ -1577,6 +1578,53 @@ function updateBarracksVisibility(enabled) {
       // 防御性兜底：renderAll 内部已通过 _act10LoadSubmissions 重置过 UI,
       // 这里再强制重置一次,保证 100% 干净。
       _act10ResetUIAfterPublish();
+
+      // [legacy v1] showToast(`✅ 第 ${roundNum} 回合已发布！`);
+    [legacy end] */
+    // #action-publish-clean-v1: 发布成功后的清场流程
+    try {
+      // 步骤 1: 开启发布期屏蔽,Realtime 回调在此期间全部忽略
+      window._sgPublishing = true;
+
+      // 步骤 2: 重新拉取所有回合(更新 state.rounds)
+      await fetchAllRounds();
+
+      // 步骤 3: 清空整张 action 表(不分回合,全部清掉)
+      await _act10ClearAllSubmissions();
+
+      // 步骤 4: 清空所有 localStorage 草稿(不分回合)
+      try {
+        var keys = Object.keys(localStorage);
+        keys.forEach(function(k) {
+          if (k.indexOf('sg_draft_') === 0) {
+            localStorage.removeItem(k);
+          }
+        });
+        console.log('[act10] 已清空所有 sg_draft_ 草稿');
+      } catch (e) {
+        console.warn('[act10] 清草稿异常:', e);
+      }
+
+      // 步骤 5: 清空内存缓存
+      window._act10Submitted = {};
+      window._act10AllSubmittedNotified = false;
+
+      // 步骤 6: 渲染新回合
+      renderAll();
+      switchTab('arena');
+
+      document.getElementById('gm-content').value = '';
+      document.getElementById('parse-preview').classList.add('hidden');
+      updateUndoBtn();
+
+      // 步骤 7: 强制重置 UI(兜底)
+      _act10ResetUIAfterPublish();
+
+      // 步骤 8: 1.5 秒后解除屏蔽,让 Realtime 恢复正常工作
+      setTimeout(function() {
+        window._sgPublishing = false;
+        console.log('[act10] 发布期屏蔽已解除');
+      }, 1500);
 
       /* [legacy v1] showToast(`✅ 第 ${roundNum} 回合已发布！`); */
       /* #gm-data-only-mode-v1: 区分两种模式的成功提示 */
@@ -2875,6 +2923,26 @@ function updateBarracksVisibility(enabled) {
   }
   // ↑↑↑ 新函数结束 ↑↑↑
 
+  // #action-publish-clean-v1: 清空整张 action_submissions_v2 表
+  // 不分回合,全部删除。发布新回合时调用,避免任何残留。
+  async function _act10ClearAllSubmissions() {
+    try {
+      // 删条件 round=gte.0 等价于全表删除（PostgREST 要求必须带 filter）
+      var res = await fetchWithTimeout(
+        ACT10_SUPA_URL + '?round=gte.0',
+        { method: 'DELETE', headers: SUPA_HEADERS },
+        8000
+      );
+      if (res.ok) {
+        console.log('[act10] 已清空整张 action_submissions_v2 表');
+      } else {
+        console.warn('[act10] 清空表失败: HTTP ' + res.status);
+      }
+    } catch (e) {
+      console.warn('[act10] 清空表异常:', e);
+    }
+  }
+
   // ↓↓↓ 修改1：新增函数 — 发布新回合后重置行动面板 UI ↓↓↓
   function _act10ResetUIAfterPublish() {
     console.log('[act10] 重置行动面板 UI');
@@ -3002,7 +3070,19 @@ function updateBarracksVisibility(enabled) {
   // ══════════════════════════════════════════
   //  行动提交实时变更回调
   // ══════════════════════════════════════════
+  /* [legacy start]
   async function _onActionSubmissionChanged(payload) {
+    var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (!currentRound) return;
+  [legacy end] */
+
+  async function _onActionSubmissionChanged(payload) {
+    // #action-publish-clean-v1: 发布回合期间,所有 action 表变更事件全部忽略,
+    // 避免 DELETE 事件回调把已清干净的 UI 又复原。
+    if (window._sgPublishing) {
+      console.log('[act10] 发布期间忽略 Realtime 事件');
+      return;
+    }
     var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
     if (!currentRound) return;
 
