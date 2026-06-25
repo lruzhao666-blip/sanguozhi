@@ -168,7 +168,7 @@ window.SGParser = (function () {
 
       // 按机遇头行切分块
       const oppLines = oppText.split('\n');
-      const OPP_HEAD_RE = /^机遇(\d+)\s*·\s*([^·\n]+?)\s*·\s*([🎭🏮🎲🐴]\uFE0F?)\s*(\[限[甲乙丙]\])?/;
+      const OPP_HEAD_RE = /^机遇(\d+)\s*·\s*([^·\n]+?)\s*·\s*([🎭🏮🎲🐴]\uFE0F?)\s*(\[限[甲乙丙]\])?/u;
       let currentOpp = null;
       const flushOpp = () => {
         if (currentOpp) {
