@@ -2104,8 +2104,7 @@ function updateBarracksVisibility(enabled) {
     h += '<div class="act-custom-slot" id="act10-cslot-' + slotIdx + '">';
     h += '<div class="rdot-v8" id="act10-cdot-' + slotIdx + '"></div>';
     h += '<div class="act-custom-inner">';
-    h += '<textarea class="act-custom-ta" placeholder="填写自定军令内容…" maxlength="120"'
-       + ' oninput="_act10CustomInput(this,' + slotIdx + ')"></textarea>';
+    h += '<textarea class="act-custom-ta" placeholder="填写自定军令内容…" maxlength="120"></textarea>';
     h += '</div></div>';
     h += '</div></div>';
     return h;
@@ -2259,9 +2258,17 @@ function updateBarracksVisibility(enabled) {
       });
     });
 
-    // ── textarea 阻止冒泡 ──
+    // ── textarea 阻止冒泡 + 自定军令自动高度 ──
     root.querySelectorAll('textarea').forEach(function(ta) {
       ta.addEventListener('click', function(e) { e.stopPropagation(); });
+    });
+    root.querySelectorAll('.act-custom-ta').forEach(function(ta) {
+      // 找到所属 slot 的 data-slot（向上找 .col-panel）
+      var panel = ta.closest('.col-panel');
+      var si = panel ? parseInt(panel.dataset.slot) : 0;
+      ta.addEventListener('input', function() {
+        _act10CustomInput(ta, si);
+      });
     });
 
     // ── 提交按钮 ──
