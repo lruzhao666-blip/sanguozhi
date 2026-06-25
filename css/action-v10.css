@@ -122,10 +122,6 @@
   user-select:none;
 }
 .act10 .opp-display::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
-.act10 .opp-display.ot-qiyu::before{background:linear-gradient(180deg,#ff9822,#e07010);}
-.act10 .opp-display.ot-jiaoyi::before{background:linear-gradient(180deg,#50b48c,#3ca070);}
-.act10 .opp-display.ot-duji::before{background:linear-gradient(180deg,#dc3c3c,#c82828);}
-.act10 .opp-display.ot-touben::before{background:linear-gradient(180deg,#6478dc,#5064c8);}
 /* (已在 style.css 中使用全局 ot-qiyu/ot-jiaoyi/ot-duji/ot-touben 的 border-left 实现，如有需要亦可保留此处旧类名适配或清空，按需清理以防冲突，这里清空旧的渐变) */
 .act10 .opp-top{display:flex;align-items:center;gap:5px;margin-bottom:2px;}
 .act10 .opp-id{font-family:var(--font-serif);font-size:.65rem;font-weight:700;color:var(--text-dim);flex-shrink:0;}
