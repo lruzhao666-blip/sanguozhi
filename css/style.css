@@ -13912,6 +13912,121 @@ html.tab-switching {
   .opp-tooltip-prestige .range-sep {
     padding: 0 3px;
   }
+
+  /* 悬浮卡内部结构样式 */
+  .opp-tt-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(180,140,50,.18);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .opp-tt-icon {
+    font-size: .9rem;
+  }
+
+  .opp-tt-title {
+    font-family: var(--font-serif);
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: .04em;
+    flex: 1;
+  }
+
+  .opp-tt-body {
+    padding: 14px 16px;
+  }
+
+  .opp-tt-desc {
+    font-family: var(--font-serif);
+    font-size: .88rem;
+    color: var(--text-sub);
+    line-height: 1.75;
+    margin-bottom: 14px;
+  }
+
+  /* 条件区（甲专属） */
+  .opp-tt-conditions {
+    padding: 12px;
+    border-left: 3px solid var(--gold);
+    background: rgba(212,168,67,.05);
+    border-radius: 4px;
+    margin-bottom: 14px;
+  }
+
+  .opp-tt-cond-row {
+    font-family: var(--font-serif);
+    font-size: .84rem;
+    color: var(--text-sub);
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .opp-tt-cond-row:last-child {
+    margin-bottom: 0;
+  }
+
+  /* 选项区 */
+  .opp-tt-options {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(180,140,50,.15);
+  }
+
+  .opp-tt-opts-title {
+    font-family: var(--font-serif);
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--gold-dim);
+    letter-spacing: .08em;
+    margin-bottom: 10px;
+  }
+
+  .opp-tt-opt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,.03);
+  }
+
+  .opp-tt-opt:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .opp-tt-opt-num {
+    font-family: var(--font-sans);
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    background: rgba(255,255,255,.04);
+    padding: 2px 7px;
+    border-radius: 50%;
+    line-height: 1;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .opp-tt-opt-name {
+    font-family: var(--font-serif);
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: .02em;
+  }
+
+  .opp-tt-opt-desc {
+    font-size: .8rem;
+    color: var(--text-dim);
+    flex-basis: 100%;
+    padding-left: 32px;
+    line-height: 1.6;
+    margin-top: 2px;
+  }
 }
 
 /* ═══ 手机端：底部抽屉 ═══ */
@@ -14042,6 +14157,78 @@ html.tab-switching {
 
   .opp-drawer-prestige .range-sep {
     padding: 0 3px;
+  }
+
+  /* 条件行（甲专属区域） */
+  .opp-tt-cond-row {
+    font-family: var(--font-serif);
+    font-size: .84rem;
+    color: var(--text-sub);
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .opp-tt-cond-row:last-child {
+    margin-bottom: 0;
+  }
+
+  /* 选项区域 */
+  .opp-tt-options {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(180,140,50,.15);
+  }
+
+  .opp-tt-opts-title {
+    font-family: var(--font-serif);
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--gold-dim);
+    letter-spacing: .08em;
+    margin-bottom: 10px;
+  }
+
+  .opp-tt-opt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,.03);
+  }
+
+  .opp-tt-opt:last-child {
+    border-bottom: none;
+  }
+
+  .opp-tt-opt-num {
+    font-family: var(--font-sans);
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    background: rgba(255,255,255,.04);
+    padding: 2px 7px;
+    border-radius: 50%;
+    line-height: 1;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .opp-tt-opt-name {
+    font-family: var(--font-serif);
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: .02em;
+  }
+
+  .opp-tt-opt-desc {
+    font-size: .8rem;
+    color: var(--text-dim);
+    flex-basis: 100%;
+    padding-left: 32px;
+    line-height: 1.6;
+    margin-top: 2px;
   }
 }
 
@@ -14282,6 +14469,121 @@ html.tab-switching {
   .opp-tooltip-prestige .range-sep {
     padding: 0 3px;
   }
+
+  /* 悬浮卡内部结构样式 */
+  .opp-tt-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(180,140,50,.18);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .opp-tt-icon {
+    font-size: .9rem;
+  }
+
+  .opp-tt-title {
+    font-family: var(--font-serif);
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: .04em;
+    flex: 1;
+  }
+
+  .opp-tt-body {
+    padding: 14px 16px;
+  }
+
+  .opp-tt-desc {
+    font-family: var(--font-serif);
+    font-size: .88rem;
+    color: var(--text-sub);
+    line-height: 1.75;
+    margin-bottom: 14px;
+  }
+
+  /* 条件区（甲专属） */
+  .opp-tt-conditions {
+    padding: 12px;
+    border-left: 3px solid var(--gold);
+    background: rgba(212,168,67,.05);
+    border-radius: 4px;
+    margin-bottom: 14px;
+  }
+
+  .opp-tt-cond-row {
+    font-family: var(--font-serif);
+    font-size: .84rem;
+    color: var(--text-sub);
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .opp-tt-cond-row:last-child {
+    margin-bottom: 0;
+  }
+
+  /* 选项区 */
+  .opp-tt-options {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(180,140,50,.15);
+  }
+
+  .opp-tt-opts-title {
+    font-family: var(--font-serif);
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--gold-dim);
+    letter-spacing: .08em;
+    margin-bottom: 10px;
+  }
+
+  .opp-tt-opt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,.03);
+  }
+
+  .opp-tt-opt:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .opp-tt-opt-num {
+    font-family: var(--font-sans);
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    background: rgba(255,255,255,.04);
+    padding: 2px 7px;
+    border-radius: 50%;
+    line-height: 1;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .opp-tt-opt-name {
+    font-family: var(--font-serif);
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: .02em;
+  }
+
+  .opp-tt-opt-desc {
+    font-size: .8rem;
+    color: var(--text-dim);
+    flex-basis: 100%;
+    padding-left: 32px;
+    line-height: 1.6;
+    margin-top: 2px;
+  }
 }
 
 /* ═══ 手机端：底部抽屉 ═══ */
@@ -14412,6 +14714,78 @@ html.tab-switching {
 
   .opp-drawer-prestige .range-sep {
     padding: 0 3px;
+  }
+
+  /* 条件行（甲专属区域） */
+  .opp-tt-cond-row {
+    font-family: var(--font-serif);
+    font-size: .84rem;
+    color: var(--text-sub);
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .opp-tt-cond-row:last-child {
+    margin-bottom: 0;
+  }
+
+  /* 选项区域 */
+  .opp-tt-options {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(180,140,50,.15);
+  }
+
+  .opp-tt-opts-title {
+    font-family: var(--font-serif);
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--gold-dim);
+    letter-spacing: .08em;
+    margin-bottom: 10px;
+  }
+
+  .opp-tt-opt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,.03);
+  }
+
+  .opp-tt-opt:last-child {
+    border-bottom: none;
+  }
+
+  .opp-tt-opt-num {
+    font-family: var(--font-sans);
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    background: rgba(255,255,255,.04);
+    padding: 2px 7px;
+    border-radius: 50%;
+    line-height: 1;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .opp-tt-opt-name {
+    font-family: var(--font-serif);
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: .02em;
+  }
+
+  .opp-tt-opt-desc {
+    font-size: .8rem;
+    color: var(--text-dim);
+    flex-basis: 100%;
+    padding-left: 32px;
+    line-height: 1.6;
+    margin-top: 2px;
   }
 }
 
