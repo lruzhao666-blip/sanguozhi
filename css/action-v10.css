@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════════════
-   action-v10.css — 行动 Tab 专属样式 v10
+   action-v10.css — 行动 Tab 专属样式 v41
    深黑基底：全面暗化背景，贴合网站暗色风格
+   v41: 渐变磨砂玻璃提交区；淡化已选中高亮；移除分隔线；
+        按钮居中适中宽度；已提交摘要高端重设计
 ═══════════════════════════════════════════════════════ */
 
 /* 回合信息条已移除 */
@@ -247,7 +249,7 @@
   background: rgba(255,255,255,.015);
 }
 .act10 .act-opt-l1:hover   { background: rgba(30,24,12,.85);  border-color: rgba(200,155,60,.28); }
-.act10 .act-opt-l1.checked { background: rgba(180,110,20,.22); border-color: rgba(220,140,30,.65); }
+.act10 .act-opt-l1.checked { background: rgba(140,90,15,.13); border-color: rgba(190,130,30,.38); }
 
 /* 单选圆点 */
 .act10 .rdot-v8 {
@@ -324,7 +326,7 @@
   transition: background .15s, border-color .15s;
 }
 .act10 .act-opt-l2:hover   { background: rgba(30,24,12,.85);  border-color: rgba(200,155,60,.28); }
-.act10 .act-opt-l2.checked { background: rgba(180,110,20,.22); border-color: rgba(220,140,30,.65); }
+.act10 .act-opt-l2.checked { background: rgba(140,90,15,.13); border-color: rgba(190,130,30,.38); }
 .act10 .act-opt-l2.cond-branch {
   border: 1px dashed rgba(200,155,60,.22);
   background: rgba(200,155,60,.03);
@@ -431,7 +433,7 @@
   transition: background .15s, border-color .15s;
   background: transparent;
 }
-.act10 .act-custom-slot.checked { background: rgba(180,110,20,.18); border-color: rgba(220,140,30,.55); }
+.act10 .act-custom-slot.checked { background: rgba(140,90,15,.10); border-color: rgba(190,130,30,.32); }
 .act10 .act-custom-inner { flex: 1; min-width: 0; }
 .act10 .act-custom-ta {
   width: 100%;
@@ -462,83 +464,197 @@
    提交区
 ════════════════════════════════ */
 .act10 .submit-area {
-  padding: 10px 10px 4px;
+  padding: 8px 10px 6px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 6px;
 }
+
+/* 提交行动按钮 — 渐变磨砂玻璃风格 */
 .act10 .submit-btn {
-  width: 100%;
-  padding: 11px;
-  border-radius: 5px;
-  border: 1px solid rgba(200,130,40,.65);
-  background: linear-gradient(135deg, rgba(180,100,20,.55), rgba(110,65,10,.35));
+  width: auto;
+  min-width: 140px;
+  max-width: 220px;
+  padding: 9px 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(210,155,50,.50);
+  background: linear-gradient(135deg,
+    rgba(160,100,20,.38) 0%,
+    rgba(90,55,8,.52) 60%,
+    rgba(60,35,5,.42) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,210,80,.10),
+    0 2px 12px rgba(0,0,0,.40);
   color: #ffe082;
-  font-size: .94rem;
+  font-size: .9rem;
   font-weight: 700;
-  letter-spacing: .07em;
+  letter-spacing: .08em;
   cursor: pointer;
-  transition: all .2s;
-  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+  transition: all .22s;
+  text-shadow: 0 1px 4px rgba(0,0,0,.55);
 }
 .act10 .submit-btn:hover {
-  background: linear-gradient(135deg, rgba(200,120,25,.72), rgba(130,75,12,.5));
-  border-color: #ffb74d;
-  box-shadow: 0 0 14px rgba(200,130,30,.35);
+  background: linear-gradient(135deg,
+    rgba(200,130,28,.55) 0%,
+    rgba(110,65,10,.65) 60%,
+    rgba(75,42,5,.55) 100%);
+  border-color: rgba(255,185,60,.70);
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,100,.15),
+    0 0 18px rgba(200,130,30,.30);
   color: #fff8e1;
 }
 .act10 .submit-btn:disabled {
-  opacity: .35;
+  opacity: .32;
   cursor: not-allowed;
-  background: rgba(60,50,30,.25);
+  background: rgba(50,42,25,.30);
+  box-shadow: none;
 }
 .act10 .submit-hint {
   text-align: center;
-  font-size: .7rem;
-  color: #907860;
+  font-size: .68rem;
+  color: #807050;
+  letter-spacing: .01em;
 }
+
+/* 修改行动按钮（原 col-edit-btn，现已由 withdraw-btn 取代，保留兼容） */
 .act10 .col-edit-btn {
   display: none;
-  width: 100%;
-  padding: 7px;
-  border-radius: 5px;
-  border: 1px solid rgba(200,155,60,.35);
-  background: rgba(200,155,60,.08);
-  color: #c0aa88;
+  width: auto;
+  min-width: 120px;
+  max-width: 200px;
+  padding: 7px 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(180,140,60,.30);
+  background: linear-gradient(135deg, rgba(100,80,30,.22), rgba(50,38,12,.30));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #b09870;
   font-size: .82rem;
   cursor: pointer;
   transition: all .2s;
+  box-shadow: inset 0 1px 0 rgba(255,210,80,.06);
 }
-.act10 .col-edit-btn:hover { background: rgba(200,155,60,.18); color: #ffb74d; }
+.act10 .col-edit-btn:hover {
+  background: linear-gradient(135deg, rgba(160,120,40,.32), rgba(80,58,18,.40));
+  border-color: rgba(200,155,60,.50);
+  color: #ffd57a;
+}
+
+/* 撤回/修改按钮 — withdraw-btn */
+.act10 .withdraw-btn {
+  width: auto;
+  min-width: 100px;
+  max-width: 180px;
+  padding: 7px 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(180,140,60,.30);
+  background: linear-gradient(135deg, rgba(100,80,30,.22), rgba(50,38,12,.30));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #b09870;
+  font-size: .82rem;
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: inset 0 1px 0 rgba(255,210,80,.06);
+}
+.act10 .withdraw-btn:hover {
+  background: linear-gradient(135deg, rgba(160,120,40,.32), rgba(80,58,18,.40));
+  border-color: rgba(200,155,60,.50);
+  color: #ffd57a;
+}
 
 /* ════════════════════════════════
-   提交后摘要
+   提交后摘要 — 磨砂玻璃高端风格
 ════════════════════════════════ */
-.act10 .act-summary {
-  margin: 4px 0 2px;
-  padding: 8px 10px;
-  border-radius: 5px;
-  background: rgba(40,160,70,.1);
-  border: 1px solid rgba(50,180,80,.3);
+
+/* 摘要容器 (act10-summary-N) */
+.act10 .col-summary {
+  margin: 6px 10px 2px;
+  border-radius: 7px;
+  border: 1px solid rgba(60,200,100,.18);
+  background: linear-gradient(145deg,
+    rgba(20,80,35,.28) 0%,
+    rgba(10,45,20,.38) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 1px 0 rgba(100,220,130,.08),
+    0 2px 14px rgba(0,0,0,.40);
+  overflow: hidden;
 }
-.act10 .act-summary-hd {
+
+/* "已提交行动" 标头 */
+.act10 .col-summary-hd {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px 6px;
   font-size: .76rem;
   font-weight: 700;
-  color: #66bb6a;
-  margin-bottom: 5px;
-  letter-spacing: .04em;
+  color: #5ddb82;
+  letter-spacing: .08em;
+  border-bottom: 1px solid rgba(60,200,100,.12);
+  background: rgba(20,80,35,.18);
 }
-.act10 .act-summary-row {
+.act10 .col-summary-hd::before {
+  content: '✓';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: rgba(60,200,100,.25);
+  border: 1px solid rgba(80,200,110,.45);
+  color: #66dd88;
+  font-size: .65rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+/* 摘要行 */
+.act10 .col-summary-row {
   display: flex;
   gap: 6px;
-  font-size: .78rem;
-  padding: 2px 0;
-  border-bottom: 1px solid rgba(255,255,255,.05);
+  font-size: .77rem;
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  line-height: 1.5;
 }
-.act10 .act-summary-row:last-child { border-bottom: none; }
-.act10 .sum-lbl   { color: #907860; flex-shrink: 0; min-width: 52px; }
-.act10 .sum-val   { color: #f0e0c0; }
-.act10 .sum-remark { color: #907860; font-style: italic; font-size: .74rem; }
+.act10 .col-summary-row:last-child { border-bottom: none; }
+.act10 .sum-lbl   { color: #7a9a80; flex-shrink: 0; min-width: 50px; font-size: .72rem; }
+.act10 .sum-val   { color: #d8eedd; }
+.act10 .sum-remark { color: #8a9a88; font-style: italic; font-size: .72rem; }
+.act10 .sum-custom-order { color: #c0e0c8; font-style: italic; }
+
+/* 已提交标签（动态注入 submitted-tag）*/
+.act10 .submitted-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .76rem;
+  font-weight: 700;
+  color: #5ddb82;
+  letter-spacing: .06em;
+  padding: 2px 0;
+}
+.act10 .submitted-tag::before {
+  content: '✓';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: rgba(60,200,100,.22);
+  border: 1px solid rgba(80,200,110,.42);
+  color: #66dd88;
+  font-size: .64rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
 
 /* 已提交状态 */
 .act10 .col-panel.submitted .submit-btn { display: none; }
@@ -560,13 +676,9 @@
 .act10 .val-toast.show { display: block; }
 
 /* ════════════════════════════════
-   分隔线
+   分隔线 — 已移除
 ════════════════════════════════ */
-.act10 .act-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(200,155,60,.4), transparent);
-  margin: 2px 0;
-}
+.act10 .act-divider { display: none; }
 
 /* ════════════════════════════════
    机遇选取
