@@ -163,7 +163,7 @@ window.SGParser = (function () {
       };
       const KEYWORD_TYPE_MAP = {
         '奇遇': 'encounter', '交谊': 'bond',
-        '赌局': 'gamble', '投奔': 'recruit'
+        '赌局': 'gamble', '访贤': 'recruit', '投奔': 'recruit'
       };
 
       // 按机遇头行切分块

@@ -1958,7 +1958,7 @@ function updateBarracksVisibility(enabled) {
     }
     var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
     var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
-    var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
+    var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '访贤' };
     var h = '';
     opps.forEach(function (o) {
       var cls = TM[o.type] || 'ot-qiyu';
@@ -2003,7 +2003,7 @@ function updateBarracksVisibility(enabled) {
         if (!opp) return;
 
         var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
-        var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
+        var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '访贤' };
         var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
         var cls = TM[opp.type] || 'ot-qiyu';
 
@@ -2110,7 +2110,7 @@ function updateBarracksVisibility(enabled) {
         if (!opp) return;
 
         var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
-        var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
+        var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '访贤' };
         var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
         var cls = TM[opp.type] || 'ot-qiyu';
 
@@ -2339,7 +2339,7 @@ function updateBarracksVisibility(enabled) {
   // ── 构建机遇选取区 ──
   function _act10BuildOppSelect(opps, slotIdx) {
     var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
-    var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '投奔' };
+    var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '访贤' };
     var TC = { encounter: 'chip-ot-qiyu', bond: 'chip-ot-jiaoyi', gamble: 'chip-ot-duji', recruit: 'chip-ot-touben' };
     var grp = 'opp-g' + slotIdx;
     var h = '<div class="opp-select-block">';
