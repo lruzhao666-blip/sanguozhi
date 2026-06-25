@@ -2827,8 +2827,9 @@ function updateBarracksVisibility(enabled) {
           /* [legacy start]
           if (sumEl) sumEl.style.display = 'none';
           [legacy end] */
-          // #action-panel-clear-fix-v1: 无提交数据时,完整重置该 slot 的 UI 状态,
-          // 而不仅仅隐藏摘要。
+          // #action-keep-draft-v1: 软重置 — 仅在该 slot 之前显示过"已提交"
+          // 状态时才恢复按钮区,不动选中态/输入框,避免清空其他玩家的草稿。
+          // 草稿清空只在 onPublish 时由 _act10ResetUIAfterPublish 统一处理。
           if (sumEl) {
             sumEl.style.display = 'none';
             sumEl.innerHTML = '';
@@ -2836,18 +2837,11 @@ function updateBarracksVisibility(enabled) {
           var panel = document.querySelector('.col-panel[data-slot="' + i + '"]');
           if (panel) {
             panel.classList.remove('submitted-locked');
-            panel.classList.remove('opp-active');
-            // 清除所有选中态
-            panel.querySelectorAll('.opt.checked, .opp-opt-row.checked').forEach(function(el) {
-              el.classList.remove('checked');
-            });
-            // 清空输入框
-            panel.querySelectorAll('.zdjl-ta, .remark-ta, .opp-decision-ta').forEach(function(ta) {
-              ta.value = '';
-            });
           }
-          // 恢复提交按钮区为初始态(覆盖可能残留的"已提交+修改"按钮)
-          if (subArea) {
+          // 判断:subArea 当前是否含"已提交"标签?有则说明此 slot 刚撤回,需要恢复按钮区。
+          // 无则说明此 slot 处于草稿编辑态,不动任何 UI。
+          var wasSubmitted = subArea && subArea.querySelector('.submitted-tag');
+          if (subArea && wasSubmitted) {
             subArea.innerHTML = '<button class="submit-btn" data-slot="' + i + '">提交行动</button>'
               + '<button class="col-edit-btn" data-slot="' + i + '">📝 修改行动</button>'
               + '<span class="submit-hint" id="act10-hint-' + i + '">选满3个行动额度后提交</span>'
