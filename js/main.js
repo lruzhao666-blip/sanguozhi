@@ -1926,7 +1926,6 @@ function updateBarracksVisibility(enabled) {
       h += '<span class="col-name">' + _act10Esc(pn) + '</span>';
       h += '<span class="col-slot-tag">[' + sk + ']</span>';
       if (pp !== '') h += '<div class="col-pres-val"><span class="col-pres-num">' + pp + '</span><span class="col-pres-lbl"> 威望</span></div>';
-      h += '<button class="barracks-open-btn" data-slot="' + i + '" data-pcolor="' + i + '">💬 军帐</button>';
       h += '</div>';
 
       // 已提交摘要区
@@ -2025,7 +2024,7 @@ function updateBarracksVisibility(enabled) {
       var subId   = 'act10-sub-' + slotIdx + '-' + lingIdx + '-' + oi;
       var optRc   = opt.risk === '稳' ? 'risk-s' : opt.risk === '险' ? 'risk-r' : 'risk-m';
 
-      h += '<div class="act-branch-l1" id="' + brId + '">';
+      h += '<div class="act-branch-l1 expanded" id="' + brId + '">';
       if (hasSub) {
         // 有二级：点击展开折叠
         h += '<div class="act-opt-l1" data-action="toggle" data-brid="' + brId + '" data-subid="' + subId + '" data-catid="' + catId + '">';
@@ -2052,7 +2051,7 @@ function updateBarracksVisibility(enabled) {
 
       // 二级分支
       if (hasSub) {
-        h += '<div class="act-sub-list" id="' + subId + '">';
+        h += '<div class="act-sub-list expanded" id="' + subId + '">';
         opt.sub.forEach(function(sub) {
           var subRc  = sub.risk === '稳' ? 'risk-s' : sub.risk === '险' ? 'risk-r' : 'risk-m';
           var isCond = !!sub.cond;
@@ -2293,15 +2292,6 @@ function updateBarracksVisibility(enabled) {
         panel.querySelectorAll('textarea').forEach(function(ta) { ta.value = ''; ta.style.height = ''; });
         _act10UpdateQuota(slotIdx);
         showToast('📝 已解锁，可重新选择行动');
-      });
-    });
-
-    // ── 军帐按钮 ──
-    root.querySelectorAll('.barracks-open-btn').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var slotIdx = parseInt(this.dataset.slot);
-        openBarracksDrawer(slotIdx);
       });
     });
 

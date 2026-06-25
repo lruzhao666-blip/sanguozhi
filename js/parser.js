@@ -267,11 +267,13 @@ window.SGParser = (function () {
 
     // 建议编号 regex: ① ② ③ ④ ⑤ ⑥
     const LING_NUM_RE = /^([①②③④⑤⑥])\s*(.+)/;
-    // 一级分支: "  A. 强攻宛城" 或 "  A．名称：描述" — 宽松匹配（缩进1-6个字符，字母A-C大小写）
-    const BRANCH_RE = /^[ \t]{0,6}([A-Ca-c])\s*[.．、]\s*([^：:]+)(?:[：:](.*))?$/;
-    // 二级分支: "    A1. 正面强攻" 或 "    A1．名称：描述" — 更多缩进，字母+数字
-    const SUB_RE    = /^[ \t]{2,8}([A-Ca-c][1-9])\s*[.．、]\s*([^：:]+)(?:[：:](.*))?(?:[（(]([^）)]*)[）)])?$/;
-    // 二级风险/威望括号（可选，附在同一行末尾）
+    // 一级分支: "  A. 强攻宛城(险·+12): 描述" 或 "  A. 名称：描述"
+    // 捕获组1=字母, 2=名称(不含括号/冒号), 3=括号内容(可选), 4=冒号后描述(可选)
+    const BRANCH_RE = /^[ \t]{0,6}([A-Ca-c])\s*[.．、]\s*([^：:（(]+?)(?:[（(]([^）)]+)[）)])?\s*(?:[：:](.*))?$/;
+    // 二级分支: "    A1. 正面强攻(中·+4): 描述" — 更多缩进，字母+数字
+    // 捕获组1=标签, 2=名称, 3=括号内容(可选), 4=冒号后描述(可选)
+    const SUB_RE    = /^[ \t]{2,8}([A-Ca-c][1-9])\s*[.．、]\s*([^：:（(]+?)(?:[（(]([^）)]+)[）)])?\s*(?:[：:](.*))?$/;
+    // 尾部括号（备用，用于从描述末尾提取）
     const OPT_TAIL_RE = /[（(]([^）)]+)[）)]$/;
     const PLAYER_HEAD_RE = /\[([甲乙丙])\]\s*[：:]/;
     const LING_NUMS_ORDER = ['①', '②', '③', '④', '⑤', '⑥'];
@@ -347,29 +349,34 @@ window.SGParser = (function () {
         // 先尝试二级（更具体的 regex），失败再试一级
         const subM = t.match(SUB_RE);
         if (subM && currentItem && currentOpt) {
-          // 二级分支——挂在 currentOpt.sub 上
-          const subLabel = subM[1].toUpperCase(); // "A1"
+          // 新 SUB_RE: 捕获组1=标签, 2=名称, 3=括号内容(可选), 4=冒号后描述(可选)
+          const subLabel = subM[1].toUpperCase();
           const subName  = subM[2].trim();
-          let subDesc = subM[3] ? subM[3].trim() : '';
+          const inlineBracketSub = subM[3] ? subM[3].trim() : '';
+          let subDesc = subM[4] ? subM[4].trim() : '';
           let subRisk = '', subPres = '', subCond = '';
-          // 尾部括号解析（风险·威望·条件）
-          const tailRaw = subM[4] || '';
-          if (tailRaw) {
-            const rM = tailRaw.match(/^(稳|中|险)/); if (rM) subRisk = rM[1];
-            const pM = tailRaw.match(/预估\s*\+?([\d~～\-+]+)\s*威望/); if (pM) subPres = pM[1];
-            const cM = tailRaw.match(/需[:：](.+)/); if (cM) subCond = cM[1].trim();
+
+          // 优先从行内括号解析
+          if (inlineBracketSub) {
+            const rM = inlineBracketSub.match(/^(稳|中|险)/); if (rM) subRisk = rM[1];
+            const pMa = inlineBracketSub.match(/预估\s*\+?([\d~～\-+]+)\s*威望/); if (pMa) subPres = pMa[1];
+            if (!subPres) { const pMb = inlineBracketSub.match(/[··]\s*([+-]?\d+)/); if (pMb) subPres = pMb[1].replace(/^\+/, ''); }
+            const cM = inlineBracketSub.match(/需[:：](.+)/); if (cM) subCond = cM[1].trim();
           }
-          // 如果描述字段里也含括号，补充解析
+
+          // 若行内括号未解析成功，从描述末尾尝试
           if (!subRisk && subDesc) {
             const dm = subDesc.match(OPT_TAIL_RE);
             if (dm) {
               const inner = dm[1];
               const rM2 = inner.match(/^(稳|中|险)/); if (rM2) subRisk = rM2[1];
-              const pM2 = inner.match(/预估\s*\+?([\d~～\-+]+)\s*威望/); if (pM2) subPres = pM2[1];
+              const pM2a = inner.match(/预估\s*\+?([\d~～\-+]+)\s*威望/); if (pM2a) subPres = pM2a[1];
+              if (!subPres) { const pM2b = inner.match(/[··]\s*([+-]?\d+)/); if (pM2b) subPres = pM2b[1].replace(/^\+/, ''); }
               const cM2 = inner.match(/需[:：](.+)/); if (cM2) subCond = cM2[1].trim();
               subDesc = subDesc.slice(0, subDesc.length - dm[0].length).trim();
             }
           }
+
           if (!currentOpt.sub) currentOpt.sub = [];
           currentOpt.sub.push({ label: subLabel, name: subName, desc: subDesc, risk: subRisk, prestige: subPres, cond: subCond });
           continue;
@@ -379,18 +386,35 @@ window.SGParser = (function () {
         if (branchM && currentItem) {
           const optLabel = branchM[1].toUpperCase();
           let   optName  = branchM[2].trim();
-          let   optDesc  = branchM[3] ? branchM[3].trim() : '';
+          // 新 BRANCH_RE: 捕获组3=括号内容, 4=冒号后描述
+          const inlineBracket = branchM[3] ? branchM[3].trim() : '';
+          let   optDesc  = branchM[4] ? branchM[4].trim() : '';
           let   optRisk  = '', optPres = '';
-          // 尾部括号解析
-          const tailM2 = (optDesc || optName).match(OPT_TAIL_RE);
-          if (tailM2) {
-            const src = optDesc || optName;
-            const inner = tailM2[1];
-            const rM3 = inner.match(/^(稳|中|险)/); if (rM3) optRisk = rM3[1];
-            const pM3 = inner.match(/预估\s*\+?([\d~～\-+]+)\s*威望/); if (pM3) optPres = pM3[1];
-            if (optDesc) optDesc = optDesc.slice(0, optDesc.length - tailM2[0].length).trim();
-            else optName = optName.slice(0, optName.length - tailM2[0].length).trim();
+
+          // 从行内括号 (险·+12) 或 (中·预估+8威望) 解析风险/威望
+          if (inlineBracket) {
+            const rM3 = inlineBracket.match(/^(稳|中|险)/); if (rM3) optRisk = rM3[1];
+            // 格式1: 预估+N威望
+            const pM3a = inlineBracket.match(/预估\s*\+?([\d~～\-+]+)\s*威望/); if (pM3a) optPres = pM3a[1];
+            // 格式2: 风险·+N 简短格式
+            if (!optPres) {
+              const pM3b = inlineBracket.match(/[··]\s*([+-]?\d+)/); if (pM3b) optPres = pM3b[1].replace(/^\+/, '');
+            }
           }
+
+          // 若行内括号未解析成功，尝试从描述末尾提取
+          if (!optRisk && !optPres) {
+            const tailM2 = (optDesc || optName).match(OPT_TAIL_RE);
+            if (tailM2) {
+              const inner = tailM2[1];
+              const rM3 = inner.match(/^(稳|中|险)/); if (rM3) optRisk = rM3[1];
+              const pM3a = inner.match(/预估\s*\+?([\d~～\-+]+)\s*威望/); if (pM3a) optPres = pM3a[1];
+              if (!optPres) { const pM3b = inner.match(/[··]\s*([+-]?\d+)/); if (pM3b) optPres = pM3b[1].replace(/^\+/, ''); }
+              if (optDesc) optDesc = optDesc.slice(0, optDesc.length - tailM2[0].length).trim();
+              else optName = optName.slice(0, optName.length - tailM2[0].length).trim();
+            }
+          }
+
           const newOpt = { label: optLabel, name: optName, desc: optDesc, risk: optRisk, prestige: optPres, sub: [] };
           currentItem.options.push(newOpt);
           currentOpt = newOpt;
