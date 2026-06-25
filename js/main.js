@@ -2847,6 +2847,69 @@ function updateBarracksVisibility(enabled) {
           ta.classList.remove('visible');
         });
       }
+
+      // 清除摘要区（"已提交行动"显示）
+      var summary = document.getElementById('act10-summary-' + i);
+      if (summary) {
+        summary.style.display = 'none';
+        summary.innerHTML = '';
+      }
+
+      // 恢复提交按钮区的初始状态
+      var submitArea = document.getElementById('act10-submit-' + i);
+      if (submitArea) {
+        submitArea.innerHTML = '<button class="submit-btn" data-slot="' + i + '">提交行动</button>'
+          + '<button class="col-edit-btn" data-slot="' + i + '">📝 修改行动</button>'
+          + '<span class="submit-hint" id="act10-hint-' + i + '">选满3个行动额度后提交</span>'
+          + '<div class="val-toast" id="act10-toast-' + i + '"></div>';
+
+        // 重新绑定提交按钮事件
+        var submitBtn = submitArea.querySelector('.submit-btn');
+        if (submitBtn) {
+          submitBtn.addEventListener('click', function() {
+            var slotIdx = parseInt(this.dataset.slot);
+            var currentSlot = getCurrentPlayerSlot();
+            if (slotIdx !== currentSlot) {
+              showToast('⚠️ 无法提交其他玩家的行动');
+              return;
+            }
+            _act10Submit(slotIdx);
+          });
+        }
+
+        // 重新绑定修改按钮事件（复用现有逻辑）
+        var editBtn = submitArea.querySelector('.col-edit-btn');
+        if (editBtn) {
+          editBtn.addEventListener('click', function() {
+            var slotIdx = parseInt(this.dataset.slot);
+            var panel = document.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+            if (!panel) return;
+            panel.classList.remove('submitted-locked');
+            var summary = document.getElementById('act10-summary-' + slotIdx);
+            if (summary) {
+              summary.style.display = 'none';
+              summary.innerHTML = '';
+            }
+            var colBody = panel.querySelector('.col-body');
+            if (colBody) {
+              void colBody.offsetHeight;
+              colBody.style.pointerEvents = 'auto';
+            }
+            panel.querySelectorAll('.opt.checked, .opp-opt-row.checked').forEach(function(el) {
+              el.classList.remove('checked');
+            });
+            panel.querySelectorAll('.zdjl-ta, .remark-ta').forEach(function(ta) {
+              ta.value = '';
+            });
+            showToast('📝 已解锁，可重新选择行动');
+          });
+        }
+      }
+
+      // 移除面板锁定类（补充）
+      if (panel) {
+        panel.classList.remove('submitted-locked');
+      }
     }
 
     // 重置全局提交数据缓存
