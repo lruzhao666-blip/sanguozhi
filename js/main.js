@@ -1535,6 +1535,7 @@ function updateBarracksVisibility(enabled) {
     }
 
     // 发布成功后的后续操作
+    /* [legacy start]
     try {
       await fetchAllRounds();
       renderAll();
@@ -1552,6 +1553,29 @@ function updateBarracksVisibility(enabled) {
       await _act10ClearRoundSubmissions(roundNum);
 
       // ↓↓↓ 修改1：清空行动面板 UI 状态，避免显示上一回合的内容 ↓↓↓
+      _act10ResetUIAfterPublish();
+    [legacy end] */
+    try {
+      await fetchAllRounds();
+
+      // #action-panel-clear-fix-v1: 清理动作必须先于 renderAll，
+      // 否则 renderAll → renderActionTab → _act10LoadSubmissions
+      // 会先把脏数据渲染到 UI。
+      _clearRoundDrafts(roundNum);
+      await _act10ClearRoundSubmissions(roundNum);
+      window._act10Submitted = {};
+      window._act10AllSubmittedNotified = false;
+
+      renderAll();
+      switchTab('arena');
+
+      document.getElementById('gm-content').value = '';
+      document.getElementById('parse-preview').classList.add('hidden');
+
+      updateUndoBtn();
+
+      // 防御性兜底：renderAll 内部已通过 _act10LoadSubmissions 重置过 UI,
+      // 这里再强制重置一次,保证 100% 干净。
       _act10ResetUIAfterPublish();
 
       /* [legacy v1] showToast(`✅ 第 ${roundNum} 回合已发布！`); */
@@ -2752,7 +2776,59 @@ function updateBarracksVisibility(enabled) {
             });
           }
         } else {
+          /* [legacy start]
           if (sumEl) sumEl.style.display = 'none';
+          [legacy end] */
+          // #action-panel-clear-fix-v1: 无提交数据时,完整重置该 slot 的 UI 状态,
+          // 而不仅仅隐藏摘要。
+          if (sumEl) {
+            sumEl.style.display = 'none';
+            sumEl.innerHTML = '';
+          }
+          var panel = document.querySelector('.col-panel[data-slot="' + i + '"]');
+          if (panel) {
+            panel.classList.remove('submitted-locked');
+            panel.classList.remove('opp-active');
+            // 清除所有选中态
+            panel.querySelectorAll('.opt.checked, .opp-opt-row.checked').forEach(function(el) {
+              el.classList.remove('checked');
+            });
+            // 清空输入框
+            panel.querySelectorAll('.zdjl-ta, .remark-ta, .opp-decision-ta').forEach(function(ta) {
+              ta.value = '';
+            });
+          }
+          // 恢复提交按钮区为初始态(覆盖可能残留的"已提交+修改"按钮)
+          if (subArea) {
+            subArea.innerHTML = '<button class="submit-btn" data-slot="' + i + '">提交行动</button>'
+              + '<button class="col-edit-btn" data-slot="' + i + '">📝 修改行动</button>'
+              + '<span class="submit-hint" id="act10-hint-' + i + '">选满3个行动额度后提交</span>'
+              + '<div class="val-toast" id="act10-toast-' + i + '"></div>';
+            var newSubmitBtn = subArea.querySelector('.submit-btn');
+            if (newSubmitBtn) {
+              newSubmitBtn.addEventListener('click', function() {
+                var slotIdx = parseInt(this.dataset.slot);
+                var currentSlot = getCurrentPlayerSlot();
+                if (slotIdx !== currentSlot) {
+                  showToast('⚠️ 无法提交其他玩家的行动');
+                  return;
+                }
+                _act10Submit(slotIdx);
+              });
+            }
+            var newEditBtn = subArea.querySelector('.col-edit-btn');
+            if (newEditBtn) {
+              newEditBtn.addEventListener('click', function() {
+                var slotIdx = parseInt(this.dataset.slot);
+                var p2 = document.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+                if (!p2) return;
+                p2.classList.remove('submitted-locked');
+                var sm = document.getElementById('act10-summary-' + slotIdx);
+                if (sm) { sm.style.display = 'none'; sm.innerHTML = ''; }
+                showToast('📝 已解锁，可重新选择行动');
+              });
+            }
+          }
         }
       });
 
