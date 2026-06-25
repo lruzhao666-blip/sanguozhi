@@ -1720,9 +1720,17 @@
 .act10 .opp-display .opp-name{order:2;flex:1;min-width:0;}
 .act10 .opp-display .opp-type-chip{order:3;margin-left:auto;flex-shrink:0;}
 
-/* #opp-strip-fix-v1: 确保左色条始终在内容之上,不被 emoji/标题遮挡 */
-.act10 .opp-display::before{ z-index:3; }
-.act10 .opp-display > *{ position:relative; z-index:1; }
+/* #opp-strip-fix-v2: 左色条改用 border-left 实现,border 永不被内容遮挡 */
+.act10 .opp-display::before{ display:none !important; }
+.act10 .opp-display{
+  border-left-width:3px !important;
+  border-left-style:solid !important;
+  padding-left:11px !important;
+}
+.act10 .opp-display.ot-qiyu{   border-left-color:#ff9822 !important; }
+.act10 .opp-display.ot-jiaoyi{ border-left-color:#50b48c !important; }
+.act10 .opp-display.ot-duji{   border-left-color:#dc3c3c !important; }
+.act10 .opp-display.ot-touben{ border-left-color:#6478dc !important; }
 
 /* 描述：单行截断（覆盖旧的 -webkit-line-clamp 多行） */
 .act10 .opp-display .opp-desc{
@@ -1799,3 +1807,114 @@
 /* 手机端抽屉内复用 opp-tt-cond-row / opp-tt-opt 的间距微调 */
 .opp-drawer .opp-tt-cond-row{font-size:.8rem;color:var(--text-sub);line-height:1.6;}
 .opp-drawer .opp-tt-cond-row + .opp-tt-cond-row{margin-top:6px;}
+
+
+/* ════════════════════════════════════════════
+   #opp-drawer-polish-v1  手机端机遇抽屉质感升级
+   对齐电脑端 #opp-tooltip 设计语言
+   ──────────────────────────────────────────── */
+
+/* 抽屉容器:圆角顶 + 金边 + 深色质感 */
+.opp-drawer{
+  background:rgba(16,10,10,.99) !important;
+  border-top:1.5px solid rgba(212,168,67,.42) !important;
+  border-radius:16px 16px 0 0 !important;
+  box-shadow:0 -8px 40px rgba(0,0,0,.7) !important;
+  overflow:hidden;
+}
+
+/* 顶部拖拽把手:更精致 */
+.opp-drawer .opp-drawer-handle{
+  width:38px;height:4px;
+  background:rgba(212,168,67,.4);
+  border-radius:2px;
+  margin:10px auto 4px;
+}
+
+/* 头部:渐变背景 + 金色下边线(对齐 tooltip header) */
+.opp-drawer .opp-drawer-header{
+  display:flex;align-items:center;gap:9px;
+  padding:12px 16px;
+  background:linear-gradient(110deg,rgba(90,60,20,.4),rgba(40,25,10,.28));
+  border-bottom:1px solid rgba(212,168,67,.2);
+}
+.opp-drawer .opp-drawer-icon{ font-size:1.15rem;flex-shrink:0; }
+.opp-drawer .opp-drawer-title{
+  font-family:var(--font-serif);
+  font-size:1rem;font-weight:700;
+  color:var(--gold-light);
+  flex:1;min-width:0;
+  letter-spacing:.02em;
+}
+.opp-drawer .opp-drawer-type{ flex-shrink:0; }
+.opp-drawer .opp-drawer-close{
+  width:30px;height:30px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.3);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;
+  color:rgba(255,255,255,.55);
+  font-size:1.2rem;line-height:1;cursor:pointer;
+  transition:all .18s;
+}
+.opp-drawer .opp-drawer-close:active{
+  background:rgba(180,50,40,.35);
+  color:#fff;
+}
+
+/* 主体:内边距 + 滚动 */
+.opp-drawer .opp-drawer-body{
+  padding:16px;
+  max-height:55vh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* 描述段:主文字色,舒适行高 */
+.opp-drawer .opp-drawer-section{ margin-bottom:14px; }
+.opp-drawer .opp-drawer-section:last-child{ margin-bottom:0; }
+.opp-drawer .opp-drawer-desc{
+  font-size:.92rem;
+  color:var(--text-main);
+  line-height:1.7;
+}
+
+/* 条件区:底色块 + 圆角,对齐 tooltip conditions */
+.opp-drawer .opp-drawer-detail-section{
+  padding:11px 12px;
+  background:rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:6px;
+}
+.opp-drawer .opp-tt-cond-row{
+  font-size:.84rem;
+  color:var(--text-sub);
+  line-height:1.6;
+}
+.opp-drawer .opp-tt-cond-row + .opp-tt-cond-row{ margin-top:7px; }
+
+/* 选项区:标题分隔线 + 选项卡片(对齐 tooltip options) */
+.opp-drawer .opp-tt-options{ margin-top:4px; }
+.opp-drawer .opp-tt-opts-title{
+  font-family:var(--font-serif);
+  font-size:.76rem;color:var(--gold-dim);
+  font-weight:700;letter-spacing:.08em;
+  margin-bottom:9px;padding-bottom:6px;
+  border-bottom:1px solid rgba(212,168,67,.15);
+}
+.opp-drawer .opp-tt-opt{
+  display:flex;align-items:baseline;gap:8px;
+  padding:9px 11px;margin-bottom:6px;
+  background:rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:6px;
+}
+.opp-drawer .opp-tt-opt-num{
+  font-size:.86rem;font-weight:700;color:var(--gold-dim);flex-shrink:0;
+}
+.opp-drawer .opp-tt-opt-name{
+  font-size:.86rem;color:var(--text-main);font-weight:600;flex-shrink:0;
+}
+.opp-drawer .opp-tt-opt-desc{
+  font-size:.8rem;color:var(--text-sub);line-height:1.55;
+}
