@@ -1560,9 +1560,12 @@ function updateBarracksVisibility(enabled) {
         ? `🔧 第 ${roundNum} 回合数据已修复(剧情区保留)`
         : `✅ 第 ${roundNum} 回合已发布！`);
     } catch (e) {
-      console.error('[SG] 发布后刷新数据失败:', e);
-      // 发布已成功，只是刷新失败，提示用户手动刷新
-      showToast('⚠️ 发布成功，但刷新失败，请手动刷新页面', 'warning', 4000);
+      console.error('[SG] 发布后局部刷新失败,转为整页刷新:', e);
+      // #publish-autoreload-v1: 发布已成功,局部刷新出错时不打扰用户,
+      // 短暂提示后自动整页刷新,确保拿到最新数据(含机遇/清理旧行动)
+      showToast('✅ 第 ' + roundNum + ' 回合已发布，正在刷新…');
+      setTimeout(function () { location.reload(); }, 800);
+      return; // 即将刷新,不再恢复按钮状态
     } finally {
       state.publishing = false;
       btn.disabled = false; btn.textContent = '🚀 发布回合';
