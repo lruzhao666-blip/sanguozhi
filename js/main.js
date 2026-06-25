@@ -2036,8 +2036,9 @@ function updateBarracksVisibility(enabled) {
       if (opt.label) h += '<span class="act-opt-lbl-l1">' + _act10Esc(opt.label) + '.</span>';
       h += '<span class="act-opt-name-l1">' + _act10Esc(opt.name) + '</span>';
       h += '</div>';
-      if (opt.risk || opt.prestige) {
+      if (opt.risk || opt.prestige || opt.cond) {
         h += '<div class="act-opt-meta-l1">';
+        if (opt.cond)     h += '<span class="act-cond-tag">需:' + _act10Esc(opt.cond) + '</span>';
         if (opt.risk)     h += '<span class="risk-chip ' + optRc + '">' + _act10Esc(opt.risk) + '</span>';
         if (opt.prestige) h += '<span class="act-cat-pres"><span class="pn">+' + _act10Esc(opt.prestige) + '</span></span>';
         h += '</div>';
