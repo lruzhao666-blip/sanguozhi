@@ -19,7 +19,7 @@
  *                   清理 standoff/retreat/garrison 三个死分支;
  *                   _renderWorldStatus 同步收窄。
  * v16 (2026-05-29) 军报UI 方案2:调度行/战报卡新增势力色徽章 + 左侧势力色条,与城池悬浮卡呼应
- * v15 (2026-05-25): 末尾追加特效开关栏 IIFE
+ * v16 (2026-06-25): 渐变磨砂玻璃提交区UI；移除act-divider；提交摘要重设计
  * v16 (变更): 军报板块 [在途]→[调度];武将名/攻守方按势力色染色;移除甲乙丙文字展示
  * 对接规范 v2.0：
  *  - 剧情区 / 数据区分离（36个=号分隔）
@@ -1970,10 +1970,8 @@ function updateBarracksVisibility(enabled) {
       }
 
       // 提交区
-      h += '<div class="act-divider"></div>';
       h += '<div class="submit-area" id="act10-submit-' + i + '">';
       h += '<button class="submit-btn" data-slot="' + i + '" disabled>提交行动</button>';
-      h += '<button class="col-edit-btn" data-slot="' + i + '">📝 修改行动</button>';
       h += '<span class="submit-hint" id="act10-hint-' + i + '">从 ①②③④ 中选 1–3 个行动分支</span>';
       h += '<div class="val-toast" id="act10-toast-' + i + '"></div>';
       h += '</div>';
@@ -2606,7 +2604,7 @@ function updateBarracksVisibility(enabled) {
           // ↑↑↑ 工单结束 ↑↑↑
           // 提交区改为"已提交 + 修改按钮"
           if (subArea) {
-            subArea.innerHTML = '<div class="submitted-tag">✅ 已提交行动</div>'
+            subArea.innerHTML = '<div class="submitted-tag">已提交行动</div>'
               + '<button class="withdraw-btn" data-slot="' + i + '">修改</button>';
             subArea.querySelector('.withdraw-btn').addEventListener('click', function() {
               _act10Withdraw(parseInt(this.dataset.slot));
@@ -2632,7 +2630,6 @@ function updateBarracksVisibility(enabled) {
           var wasSubmitted = subArea && subArea.querySelector('.submitted-tag');
           if (subArea && wasSubmitted) {
             subArea.innerHTML = '<button class="submit-btn" data-slot="' + i + '">提交行动</button>'
-              + '<button class="col-edit-btn" data-slot="' + i + '">📝 修改行动</button>'
               + '<span class="submit-hint" id="act10-hint-' + i + '">选满3个行动额度后提交</span>'
               + '<div class="val-toast" id="act10-toast-' + i + '"></div>';
             var newSubmitBtn = subArea.querySelector('.submit-btn');
@@ -2786,7 +2783,6 @@ function updateBarracksVisibility(enabled) {
       var submitArea = document.getElementById('act10-submit-' + i);
       if (submitArea) {
         submitArea.innerHTML = '<button class="submit-btn" data-slot="' + i + '">提交行动</button>'
-          + '<button class="col-edit-btn" data-slot="' + i + '">📝 修改行动</button>'
           + '<span class="submit-hint" id="act10-hint-' + i + '">选满3个行动额度后提交</span>'
           + '<div class="val-toast" id="act10-toast-' + i + '"></div>';
 
