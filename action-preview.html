@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行动面板改版预览 · 甲</title>
+<style>
+/* ── 基础变量（沿用主站色系）── */
+:root {
+  --bg-deep:      #0d0a07;
+  --bg-card:      #16120d;
+  --bg-card2:     #1e1812;
+  --bg-hover:     #241e15;
+  --border-gold:  rgba(180,145,60,.35);
+  --border-light: rgba(180,145,60,.18);
+  --gold:         #c8a84a;
+  --gold-light:   #e8c96a;
+  --gold-dim:     #9a7c38;
+  --text-main:    #e8dcc8;
+  --text-sub:     #b8a888;
+  --text-dim:     #7a6a50;
+
+  /* 四大类颜色 */
+  --c-mil:   #d45555;  /* ① 军事 */
+  --c-gov:   #55bb77;  /* ② 内政 */
+  --c-tal:   #aa77dd;  /* ③ 人才 */
+  --c-dip:   #5599dd;  /* ④ 外交 */
+
+  /* 风险档 */
+  --risk-s:  #7dd87d;
+  --risk-m:  #e8c560;
+  --risk-r:  #e87060;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-main);
+  font-family: "PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+h1.preview-title {
+  text-align: center;
+  color: var(--gold-light);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  margin-bottom: 20px;
+  opacity: .85;
+}
+
+/* ── 玩家列面板 ── */
+.col-panel-v8 {
+  width: 360px;
+  max-width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,.5);
+  margin: 0 auto;
+}
+
+/* 面板头 */
+.col-head-v8 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(110deg, rgba(120,15,8,.55), rgba(60,5,2,.22));
+  border-bottom: 1px solid var(--border-gold);
+}
+.col-name-v8 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: .05em;
+}
+.col-slot-tag-v8 {
+  font-size: .72rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.col-pres-v8 {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.col-pres-num-v8 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.col-pres-lbl-v8 {
+  font-size: .68rem;
+  color: var(--text-dim);
+}
+
+/* 面板体 */
+.col-body-v8 {
+  padding: 10px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── 行动大类卡片 ── */
+.act-cat {
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card2);
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.act-cat:hover { border-color: var(--border-gold); }
+
+/* 大类头 — flex-wrap 允许谏言换行 */
+.act-cat-hd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  padding: 7px 10px 0;
+  border-bottom: none;
+  cursor: default;
+}
+.act-cat-num {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+/* 四大类颜色 */
+.cat-mil .act-cat-num  { color: var(--c-mil); }
+.cat-gov .act-cat-num  { color: var(--c-gov); }
+.cat-tal .act-cat-num  { color: var(--c-tal); }
+.cat-dip .act-cat-num  { color: var(--c-dip); }
+
+.cat-mil .act-cat-hd   { background: linear-gradient(90deg, rgba(180,40,30,.18), transparent); }
+.cat-gov .act-cat-hd   { background: linear-gradient(90deg, rgba(40,160,80,.15), transparent); }
+.cat-tal .act-cat-hd   { background: linear-gradient(90deg, rgba(130,60,200,.15), transparent); }
+.cat-dip .act-cat-hd   { background: linear-gradient(90deg, rgba(50,110,210,.15), transparent); }
+
+.act-cat-name {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: .03em;
+}
+
+/* 风险+威望 inline */
+.act-cat-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 4px;
+}
+.risk-chip {
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: .04em;
+}
+.risk-s { color: var(--risk-s); background: rgba(0,60,22,.3);   border: 1px solid rgba(61,190,108,.3); }
+.risk-m { color: var(--risk-m); background: rgba(60,42,0,.3);   border: 1px solid rgba(200,155,0,.3); }
+.risk-r { color: var(--risk-r); background: rgba(60,10,2,.3);   border: 1px solid rgba(220,80,40,.3); }
+
+.act-cat-pres {
+  font-size: .68rem;
+  color: var(--gold-dim);
+}
+.act-cat-pres .pn { color: var(--gold); font-weight: 700; }
+
+/* 谏言引语 — 换行独占一行显示 */
+.act-cat-quote {
+  width: 100%;
+  flex-basis: 100%;
+  font-size: .68rem;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.5;
+  white-space: normal;
+  padding: 3px 26px 5px;  /* 左对齐到类名下方 */
+  border-top: 1px dashed rgba(180,145,60,.10);
+  margin-top: 2px;
+  letter-spacing: .01em;
+}
+
+/* 大类体 */
+.act-cat-body {
+  padding: 6px 8px 8px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── 一级分支行 ── */
+.act-branch-l1 {
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+/* 一级行本身（可直接选中 or 展开二级） */
+.act-opt-l1 {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  background: rgba(255,255,255,.02);
+}
+.act-opt-l1:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-light);
+}
+.act-opt-l1.checked {
+  background: rgba(180,145,60,.1);
+  border-color: rgba(180,145,60,.4);
+}
+
+/* 单选圆点 */
+.rdot-v8 {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-dim);
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: border-color .15s, background .15s;
+  position: relative;
+}
+.act-opt-l1.checked .rdot-v8 {
+  border-color: var(--gold);
+  background: var(--gold);
+}
+.act-opt-l1.checked .rdot-v8::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--bg-deep);
+}
+
+.act-opt-body-l1 { flex: 1; min-width: 0; }
+
+.act-opt-top-l1 {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.act-opt-lbl-l1 {
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  flex-shrink: 0;
+  min-width: 14px;
+}
+.act-opt-name-l1 {
+  font-size: .83rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: .02em;
+}
+.act-opt-meta-l1 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+.act-opt-desc-l1 {
+  font-size: .73rem;
+  color: var(--text-sub);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+/* 展开指示箭头（一级有二级时显示） */
+.act-expand-arrow {
+  font-size: .65rem;
+  color: var(--text-dim);
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: transform .2s;
+  padding-top: 3px;
+}
+.act-branch-l1.expanded .act-expand-arrow { transform: rotate(90deg); }
+
+/* ── 二级分支 ── */
+.act-sub-list {
+  padding: 3px 8px 6px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 1px dashed rgba(180,145,60,.12);
+  background: rgba(0,0,0,.12);
+}
+
+.act-opt-l2 {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 5px 7px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.act-opt-l2:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-light);
+}
+.act-opt-l2.checked {
+  background: rgba(180,145,60,.1);
+  border-color: rgba(180,145,60,.4);
+}
+
+.rdot-v8-sm {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-dim);
+  flex-shrink: 0;
+  margin-top: 3px;
+  transition: border-color .15s, background .15s;
+  position: relative;
+}
+.act-opt-l2.checked .rdot-v8-sm {
+  border-color: var(--gold);
+  background: var(--gold);
+}
+.act-opt-l2.checked .rdot-v8-sm::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--bg-deep);
+}
+
+.act-opt-body-l2 { flex: 1; min-width: 0; }
+.act-opt-top-l2 {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.act-opt-lbl-l2 {
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  flex-shrink: 0;
+}
+.act-opt-name-l2 {
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
+.act-opt-meta-l2 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+}
+.act-opt-desc-l2 {
+  font-size: .7rem;
+  color: var(--text-sub);
+  margin-top: 1px;
+  line-height: 1.45;
+}
+/* 条件分支特殊样式 */
+.act-opt-l2.cond-branch {
+  border: 1px dashed rgba(180,145,60,.22);
+  background: rgba(180,145,60,.04);
+}
+.act-opt-l2.cond-branch .act-opt-lbl-l2 { color: var(--text-dim); }
+.act-cond-tag {
+  font-size: .62rem;
+  color: var(--text-dim);
+  background: rgba(120,90,40,.2);
+  border-radius: 2px;
+  padding: 0 4px;
+  border: 1px solid rgba(120,90,40,.3);
+}
+
+/* ── 备注区 ── */
+.act-remark-block {
+  display: none;
+  margin-top: 4px;
+  padding: 5px 8px;
+  background: rgba(0,0,0,.18);
+  border-radius: 4px;
+  border: 1px dashed rgba(180,145,60,.15);
+}
+.act-remark-block.visible { display: block; }
+.act-remark-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.act-remark-lbl {
+  font-size: .66rem;
+  color: var(--text-dim);
+}
+.act-remark-ta {
+  width: 100%;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(180,145,60,.2);
+  border-radius: 3px;
+  color: var(--text-main);
+  font-size: .75rem;
+  padding: 4px 7px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.act-remark-ta:focus { border-color: rgba(180,145,60,.45); }
+
+/* ── 自定军令区 ── */
+.act-custom-block {
+  border-radius: 6px;
+  border: 1px dashed rgba(180,145,60,.28);
+  background: rgba(180,145,60,.04);
+  overflow: hidden;
+}
+.act-custom-hd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px 6px;
+  border-bottom: 1px dashed rgba(180,145,60,.15);
+}
+.act-custom-num {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+}
+.act-custom-name {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+.act-custom-hint {
+  font-size: .67rem;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+.act-custom-body { padding: 7px 10px; }
+.act-custom-slot {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 5px 7px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  background: rgba(255,255,255,.02);
+  margin-bottom: 5px;
+}
+.act-custom-slot:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-light);
+}
+.act-custom-slot.checked {
+  background: rgba(180,145,60,.1);
+  border-color: rgba(180,145,60,.4);
+}
+.act-custom-slot-label {
+  font-size: .68rem;
+  color: var(--gold-dim);
+  font-weight: 700;
+  padding-top: 3px;
+  flex-shrink: 0;
+  width: 22px;
+}
+.act-custom-inner { flex: 1; min-width: 0; }
+.act-custom-tag {
+  font-size: .68rem;
+  color: var(--text-dim);
+  margin-bottom: 3px;
+}
+.act-custom-ta {
+  width: 100%;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(180,145,60,.2);
+  border-radius: 3px;
+  color: var(--text-main);
+  font-size: .78rem;
+  padding: 5px 8px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.5;
+  min-height: 2.6em;
+  field-sizing: content;   /* auto-grow with content (modern browsers) */
+  overflow-y: hidden;
+}
+.act-custom-ta:focus { border-color: rgba(180,145,60,.5); }
+.act-custom-charcount {
+  font-size: .62rem;
+  color: var(--text-dim);
+  text-align: right;
+  margin-top: 2px;
+}
+
+/* ── 额度计数条 ── */
+.act-quota-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: rgba(0,0,0,.2);
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+.act-quota-label {
+  font-size: .68rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.act-quota-dots {
+  display: flex;
+  gap: 5px;
+}
+.act-quota-dot {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(180,145,60,.3);
+  background: rgba(180,145,60,.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .65rem;
+  color: var(--text-dim);
+  transition: all .2s;
+}
+.act-quota-dot.filled {
+  border-color: var(--gold);
+  background: rgba(180,145,60,.25);
+  color: var(--gold);
+  font-weight: 700;
+}
+.act-quota-hint {
+  font-size: .65rem;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+.act-quota-hint.ok { color: var(--risk-s); font-weight: 600; }
+.act-quota-hint.err { color: var(--risk-r); font-weight: 600; }
+
+/* ── 提交区 ── */
+.act-submit-area {
+  padding: 10px 10px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.act-submit-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid rgba(180,145,60,.5);
+  background: linear-gradient(135deg, rgba(180,120,30,.35), rgba(100,70,15,.2));
+  color: var(--gold-light);
+  font-size: .88rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  cursor: pointer;
+  transition: all .2s;
+}
+.act-submit-btn:hover {
+  background: linear-gradient(135deg, rgba(180,120,30,.55), rgba(100,70,15,.35));
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(180,145,60,.2);
+}
+.act-submit-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  background: rgba(60,50,30,.2);
+}
+.act-submit-hint {
+  text-align: center;
+  font-size: .67rem;
+  color: var(--text-dim);
+}
+
+/* ── 提交后摘要 ── */
+.act-summary {
+  margin: 4px 0 2px;
+  padding: 8px 10px;
+  border-radius: 5px;
+  background: rgba(50,180,80,.08);
+  border: 1px solid rgba(50,180,80,.25);
+}
+.act-summary-hd {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--risk-s);
+  margin-bottom: 5px;
+  letter-spacing: .04em;
+}
+.act-summary-row {
+  display: flex;
+  gap: 6px;
+  font-size: .73rem;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.act-summary-row:last-child { border-bottom: none; }
+.sum-lbl {
+  color: var(--text-dim);
+  flex-shrink: 0;
+  min-width: 52px;
+}
+.sum-val { color: var(--text-main); }
+.sum-custom { color: var(--gold-dim); font-style: italic; }
+
+/* ── 休整态 ── */
+.act-cat.resting { opacity: .55; }
+.act-cat.resting .act-cat-hd {
+  background: rgba(50,50,50,.12);
+}
+.act-rest-tag {
+  font-size: .65rem;
+  color: var(--text-dim);
+  background: rgba(80,80,80,.2);
+  border: 1px solid rgba(100,100,100,.3);
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-left: 4px;
+}
+
+/* ── 分隔线 ── */
+.act-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-gold), transparent);
+  margin: 2px 0;
+  opacity: .4;
+}
+
+/* ── 小工具 ── */
+.pres-up { color: var(--gold); font-weight: 700; }
+.pres-range { color: var(--gold); font-size: .75rem; }
+
+/* ── 说明区（预览用）── */
+.preview-note {
+  max-width: 360px;
+  margin: 0 auto 16px;
+  font-size: .72rem;
+  color: var(--text-dim);
+  background: rgba(180,145,60,.06);
+  border: 1px solid rgba(180,145,60,.15);
+  border-radius: 5px;
+  padding: 8px 12px;
+  line-height: 1.7;
+}
+.preview-note strong { color: var(--gold-dim); }
+</style>
+</head>
+<body>
+
+<h1 class="preview-title">⚔ 行动面板 v8 改版预览 · 甲</h1>
+
+<div class="preview-note">
+  <strong>交互说明（预览演示）：</strong><br>
+  · ①②③④ 为四大类行动，选 1–3 个分支即可提交<br>
+  · 点击一级分支选中；有二级时点 A 行展开再选<br>
+  · ⑤ 自定军令可替代任意大类分支，随输入自动扩展<br>
+  · 上方额度条实时显示已选数量（1–3 个均可提交）
+</div>
+
+<!-- ══════════════════════════════
+     玩家甲 面板
+═══════════════════════════════════ -->
+<div class="col-panel-v8" id="panel-jia">
+
+  <!-- 面板头 -->
+  <div class="col-head-v8">
+    <span class="col-name-v8">昭公</span>
+    <span class="col-slot-tag-v8">[甲]</span>
+    <div class="col-pres-v8">
+      <span class="col-pres-num-v8">143</span>
+      <span class="col-pres-lbl-v8"> 威望</span>
+    </div>
+  </div>
+
+  <!-- 额度计数条 -->
+  <div class="act-quota-bar" id="quota-bar">
+    <span class="act-quota-label">行动额度</span>
+    <div class="act-quota-dots" id="quota-dots">
+      <div class="act-quota-dot" id="qdot-0">1</div>
+      <div class="act-quota-dot" id="qdot-1">2</div>
+      <div class="act-quota-dot" id="qdot-2">3</div>
+    </div>
+    <span class="act-quota-hint" id="quota-hint">已选 0 / 最多 3 个</span>
+  </div>
+
+  <!-- 面板体 -->
+  <div class="col-body-v8" id="panel-body">
+
+    <!-- ①军事扩张 -->
+    <div class="act-cat cat-mil" id="cat-0">
+      <div class="act-cat-hd">
+        <span class="act-cat-num">①</span>
+        <span class="act-cat-name">军事扩张</span>
+        <div class="act-cat-meta">
+          <span class="risk-chip risk-m">中</span>
+          <span class="act-cat-pres">预估 <span class="pn">+4</span> 威望</span>
+        </div>
+        <span class="act-cat-quote">赵云「宛城虚实未明，宜先探后动，不可轻进」</span>
+      </div>
+      <div class="act-cat-body">
+
+        <!-- A. 强攻宛城（有二级分支） -->
+        <div class="act-branch-l1" id="branch-0-0">
+          <div class="act-opt-l1" onclick="toggleL1(0,0)">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">A.</span>
+                <span class="act-opt-name-l1">强攻宛城</span>
+              </div>
+            </div>
+            <span class="act-expand-arrow">▶</span>
+          </div>
+          <!-- 二级分支 -->
+          <div class="act-sub-list" id="sub-0-0" style="display:none;">
+            <div class="act-opt-l2" onclick="selectL2(this, 0, '①A1')">
+              <div class="rdot-v8-sm"></div>
+              <div class="act-opt-body-l2">
+                <div class="act-opt-top-l2">
+                  <span class="act-opt-lbl-l2">A1.</span>
+                  <span class="act-opt-name-l2">正面强攻</span>
+                </div>
+                <div class="act-opt-meta-l2">
+                  <span class="risk-chip risk-m">中</span>
+                  <span class="act-cat-pres"><span class="pn">+4</span></span>
+                </div>
+                <div class="act-opt-desc-l2">兵力压制，赵云统率破阵，伤亡可能偏高</div>
+              </div>
+            </div>
+            <div class="act-opt-l2" onclick="selectL2(this, 0, '①A2')">
+              <div class="rdot-v8-sm"></div>
+              <div class="act-opt-body-l2">
+                <div class="act-opt-top-l2">
+                  <span class="act-opt-lbl-l2">A2.</span>
+                  <span class="act-opt-name-l2">夜袭破门</span>
+                </div>
+                <div class="act-opt-meta-l2">
+                  <span class="risk-chip risk-r">险</span>
+                  <span class="act-cat-pres"><span class="pn">+6</span></span>
+                </div>
+                <div class="act-opt-desc-l2">奇袭成功则速胜，败则伤亡惨重</div>
+              </div>
+            </div>
+            <div class="act-opt-l2 cond-branch" onclick="selectL2(this, 0, '①A3')">
+              <div class="rdot-v8-sm"></div>
+              <div class="act-opt-body-l2">
+                <div class="act-opt-top-l2">
+                  <span class="act-opt-lbl-l2">A3.</span>
+                  <span class="act-opt-name-l2">火攻辎重</span>
+                  <span class="act-cond-tag">需:骑兵≥800</span>
+                </div>
+                <div class="act-opt-meta-l2">
+                  <span class="risk-chip risk-r">险</span>
+                  <span class="act-cat-pres"><span class="pn">+7</span></span>
+                </div>
+                <div class="act-opt-desc-l2">断敌粮道再强攻，守军士气崩溃+2档</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. 围而不攻（直接选） -->
+        <div class="act-branch-l1" id="branch-0-1">
+          <div class="act-opt-l1" onclick="selectL1(this, 0, '①B')">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">B.</span>
+                <span class="act-opt-name-l1">围城断粮</span>
+              </div>
+              <div class="act-opt-meta-l1">
+                <span class="risk-chip risk-s">稳</span>
+                <span class="act-cat-pres"><span class="pn">+2</span></span>
+              </div>
+              <div class="act-opt-desc-l1">稳步消耗，2回合可迫降，伤亡极低</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C. 野战拦截 -->
+        <div class="act-branch-l1" id="branch-0-2">
+          <div class="act-opt-l1" onclick="toggleL1(2, 0)">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">C.</span>
+                <span class="act-opt-name-l1">野战拦截</span>
+              </div>
+            </div>
+            <span class="act-expand-arrow">▶</span>
+          </div>
+          <div class="act-sub-list" id="sub-0-2" style="display:none;">
+            <div class="act-opt-l2" onclick="selectL2(this, 0, '①C1')">
+              <div class="rdot-v8-sm"></div>
+              <div class="act-opt-body-l2">
+                <div class="act-opt-top-l2">
+                  <span class="act-opt-lbl-l2">C1.</span>
+                  <span class="act-opt-name-l2">正面决战</span>
+                </div>
+                <div class="act-opt-meta-l2">
+                  <span class="risk-chip risk-m">中</span>
+                  <span class="act-cat-pres"><span class="pn">+3</span></span>
+                </div>
+                <div class="act-opt-desc-l2">主动出击截断援军，双方主将对阵</div>
+              </div>
+            </div>
+            <div class="act-opt-l2" onclick="selectL2(this, 0, '①C2')">
+              <div class="rdot-v8-sm"></div>
+              <div class="act-opt-body-l2">
+                <div class="act-opt-top-l2">
+                  <span class="act-opt-lbl-l2">C2.</span>
+                  <span class="act-opt-name-l2">设伏要道</span>
+                </div>
+                <div class="act-opt-meta-l2">
+                  <span class="risk-chip risk-r">险</span>
+                  <span class="act-cat-pres"><span class="pn">+5</span></span>
+                </div>
+                <div class="act-opt-desc-l2">提前埋伏骑兵，成功则全歼，被察觉则反陷</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 备注区（选中一级后显示） -->
+        <div class="act-remark-block" id="remark-cat0">
+          <div class="act-remark-hd">
+            <span class="act-remark-lbl">💬 备注（可选，不占额度）</span>
+          </div>
+          <textarea class="act-remark-ta" rows="2" placeholder="对此行动的补充说明，如兵力分配、具体目标等…" maxlength="60"></textarea>
+        </div>
+      </div>
+    </div><!-- /cat-mil -->
+
+    <!-- ②内政发展 -->
+    <div class="act-cat cat-gov" id="cat-1">
+      <div class="act-cat-hd">
+        <span class="act-cat-num">②</span>
+        <span class="act-cat-name">内政发展</span>
+        <div class="act-cat-meta">
+          <span class="risk-chip risk-s">稳</span>
+          <span class="act-cat-pres">预估 <span class="pn">+2</span> 威望</span>
+        </div>
+      </div><!-- /cat-gov head -->
+      <div class="act-cat-body">
+
+        <!-- A. 屯田工程（禁二级，直接选） -->
+        <div class="act-branch-l1" id="branch-1-0">
+          <div class="act-opt-l1" onclick="selectL1(this, 1, '②A')">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">A.</span>
+                <span class="act-opt-name-l1">屯田兴粮</span>
+              </div>
+              <div class="act-opt-meta-l1">
+                <span class="risk-chip risk-s">稳</span>
+                <span class="act-cat-pres"><span class="pn">+2</span></span>
+              </div>
+              <div class="act-opt-desc-l1">宛城建屯田，粮产+40/回合，永久</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. 募兵（禁二级） -->
+        <div class="act-branch-l1" id="branch-1-1">
+          <div class="act-opt-l1" onclick="selectL1(this, 1, '②B')">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">B.</span>
+                <span class="act-opt-name-l1">充军备战</span>
+              </div>
+              <div class="act-opt-meta-l1">
+                <span class="risk-chip risk-s">稳</span>
+                <span class="act-cat-pres"><span class="pn">+0</span></span>
+              </div>
+              <div class="act-opt-desc-l1">宛城募步兵500，花费150金+100粮</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C. 义仓救民 -->
+        <div class="act-branch-l1" id="branch-1-2">
+          <div class="act-opt-l1" onclick="selectL1(this, 1, '②C')">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">C.</span>
+                <span class="act-opt-name-l1">义仓安民</span>
+              </div>
+              <div class="act-opt-meta-l1">
+                <span class="risk-chip risk-s">稳</span>
+                <span class="act-cat-pres"><span class="pn">+2</span></span>
+              </div>
+              <div class="act-opt-desc-l1">建义仓，民心+8，赤字时民心下降减半</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="act-remark-block" id="remark-cat1">
+          <div class="act-remark-hd">
+            <span class="act-remark-lbl">💬 备注（可选）</span>
+          </div>
+          <textarea class="act-remark-ta" rows="2" placeholder="如指定工程地点、优先城池…" maxlength="60"></textarea>
+        </div>
+      </div>
+    </div><!-- /cat-gov -->
+
+    <!-- ③人才经营 -->
+    <div class="act-cat cat-tal" id="cat-2">
+      <div class="act-cat-hd">
+        <span class="act-cat-num">③</span>
+        <span class="act-cat-name">人才经营</span>
+        <div class="act-cat-meta">
+          <span class="risk-chip risk-m">中</span>
+          <span class="act-cat-pres">预估 <span class="pn">+3</span> 威望</span>
+        </div>
+        <span class="act-cat-quote">法正「此时访贤，时机正好，主公宜亲往一叙」</span>
+      </div>
+      <div class="act-cat-body">
+
+        <!-- A. 访贤赵云（传奇·有二级） -->
+        <div class="act-branch-l1" id="branch-2-0">
+          <div class="act-opt-l1" onclick="toggleL1(0, 2)">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">A.</span>
+                <span class="act-opt-name-l1">访贤庞统</span>
+              </div>
+              <div class="act-opt-meta-l1">
+                <span class="risk-chip risk-m">中</span>
+              </div>
+              <div class="act-opt-desc-l1">传奇级·首访，庞统试探"何以服我？"</div>
+            </div>
+            <span class="act-expand-arrow">▶</span>
+          </div>
+          <div class="act-sub-list" id="sub-2-0" style="display:none;">
+            <div class="act-opt-l2" onclick="selectL2(this, 2, '③A1')">
+              <div class="rdot-v8-sm"></div>
+              <div class="act-opt-body-l2">
+                <div class="act-opt-top-l2">
+                  <span class="act-opt-lbl-l2">A1.</span>
+                  <span class="act-opt-name-l2">以义相邀</span>
+                </div>
+                <div class="act-opt-meta-l2">
+                  <span class="risk-chip risk-m">中</span>
+                  <span class="act-cat-pres"><span class="pn">+3</span></span>
+                </div>
+                <div class="act-opt-desc-l2">陈述仁义抱负，打动庞统价值观</div>
+              </div>
+            </div>
+            <div class="act-opt-l2" onclick="selectL2(this, 2, '③A2')">
+              <div class="rdot-v8-sm"></div>
+              <div class="act-opt-body-l2">
+                <div class="act-opt-top-l2">
+                  <span class="act-opt-lbl-l2">A2.</span>
+                  <span class="act-opt-name-l2">论天下大势</span>
+                </div>
+                <div class="act-opt-meta-l2">
+                  <span class="risk-chip risk-m">中</span>
+                  <span class="act-cat-pres"><span class="pn">+3</span></span>
+                </div>
+                <div class="act-opt-desc-l2">借问对展示谋略，契合则直接应允</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. 安抚武将 -->
+        <div class="act-branch-l1" id="branch-2-1">
+          <div class="act-opt-l1" onclick="selectL1(this, 2, '③B')">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">B.</span>
+                <span class="act-opt-name-l1">厚待赵云</span>
+              </div>
+              <div class="act-opt-meta-l1">
+                <span class="risk-chip risk-s">稳</span>
+                <span class="act-cat-pres"><span class="pn">+0</span></span>
+              </div>
+              <div class="act-opt-desc-l1">委任赵云镇守宛城，忠诚度提升</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="act-remark-block" id="remark-cat2">
+          <div class="act-remark-hd">
+            <span class="act-remark-lbl">💬 备注（可选）</span>
+          </div>
+          <textarea class="act-remark-ta" rows="2" placeholder="访贤时的具体说辞或赠礼…" maxlength="60"></textarea>
+        </div>
+      </div>
+    </div><!-- /cat-tal -->
+
+    <!-- ④外交谋略 -->
+    <div class="act-cat cat-dip" id="cat-3">
+      <div class="act-cat-hd">
+        <span class="act-cat-num">④</span>
+        <span class="act-cat-name">外交谋略</span>
+        <div class="act-cat-meta">
+          <span class="risk-chip risk-r">险</span>
+          <span class="act-cat-pres">预估 <span class="pn">+5</span> 威望</span>
+        </div>
+        <span class="act-cat-quote">鲁肃「联盟之事宜速决，迟则生变，主公当早做定夺」</span>
+      </div>
+      <div class="act-cat-body">
+
+        <!-- A. 离间计 -->
+        <div class="act-branch-l1" id="branch-3-0">
+          <div class="act-opt-l1" onclick="toggleL1(0, 3)">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">A.</span>
+                <span class="act-opt-name-l1">反间袁绍</span>
+              </div>
+            </div>
+            <span class="act-expand-arrow">▶</span>
+          </div>
+          <div class="act-sub-list" id="sub-3-0" style="display:none;">
+            <div class="act-opt-l2" onclick="selectL2(this, 3, '④A1')">
+              <div class="rdot-v8-sm"></div>
+              <div class="act-opt-body-l2">
+                <div class="act-opt-top-l2">
+                  <span class="act-opt-lbl-l2">A1.</span>
+                  <span class="act-opt-name-l2">伪造密信</span>
+                </div>
+                <div class="act-opt-meta-l2">
+                  <span class="risk-chip risk-r">险</span>
+                  <span class="act-cat-pres"><span class="pn">+5</span></span>
+                </div>
+                <div class="act-opt-desc-l2">捏造袁绍谋士通敌信，成功则其内乱</div>
+              </div>
+            </div>
+            <div class="act-opt-l2" onclick="selectL2(this, 3, '④A2')">
+              <div class="rdot-v8-sm"></div>
+              <div class="act-opt-body-l2">
+                <div class="act-opt-top-l2">
+                  <span class="act-opt-lbl-l2">A2.</span>
+                  <span class="act-opt-name-l2">遣使煽动</span>
+                </div>
+                <div class="act-opt-meta-l2">
+                  <span class="risk-chip risk-m">中</span>
+                  <span class="act-cat-pres"><span class="pn">+3</span></span>
+                </div>
+                <div class="act-opt-desc-l2">明面外交、暗中挑拨，风险较低</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. 结盟 -->
+        <div class="act-branch-l1" id="branch-3-1">
+          <div class="act-opt-l1" onclick="selectL1(this, 3, '④B')">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">B.</span>
+                <span class="act-opt-name-l1">遣使联吴</span>
+              </div>
+              <div class="act-opt-meta-l1">
+                <span class="risk-chip risk-s">稳</span>
+                <span class="act-cat-pres"><span class="pn">+2</span></span>
+              </div>
+              <div class="act-opt-desc-l1">向乙家递交结盟议书，共抗曹操</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C. 情报刺探 -->
+        <div class="act-branch-l1" id="branch-3-2">
+          <div class="act-opt-l1" onclick="selectL1(this, 3, '④C')">
+            <div class="rdot-v8"></div>
+            <div class="act-opt-body-l1">
+              <div class="act-opt-top-l1">
+                <span class="act-opt-lbl-l1">C.</span>
+                <span class="act-opt-name-l1">探查许昌</span>
+              </div>
+              <div class="act-opt-meta-l1">
+                <span class="risk-chip risk-s">稳</span>
+                <span class="act-cat-pres"><span class="pn">+0</span></span>
+              </div>
+              <div class="act-opt-desc-l1">派细作潜入许昌，下回合获得情报</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="act-remark-block" id="remark-cat3">
+          <div class="act-remark-hd">
+            <span class="act-remark-lbl">💬 备注（可选）</span>
+          </div>
+          <textarea class="act-remark-ta" rows="2" placeholder="具体外交措辞或谋略细节…" maxlength="60"></textarea>
+        </div>
+      </div>
+    </div><!-- /cat-dip -->
+
+    <div class="act-divider"></div>
+
+    <!-- ⑤自定军令 -->
+    <div class="act-custom-block" id="cat-custom">
+      <div class="act-custom-hd">
+        <span class="act-custom-num">⑤</span>
+        <span class="act-custom-name">自定军令</span>
+      </div>
+      <div class="act-custom-body">
+        <!-- 单槽，自动扩展 -->
+        <div class="act-custom-slot" id="custom-slot-0">
+          <div class="rdot-v8" id="custom-dot-0"></div>
+          <div class="act-custom-inner">
+            <textarea class="act-custom-ta"
+              placeholder="填写自定军令内容…"
+              maxlength="120"
+              onclick="event.stopPropagation()"
+              oninput="updateCustomChar(this)"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 提交区 -->
+    <div class="act-submit-area">
+      <button class="act-submit-btn" id="submit-btn" disabled onclick="handleSubmit()">提交行动</button>
+      <div class="act-submit-hint" id="submit-hint">从 ①②③④ 中选 1–3 个行动分支</div>
+    </div>
+
+  </div><!-- /col-body-v8 -->
+</div><!-- /col-panel-v8 -->
+
+<script>
+// ── 状态追踪 ──
+const state = {
+  catSel: [null, null, null, null],  // 0=①军事 1=②内政 2=③人才 3=④外交
+  customFilled: false,
+};
+
+// ── 一级分支（有二级时，点击展开/收起，不直接选中） ──
+function toggleL1(branchLocalIdx, catIdx) {
+  const branchId = 'branch-' + catIdx + '-' + branchLocalIdx;
+  const subId    = 'sub-'    + catIdx + '-' + branchLocalIdx;
+  const branchEl = document.getElementById(branchId);
+  const subEl    = document.getElementById(subId);
+  if (!branchEl || !subEl) return;
+
+  const isExpanded = branchEl.classList.contains('expanded');
+  // 先折叠同类所有二级
+  const catEl = document.getElementById('cat-' + catIdx);
+  catEl.querySelectorAll('.act-branch-l1').forEach(b => b.classList.remove('expanded'));
+  catEl.querySelectorAll('.act-sub-list').forEach(s => s.style.display = 'none');
+
+  if (!isExpanded) {
+    branchEl.classList.add('expanded');
+    subEl.style.display = 'flex';
+  }
+}
+
+// ── 一级分支（无二级，直接选中；再次点击取消选中） ──
+function selectL1(optEl, catIdx, code) {
+  const catEl = document.getElementById('cat-' + catIdx);
+  // 清除同类所有选中
+  catEl.querySelectorAll('.act-opt-l1.checked, .act-opt-l2.checked').forEach(el => el.classList.remove('checked'));
+  catEl.querySelectorAll('.act-sub-list').forEach(s => s.style.display = 'none');
+  catEl.querySelectorAll('.act-branch-l1').forEach(b => b.classList.remove('expanded'));
+
+  const already = optEl.classList.contains('checked');
+  if (already) {
+    optEl.classList.remove('checked');
+    state.catSel[catIdx] = null;
+    document.getElementById('remark-cat' + catIdx).classList.remove('visible');
+  } else {
+    optEl.classList.add('checked');
+    state.catSel[catIdx] = code;
+    document.getElementById('remark-cat' + catIdx).classList.add('visible');
+  }
+  updateQuota();
+}
+
+// ── 二级分支选中（再次点击取消） ──
+function selectL2(optEl, catIdx, code) {
+  const catEl = document.getElementById('cat-' + catIdx);
+  catEl.querySelectorAll('.act-opt-l2.checked').forEach(el => el.classList.remove('checked'));
+  catEl.querySelectorAll('.act-opt-l1.checked').forEach(el => el.classList.remove('checked'));
+
+  const already = optEl.classList.contains('checked');
+  if (already) {
+    optEl.classList.remove('checked');
+    state.catSel[catIdx] = null;
+    document.getElementById('remark-cat' + catIdx).classList.remove('visible');
+  } else {
+    optEl.classList.add('checked');
+    state.catSel[catIdx] = code;
+    document.getElementById('remark-cat' + catIdx).classList.add('visible');
+    // 同步点亮父级一级分支行
+    const parentL1 = optEl.closest('.act-branch-l1');
+    if (parentL1) parentL1.querySelector('.act-opt-l1').classList.add('checked');
+  }
+  updateQuota();
+}
+
+// ── 自定军令：随输入自动扩展高度，并激活圆点 ──
+function updateCustomChar(ta) {
+  const len = ta.value.trim().length;
+  const dot   = document.getElementById('custom-dot-0');
+  const slot  = document.getElementById('custom-slot-0');
+  if (len > 0) {
+    dot.style.borderColor = 'var(--gold)';
+    dot.style.background  = 'var(--gold)';
+    state.customFilled    = true;
+    slot.classList.add('checked');
+  } else {
+    dot.style.borderColor = '';
+    dot.style.background  = '';
+    state.customFilled    = false;
+    slot.classList.remove('checked');
+  }
+  // 自动高度（field-sizing:content 的 JS 兜底）
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+  updateQuota();
+}
+
+// ── 额度更新：1–3 个行动均可提交 ──
+function updateQuota() {
+  let selCount = 0;
+  for (let i = 0; i < 4; i++) {
+    if (state.catSel[i]) selCount++;
+  }
+  const total = selCount + (state.customFilled ? 1 : 0);
+
+  // 点亮前 total 格（最多 3 格）
+  for (let d = 0; d < 3; d++) {
+    const dot = document.getElementById('qdot-' + d);
+    dot.textContent = d + 1;
+    dot.classList.toggle('filled', d < total);
+  }
+
+  const hintEl    = document.getElementById('quota-hint');
+  const submitBtn = document.getElementById('submit-btn');
+  const hintMain  = document.getElementById('submit-hint');
+
+  if (total >= 1 && total <= 3) {
+    hintEl.textContent     = '已选 ' + total + ' 个行动';
+    hintEl.className       = 'act-quota-hint ok';
+    submitBtn.disabled     = false;
+    hintMain.textContent   = '确认后提交给 GM';
+    hintMain.style.color   = 'var(--risk-s)';
+  } else if (total > 3) {
+    hintEl.textContent     = '行动超过 3 个';
+    hintEl.className       = 'act-quota-hint err';
+    submitBtn.disabled     = true;
+    hintMain.textContent   = '最多选 3 个行动，请取消部分选项';
+    hintMain.style.color   = 'var(--risk-r)';
+  } else {
+    hintEl.textContent     = '已选 0 / 最多 3 个';
+    hintEl.className       = 'act-quota-hint';
+    submitBtn.disabled     = true;
+    hintMain.textContent   = '从 ①②③④ 中选 1–3 个行动分支';
+    hintMain.style.color   = '';
+  }
+}
+
+// ── 提交摘要 ──
+function handleSubmit() {
+  const lines = [];
+  const NAMES = ['①', '②', '③', '④'];
+  for (let i = 0; i < 4; i++) {
+    if (state.catSel[i]) lines.push(state.catSel[i]);
+  }
+  if (state.customFilled) {
+    const ta = document.querySelector('#custom-slot-0 .act-custom-ta');
+    if (ta && ta.value.trim()) lines.push('⑤ ' + ta.value.trim());
+  }
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="act-summary">
+      <div class="act-summary-hd">✓ 行动已提交</div>
+      ${lines.map((l, i) => `<div class="act-summary-row"><span class="sum-lbl">行动 ${i+1}</span><span class="sum-val">${l}</span></div>`).join('')}
+      <div class="act-summary-row" style="margin-top:6px;">
+        <span class="sum-lbl" style="color:var(--text-dim)">格式</span>
+        <span class="sum-val" style="font-size:.7rem;color:var(--text-dim)">${lines.join(' | ')}</span>
+      </div>
+    </div>
+    <div class="act-submit-area">
+      <button class="act-submit-btn" style="background:rgba(60,10,2,.2);font-size:.8rem;" onclick="location.reload()">↩ 重置预览</button>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
