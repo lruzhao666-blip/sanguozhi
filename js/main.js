@@ -2466,16 +2466,21 @@ function updateBarracksVisibility(enabled) {
     function _clearRoundDrafts(roundNum) {
       if (!roundNum) return;
 
-      // 清除三个槽位（甲/乙/丙）的草稿
-      [0, 1, 2].forEach(function(slot) {
-        var key = 'sg_draft_r' + roundNum + '_s' + slot;
-        try {
+      // ↓↓↓ 修改：清除所有草稿，避免旧回合草稿残留 ↓↓↓
+      try {
+        var keys = Object.keys(localStorage);
+        var draftKeys = keys.filter(function(k) { return k.startsWith('sg_draft_'); });
+        draftKeys.forEach(function(key) {
           localStorage.removeItem(key);
           console.log('[act10] 草稿已清除:', key);
-        } catch (e) {
-          console.warn('[act10] 草稿清除失败:', key, e);
+        });
+        if (draftKeys.length > 0) {
+          console.log('[act10] 共清除 ' + draftKeys.length + ' 条草稿');
         }
-      });
+      } catch (e) {
+        console.warn('[act10] 草稿清除失败:', e);
+      }
+      // ↑↑↑ 修改结束 ↑↑↑
     }
 
     // 加载草稿函数（在渲染完成后调用）
