@@ -1841,10 +1841,7 @@ function updateBarracksVisibility(enabled) {
     if (!rd || !rd.parsed) return;
     var parsed = rd.parsed;
     _act10RoundStrip(parsed);
-    _act10Prestige(parsed);
-    _act10OppPool(parsed);
     _act10Columns(parsed);
-    _act10SyncPresHeight();
 
     console.log('[act10] 渲染行动Tab，当前回合:', rd.round || parsed.round);
     await _act10LoadSubmissions(rd.round || parsed.round);
@@ -1902,268 +1899,13 @@ function updateBarracksVisibility(enabled) {
     el.innerHTML = h;
   }
 
-  // ── 威望排行 ──
-  function _act10Prestige(parsed) {
-    var el = document.getElementById('act10-pres-body');
-    if (!el) return;
-    var pres = parsed.prestige;
-    if (!pres || !pres.entries || !pres.entries.length) {
-      el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-dim);font-size:.76rem;">等待GM数据</div>';
-      return;
-    }
-    var entries = pres.entries;
-    var maxS = entries[0].score || 1;
-    var h = '';
-    entries.forEach(function(e, idx) {
-      var rank = idx + 1;
-      var rCls = rank === 1 ? ' r1' : rank === 2 ? ' r2' : rank === 3 ? ' r3' : ' rn';
-      var isP = e.isPlayer;
-      var ck = isP ? (ACT10_SLOT_COLORS[e.name] || '0') : 'n';
-      var barCls = isP ? 'c' + ck + ' c' + ck + 's' : 'cn';
-      var nCls = isP ? '' : ' npc';
-      var pct = Math.round((e.score / maxS) * 100);
-      var dn = e.name;
-      if (isP) {
-        var pi = { '甲': 0, '乙': 1, '丙': 2 }[e.name];
-        if (pi !== undefined && state.players[pi] && state.players[pi].name) dn = state.players[pi].name;
-      }
-      h += '<div class="pres-row">';
-      h += '<span class="pr-rank' + rCls + '">' + rank + '</span>';
-      h += '<span class="pr-bar ' + barCls + '"></span>';
-      h += '<span class="pr-name' + nCls + '">' + _act10Esc(dn) + '</span>';
-      h += '<div class="pr-micro"><div class="pr-fill ' + barCls.split(' ')[0] + '" style="width:' + pct + '%"></div></div>';
-      h += '<span class="pr-val">' + e.score + '</span>';
-      h += '</div>';
-      // 玩家与 NPC 之间加分隔线
-      if (isP && idx < entries.length - 1 && !entries[idx + 1].isPlayer) {
-        h += '<div class="pr-divider"></div>';
-      }
-    });
-    el.innerHTML = h;
-  }
-
-  // ── 威望面板高度同步 ──
-  // v6.2: 威望面板等高由 CSS stretch 控制，不再 JS 同步
-  function _act10SyncPresHeight() {}
-  window.addEventListener('resize', _act10SyncPresHeight);
-
-  // ── 公共机遇池 ──
-  function _act10OppPool(parsed) {
-    var el = document.getElementById('act10-opp-grid');
-    if (!el) return;
-    var opps = parsed.opportunities || [];
-    if (!opps.length) {
-      el.innerHTML = '<div class="opp-empty" style="grid-column:1/-1;text-align:center;padding:18px;color:var(--text-dim);font-size:.76rem;">本回合无公共机遇</div>';
-      return;
-    }
-    var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
-    var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
-    var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '访贤' };
-    var h = '';
-    opps.forEach(function (o) {
-      var cls = TM[o.type] || 'ot-qiyu';
-      var condBrief = (o.conditions && o.conditions.length) ? o.conditions[0] : '';
-      h += '<div class="opp-display ' + cls + '" data-opp-id="' + o.id + '" data-opp-type="' + o.type + '">';
-      h += '<div class="opp-top">';
-      h += '<span class="opp-type-icon">' + (TI[o.type] || '🎭') + '</span>';
-      h += '<span class="opp-id">机遇' + o.id + '</span>';
-      h += '<span class="opp-name">' + _act10Esc(o.title) + '</span>';
-      h += '<span class="chip chip-' + cls + ' opp-type-chip">' + (TT[o.type] || '奇遇') + '</span>';
-      h += '</div>';
-      h += '<div class="opp-desc">' + _act10Esc(o.desc) + '</div>';
-      h += '<div class="opp-foot"><span class="opp-cond-brief">' + _act10Esc(condBrief) + '</span></div>';
-      h += '</div>';
-    });
-    el.innerHTML = h;
-
-    // 电脑端：智能悬浮卡
-    if (window.matchMedia && window.matchMedia('(min-width: 769px)').matches) {
-      _act10InitTooltip(opps);
-    }
-    // 手机端：底部抽屉
-    else {
-      _act10InitDrawer(opps);
-    }
-  }
-
-  // ── 电脑端：智能悬浮卡初始化 ──
-  function _act10InitTooltip(opps) {
-    var tooltip = document.getElementById('opp-tooltip');
-    if (!tooltip) {
-      tooltip = document.createElement('div');
-      tooltip.id = 'opp-tooltip';
-      document.body.appendChild(tooltip);
-    }
-
-    var cards = document.querySelectorAll('.opp-display[data-opp-id]');
-    cards.forEach(function(card) {
-      card.addEventListener('mouseenter', function(e) {
-        var oppId = parseInt(this.dataset.oppId);
-        var opp = opps.find(function(o) { return o.id === oppId; });
-        if (!opp) return;
-
-        var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
-        var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '访贤' };
-        var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
-        var cls = TM[opp.type] || 'ot-qiyu';
-
-        var html = '';
-        html += '<div class="opp-tt-header">';
-        html += '<span class="opp-tt-icon">' + (TI[opp.type] || '🎭') + '</span>';
-        html += '<span class="opp-tt-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
-        html += '<span class="chip chip-' + cls + '">' + (TT[opp.type] || '奇遇') + '</span>';
-        html += '</div>';
-        html += '<div class="opp-tt-body">';
-        if (opp.desc) {
-          html += '<div class="opp-tt-desc">' + _act10Esc(opp.desc) + '</div>';
-        }
-        if (opp.conditions && opp.conditions.length) {
-          html += '<div class="opp-tt-conditions">';
-          opp.conditions.forEach(function (c) {
-            html += '<div class="opp-tt-cond-row">' + _act10Esc(c) + '</div>';
-          });
-          html += '</div>';
-        }
-        if (opp.options && opp.options.length) {
-          html += '<div class="opp-tt-options"><div class="opp-tt-opts-title">选项</div>';
-          opp.options.forEach(function (op) {
-            html += '<div class="opp-tt-opt"><span class="opp-tt-opt-num">' + _act10Esc(op.num) + '</span>';
-            html += '<span class="opp-tt-opt-name">' + _act10Esc(op.name) + '</span>';
-            if (op.desc) html += '<span class="opp-tt-opt-desc">' + _act10Esc(op.desc) + '</span>';
-            html += '</div>';
-          });
-          html += '</div>';
-        }
-        html += '</div>';
-
-        tooltip.innerHTML = html;
-        tooltip.classList.add('show');
-
-        // 初始定位（鼠标位置）
-        _act10PositionTooltipMouse(tooltip, e);
-      });
-
-      card.addEventListener('mousemove', function(e) {
-        if (!tooltip.classList.contains('show')) return;
-        // 跟随鼠标移动
-        _act10PositionTooltipMouse(tooltip, e);
-      });
-
-      card.addEventListener('mouseleave', function() {
-        tooltip.classList.remove('show');
-      });
-    });
-  }
-
-  // ── 机遇悬浮卡跟随鼠标定位（复用武将悬浮卡逻辑）──
-  function _act10PositionTooltipMouse(tooltip, e) {
-    var W  = window.innerWidth;
-    var H  = window.innerHeight;
-    var tw = tooltip.offsetWidth  || 420;
-    var th = tooltip.offsetHeight || 300;
-    var gap = 16;
-
-    // 默认右下定位（鼠标右下方）
-    var x = e.clientX + gap;
-    var y = e.clientY + gap;
-
-    // 右侧超出 → 改为左侧
-    if (x + tw > W - 8) {
-      x = e.clientX - tw - 12;
-    }
-
-    // 下方超出 → 改为上方
-    if (y + th > H - 8) {
-      y = e.clientY - th - 12;
-    }
-
-    // 边界保护
-    if (x < 4) x = 4;
-    if (y < 4) y = 4;
-
-    tooltip.style.left = x + 'px';
-    tooltip.style.top  = y + 'px';
-  }
-
-  // ── 手机端：底部抽屉初始化 ──
-  function _act10InitDrawer(opps) {
-    var overlay = document.getElementById('opp-drawer-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'opp-drawer-overlay';
-      overlay.className = 'opp-drawer-overlay';
-      overlay.innerHTML = '<div class="opp-drawer"><div class="opp-drawer-handle"></div><div class="opp-drawer-header"></div><div class="opp-drawer-body"></div></div>';
-      document.body.appendChild(overlay);
-
-      overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-          overlay.classList.remove('show');
-        }
-      });
-    }
-
-    var cards = document.querySelectorAll('.opp-display[data-opp-id]');
-    cards.forEach(function(card) {
-      card.addEventListener('click', function() {
-        var oppId = parseInt(this.dataset.oppId);
-        var opp = opps.find(function(o) { return o.id === oppId; });
-        if (!opp) return;
-
-        var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
-        var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '访贤' };
-        var TM = { encounter: 'ot-qiyu', bond: 'ot-jiaoyi', gamble: 'ot-duji', recruit: 'ot-touben' };
-        var cls = TM[opp.type] || 'ot-qiyu';
-
-        var headerHtml = '';
-        headerHtml += '<span class="opp-drawer-icon">' + (TI[opp.type] || '🎭') + '</span>';
-        headerHtml += '<span class="opp-drawer-title">机遇' + opp.id + ' · ' + _act10Esc(opp.title) + '</span>';
-        headerHtml += '<span class="opp-drawer-type chip chip-' + cls + '">' + (TT[opp.type] || '奇遇') + '</span>';
-        headerHtml += '<button class="opp-drawer-close">✕</button>';
-
-        var bodyHtml = '';
-        if (opp.desc) {
-          bodyHtml += '<div class="opp-drawer-section"><div class="opp-drawer-desc">' + _act10Esc(opp.desc).replace(/\n/g, '<br>') + '</div></div>';
-        }
-        if (opp.conditions && opp.conditions.length) {
-          bodyHtml += '<div class="opp-drawer-section opp-drawer-detail-section">';
-          opp.conditions.forEach(function (c) {
-            bodyHtml += '<div class="opp-tt-cond-row">' + _act10Esc(c) + '</div>';
-          });
-          bodyHtml += '</div>';
-        }
-        if (opp.options && opp.options.length) {
-          bodyHtml += '<div class="opp-drawer-section opp-tt-options"><div class="opp-tt-opts-title">选项</div>';
-          opp.options.forEach(function (op) {
-            bodyHtml += '<div class="opp-tt-opt"><span class="opp-tt-opt-num">' + _act10Esc(op.num) + '</span><span class="opp-tt-opt-name">' + _act10Esc(op.name) + '</span>';
-            if (op.desc) bodyHtml += '<span class="opp-tt-opt-desc">' + _act10Esc(op.desc) + '</span>';
-            bodyHtml += '</div>';
-          });
-          bodyHtml += '</div>';
-        }
-
-        overlay.querySelector('.opp-drawer-header').innerHTML = headerHtml;
-        overlay.querySelector('.opp-drawer-body').innerHTML = bodyHtml;
-        overlay.classList.add('show');
-
-        // 绑定关闭按钮
-        overlay.querySelector('.opp-drawer-close').addEventListener('click', function() {
-          overlay.classList.remove('show');
-        });
-      });
-    });
-  }
-
-  // ── 三家行动面板 ──
+  // ── 三家行动面板（v8 预览页对齐版）──
   function _act10Columns(parsed) {
     var el = document.getElementById('act10-cols-grid');
     if (!el) return;
     var actions = parsed.playerActions || {};
-    var opps = parsed.opportunities || [];
-    var pres = parsed.prestige;
-
-    // v6.3: 移动端 tab 已删除，三栏始终并排显示（移动端纵向堆叠）
-    var tabH = '';
-
+    var opps    = parsed.opportunities || [];
+    var pres    = parsed.prestige;
     var h = '';
     var currentSlot = getCurrentPlayerSlot();
 
@@ -2178,14 +1920,8 @@ function updateBarracksVisibility(enabled) {
         if (pe) pp = pe.score;
       }
 
-      // ↓↓↓ 工单 #action-panel-reorder-v1 ↓↓↓
-      var orderStyle = '';
-      if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
-        var currentSlot = getCurrentPlayerSlot();
-        orderStyle = ' style="order:' + (i === currentSlot ? '0' : String(i + 1)) + '"';
-      }
-      h += '<div class="col-panel" data-slot="' + i + '" data-editable="' + isEditable + '"' + orderStyle + '>';
-      // ↑↑↑ 工单结束 ↑↑↑
+      h += '<div class="col-panel" data-slot="' + i + '" data-editable="' + isEditable + '">';
+      // 面板头
       h += '<div class="col-head">';
       h += '<span class="col-name">' + _act10Esc(pn) + '</span>';
       h += '<span class="col-slot-tag">[' + sk + ']</span>';
@@ -2193,212 +1929,229 @@ function updateBarracksVisibility(enabled) {
       h += '<button class="barracks-open-btn" data-slot="' + i + '" data-pcolor="' + i + '">💬 军帐</button>';
       h += '</div>';
 
-      // 已提交摘要区（初始隐藏，加载提交数据后填充）
+      // 已提交摘要区
       h += '<div class="col-summary" id="act10-summary-' + i + '" style="display:none"></div>';
 
+      // 额度计数条
+      h += '<div class="quota-bar" id="act10-quota-' + i + '">';
+      h += '<span class="quota-label">行动额度</span>';
+      h += '<div class="quota-dots">';
+      h += '<div class="quota-dot" id="act10-qdot-' + i + '-0">1</div>';
+      h += '<div class="quota-dot" id="act10-qdot-' + i + '-1">2</div>';
+      h += '<div class="quota-dot" id="act10-qdot-' + i + '-2">3</div>';
+      h += '</div>';
+      h += '<span class="quota-hint" id="act10-qhint-' + i + '">已选 0 / 最多 3</span>';
+      h += '</div>';
+
+      // 面板体
       h += '<div class="col-body" id="act10-body-' + i + '">';
 
       if (!sa) {
         h += '<div style="text-align:center;padding:28px 10px;color:var(--text-dim);font-size:.82rem;">等待 GM 发布行动选项…</div>';
       } else {
-        // v6.2: ①②③④ 建议令（含自定军令，4选2）
+        // ①②③④ 四大类行动令
         var lingItems = sa.items || [];
         if (lingItems.length) {
           lingItems.forEach(function(item, li) {
-            h += _act10BuildLing(item, li, i, 'item' + li);
+            h += _act10BuildCat(item, li, i);
           });
-          // 只有当 items 数组少于4个时，才补充自定军令
           if (lingItems.length < 4) {
-            h += _act10BuildCustomOrder(i, lingItems.length);
+            h += _act10BuildCustomOrder(i);
           }
         } else {
           var lingKeys = ['wu', 'wen', 'ce'];
           lingKeys.forEach(function(key, li) {
             var ling = sa[key];
             if (!ling) return;
-            h += _act10BuildLing(ling, li, i, key);
+            h += _act10BuildCat(ling, li, i);
           });
-          // 旧版本格式才自动追加自定军令
-          h += _act10BuildCustomOrder(i, 3);
+          h += _act10BuildCustomOrder(i);
         }
 
-        // 机遇选取区（占1个行动额度）
+        // 机遇选取区
         h += _act10BuildOppSelect(opps, i);
-
-        // 提交区
-        h += '<div class="submit-area" id="act10-submit-' + i + '">';
-        h += '<button class="submit-btn" data-slot="' + i + '">提交行动</button>';
-        h += '<button class="col-edit-btn" data-slot="' + i + '">📝 修改行动</button>';
-        h += '<span class="submit-hint" id="act10-hint-' + i + '">从 ①②③④ 中选 1–3 个行动分支后提交</span>';
-        h += '<div class="val-toast" id="act10-toast-' + i + '"></div>';
-        h += '</div>';
       }
 
-      h += '</div></div>';
+      // 提交区
+      h += '<div class="act-divider"></div>';
+      h += '<div class="submit-area" id="act10-submit-' + i + '">';
+      h += '<button class="submit-btn" data-slot="' + i + '" disabled>提交行动</button>';
+      h += '<button class="col-edit-btn" data-slot="' + i + '">📝 修改行动</button>';
+      h += '<span class="submit-hint" id="act10-hint-' + i + '">从 ①②③④ 中选 1–3 个行动分支</span>';
+      h += '<div class="val-toast" id="act10-toast-' + i + '"></div>';
+      h += '</div>';
+
+      h += '</div></div>'; // col-body / col-panel
     }
-    el.innerHTML = tabH + h;
+    el.innerHTML = h;
     _act10BindAll();
   }
 
-  // ── 构建单个令 HTML ──
-  function _act10BuildLing(ling, lingIdx, slotIdx, lingKey) {
-    var grp = 'g' + slotIdx + '-' + lingKey;
-    var h = '<div class="ling" id="act10-ling-' + slotIdx + '-' + lingIdx + '">';
+  // ── 构建单个大类行动卡（对齐 action-preview.html）──
+  function _act10BuildCat(ling, lingIdx, slotIdx) {
+    var catNums  = ['①','②','③','④'];
+    var catCls   = ['cat-mil','cat-gov','cat-tal','cat-dip'];
+    var catId    = 'act10-cat-' + slotIdx + '-' + lingIdx;
+    var remId    = 'act10-remark-' + slotIdx + '-' + lingIdx;
+    var num      = ling.num || catNums[lingIdx] || String(lingIdx+1);
+    var name     = ling.title || ling.name || '';
+    var quote    = ling.quote || '';
+    var risk     = ling.risk || '';
+    var prestige = ling.prestige || '';
+    var cls      = catCls[lingIdx] || 'cat-mil';
+    var rc       = risk === '稳' ? 'risk-s' : risk === '险' ? 'risk-r' : 'risk-m';
 
-    // 令头
-    h += '<div class="ling-header"><span class="ling-num">' + _act10Esc(ling.num || ACT10_LING_NUMS[lingIdx] || '') + '</span><div class="ling-main">';
-    h += '<div class="ling-title-row"><span class="ling-name">' + _act10Esc(ling.title || ling.name || '') + '</span>';
-    if (ling.risk || ling.prestige) {
-      var rc = ling.risk === '稳' ? 'chip-s' : ling.risk === '险' ? 'chip-r' : 'chip-m';
-      h += '<div class="ling-risk">';
-      if (ling.risk) h += '<span class="chip ' + rc + '">' + _act10Esc(ling.risk) + '</span>';
-      if (ling.prestige) h += '<span class="ling-pres">预估 ' + _act10WrapPrestige('+' + ling.prestige) + ' 威望</span>';
+    var h = '<div class="act-cat ' + cls + '" id="' + catId + '">';
+
+    // 大类头
+    h += '<div class="act-cat-hd">';
+    h += '<span class="act-cat-num">' + _act10Esc(num) + '</span>';
+    h += '<span class="act-cat-name">' + _act10Esc(name) + '</span>';
+    if (risk || prestige) {
+      h += '<div class="act-cat-meta">';
+      if (risk)     h += '<span class="risk-chip ' + rc + '">' + _act10Esc(risk) + '</span>';
+      if (prestige) h += '<span class="act-cat-pres">预估 <span class="pn">+' + _act10Esc(prestige) + '</span> 威望</span>';
       h += '</div>';
     }
+    if (quote) h += '<span class="act-cat-quote">' + _act10Esc(quote) + '</span>';
     h += '</div>';
-    if (ling.quote) {
-      h += '<div class="ling-quote">' + _act10Esc(ling.quote) + '</div>';
-    }
-    if (ling.note) h += '<div class="ling-note">' + _act10Esc(ling.note) + '</div>';
-    h += '</div></div>';
 
-    // 分支列表
-    h += '<div class="branch-list">';
+    // 大类体
+    h += '<div class="act-cat-body">';
     var opts = ling.options || [];
-    if (opts.length) {
-      opts.forEach(function(opt, oi) {
-        var hasSub = opt.sub && opt.sub.length > 0;
-        var subId  = 'sub-' + slotIdx + '-' + lingIdx + '-' + oi;
-        var optCls = 'opt' + (hasSub ? ' has-sub' : '');
-        h += '<div class="' + optCls + '" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="' + _act10Esc(opt.label || opt.name) + '"' + (hasSub ? ' data-sub="' + subId + '"' : '') + '>';
-        h += '<div class="rdot"></div><div class="opt-body">';
-        h += '<div style="display:flex;align-items:baseline;gap:4px;">';
-        if (opt.label) h += '<span class="opt-lbl">' + _act10Esc(opt.label) + '.</span>';
-        h += '<span class="opt-nm">' + _act10Esc(opt.name) + '</span>';
-        if (opt.risk) {
-          var rc2 = opt.risk === '稳' ? 'chip-s' : opt.risk === '险' ? 'chip-r' : 'chip-m';
-          h += '<span class="chip ' + rc2 + '" style="font-size:.55rem;padding:1px 4px;">' + _act10Esc(opt.risk) + '</span>';
-        }
-        if (opt.prestige) h += '<span class="ling-pres" style="font-size:.65rem;">' + _act10WrapPrestige(opt.prestige) + '</span>';
-        h += '</div>';
-        if (opt.desc) h += '<div class="opt-desc">' + _act10Esc(opt.desc) + '</div>';
-        h += '</div>';
-        if (hasSub) h += '<span class="expand-arrow">▶</span>';
-        h += '</div>';
+    opts.forEach(function(opt, oi) {
+      var hasSub  = opt.sub && opt.sub.length > 0;
+      var brId    = 'act10-branch-' + slotIdx + '-' + lingIdx + '-' + oi;
+      var subId   = 'act10-sub-' + slotIdx + '-' + lingIdx + '-' + oi;
+      var optRc   = opt.risk === '稳' ? 'risk-s' : opt.risk === '险' ? 'risk-r' : 'risk-m';
 
-        // 二级分支
-        if (hasSub) {
-          h += '<div class="sub-branch-list" id="' + subId + '">';
-          opt.sub.forEach(function(sub) {
-            var subGrp = grp + '-' + oi;
-            h += '<div class="opt-l2" data-grp="' + grp + '" data-subgrp="' + subGrp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="' + _act10Esc(sub.label || sub.name) + '" data-parent-opt="' + _act10Esc(opt.label || opt.name) + '">';
-            h += '<div class="rdot-sm"></div><div class="opt-body">';
-            h += '<div style="display:flex;align-items:baseline;gap:4px;">';
-            if (sub.label) h += '<span class="opt-lbl" style="font-size:.68rem;">' + _act10Esc(sub.label) + '.</span>';
-            h += '<span class="opt-nm" style="font-size:.8rem;">' + _act10Esc(sub.name) + '</span>';
-            if (sub.risk) {
-              var rc3 = sub.risk === '稳' ? 'chip-s' : sub.risk === '险' ? 'chip-r' : 'chip-m';
-              h += '<span class="chip ' + rc3 + '" style="font-size:.52rem;padding:1px 4px;">' + _act10Esc(sub.risk) + '</span>';
-            }
-            if (sub.prestige) h += '<span class="ling-pres" style="font-size:.62rem;">' + _act10WrapPrestige(sub.prestige) + '</span>';
-            if (sub.cond) h += '<span class="chip chip-gold" style="font-size:.52rem;padding:1px 4px;">需:' + _act10Esc(sub.cond) + '</span>';
-            h += '</div>';
-            if (sub.desc) h += '<div class="opt-desc" style="font-size:.72rem;">' + _act10Esc(sub.desc) + '</div>';
-            h += '</div></div>';
-          });
-          h += '</div>';
-        }
-      });
-    } else {
-      // 兜底：读 a/b/c 字段
-      var optKeys = Object.keys(ling).filter(function(k) { return /^[a-c]$/.test(k); }).sort();
-      if (optKeys.length) {
-        optKeys.forEach(function(k) {
-          var o = ling[k]; if (!o) return;
-          h += '<div class="opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="' + k.toUpperCase() + '">';
-          h += '<div class="rdot"></div><div class="opt-body"><span class="opt-lbl">' + k.toUpperCase() + '.</span><span class="opt-nm">' + _act10Esc(o.name) + '</span>';
-          if (o.desc) h += '<div class="opt-desc">' + _act10Esc(o.desc) + '</div>';
-          h += '</div></div>';
-        });
-      } else if (ling.desc) {
-        h += '<div class="opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="execute">';
-        h += '<div class="rdot"></div><div class="opt-body"><span class="opt-nm">执行此谋略</span><div class="opt-desc">' + _act10Esc(ling.desc) + '</div></div></div>';
+      h += '<div class="act-branch-l1" id="' + brId + '">';
+      if (hasSub) {
+        // 有二级：点击展开折叠
+        h += '<div class="act-opt-l1" data-action="toggle" data-brid="' + brId + '" data-subid="' + subId + '" data-catid="' + catId + '">';
+      } else {
+        // 无二级：直接选中
+        h += '<div class="act-opt-l1" data-action="select" data-slot="' + slotIdx + '" data-cat="' + lingIdx + '" data-val="' + _act10Esc(opt.label || opt.name) + '" data-remid="' + remId + '">';
       }
-    }
+      h += '<div class="rdot-v8"></div>';
+      h += '<div class="act-opt-body-l1">';
+      h += '<div class="act-opt-top-l1">';
+      if (opt.label) h += '<span class="act-opt-lbl-l1">' + _act10Esc(opt.label) + '.</span>';
+      h += '<span class="act-opt-name-l1">' + _act10Esc(opt.name) + '</span>';
+      h += '</div>';
+      if (opt.risk || opt.prestige) {
+        h += '<div class="act-opt-meta-l1">';
+        if (opt.risk)     h += '<span class="risk-chip ' + optRc + '">' + _act10Esc(opt.risk) + '</span>';
+        if (opt.prestige) h += '<span class="act-cat-pres"><span class="pn">+' + _act10Esc(opt.prestige) + '</span></span>';
+        h += '</div>';
+      }
+      if (opt.desc) h += '<div class="act-opt-desc-l1">' + _act10Esc(opt.desc) + '</div>';
+      h += '</div>';
+      if (hasSub) h += '<span class="act-expand-arrow">▶</span>';
+      h += '</div>'; // .act-opt-l1
+
+      // 二级分支
+      if (hasSub) {
+        h += '<div class="act-sub-list" id="' + subId + '">';
+        opt.sub.forEach(function(sub) {
+          var subRc  = sub.risk === '稳' ? 'risk-s' : sub.risk === '险' ? 'risk-r' : 'risk-m';
+          var isCond = !!sub.cond;
+          h += '<div class="act-opt-l2' + (isCond ? ' cond-branch' : '') + '" data-action="select-l2" data-slot="' + slotIdx + '" data-cat="' + lingIdx + '" data-val="' + _act10Esc(sub.label || sub.name) + '" data-brid="' + brId + '" data-remid="' + remId + '">';
+          h += '<div class="rdot-v8-sm"></div>';
+          h += '<div class="act-opt-body-l2">';
+          h += '<div class="act-opt-top-l2">';
+          if (sub.label) h += '<span class="act-opt-lbl-l2">' + _act10Esc(sub.label) + '.</span>';
+          h += '<span class="act-opt-name-l2">' + _act10Esc(sub.name) + '</span>';
+          if (sub.cond)  h += '<span class="act-cond-tag">需:' + _act10Esc(sub.cond) + '</span>';
+          h += '</div>';
+          if (sub.risk || sub.prestige) {
+            h += '<div class="act-opt-meta-l2">';
+            if (sub.risk)     h += '<span class="risk-chip ' + subRc + '">' + _act10Esc(sub.risk) + '</span>';
+            if (sub.prestige) h += '<span class="act-cat-pres"><span class="pn">+' + _act10Esc(sub.prestige) + '</span></span>';
+            h += '</div>';
+          }
+          if (sub.desc) h += '<div class="act-opt-desc-l2">' + _act10Esc(sub.desc) + '</div>';
+          h += '</div></div>'; // act-opt-body-l2 / act-opt-l2
+        });
+        h += '</div>'; // .act-sub-list
+      }
+
+      h += '</div>'; // .act-branch-l1
+    });
+
+    // 备注区（选中一级/二级后显示）
+    h += '<div class="act-remark-block" id="' + remId + '">';
+    h += '<div class="act-remark-hd"><span class="act-remark-lbl">💬 备注（可选，不占额度）</span></div>';
+    h += '<textarea class="act-remark-ta" rows="2" placeholder="对此行动的补充说明…" maxlength="60"></textarea>';
     h += '</div>';
 
-    // 备注区
-    h += '<div class="remark-block" id="act10-remark-' + slotIdx + '-' + lingIdx + '">';
-    h += '<div class="remark-hd">';
-    h += '<div class="remark-lbl">备注（可选，不占额度）</div>';
-    h += '<button class="pop-btn" data-target="remark" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" title="弹出输入框">📌</button>';
-    h += '</div>';
-    h += '<textarea class="remark-ta" rows="1" placeholder="对此行动的补充说明…"></textarea>';
-    h += '</div>';
-
-    h += '</div>';
+    h += '</div></div>'; // .act-cat-body / .act-cat
     return h;
   }
 
+  // ── 旧函数别名（兼容内部调用）──
+  function _act10BuildLing(ling, lingIdx, slotIdx, lingKey) {
+    return _act10BuildCat(ling, lingIdx, slotIdx);
+  }
+
   // ── 构建⑤自定军令（单框，随内容自动扩展）──
-  function _act10BuildCustomOrder(slotIdx, lingIdx) {
-    var grp = 'g' + slotIdx + '-custom';
-    var h = '<div class="ling" id="act10-ling-' + slotIdx + '-' + lingIdx + '">';
-
-    // 令头
-    h += '<div class="ling-header">';
-    h += '<span class="ling-num">⑤</span>';
-    h += '<div class="ling-main">';
-    h += '<div class="ling-title-row"><span class="ling-name">自定军令</span></div>';
+  function _act10BuildCustomOrder(slotIdx) {
+    var h = '<div class="act-custom-block" id="act10-custom-' + slotIdx + '">';
+    h += '<div class="act-custom-hd">';
+    h += '<span class="act-custom-num">⑤</span>';
+    h += '<span class="act-custom-name">自定军令</span>';
+    h += '</div>';
+    h += '<div class="act-custom-body">';
+    h += '<div class="act-custom-slot" id="act10-cslot-' + slotIdx + '">';
+    h += '<div class="rdot-v8" id="act10-cdot-' + slotIdx + '"></div>';
+    h += '<div class="act-custom-inner">';
+    h += '<textarea class="act-custom-ta" placeholder="填写自定军令内容…" maxlength="120"'
+       + ' oninput="_act10CustomInput(this,' + slotIdx + ')"></textarea>';
     h += '</div></div>';
-
-    // 输入区（单槽，自动扩展，有内容则计为已选）
-    h += '<div class="branch-list">';
-    h += '<div class="opt zdjl-opt" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-ling="' + lingIdx + '" data-val="custom">';
-    h += '<div class="zdjl-top"><div class="rdot"></div><span class="zdjl-nm">填写自定军令</span></div>';
-    h += '<div class="zdjl-wrap">';
-    h += '<div class="zdjl-hd">';
-    h += '<button class="pop-btn" data-target="zdjl" data-slot="' + slotIdx + '" title="弹出输入框">📌</button>';
-    h += '</div>';
-    h += '<textarea class="zdjl-ta" placeholder="填写自定军令内容（可替代任意大类分支）…" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'"></textarea>';
-    h += '</div>';
-    h += '</div>';
-    h += '</div>';
-
-    h += '</div>';
+    h += '</div></div>';
     return h;
+  }
+
+  // ── 自定军令输入处理 ──
+  function _act10CustomInput(ta, slotIdx) {
+    var dot  = document.getElementById('act10-cdot-' + slotIdx);
+    var slot = document.getElementById('act10-cslot-' + slotIdx);
+    var len  = ta.value.trim().length;
+    if (dot) {
+      dot.style.borderColor = len > 0 ? 'var(--gold)' : '';
+      dot.style.background  = len > 0 ? 'var(--gold)' : '';
+    }
+    if (slot) slot.classList.toggle('checked', len > 0);
+    // 自动高度
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+    _act10UpdateQuota(slotIdx);
   }
 
   // ── 构建机遇选取区 ──
   function _act10BuildOppSelect(opps, slotIdx) {
+    if (!opps || !opps.length) return '';
     var TI = { encounter: '🎭', bond: '🏮', gamble: '🎲', recruit: '🐴' };
     var TT = { encounter: '奇遇', bond: '交谊', gamble: '赌局', recruit: '访贤' };
-    var TC = { encounter: 'chip-ot-qiyu', bond: 'chip-ot-jiaoyi', gamble: 'chip-ot-duji', recruit: 'chip-ot-touben' };
-    var grp = 'opp-g' + slotIdx;
-    var h = '<div class="opp-select-block">';
-    h += '<div class="opp-select-hd"><span class="chip chip-opp" style="font-size:.6rem;">机遇</span><span class="opp-select-title">选取机遇（可选）</span><span class="opp-select-hint">占1个行动额度</span></div>';
-    h += '<div class="opp-active-hint">已选机遇 · 占用1个行动额度，还可再选1条令</div>';
+    var h = '<div class="opp-select-block" id="act10-opp-' + slotIdx + '">';
+    h += '<div class="opp-select-hd">';
+    h += '<span style="font-size:.72rem;color:#c888e8;">机遇</span>';
+    h += '<span class="opp-select-title">选取机遇（可选）</span>';
+    h += '<span class="opp-select-hint">占1个行动额度</span>';
+    h += '</div>';
+    h += '<div class="opp-opts-list">';
     opps.forEach(function(o) {
-      h += '<div class="opp-opt-row" data-grp="' + grp + '" data-slot="' + slotIdx + '" data-opp-id="' + o.id + '">';
+      h += '<div class="opp-opt-row" data-action="select-opp" data-slot="' + slotIdx + '" data-opp-id="' + o.id + '">';
       h += '<div class="opp-rdot"></div>';
-      h += '<span class="opp-opt-icon">' + (TI[o.type] || '🎭') + '</span>';
-      h += '<span class="opp-opt-name">机遇' + o.id + ' · ' + _act10Esc(o.title) + '</span>';
-      h += '<span class="opp-opt-pres">' + _act10WrapPrestige(String(o.prestige)) + '</span>';
-      h += '<span class="chip ' + (TC[o.type] || 'chip-ot-qiyu') + '" style="margin-left:2px;">' + (TT[o.type] || '奇遇') + '</span>';
+      h += '<div class="opp-opt-body">';
+      h += '<span class="opp-opt-name">' + (TI[o.type] || '🎭') + ' 机遇' + o.id + ' · ' + _act10Esc(o.title) + '</span>';
+      if (o.desc) h += '<div class="opp-opt-desc">' + _act10Esc(o.desc) + '</div>';
+      h += '</div>';
+      h += '<span class="opp-opt-pres">' + _act10WrapPrestige(String(o.prestige || '')) + '</span>';
       h += '</div>';
     });
-    h += '<div class="opp-no-sel-note">占1个行动额度 · 每人每回合最多选1条</div>';
-
-    // ↓↓↓ 新增：机遇决策输入框 ↓↓↓
-    h += '<div class="opp-decision-block">';
-    h += '<div class="opp-decision-hd">';
-    h += '<div class="opp-decision-lbl">决策（可选，≤30字）</div>';
-    h += '<button class="pop-btn" data-target="opp-decision" data-slot="' + slotIdx + '" title="弹出输入框">📌</button>';
     h += '</div>';
-    h += '<textarea class="opp-decision-ta" rows="1" maxlength="30" placeholder="说明如何处理此机遇…"></textarea>';
-    h += '</div>';
-    // ↑↑↑ 新增结束 ↑↑↑
-
+    h += '<div class="opp-empty" style="font-size:.64rem;color:var(--text-dim);padding:4px 10px 6px;">占1个行动额度 · 每人每回合最多选1条</div>';
     h += '</div>';
     return h;
   }
@@ -2410,315 +2163,267 @@ function updateBarracksVisibility(enabled) {
     var root = document.getElementById('act10-root');
     if (!root) return;
 
-    // 一级选项 Toggle（无子分支时直接选中；有子分支时展开/折叠）
-    root.querySelectorAll('.opt').forEach(function(opt) {
-      opt.addEventListener('click', function(e) {
+    // ── 一级分支（data-action="select" 或 "toggle"）──
+    root.querySelectorAll('.act-opt-l1').forEach(function(el) {
+      el.addEventListener('click', function(e) {
         if (e.target.tagName === 'TEXTAREA') return;
-
         var panel = this.closest('.col-panel');
         if (panel && panel.dataset.editable === 'false') {
-          showToast('⚠️ 无法编辑其他玩家的行动');
-          return;
+          showToast('⚠️ 无法编辑其他玩家的行动'); return;
         }
+        var action  = this.dataset.action;
+        var slotIdx = parseInt(this.dataset.slot);
+        var catIdx  = parseInt(this.dataset.cat);
 
-        var grp = this.dataset.grp;
-        var si  = parseInt(this.dataset.slot);
-        var li  = parseInt(this.dataset.ling);
-        if (isNaN(li)) {
-          console.warn('[act10] Invalid data-ling:', this.dataset.ling, 'for opt:', this);
-        }
-
-        var hasSub  = this.classList.contains('has-sub');
-        var subId   = this.dataset.sub;
-        var subEl   = subId ? document.getElementById(subId) : null;
-
-        if (hasSub && subEl) {
-          // 有二级分支：展开/折叠，不直接选中
-          var isExpanded = this.classList.contains('expanded');
-          // 先收起同令内所有其他子列表
-          var lingEl = this.closest('.ling');
-          if (lingEl) {
-            lingEl.querySelectorAll('.opt.has-sub').forEach(function(o) {
-              o.classList.remove('expanded');
-              var sid = o.dataset.sub;
-              if (sid) { var s = document.getElementById(sid); if (s) s.classList.remove('expanded'); }
-            });
+        if (action === 'toggle') {
+          // 有二级：展开/收起
+          var brEl  = document.getElementById(this.dataset.brid);
+          var subEl = document.getElementById(this.dataset.subid);
+          var catEl = document.getElementById(this.dataset.catid);
+          if (!brEl || !subEl) return;
+          var isExpanded = brEl.classList.contains('expanded');
+          // 先折叠同大类内所有分支
+          if (catEl) {
+            catEl.querySelectorAll('.act-branch-l1').forEach(function(b) { b.classList.remove('expanded'); });
+            catEl.querySelectorAll('.act-sub-list').forEach(function(s) { s.classList.remove('expanded'); });
           }
           if (!isExpanded) {
-            this.classList.add('expanded');
+            brEl.classList.add('expanded');
             subEl.classList.add('expanded');
           }
         } else {
-          // 无二级分支：直接单选（原逻辑）
+          // 无二级：直接单选
+          var catEl2 = panel ? panel.querySelector('#act10-cat-' + panel.dataset.slot + '-' + catIdx) : null;
           var already = this.classList.contains('checked');
-          // 清除同令同 grp 所有选中（一级 + 二级）
-          root.querySelectorAll('.opt[data-grp="' + grp + '"]').forEach(function(c) { c.classList.remove('checked'); });
-          root.querySelectorAll('.opt-l2[data-grp="' + grp + '"]').forEach(function(c) { c.classList.remove('checked'); });
-          var rem = document.getElementById('act10-remark-' + si + '-' + li);
+          // 清除此大类内所有选中
+          if (catEl2) {
+            catEl2.querySelectorAll('.act-opt-l1.checked, .act-opt-l2.checked').forEach(function(c) { c.classList.remove('checked'); });
+            catEl2.querySelectorAll('.act-branch-l1').forEach(function(b) { b.classList.remove('expanded'); });
+            catEl2.querySelectorAll('.act-sub-list').forEach(function(s) { s.classList.remove('expanded'); });
+            catEl2.querySelectorAll('.act-remark-block').forEach(function(r) { r.classList.remove('visible'); });
+          }
           if (!already) {
             this.classList.add('checked');
+            var rem = document.getElementById(this.dataset.remid);
             if (rem) rem.classList.add('visible');
-          } else {
-            if (rem) rem.classList.remove('visible');
           }
-          _act10UpdateBadge(si);
-          _act10HideToast(si);
+          _act10UpdateQuota(isNaN(slotIdx) ? null : slotIdx);
+          _act10HideToast(slotIdx);
         }
       });
     });
 
-    // 二级分支 Toggle（选中后联动点亮父级一级行）
-    root.querySelectorAll('.opt-l2').forEach(function(opt2) {
-      opt2.addEventListener('click', function(e) {
+    // ── 二级分支（data-action="select-l2"）──
+    root.querySelectorAll('.act-opt-l2').forEach(function(el) {
+      el.addEventListener('click', function(e) {
         if (e.target.tagName === 'TEXTAREA') return;
-
         var panel = this.closest('.col-panel');
         if (panel && panel.dataset.editable === 'false') {
-          showToast('⚠️ 无法编辑其他玩家的行动');
-          return;
+          showToast('⚠️ 无法编辑其他玩家的行动'); return;
         }
-
-        var grp = this.dataset.grp;
-        var si  = parseInt(this.dataset.slot);
-        var li  = parseInt(this.dataset.ling);
+        var slotIdx = parseInt(this.dataset.slot);
+        var catIdx  = parseInt(this.dataset.cat);
+        var catEl   = panel ? panel.querySelector('#act10-cat-' + panel.dataset.slot + '-' + catIdx) : null;
         var already = this.classList.contains('checked');
 
-        // 清除同 grp 所有一级和二级选中
-        root.querySelectorAll('.opt[data-grp="' + grp + '"]').forEach(function(c) { c.classList.remove('checked'); });
-        root.querySelectorAll('.opt-l2[data-grp="' + grp + '"]').forEach(function(c) { c.classList.remove('checked'); });
-
-        var rem = document.getElementById('act10-remark-' + si + '-' + li);
+        if (catEl) {
+          catEl.querySelectorAll('.act-opt-l1.checked, .act-opt-l2.checked').forEach(function(c) { c.classList.remove('checked'); });
+          catEl.querySelectorAll('.act-remark-block').forEach(function(r) { r.classList.remove('visible'); });
+        }
         if (!already) {
           this.classList.add('checked');
+          // 联动点亮父级一级行
+          var brEl = document.getElementById(this.dataset.brid);
+          if (brEl) brEl.querySelector('.act-opt-l1').classList.add('checked');
+          var rem = document.getElementById(this.dataset.remid);
           if (rem) rem.classList.add('visible');
-          // 同步点亮父级一级行
-          var subList = this.closest('.sub-branch-list');
-          if (subList) {
-            var parentOpt = subList.previousElementSibling;
-            if (parentOpt && parentOpt.classList.contains('opt')) {
-              parentOpt.classList.add('checked');
-            }
-          }
-        } else {
-          if (rem) rem.classList.remove('visible');
         }
-        _act10UpdateBadge(si);
-        _act10HideToast(si);
+        _act10UpdateQuota(slotIdx);
+        _act10HideToast(slotIdx);
       });
     });
 
-    // 机遇 Toggle（点击选中，再点取消，单选）
+    // ── 机遇单选 ──
     root.querySelectorAll('.opp-opt-row').forEach(function(row) {
       row.addEventListener('click', function() {
         var panel = this.closest('.col-panel');
         if (panel && panel.dataset.editable === 'false') {
-          showToast('⚠️ 无法编辑其他玩家的行动');
-          return;
+          showToast('⚠️ 无法编辑其他玩家的行动'); return;
         }
-
-        var grp = this.dataset.grp;
         var si = parseInt(this.dataset.slot);
         var already = this.classList.contains('checked');
-        // 先清除同组所有选中
-        root.querySelectorAll('.opp-opt-row[data-grp="' + grp + '"]').forEach(function(c) { c.classList.remove('checked'); });
-        var panel = root.querySelector('.col-panel[data-slot="' + si + '"]');
-        if (!already) {
-          // 选中
-          this.classList.add('checked');
-          if (panel) panel.classList.add('opp-active');
-        } else {
-          // 取消选中
-          if (panel) panel.classList.remove('opp-active');
-        }
-        _act10UpdateBadge(si);
+        var oppBlock = this.closest('.opp-select-block');
+        if (oppBlock) oppBlock.querySelectorAll('.opp-opt-row.checked').forEach(function(c) { c.classList.remove('checked'); });
+        if (!already) this.classList.add('checked');
+        _act10UpdateQuota(si);
         _act10HideToast(si);
       });
     });
 
-    // textarea 阻止冒泡
-    root.querySelectorAll('.zdjl-ta, .remark-ta, .zero-ta').forEach(function(ta) {
+    // ── textarea 阻止冒泡 ──
+    root.querySelectorAll('textarea').forEach(function(ta) {
       ta.addEventListener('click', function(e) { e.stopPropagation(); });
     });
 
-    // 提交按钮
+    // ── 提交按钮 ──
     root.querySelectorAll('.submit-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var slotIdx = parseInt(this.dataset.slot);
-        var currentSlot = getCurrentPlayerSlot();
-
-        if (slotIdx !== currentSlot) {
-          showToast('⚠️ 无法提交其他玩家的行动');
-          return;
+        if (slotIdx !== getCurrentPlayerSlot()) {
+          showToast('⚠️ 无法提交其他玩家的行动'); return;
         }
-
         _act10Submit(slotIdx);
       });
     });
 
-    // ↓↓↓ 工单 #submit-lock-v1 ↓↓↓
-    // 修改按钮
+    // ── 修改按钮 ──
     root.querySelectorAll('.col-edit-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var slotIdx = parseInt(this.dataset.slot);
         var panel = root.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
         if (!panel) return;
-
-        // 解锁面板
-        panel.classList.remove('submitted-locked');
-
-        // ↓↓↓ 工单 #edit-btn-fix-v2 彻底清除摘要区 ↓↓↓
+        panel.classList.remove('submitted', 'submitted-locked');
         var summary = document.getElementById('act10-summary-' + slotIdx);
-        if (summary) {
-          summary.style.display = 'none';
-          summary.innerHTML = ''; // 清空内容，防止占据空间
-        }
-        // ↑↑↑ 工单结束 ↑↑↑
-
-        // 强制触发重绘，确保 pointer-events 立即恢复
+        if (summary) { summary.style.display = 'none'; summary.innerHTML = ''; }
         var colBody = panel.querySelector('.col-body');
-        if (colBody) {
-          void colBody.offsetHeight;
-          colBody.style.pointerEvents = 'auto';
-        }
-
-        // ↓↓↓ 工单 #edit-btn-fix-v2 清除残留选中态 ↓↓↓
-        // 清除所有选项的选中状态，避免 UI 残留
-        panel.querySelectorAll('.opt.checked, .opp-opt-row.checked').forEach(function(el) {
-          el.classList.remove('checked');
-        });
-        // 清空自定军令和备注输入框
-        panel.querySelectorAll('.zdjl-ta, .remark-ta').forEach(function(ta) {
-          ta.value = '';
-        });
-        // 重置徽章
-        _act10UpdateBadge(slotIdx);
-        // ↑↑↑ 工单结束 ↑↑↑
-
+        if (colBody) { void colBody.offsetHeight; colBody.style.pointerEvents = 'auto'; }
+        // 清除选中态
+        panel.querySelectorAll('.act-opt-l1.checked, .act-opt-l2.checked, .opp-opt-row.checked').forEach(function(el) { el.classList.remove('checked'); });
+        panel.querySelectorAll('.act-remark-block.visible').forEach(function(r) { r.classList.remove('visible'); });
+        panel.querySelectorAll('textarea').forEach(function(ta) { ta.value = ''; ta.style.height = ''; });
+        _act10UpdateQuota(slotIdx);
         showToast('📝 已解锁，可重新选择行动');
       });
     });
-    // ↑↑↑ 工单结束 ↑↑↑
 
-    // ↓↓↓ 工单 #action-draft-autosave-v1 ↓↓↓
-    // 草稿自动保存逻辑
-    var draftTimer = null;
-    var DRAFT_DEBOUNCE = 1000; // 1秒防抖
-
-    // 监听所有输入变化（选项、机遇、自定军令、备注）
-    root.querySelectorAll('.opt, .opp-opt-row, .zdjl-ta, .remark-ta').forEach(function(el) {
-      var eventType = (el.tagName === 'TEXTAREA') ? 'input' : 'click';
-      el.addEventListener(eventType, function() {
-        clearTimeout(draftTimer);
-        draftTimer = setTimeout(function() {
-          _act10SaveDraft();
-        }, DRAFT_DEBOUNCE);
-      });
-    });
-
-    // 保存草稿函数
-    function _act10SaveDraft() {
-      var currentSlot = getCurrentPlayerSlot();
-      var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
-      if (currentSlot === null || !currentRound) return;
-
-      var draft = _act10CollectSlot(currentSlot);
-      if (!draft) return;
-
-      var key = 'sg_draft_r' + currentRound + '_s' + currentSlot;
-      try {
-        localStorage.setItem(key, JSON.stringify(draft));
-        console.log('[act10] 草稿已保存:', key);
-      } catch (e) {
-        console.warn('[act10] 草稿保存失败:', e);
-      }
-    }
-
-    // 清除指定回合的所有草稿
-    function _clearRoundDrafts(roundNum) {
-      if (!roundNum) return;
-
-      // ↓↓↓ 修改：清除所有草稿，避免旧回合草稿残留 ↓↓↓
-      try {
-        var keys = Object.keys(localStorage);
-        var draftKeys = keys.filter(function(k) { return k.startsWith('sg_draft_'); });
-        draftKeys.forEach(function(key) {
-          localStorage.removeItem(key);
-          console.log('[act10] 草稿已清除:', key);
-        });
-        if (draftKeys.length > 0) {
-          console.log('[act10] 共清除 ' + draftKeys.length + ' 条草稿');
-        }
-      } catch (e) {
-        console.warn('[act10] 草稿清除失败:', e);
-      }
-      // ↑↑↑ 修改结束 ↑↑↑
-    }
-
-    // 加载草稿函数（在渲染完成后调用）
-    function _act10LoadDraft() {
-      var currentSlot = getCurrentPlayerSlot();
-      var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
-      if (currentSlot === null || !currentRound) return;
-
-      var key = 'sg_draft_r' + currentRound + '_s' + currentSlot;
-      var draftStr = localStorage.getItem(key);
-      if (!draftStr) return;
-
-      try {
-        var draft = JSON.parse(draftStr);
-        _act10RestoreDraft(draft, currentSlot);
-        console.log('[act10] 草稿已加载:', key);
-      } catch (e) {
-        console.warn('[act10] 草稿加载失败:', e);
-      }
-    }
-
-    // 恢复草稿到UI
-    function _act10RestoreDraft(draft, slotIdx) {
-      var panel = root.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
-      if (!panel) return;
-
-      // 恢复令选择
-      (draft.ling_selections || []).forEach(function(sel) {
-        var ling = panel.querySelector('.ling[id*="-' + sel.lingIdx + '"]');
-        if (!ling) return;
-        var opt = ling.querySelector('.opt[data-val="' + sel.choice + '"]');
-        if (opt) {
-          opt.click(); // 模拟点击，触发UI更新
-          // 恢复自定军令文本
-          if (sel.customText) {
-            var ta = opt.querySelector('.zdjl-ta');
-            if (ta) ta.value = sel.customText;
-          }
-        }
-      });
-
-      // 恢复机遇选择
-      if (draft.opp_selection && draft.opp_selection.type === 'opp') {
-        var oppRow = panel.querySelector('.opp-opt-row[data-opp-id="' + draft.opp_selection.oppId + '"]');
-        if (oppRow) oppRow.click();
-      }
-    }
-
-    // 页面加载时恢复草稿
-    _act10LoadDraft();
-    // ↑↑↑ 工单结束 ↑↑↑
-
-    // v6.3: 移动端 tab 已删除，无需事件绑定
-
-    // ── 军帐按钮绑定 ──
+    // ── 军帐按钮 ──
     root.querySelectorAll('.barracks-open-btn').forEach(function(btn) {
       btn.addEventListener('click', function(e) {
         e.stopPropagation();
-        var slotIdx = parseInt(this.dataset.slot, 10);
-        openBarracks(slotIdx);
+        var slotIdx = parseInt(this.dataset.slot);
+        openBarracksDrawer(slotIdx);
       });
     });
+
   }
 
-  function _act10UpdateBadge(si, total) {
-    // 已选标记已移除，此函数保留为空函数以避免调用报错
+  // ── 草稿保存 ──
+  function _act10SaveDraft() {
+    var currentSlot = getCurrentPlayerSlot();
+    var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (currentSlot === null || !currentRound) return;
+
+    var draft = _act10CollectSlot(currentSlot);
+    if (!draft) return;
+
+    var key = 'sg_draft_r' + currentRound + '_s' + currentSlot;
+    try {
+      localStorage.setItem(key, JSON.stringify(draft));
+      console.log('[act10] 草稿已保存:', key);
+    } catch (e) {
+      console.warn('[act10] 草稿保存失败:', e);
+    }
   }
+
+  // 清除指定回合的所有草稿
+  function _clearRoundDrafts(roundNum) {
+    if (!roundNum) return;
+    try {
+      var keys = Object.keys(localStorage);
+      var draftKeys = keys.filter(function(k) { return k.startsWith('sg_draft_'); });
+      draftKeys.forEach(function(key) {
+        localStorage.removeItem(key);
+        console.log('[act10] 草稿已清除:', key);
+      });
+      if (draftKeys.length > 0) {
+        console.log('[act10] 共清除 ' + draftKeys.length + ' 条草稿');
+      }
+    } catch (e) {
+      console.warn('[act10] 草稿清除失败:', e);
+    }
+  }
+
+  // 加载草稿函数（在渲染完成后调用）
+  function _act10LoadDraft() {
+    var currentSlot = getCurrentPlayerSlot();
+    var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
+    if (currentSlot === null || !currentRound) return;
+
+    var key = 'sg_draft_r' + currentRound + '_s' + currentSlot;
+    var draftStr = localStorage.getItem(key);
+    if (!draftStr) return;
+
+    try {
+      var draft = JSON.parse(draftStr);
+      _act10RestoreDraft(draft, currentSlot);
+      console.log('[act10] 草稿已加载:', key);
+    } catch (e) {
+      console.warn('[act10] 草稿加载失败:', e);
+    }
+  }
+
+  // 恢复草稿到UI
+  function _act10RestoreDraft(draft, slotIdx) {
+    var root = document.getElementById('act10-root');
+    if (!root) return;
+    var panel = root.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+    if (!panel) return;
+
+    // 恢复机遇选择
+    if (draft.opp_selection && draft.opp_selection.type === 'opp') {
+      var oppRow = panel.querySelector('.opp-opt-row[data-opp-id="' + draft.opp_selection.oppId + '"]');
+      if (oppRow) oppRow.click();
+    }
+  }
+
+  // ── 额度计数条更新（对齐预览页）──
+  function _act10UpdateQuota(slotIdx) {
+    if (slotIdx === null || isNaN(slotIdx)) return;
+    var root = document.getElementById('act10-root');
+    if (!root) return;
+    var panel = root.querySelector('.col-panel[data-slot="' + slotIdx + '"]');
+    if (!panel) return;
+
+    // 统计：每个大类最多1个选中（一级或二级），机遇占1，自定军令占1
+    var catCount = 0;
+    for (var ci = 0; ci < 4; ci++) {
+      var catEl = panel.querySelector('#act10-cat-' + slotIdx + '-' + ci);
+      if (catEl && (catEl.querySelector('.act-opt-l1.checked') || catEl.querySelector('.act-opt-l2.checked'))) {
+        catCount++;
+      }
+    }
+    var customEl = panel.querySelector('.act-custom-slot');
+    var customFilled = customEl && customEl.classList.contains('checked') ? 1 : 0;
+    var oppChecked = panel.querySelector('.opp-opt-row.checked') ? 1 : 0;
+    var total = catCount + customFilled + oppChecked;
+
+    // 更新点
+    for (var d = 0; d < 3; d++) {
+      var dot = document.getElementById('act10-qdot-' + slotIdx + '-' + d);
+      if (dot) dot.classList.toggle('filled', d < total);
+    }
+
+    // 更新提示和按钮
+    var hint    = document.getElementById('act10-qhint-' + slotIdx);
+    var submitBtn = panel.querySelector('.submit-btn');
+    var submitHint = document.getElementById('act10-hint-' + slotIdx);
+
+    if (total >= 1 && total <= 3) {
+      if (hint) { hint.textContent = '已选 ' + total + ' 个行动'; hint.className = 'quota-hint ok'; }
+      if (submitBtn) submitBtn.disabled = false;
+      if (submitHint) { submitHint.textContent = '确认后提交给 GM'; submitHint.style.color = '#7dd87d'; }
+    } else if (total > 3) {
+      if (hint) { hint.textContent = '行动超过 3 个'; hint.className = 'quota-hint err'; }
+      if (submitBtn) submitBtn.disabled = true;
+      if (submitHint) { submitHint.textContent = '最多选 3 个行动，请取消部分选项'; submitHint.style.color = '#e87060'; }
+    } else {
+      if (hint) { hint.textContent = '已选 0 / 最多 3'; hint.className = 'quota-hint'; }
+      if (submitBtn) submitBtn.disabled = true;
+      if (submitHint) { submitHint.textContent = '从 ①②③④ 中选 1–3 个行动分支'; submitHint.style.color = ''; }
+    }
+  }
+
+  function _act10UpdateBadge(si, total) { _act10UpdateQuota(si); }
 
   // ══════════════════════════════════════════
   //  收集选择数据
@@ -2731,59 +2436,41 @@ function updateBarracksVisibility(enabled) {
 
     var lingSelections = [];
     var remarks = [];
-    panel.querySelectorAll('.ling').forEach(function(ling, li) {
-      // 优先检查二级分支选中
-      var checkedL2 = ling.querySelector('.opt-l2.checked');
-      if (checkedL2) {
-        var val = checkedL2.dataset.val || '';
-        lingSelections.push({ lingIdx: li, choice: val, customText: null });
-        var remarkBlock = document.getElementById('act10-remark-' + slotIdx + '-' + li);
-        if (remarkBlock) {
-          var remarkTa = remarkBlock.querySelector('.remark-ta');
-          if (remarkTa && remarkTa.value.trim()) remarks.push({ lingIdx: li, text: remarkTa.value.trim() });
-        }
-        return;
-      }
-      // 再检查一级分支
-      var checked = ling.querySelector('.opt.checked');
-      if (!checked) return;
-      var val = checked.dataset.val || '';
-      var customText = null;
-      if (checked.classList.contains('zdjl-opt')) {
-        var ta = checked.querySelector('.zdjl-ta');
-        customText = ta ? ta.value.trim() : '';
-        if (!customText) return;
-      }
-      lingSelections.push({ lingIdx: li, choice: val, customText: customText });
 
-      var remarkBlock = document.getElementById('act10-remark-' + slotIdx + '-' + li);
-      if (remarkBlock) {
-        var remarkTa = remarkBlock.querySelector('.remark-ta');
-        if (remarkTa && remarkTa.value.trim()) remarks.push({ lingIdx: li, text: remarkTa.value.trim() });
+    // 四大类
+    for (var ci = 0; ci < 4; ci++) {
+      var catEl = panel.querySelector('#act10-cat-' + slotIdx + '-' + ci);
+      if (!catEl) continue;
+      var checkedL2 = catEl.querySelector('.act-opt-l2.checked');
+      var checkedL1 = catEl.querySelector('.act-opt-l1.checked');
+      var chosen = checkedL2 || checkedL1;
+      if (!chosen) continue;
+      var val = chosen.dataset.val || '';
+      lingSelections.push({ lingIdx: ci, choice: val, customText: null });
+      var rem = document.getElementById('act10-remark-' + slotIdx + '-' + ci);
+      if (rem) {
+        var remTa = rem.querySelector('.act-remark-ta');
+        if (remTa && remTa.value.trim()) remarks.push({ lingIdx: ci, text: remTa.value.trim() });
       }
-    });
-
-    // 机遇（可选，不选则 type:'none'）
-    var oppSel = { type: 'none' };
-    var oppChecked = panel.querySelector('.opp-opt-row.checked');
-    if (oppChecked) {
-      oppSel = { type: 'opp', oppId: oppChecked.dataset.oppId || '' };
-
-      // ↓↓↓ 新增：收集机遇决策 ↓↓↓
-      var oppDecisionTa = panel.querySelector('.opp-decision-ta');
-      if (oppDecisionTa && oppDecisionTa.value.trim()) {
-        oppSel.decision = oppDecisionTa.value.trim().slice(0, 30); // 强制截断30字
-      }
-      // ↑↑↑ 新增结束 ↑↑↑
     }
 
-    // 零消耗已删除
-    var zeroCost = '';
+    // 自定军令
+    var cSlot = panel.querySelector('#act10-cslot-' + slotIdx);
+    if (cSlot && cSlot.classList.contains('checked')) {
+      var cTa = cSlot.querySelector('.act-custom-ta');
+      var cText = cTa ? cTa.value.trim() : '';
+      if (cText) lingSelections.push({ lingIdx: 4, choice: 'custom', customText: cText });
+    }
+
+    // 机遇
+    var oppSel = { type: 'none' };
+    var oppChecked = panel.querySelector('.opp-opt-row.checked');
+    if (oppChecked) oppSel = { type: 'opp', oppId: oppChecked.dataset.oppId || '' };
 
     return {
       ling_selections: lingSelections,
       opp_selection: oppSel,
-      zero_cost: zeroCost,
+      zero_cost: '',
       remarks: remarks
     };
   }
@@ -2799,41 +2486,36 @@ function updateBarracksVisibility(enabled) {
     var currentRound = state.rounds.length > 0 ? state.rounds[state.rounds.length - 1].round : 0;
     if (!currentRound) { showToast('当前无回合数据'); return; }
 
-    // 校验：常规行动最多3个，机遇最多1个（不占常规额度）
+    // 校验：1–3 个行动（含机遇），自定军令有内容才计数
     var reasons = [];
-    var lingCount = 0;
-    var zdjlEmpty = false;
 
-    // 统计常规行动（含二级分支选中）
-    panel.querySelectorAll('.ling').forEach(function(ling) {
-      // 二级分支优先
-      if (ling.querySelector('.opt-l2.checked')) { lingCount++; return; }
-      var reg = ling.querySelector('.opt:not(.zdjl-opt).checked');
-      if (reg) { lingCount++; return; }
-      var zd = ling.querySelector('.zdjl-opt.checked');
-      if (zd) {
-        var ta = zd.querySelector('.zdjl-ta');
-        (ta && ta.value.trim()) ? lingCount++ : (zdjlEmpty = true);
+    // 用 _act10UpdateQuota 同款逻辑统计
+    var catCount = 0;
+    for (var ci = 0; ci < 4; ci++) {
+      var catEl = panel.querySelector('#act10-cat-' + slotIdx + '-' + ci);
+      if (catEl && (catEl.querySelector('.act-opt-l1.checked') || catEl.querySelector('.act-opt-l2.checked'))) {
+        catCount++;
       }
-    });
-
-    // 统计机遇
+    }
+    var customEl = panel.querySelector('.act-custom-slot');
+    var customFilled = customEl && customEl.classList.contains('checked') ? 1 : 0;
     var oppChecked = panel.querySelector('.opp-opt-row.checked');
     var oppCount = oppChecked ? 1 : 0;
+    var totalCount = catCount + customFilled + oppCount;
 
-    // v8 验证规则：1–3 个行动（含机遇）均可提交
-    var totalCount = lingCount + oppCount;
+    // 自定军令勾选但内容空
+    if (customEl && customEl.classList.contains('checked')) {
+      var cTa = customEl.querySelector('.act-custom-ta');
+      if (!cTa || !cTa.value.trim()) {
+        reasons.push('已勾选「自定军令」但内容为空，请填写后再提交');
+      }
+    }
+
     if (totalCount === 0) {
       reasons.push('请至少选择 1 个行动（从 ①②③④ 中选分支，或选取机遇）');
     }
     if (totalCount > 3) {
       reasons.push('行动总数超过 3 个（当前共 ' + totalCount + ' 个），请取消部分选项');
-    }
-    if (oppCount > 1) {
-      reasons.push('公共机遇最多选 1 个');
-    }
-    if (zdjlEmpty) {
-      reasons.push('已勾选「自定军令」但内容为空，请填写后再提交');
     }
 
     if (reasons.length) { _act10ShowToast(slotIdx, reasons); return; }
