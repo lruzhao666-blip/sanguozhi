@@ -2174,15 +2174,24 @@ function updateBarracksVisibility(enabled) {
           // 有二级：展开/收起
           var brEl  = document.getElementById(this.dataset.brid);
           var subEl = document.getElementById(this.dataset.subid);
-          var catEl = document.getElementById(this.dataset.catid);
+          // var catEl = document.getElementById(this.dataset.catid); // [legacy v1] 互斥用，已停用
           if (!brEl || !subEl) return;
           var isExpanded = brEl.classList.contains('expanded');
-          // 先折叠同大类内所有分支
+          /* [legacy v1] 旧逻辑：点开一个会先折叠同大类内其它分支（互斥）
           if (catEl) {
             catEl.querySelectorAll('.act-branch-l1').forEach(function(b) { b.classList.remove('expanded'); });
             catEl.querySelectorAll('.act-sub-list').forEach(function(s) { s.classList.remove('expanded'); });
           }
           if (!isExpanded) {
+            brEl.classList.add('expanded');
+            subEl.classList.add('expanded');
+          }
+          */
+          // #branch-independent-toggle-v1：每个分支独立展开/收起，互不影响
+          if (isExpanded) {
+            brEl.classList.remove('expanded');
+            subEl.classList.remove('expanded');
+          } else {
             brEl.classList.add('expanded');
             subEl.classList.add('expanded');
           }
