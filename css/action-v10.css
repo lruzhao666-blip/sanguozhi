@@ -736,3 +736,18 @@
 .act10 .opp-opt-desc { font-size: .72rem; color: #c0aa88; margin-top: 1px; }
 .act10 .opp-opt-pres { font-size: .72rem; color: #c8a84a; margin-left: auto; flex-shrink: 0; }
 .act10 .opp-empty { font-size: .78rem; color: #907860; padding: 10px; text-align: center; }
+
+/* ═══ v42 改动A：行动板块背景压暗（覆盖旧值） ═══ */
+.act10 .col-body { background: #030201; }
+.act10 .act-cat  { background: #050302; }
+.act10 .act-sub-list { background: rgba(0,0,0,.62); }
+
+/* ═══ v42 改动C：选项名按类别染色（覆盖旧米白色） ═══ */
+.act10 .cat-mil .act-opt-name-l1,
+.act10 .cat-mil .act-opt-name-l2 { color: #ff9a9a; }
+.act10 .cat-gov .act-opt-name-l1,
+.act10 .cat-gov .act-opt-name-l2 { color: #80e8a0; }
+.act10 .cat-tal .act-opt-name-l1,
+.act10 .cat-tal .act-opt-name-l2 { color: #d4a8f0; }
+.act10 .cat-dip .act-opt-name-l1,
+.act10 .cat-dip .act-opt-name-l2 { color: #88ccf8; }
