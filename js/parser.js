@@ -349,46 +349,12 @@ window.SGParser = (function () {
             title = body;
           }
 
-          // 宽松模式：读取后续所有缩进行作为 note（直到遇到 A/B/C 分支或新建议）
-          let lookahead = li + 1;
-          const noteLines = [];
-          while (lookahead < lines.length) {
-            const nextRaw = lines[lookahead];
-            const nextLine = nextRaw.trimEnd();
-
-            // 遇到非缩进行（新建议）则停止
-            if (nextLine && !/^[ \t]{2,}/.test(nextRaw)) break;
-
-            // 空行跳过
-            if (!nextLine.trim()) {
-              lookahead++;
-              continue;
-            }
-
-            const trimmed = nextLine.trim();
-
-            // 遇到 A/B/C 分支则停止
-            if (/^[A-Ca-c]\s*[.．、]/.test(trimmed)) break;
-
-            // 收集所有缩进行
-            noteLines.push(trimmed);
-            lookahead++;
-          }
-
-          // 合并为 note
-          if (noteLines.length > 0) {
-            note = noteLines.join('\n');
-          }
-
-          // 更新当前行指针
-          li = lookahead - 1;
-
           currentItem = {
             num: num,
             idx: LING_NUMS_ORDER.indexOf(num),
             title: title,
-            quote: quote || '',
-            note: note || '',
+            quote: quote,
+            note: note,
             risk: risk,
             prestige: prestige,
             options: []
