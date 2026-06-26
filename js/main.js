@@ -2177,12 +2177,10 @@ function updateBarracksVisibility(enabled) {
           var catEl = document.getElementById(this.dataset.catid);
           if (!brEl || !subEl) return;
           var isExpanded = brEl.classList.contains('expanded');
-          // 先折叠同大类内所有分支
-          if (catEl) {
-            catEl.querySelectorAll('.act-branch-l1').forEach(function(b) { b.classList.remove('expanded'); });
-            catEl.querySelectorAll('.act-sub-list').forEach(function(s) { s.classList.remove('expanded'); });
-          }
-          if (!isExpanded) {
+          if (isExpanded) {
+            brEl.classList.remove('expanded');
+            subEl.classList.remove('expanded');
+          } else {
             brEl.classList.add('expanded');
             subEl.classList.add('expanded');
           }
@@ -2999,6 +2997,7 @@ function updateBarracksVisibility(enabled) {
 
   // ── 构建已提交摘要 HTML ──
   function _act10BuildSummary(sub, slotIdx) {
+    var _isMine = (slotIdx === getCurrentPlayerSlot());
     var sels = [];
     try { sels = typeof sub.ling_selections === 'string' ? JSON.parse(sub.ling_selections) : (sub.ling_selections || []); } catch (e) { sels = []; }
     var opp = {};
@@ -3021,7 +3020,7 @@ function updateBarracksVisibility(enabled) {
         : lingNum + ' ' + _act10Esc(sel.choice);
 
       // 拼接备注
-      var remarkText = remarks[sel.lingIdx] ? ' <span class="sum-remark">备注：' + _act10Esc(remarks[sel.lingIdx]) + '</span>' : '';
+      var remarkText = (_isMine && remarks[sel.lingIdx]) ? ' <span class="sum-remark">备注：' + _act10Esc(remarks[sel.lingIdx]) + '</span>' : '';
 
       h += '<div class="col-summary-row"><span class="sum-lbl">' + label + '</span><span class="sum-val">' + val + remarkText + '</span></div>';
     });
@@ -3230,13 +3229,6 @@ function updateBarracksVisibility(enabled) {
         }
         // ↑↑↑ 新增结束 ↑↑↑
         lines.push(oppLine);
-      } else {
-        lines.push('机遇: 不选');
-      }
-
-      // 零消耗（如果有）
-      if (sub.zero_cost && sub.zero_cost.trim()) {
-        lines.push('零消耗: ' + sub.zero_cost);
       }
 
       lines.push(''); // 玩家之间空一行

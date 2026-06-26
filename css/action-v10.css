@@ -85,8 +85,8 @@
   background: #060403;
 }
 
-/* 已提交摘要区 */
-.act10 .col-summary { display: none; }
+/* 已提交摘要区（改为默认可见，供三家互看 / 工单 act-summary-public） */
+.act10 .col-summary { display: block; }
 
 /* ════════════════════════════════
    额度计数条
