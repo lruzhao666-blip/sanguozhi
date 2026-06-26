@@ -8004,3 +8004,25 @@ document.addEventListener('DOMContentLoaded', function() {
 // ══════════════════════════════════════════════════════════
 //  Textarea 自动高度调整结束
 // ══════════════════════════════════════════════════════════
+
+// 自定军令编号动态更新
+function updateCustomOrderNumber() {
+  document.querySelectorAll('.col-panel').forEach(panel => {
+    const catCount = panel.querySelectorAll('.act-cat').length;
+    const customNum = panel.querySelector('.act-custom-num');
+    if (customNum) {
+      const circleNums = ['⓪','①','②','③','④','⑤','⑥','⑦','⑧','⑨'];
+      customNum.textContent = circleNums[catCount + 1] || '⑤';
+    }
+  });
+}
+// 在行动面板渲染后调用
+if (document.getElementById('tab-action')) {
+  const observer = new MutationObserver(() => {
+    if (document.querySelector('.act-custom-num')) {
+      updateCustomOrderNumber();
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.getElementById('act10-cols-grid'), { childList: true, subtree: true });
+}
