@@ -378,7 +378,9 @@ window.SGParser = (function () {
             const rM = inlineBracketSub.match(/^(稳|中|险)/); if (rM) subRisk = rM[1];
             const pMa = inlineBracketSub.match(/预估\s*\+?([\d~～\-+]+)\s*威望/); if (pMa) subPres = pMa[1];
             if (!subPres) { const pMb = inlineBracketSub.match(/[··]\s*([+-]?\d+)/); if (pMb) subPres = pMb[1].replace(/^\+/, ''); }
-            const cM = inlineBracketSub.match(/需[:：](.+)/); if (cM) subCond = cM[1].trim();
+            const cM = inlineBracketSub.match(/(?:条件[:：]\s*需?|需[:：])\s*([^·\d+\-\s][^·]+?)(?:\s*[·]|$)/);
+            if (cM) { subCond = cM[1].trim(); }
+            else { const cM2 = inlineBracketSub.match(/^需([^·\d+\-\s][^·]*?)(?:\s*[·]|$)/); if (cM2) subCond = cM2[1].trim(); }
           }
 
           // 若行内括号未解析成功，从描述末尾尝试
