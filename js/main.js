@@ -3114,7 +3114,7 @@ function updateBarracksVisibility(enabled) {
       var label = '行动' + lingNum;
       var val = sel.choice === 'custom'
         ? '<span class="sum-custom-order">自定军令: ' + _act10Esc(sel.customText || '') + '</span>'
-        : lingNum + ' ' + _act10Esc(_act10ResolveActionName(slotIdx, sel.lingIdx, sel.choice));
+      : _act10Esc(_act10ResolveActionName(slotIdx, sel.lingIdx, sel.choice));
 
       // 拼接备注
       var remarkText = remarks[sel.lingIdx] ? ' <span class="sum-remark">备注：' + _act10Esc(remarks[sel.lingIdx]) + '</span>' : '';
