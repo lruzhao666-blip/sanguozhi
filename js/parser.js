@@ -49,6 +49,133 @@
 window.SGParser = (function () {
   'use strict';
 
+  // ══════════════════════════════════════════
+  //  容错预处理层
+  // ══════════════════════════════════════════
+
+  /**
+   * 第1层：全局文本预处理
+   * 修复：全角半角、标签格式、分隔线
+   */
+  function _normalizeGlobalText(raw) {
+    if (!raw) return raw;
+
+    let normalized = raw;
+    const fixes = [];
+
+    // 1. 全角数字 → 半角数字
+    const fullToHalf = {
+      '０':'0','１':'1','２':'2','３':'3','４':'4',
+      '５':'5','６':'6','７':'7','８':'8','９':'9'
+    };
+    const beforeNum = normalized;
+    normalized = normalized.replace(/[０-９]/g, c => fullToHalf[c]);
+    if (normalized !== beforeNum) fixes.push('全角数字');
+
+    // 2. 全角方括号 → 半角方括号（标签）
+    const beforeBracket = normalized;
+    normalized = normalized.replace(/【/g, '[').replace(/】/g, ']');
+    if (normalized !== beforeBracket) fixes.push('全角方括号');
+
+    // 3. 标签内多余空格 [甲 ] → [甲]
+    normalized = normalized.replace(/\[\s*([甲乙丙回合速递NPC战报变动调度在途世界])\s*\]/g, '[$1]');
+
+    // 4. 分隔线修复（36个等号）
+    const sepLines = normalized.match(/^=+$/gm);
+    if (sepLines) {
+      sepLines.forEach(line => {
+        if (line.length > 0 && line.length !== 36) {
+          const fixed = '='.repeat(36);
+          normalized = normalized.replace(line, fixed);
+          fixes.push('分隔线长度');
+        }
+      });
+    }
+
+    // 5. 破折号误用为分隔线
+    normalized = normalized.replace(/^[\-—–]+$/gm, '====================================');
+
+    if (fixes.length) {
+      console.log('[SGParser 全局容错] 已修复:', fixes.join(', '));
+    }
+
+    return normalized;
+  }
+
+  /**
+   * 第2层：城池字符串预处理
+   * 修复：守将分隔符、兵力分隔符、多余空格
+   */
+  function _normalizeCityString(raw) {
+    if (!raw) return raw;
+
+    let normalized = raw;
+    const fixes = [];
+
+    // 1. 守将分隔符：逗号、顿号 → 斜杠
+    // 只在括号内、管道符左侧替换
+    normalized = normalized.replace(/\(([^|)]+)\|/g, function(match, holders) {
+      const original = holders;
+      const fixed = holders.replace(/[,，、]/g, '/');
+      if (fixed !== original) fixes.push('守将分隔符');
+      return '(' + fixed + '|';
+    });
+
+    // 2. 兵力分隔符：连续空格 → 逗号
+    // 格式：步:X 弓:Y → 步:X,弓:Y
+    normalized = normalized.replace(/\|([^)]+)\)/g, function(match, troops) {
+      const original = troops;
+      // 匹配 "兵种:数字 兵种" 模式，在中间插入逗号
+      const fixed = troops.replace(/([步弓骑水蛮]:)\s*(\d+)\s+(?=[步弓骑水蛮])/g, '$1$2,');
+      if (fixed !== original) fixes.push('兵力分隔符(空格)');
+      return '|' + fixed + ')';
+    });
+
+    // 3. 兵力区全角逗号 → 半角逗号
+    normalized = normalized.replace(/\|([^)]+)\)/g, function(match, troops) {
+      const original = troops;
+      const fixed = troops.replace(/，/g, ',');
+      if (fixed !== original) fixes.push('兵力分隔符(全角)');
+      return '|' + fixed + ')';
+    });
+
+    // 4. 清理多余空格（括号、管道符周围）
+    normalized = normalized.replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
+    normalized = normalized.replace(/\|\s+/g, '|').replace(/\s+\|/g, '|');
+
+    // 5. 清理重复分隔符
+    normalized = normalized.replace(/\/+/g, '/').replace(/,+/g, ',');
+
+    if (fixes.length && normalized !== raw) {
+      console.log('[SGParser 城池容错] 已修复:', fixes.join(', '));
+      console.log('  原文:', raw.slice(0, 100));
+      console.log('  修复后:', normalized.slice(0, 100));
+    }
+
+    return normalized;
+  }
+
+  /**
+   * 第3层：兵力字符串预处理
+   * 修复：全角标点、多余空格
+   */
+  function _normalizeTroopString(raw) {
+    if (!raw) return raw;
+
+    let normalized = raw;
+
+    // 全角冒号 → 半角冒号
+    normalized = normalized.replace(/：/g, ':');
+
+    // 全角逗号 → 半角逗号
+    normalized = normalized.replace(/，/g, ',');
+
+    // 清理空格
+    normalized = normalized.replace(/\s+/g, '');
+
+    return normalized;
+  }
+
   const SEP = '='.repeat(36);
 
   // 兵种顺序（显示用）
@@ -470,6 +597,9 @@ window.SGParser = (function () {
   //  主入口：格式探针 → 路由到对应解析器
   // ─────────────────────────────────────────
   function parse(rawText) {
+    // 第1层：全局容错预处理
+    rawText = _normalizeGlobalText(rawText);
+
     if (!rawText || !rawText.trim()) return _empty();
 
     // ── 格式 B：简化新格式 v3（含【结构化数据】或 △| 管道行）──
@@ -1076,6 +1206,9 @@ window.SGParser = (function () {
   //        NPC用：城名(守将1/守将2)
   // ─────────────────────────────────────────
   function _parseCityList(raw) {
+    // 第2层：城池容错预处理
+    raw = _normalizeCityString(raw);
+
     if (!raw || !raw.trim()) return [];
     if (/[（）]/.test(raw)) {
       /* #parser-silence-warns-v1 silenced */
@@ -1146,6 +1279,9 @@ window.SGParser = (function () {
   //  输出：{ 骑:3000, 步:2000 }
   // ─────────────────────────────────────────
   function _parseTroops(raw) {
+    // 第3层：兵力容错预处理
+    raw = _normalizeTroopString(raw);
+
     if (!raw || raw === '无兵' || !raw.trim()) return {};
     const result = {};
     raw.split(',').forEach(seg => {
