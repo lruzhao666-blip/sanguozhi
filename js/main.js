@@ -1830,7 +1830,7 @@ function updateBarracksVisibility(enabled) {
   var ACT10_SUPA_URL = 'https://smiifcbmmtolimtaxpip.supabase.co/rest/v1/action_submissions_v2';
   var ACT10_SLOT_NAMES = ['甲', '乙', '丙'];
   var ACT10_SLOT_COLORS = { '甲': '0', '乙': '1', '丙': '2' };
-  var ACT10_LING_NUMS = ['①', '②', '③', '④'];
+  var ACT10_LING_NUMS = ['①', '②', '③', '④', '④'];
 
   function bindActionTab() {
     var gmCopyBtn = document.getElementById('btn-gm-copy-all-actions');
