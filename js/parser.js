@@ -1276,17 +1276,13 @@ window.SGParser = (function () {
     const result = [];
 
     // 位移态: 甲 武将 出发→目的 兵种:数量 状态
-    const reMove = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([步弓骑水蛮]:\d+(?:,[步弓骑水蛮]:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
+    const reMove = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([\u4e00-\u9fa5]+:\d+(?:,[\u4e00-\u9fa5]+:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
 
     // 驻扎态: 甲 武将 位置 兵种:数量 状态
-    const reStay = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)\s+([步弓骑水蛮]:\d+(?:,[步弓骑水蛮]:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
+    const reStay = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)\s+([\u4e00-\u9fa5]+:\d+(?:,[\u4e00-\u9fa5]+:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
 
-    // 状态归一化映射
-    const STATUS_NORMALIZE = {
-      '围攻中': '攻城中',
-      '对峙中': '交战中',
-      '驻屯中': '交战中',
-    };
+    // 状态归一化映射 - 已禁用，保留原值
+    const STATUS_NORMALIZE = {};
 
     for (const line of lines) {
       // 先尝试位移态
@@ -1347,12 +1343,8 @@ window.SGParser = (function () {
       });
       const firstEntry = troopEntries[0] || { type: '', count: 0 };
 
-      // 状态归一化
-      if (status === '撤退中') {
-        status = '剩1';
-      } else if (STATUS_NORMALIZE[status]) {
-        status = STATUS_NORMALIZE[status];
-      }
+      // 状态归一化 - 已禁用，直接使用原始状态
+      // (保留原值，不做任何转换)
 
       // 输出数据
       result.push({
