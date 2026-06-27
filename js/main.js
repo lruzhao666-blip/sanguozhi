@@ -2097,14 +2097,14 @@ function updateBarracksVisibility(enabled) {
   function _act10BuildCustomOrder(slotIdx) {
     var h = '<div class="act-custom-block" id="act10-custom-' + slotIdx + '">';
     h += '<div class="act-custom-hd">';
-    h += '<span class="act-custom-num">⑤</span>';
+    h += '<span class="act-custom-num">④</span>';
     h += '<span class="act-custom-name">自定军令</span>';
     h += '</div>';
     h += '<div class="act-custom-body">';
     h += '<div class="act-custom-slot" id="act10-cslot-' + slotIdx + '">';
     h += '<div class="rdot-v8" id="act10-cdot-' + slotIdx + '"></div>';
     h += '<div class="act-custom-inner">';
-    h += '<textarea class="act-custom-ta" placeholder="填写自定军令内容…" maxlength="120"></textarea>';
+    h += '<textarea class="act-custom-ta" placeholder="填写自定军令内容…"></textarea>';
     h += '</div></div>';
     h += '</div></div>';
     return h;
