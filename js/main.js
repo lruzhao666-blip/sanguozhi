@@ -1590,9 +1590,11 @@ function updateBarracksVisibility(enabled) {
       await fetchAllRounds();
 
       // 步骤 3: 清空整张 action 表(不分回合,全部清掉)
-      await _act10ClearAllSubmissions();
+      // await _act10ClearAllSubmissions(); // ← 保留草稿：不清空玩家行动
 
       // 步骤 4: 清空所有 localStorage 草稿(不分回合)
+      // ← 保留草稿：不清空玩家行动，当做备用草稿
+      /*
       try {
         var keys = Object.keys(localStorage);
         keys.forEach(function(k) {
@@ -1604,6 +1606,7 @@ function updateBarracksVisibility(enabled) {
       } catch (e) {
         console.warn('[act10] 清草稿异常:', e);
       }
+      */
 
       // 步骤 5: 清空内存缓存
       window._act10Submitted = {};
