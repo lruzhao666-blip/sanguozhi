@@ -245,7 +245,7 @@
   border-radius: 5px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background .15s, border-color .15s;
+  transition: all .22s ease-out;
   background: rgba(255,255,255,.015);
 }
 .act10 .act-opt-l1:hover   { background: rgba(30,24,12,.85);  border-color: rgba(200,155,60,.28); }
@@ -323,7 +323,7 @@
   border-radius: 4px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background .15s, border-color .15s;
+  transition: all .22s ease-out;
 }
 .act10 .act-opt-l2:hover   { background: rgba(30,24,12,.85);  border-color: rgba(200,155,60,.28); }
 .act10 .act-opt-l2.checked { background: rgba(140,90,15,.13); border-color: rgba(190,130,30,.38); }
@@ -707,7 +707,7 @@
   border-radius: 4px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background .15s;
+  transition: all .22s ease-out;
   font-size: .8rem;
 }
 .act10 .opp-opt-row:hover   { background: rgba(110,35,180,.16); border-color: rgba(150,60,220,.28); }
