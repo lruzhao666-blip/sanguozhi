@@ -736,3 +736,28 @@
 .act10 .opp-opt-desc { font-size: .72rem; color: #c0aa88; margin-top: 1px; }
 .act10 .opp-opt-pres { font-size: .72rem; color: #c8a84a; margin-left: auto; flex-shrink: 0; }
 .act10 .opp-empty { font-size: .78rem; color: #907860; padding: 10px; text-align: center; }
+
+/* ════════════════════════════════
+   Overrides (Appended as per guidelines)
+════════════════════════════════ */
+
+/* 1. 替换四大类头部渐变背景 */
+.act10 .cat-mil .act-cat-hd   { background: linear-gradient(120deg, rgba(85,50,15,.42) 0%, rgba(65,38,10,.28) 45%, rgba(45,25,8,.12) 75%, transparent 100%); box-shadow: inset 0 1px 0 rgba(180,120,40,.08), 0 0 12px rgba(130,80,25,.06); }
+.act10 .cat-gov .act-cat-hd   { background: linear-gradient(120deg, rgba(85,50,15,.42) 0%, rgba(65,38,10,.28) 45%, rgba(45,25,8,.12) 75%, transparent 100%); box-shadow: inset 0 1px 0 rgba(180,120,40,.08), 0 0 12px rgba(130,80,25,.06); }
+.act10 .cat-tal .act-cat-hd   { background: linear-gradient(120deg, rgba(85,50,15,.42) 0%, rgba(65,38,10,.28) 45%, rgba(45,25,8,.12) 75%, transparent 100%); box-shadow: inset 0 1px 0 rgba(180,120,40,.08), 0 0 12px rgba(130,80,25,.06); }
+.act10 .cat-dip .act-cat-hd   { background: linear-gradient(120deg, rgba(85,50,15,.42) 0%, rgba(65,38,10,.28) 45%, rgba(45,25,8,.12) 75%, transparent 100%); box-shadow: inset 0 1px 0 rgba(180,120,40,.08), 0 0 12px rgba(130,80,25,.06); }
+
+/* 2. 替换大类卡片边框 */
+.act10 .act-cat { border: 1px solid rgba(140,100,35,.18); }
+
+/* 3. 替换 hover 态边框 */
+.act10 .act-cat:hover { border-color: rgba(140,100,35,.38); box-shadow: 0 1px 12px rgba(0,0,0,.6); }
+
+/* 4. 替换四大类数字颜色 */
+.act10 .cat-mil .act-cat-num  { color: #a88540; }
+.act10 .cat-gov .act-cat-num  { color: #a88540; }
+.act10 .cat-tal .act-cat-num  { color: #a88540; }
+.act10 .cat-dip .act-cat-num  { color: #a88540; }
+
+/* 5. 替换大类体顶部边框 */
+.act10 .act-cat-body { border-top: 1px solid rgba(140,100,35,.18); }
