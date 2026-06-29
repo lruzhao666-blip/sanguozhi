@@ -1271,97 +1271,241 @@ window.SGParser = (function () {
   //   保留旧 troopType/troopCount 字段做向后兼容(取第一个兵种回填)。
   function _parseTransit(raw) {
     if (!raw || !raw.trim()) return [];
-    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length === 1 && /无在途|无调度|本回合无调度部队/.test(lines[0])) return [];
+
+    // 空白归一：全角空格→半角，连续空格→单个半角
+    const _normSpace = (s) => String(s == null ? '' : s)
+      .replace(/\u3000/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .trim();
+
+    const rawLines = raw.split('\n').map(l => l.replace(/\s+$/, '')).filter(l => l.trim());
+
+    // 空段判定
+    if (rawLines.length === 1 &&
+        /无在途|无调度|本回合无调度部队/.test(rawLines[0])) {
+      return [];
+    }
+
+    const FACTION_SLOT = { '甲': 0, '乙': 1, '丙': 2 };
+
+    // 兵种容错映射
+    const TROOP_ALIAS = {
+      '步': '步', '步卒': '步', '步兵': '步',
+      '弓': '弓', '弓手': '弓', '弓兵': '弓',
+      '骑': '骑', '骑兵': '骑',
+      '水': '水', '水军': '水',
+      '蛮': '蛮', '蛮兵': '蛮',
+    };
+    // 非兵种噪声词（出现在兵种槽里要剔除，数值不计入）
+    const TROOP_NOISE = ['民夫', '民船', '残部'];
+    // 格式分类名（误填进行内要剥离）
+    const FORMAT_WORDS = ['位移态', '驻扎态', '在路上', '已就位'];
+
     const result = [];
 
-    // 位移态: 甲 武将 出发→目的 兵种:数量 状态
-    const reMove = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([\u4e00-\u9fa5]+:\d+(?:,[\u4e00-\u9fa5]+:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
-
-    // 驻扎态: 甲 武将 位置 兵种:数量 状态
-    const reStay = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)\s+([\u4e00-\u9fa5]+:\d+(?:,[\u4e00-\u9fa5]+:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
-
-    // 状态归一化映射 - 已禁用，保留原值
-    const STATUS_NORMALIZE = {};
-
-    for (const line of lines) {
-      // 先尝试位移态
-      let m = line.match(reMove);
-      let isStationary = false;
-
-      // 如果不是位移态，尝试驻扎态
-      if (!m) {
-        m = line.match(reStay);
-        if (m) {
-          isStationary = true;
-        }
-      }
-
-      if (!m) {
-        // 容错日志
-        /* #parser-silence-warns-v1 silenced */
-        continue;
-      }
-
-      const factionRaw = m[1];
-      const slot = factionRaw === '甲' ? 0 :
-                   factionRaw === '乙' ? 1 :
-                   factionRaw === '丙' ? 2 : null;
-
-      // 驻扎态和位移态的捕获组编号不同
-      let general, from, to, troopsStr, status, note;
-
-      if (isStationary) {
-        // 驻扎态: m[1]=阵营 m[2]=武将 m[3]=位置 m[4]=兵种 m[5]=状态 m[6]=备注
-        general = m[2];
-        from = '';
-        to = m[3];
-        troopsStr = m[4];
-        status = m[5];
-        note = m[6] || '';
-      } else {
-        // 位移态: m[1]=阵营 m[2]=武将 m[3]=出发 m[4]=目的 m[5]=兵种 m[6]=状态 m[7]=备注
-        general = m[2];
-        from = m[3];
-        to = m[4];
-        troopsStr = m[5];
-        status = m[6];
-        note = m[7] || '';
-      }
-
-      // 兵种段解析
+    // 清洗单个兵种槽：返回 { troops, troopEntries, infos:[] }
+    const _cleanTroops = (seg) => {
       const troops = {};
       const troopEntries = [];
-      troopsStr.split(',').forEach(seg => {
-        const tm = seg.match(/^([步弓骑水蛮]):(\d+)$/);
-        if (tm) {
-          const t = tm[1];
-          const n = parseInt(tm[2], 10);
-          troops[t] = n;
-          troopEntries.push({ type: t, count: n });
+      const infos = [];
+      seg.split(/[,，]/).forEach(piece => {
+        let p = piece.trim();
+        if (!p) return;
+        // 剥离括号尾注 (折N) / （折500） 等
+        const noteM = p.match(/[（(]([^）)]*)[）)]\s*$/);
+        if (noteM) {
+          infos.push("剥离兵种尾注'(" + noteM[1] + ")'");
+          p = p.replace(/[（(][^）)]*[）)]\s*$/, '').trim();
+        }
+        const kvM = p.match(/^([^:：]+)[:：]\s*(-?\d+)$/);
+        if (!kvM) {
+          if (p) infos.push("无法识别的兵种片段'" + p + "'，已忽略");
+          return;
+        }
+        const key = kvM[1].trim();
+        const num = parseInt(kvM[2], 10);
+        // 噪声词剔除
+        if (TROOP_NOISE.indexOf(key) !== -1) {
+          infos.push("非兵种'" + key + ":" + num + "'已剔除，数值不计入兵力");
+          return;
+        }
+        const mapped = TROOP_ALIAS[key];
+        if (!mapped) {
+          infos.push("未知兵种'" + key + "'已忽略");
+          return;
+        }
+        if (mapped !== key) {
+          infos.push("兵种'" + key + "'归一为'" + mapped + "'");
+        }
+        troops[mapped] = (troops[mapped] || 0) + num;
+        troopEntries.push({ type: mapped, count: num });
+      });
+      return { troops, troopEntries, infos };
+    };
+
+    // 剥离状态文本中的格式分类名；返回 { status, warns:[] }
+    const _cleanStatus = (s) => {
+      const warns = [];
+      let txt = _normSpace(s);
+      FORMAT_WORDS.forEach(w => {
+        if (txt.indexOf(w) !== -1) {
+          warns.push("剥离格式分类名'" + w + "'");
+          txt = txt.split(w).join('');
         }
       });
+      txt = _normSpace(txt);
+      return { status: txt, warns };
+    };
+
+    rawLines.forEach((origLine, i) => {
+      const lineNo = i + 1;
+      const line = _normSpace(origLine);
+      const warnings = [];        // 本行容错记录（INFO/WARN 文案）
+      let level = null;           // 'WARN' | 'INFO' | null
+      const _info = (m) => { warnings.push(m); if (level !== 'WARN') level = 'INFO'; };
+      const _warn = (m) => { warnings.push(m); level = 'WARN'; };
+
+      // 跳过空段提示行（多行里夹杂的）
+      if (/无在途|无调度|本回合无调度部队/.test(line)) return;
+
+      // 行类型判定（D-1）：剩N / 本回合抵达 → 在路上；含→但无剩N → WARN 仍按在路上
+      const hasRemain  = /剩\s*\d+\s*回合/.test(line);
+      const hasArrived = /本回合抵达/.test(line);
+      const hasArrow   = line.indexOf('→') !== -1;
+      let moveType;
+      if (hasRemain || hasArrived) {
+        moveType = 'enroute';
+      } else if (hasArrow) {
+        moveType = 'enroute';
+        _warn("含'→'但无'剩N回合'/'本回合抵达'，按在路上尽力解析");
+      } else {
+        moveType = 'stationed';
+      }
+
+      // 按空格切槽
+      const slots = line.split(' ').filter(Boolean);
+
+      // 首槽：阵营锚点（甲/乙/丙 或 长度≤6 的连续非空白 NPC 主公名）
+      const factionRaw = slots.length ? slots[0] : '';
+      const isValidFaction = /^[甲乙丙]$/.test(factionRaw) ||
+        (factionRaw.length >= 1 && factionRaw.length <= 6 && !/\s/.test(factionRaw));
+      if (!factionRaw || !isValidFaction) {
+        result.push({
+          __error: true,
+          line: lineNo,
+          raw: origLine,
+          reason: '缺阵营首槽',
+          action: '该行不渲染，进告警区',
+        });
+        return;
+      }
+      const slot = FACTION_SLOT.hasOwnProperty(factionRaw) ? FACTION_SLOT[factionRaw] : null;
+
+      // 武将名槽（第二槽），/ 拆数组但保留原槽文本
+      const generalRaw = slots[1] || '';
+      const generals = generalRaw ? generalRaw.split('/').map(s => s.trim()).filter(Boolean) : [];
+
+      // 找兵种槽：从第三槽起，第一个含 数字 且形如 X:N 的槽（去括号后判定）
+      const _looksTroop = (s) => {
+        const t = s.replace(/[（(][^）)]*[）)]/g, '');
+        return /[:：]\s*-?\d+/.test(t);
+      };
+      let troopIdx = -1;
+      for (let k = 2; k < slots.length; k++) {
+        if (_looksTroop(slots[k])) { troopIdx = k; break; }
+      }
+
+      let troops = {}, troopEntries = [];
+      if (troopIdx !== -1) {
+        const cleaned = _cleanTroops(slots[troopIdx]);
+        troops = cleaned.troops;
+        troopEntries = cleaned.troopEntries;
+        cleaned.infos.forEach(_info);
+      } else {
+        _warn('未找到合法兵种槽');
+      }
+
+      // 位置/路线（第三槽到兵种槽之间的槽合并；无兵种槽则到末尾前留状态）
+      const midEnd = troopIdx !== -1 ? troopIdx : slots.length;
+      const midParts = slots.slice(2, midEnd);
+      const midText = midParts.join(' ');
+
+      let from = '', to = '', location = '';
+      if (moveType === 'enroute') {
+        // 优先从含 → 的部分拆 from/to
+        const arrowSrc = hasArrow ? midText : (line.indexOf('→') !== -1 ? line : midText);
+        const arrowM = arrowSrc.match(/(\S+?)→(\S+)/);
+        if (arrowM) {
+          from = _normSpace(arrowM[1]);
+          to   = _normSpace(arrowM[2]);
+        } else {
+          to = _normSpace(midText);
+        }
+      } else {
+        location = _normSpace(midText);
+        to = location; // 兼容旧渲染：驻扎态下 to=位置
+      }
+
+      // 剩N / 本回合抵达（D-5）
+      let remainTurns = null;
+      let arrived = false;
+      const remM = line.match(/剩\s*(\d+)\s*回合/);
+      if (remM) {
+        remainTurns = parseInt(remM[1], 10);
+        if (remainTurns === 0) {
+          _warn("出现'剩0回合'，按'本回合抵达'处理");
+          arrived = true;
+        }
+      }
+      if (hasArrived) {
+        arrived = true;
+        if (remainTurns === null) remainTurns = 0;
+      }
+
+      // 状态槽：兵种槽之后的剩余文本（剥掉剩N / 本回合抵达XX）
+      let statusSrc = '';
+      if (troopIdx !== -1) {
+        statusSrc = slots.slice(troopIdx + 1).join(' ');
+      }
+      statusSrc = statusSrc
+        .replace(/剩\s*\d+\s*回合/g, '')
+        .replace(/本回合抵达[^\s]*/g, '');
+      const sc = _cleanStatus(statusSrc);
+      sc.warns.forEach(_warn);
+      let status = sc.status;
+      if (moveType === 'stationed' && !status) {
+        _warn('剥离后状态槽为空');
+      }
+
+      // 兼容旧字段
       const firstEntry = troopEntries[0] || { type: '', count: 0 };
 
-      // 状态归一化 - 已禁用，直接使用原始状态
-      // (保留原值，不做任何转换)
-
-      // 输出数据
       result.push({
+        // ── 旧字段（渲染层在用，保持不变）──
         faction: factionRaw,
         slot,
-        general: general,
-        from: from,
-        to: to,
+        general: generalRaw,
+        from,
+        to,
         troops,
         troopEntries,
         troopType: firstEntry.type,
         troopCount: firstEntry.count,
         status,
-        note: note ? note.trim() : '',
-        isStationary: isStationary  // 新增标记
+        note: '',
+        isStationary: (moveType === 'stationed'),
+        // ── 新字段（D-7 冗余输出）──
+        generals,
+        moveType,
+        location: (moveType === 'stationed') ? location : null,
+        remainTurns: (moveType === 'enroute') ? remainTurns : null,
+        arrived,
+        raw: origLine,
+        warnings,
+        warnLevel: level, // 'WARN' | 'INFO' | null
       });
-    }
+    });
+
     return result;
   }
 
