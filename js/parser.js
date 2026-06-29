@@ -1477,6 +1477,13 @@ window.SGParser = (function () {
         _warn('剥离后状态槽为空');
       }
 
+      // #transit-status-remain-fallback-v1:
+      // 行军态下，剥离"剩N回合"后 status 为空时，
+      // 自动回填 "剩N" 作为显示状态，确保渲染端不显示空横杠。
+      if (moveType === 'enroute' && !status && remainTurns != null) {
+        status = '剩' + remainTurns;
+      }
+
       // 兼容旧字段
       const firstEntry = troopEntries[0] || { type: '', count: 0 };
 
