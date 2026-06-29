@@ -1276,18 +1276,20 @@ window.SGParser = (function () {
     const result = [];
 
     // 位移态: 甲 武将 出发→目的 兵种:数量 状态
-    const reMove = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+(.+)$/;
+    const reMove = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)→(\S+?)\s+([\u4e00-\u9fa5]+:\d+(?:,[\u4e00-\u9fa5]+:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
 
     // 驻扎态: 甲 武将 位置 兵种:数量 状态
-    const reStay = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)\s+(.+)$/;
+    const reStay = /^([甲乙丙]|\S{1,6})\s+(\S+)\s+(\S+?)\s+([\u4e00-\u9fa5]+:\d+(?:,[\u4e00-\u9fa5]+:\d+)*)\s+(\S+)(?:\s+(.+))?\s*$/;
 
     // 状态归一化映射 - 已禁用，保留原值
     const STATUS_NORMALIZE = {};
 
     for (const line of lines) {
+      // 先尝试位移态
       let m = line.match(reMove);
       let isStationary = false;
 
+      // 如果不是位移态，尝试驻扎态
       if (!m) {
         m = line.match(reStay);
         if (m) {
@@ -1296,6 +1298,8 @@ window.SGParser = (function () {
       }
 
       if (!m) {
+        // 容错日志
+        /* #parser-silence-warns-v1 silenced */
         continue;
       }
 
@@ -1304,72 +1308,45 @@ window.SGParser = (function () {
                    factionRaw === '乙' ? 1 :
                    factionRaw === '丙' ? 2 : null;
 
-      let general, from, to, restFields;
+      // 驻扎态和位移态的捕获组编号不同
+      let general, from, to, troopsStr, status, note;
 
       if (isStationary) {
+        // 驻扎态: m[1]=阵营 m[2]=武将 m[3]=位置 m[4]=兵种 m[5]=状态 m[6]=备注
         general = m[2];
         from = '';
         to = m[3];
-        restFields = m[4];
+        troopsStr = m[4];
+        status = m[5];
+        note = m[6] || '';
       } else {
+        // 位移态: m[1]=阵营 m[2]=武将 m[3]=出发 m[4]=目的 m[5]=兵种 m[6]=状态 m[7]=备注
         general = m[2];
         from = m[3];
         to = m[4];
-        restFields = m[5];
+        troopsStr = m[5];
+        status = m[6];
+        note = m[7] || '';
       }
 
-      const tokens = restFields.trim().split(/\s+/);
-      let troopsStr = '';
-      let status = '';
-      let note = '';
-
-      if (tokens.length > 0) {
-        const firstToken = tokens[0];
-        const hasTroopPattern = /[:：]/.test(firstToken) ||
-                                /^[\u4e00-\u9fa5]+\d+$/.test(firstToken);
-
-        if (hasTroopPattern) {
-          troopsStr = firstToken;
-          status = tokens.slice(1).join(' ');
-        } else {
-          troopsStr = '';
-          status = restFields.trim();
-        }
-      }
-
+      // 兵种段解析
       const troops = {};
       const troopEntries = [];
-
-      if (troopsStr) {
-        troopsStr.split(',').forEach(seg => {
-          const s = seg.trim();
-          const tm1 = s.match(/^([\u4e00-\u9fa5]+):(\d+)$/);
-          if (tm1) {
-            const t = tm1[1];
-            const n = parseInt(tm1[2], 10);
-            troops[t] = n;
-            troopEntries.push({ type: t, count: n });
-            return;
-          }
-          const tm2 = s.match(/^([\u4e00-\u9fa5]+)(\d+)$/);
-          if (tm2) {
-            const t = tm2[1];
-            const n = parseInt(tm2[2], 10);
-            troops[t] = n;
-            troopEntries.push({ type: t, count: n });
-            return;
-          }
-          const tm3 = s.match(/^([\u4e00-\u9fa5]{2,})$/);
-          if (tm3) {
-            const t = tm3[1];
-            troops[t] = 0;
-            troopEntries.push({ type: t, count: 0 });
-          }
-        });
-      }
-
+      troopsStr.split(',').forEach(seg => {
+        const tm = seg.match(/^([步弓骑水蛮]):(\d+)$/);
+        if (tm) {
+          const t = tm[1];
+          const n = parseInt(tm[2], 10);
+          troops[t] = n;
+          troopEntries.push({ type: t, count: n });
+        }
+      });
       const firstEntry = troopEntries[0] || { type: '', count: 0 };
 
+      // 状态归一化 - 已禁用，直接使用原始状态
+      // (保留原值，不做任何转换)
+
+      // 输出数据
       result.push({
         faction: factionRaw,
         slot,
@@ -1381,8 +1358,8 @@ window.SGParser = (function () {
         troopType: firstEntry.type,
         troopCount: firstEntry.count,
         status,
-        note: note,
-        isStationary: isStationary
+        note: note ? note.trim() : '',
+        isStationary: isStationary  // 新增标记
       });
     }
     return result;
