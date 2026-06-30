@@ -1098,9 +1098,13 @@ function _esc(str) {
     if (gold < floor.gold) gold = floor.gold;
     if (food < floor.food) food = floor.food;
 
-    // 就近凑整百（规则书 M-18 取整硬规）
-    gold = Math.round(gold / 100) * 100 || (gold > 0 ? 100 : 0);
-    food = Math.round(food / 100) * 100 || (food > 0 ? 100 : 0);
+    // v_map-tooltip-prod-floor-v1: 凑整百仅在有地利修正时生效
+    // 基础产出本身（60/120/250等）是规则书硬数值，无需再凑整
+    // 有 delta 时才对最终值就近凑整百（最低保留100，0仍记0）
+    if (deltas.length > 0) {
+      gold = gold <= 0 ? 0 : Math.max(100, Math.round(gold / 100) * 100);
+      food = food <= 0 ? 0 : Math.max(100, Math.round(food / 100) * 100);
+    }
 
     const isPlayer = ow && ow.owner && ow.owner !== 'npc' && ow.owner !== '';
     const chain = { base, tier, deltas };
