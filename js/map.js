@@ -1,5 +1,6 @@
 /**
- * map.js — 三国志文字版 · 势力地图 v25.3
+ * map.js — 三国志文字版 · 势力地图 v25.7
+ * v25.7 (工单#map-tooltip-prod-calc-v1): 悬浮卡产出计算改为规则书M-04/M-18加减法，删除BONUS_MULT乘法表，新增BONUS_DELTA/CITY_TIER_FLOOR/TIER_IDX，重写_calcProd与chainHtml
  * v25.6 (2026-08-XX): 工单#map-tooltip-region-bonus-v1 · 城池悬浮卡新增「州」chip + 「地利」独立成行
  * v25.5.1 (2026-05-30): 工单#map-tooltip-empty-polish · 文案"空"回滚"空缺"
  * v25.5 (2026-05-30): 工单#map-tooltip-font-unify · 玩家城驻将兜底"空" + 文案"空缺"→"空"
@@ -265,16 +266,28 @@ const CITY_TIER_BASE = {
 };
 
 // v15 地利百分比乘算
-const BONUS_MULT = {
-  '粮丰':     { food: 1.5  },
-  '金丰':     { gold: 1.5  },
-  '进攻+':    { gold: 1.2  },
-  '谋略+':    { gold: 1.1  },
-  '水战强':   { food: 1.15 },
-  '苦寒减产': { gold: 0.8, food: 0.8 },
-  '瘴气':     { food: 0.75 },
-  '偏远':     { gold: 0.9, food: 0.9 },
+// v_map-tooltip-prod-calc-v1: 改为规则书 M-04/M-18 加减法
+// 键: 地利标签；值: 按城等 [县,郡,州治,雄都] 的金/粮加减绝对值
+// 战斗向标签（险关/防御+/谋略+/骑兵强/水战强/蛮兵强/进攻+）不影响产出，不列入此表
+const BONUS_DELTA = {
+  '粮丰':     { gold: [0,   0,   0,    0  ], food: [50,  100, 150,  200] },
+  '金丰':     { gold: [50,  100, 150,  200], food: [0,   0,   0,    0  ] },
+  '苦寒减产': { gold: [-50,-100,-100, -100], food: [-50,-100,-100, -100] },
+  '瘴气':     { gold: [0,   0,   0,    0  ], food: [-50,-100,-100, -100] },
+  '偏远':     { gold: [-50, -50,-100, -100], food: [-50, -50,-100, -100] },
 };
+
+// 城等 → 下限保护值（基础值的一半，就近凑整百）
+// 规则书 M-18：低于基础一半则取基础一半
+const CITY_TIER_FLOOR = {
+  '雄都': { gold: 150, food: 300 },
+  '州治': { gold: 100, food: 200 },
+  '郡城': { gold: 60,  food: 100 },
+  '县城': { gold: 30,  food: 60  },
+};
+
+// 城等在 BONUS_DELTA 数组中的下标
+const TIER_IDX = { '县城': 0, '郡城': 1, '州治': 2, '雄都': 3 };
 
   const CITIES = [
     /* ══ 幽州 ══ */
@@ -1062,19 +1075,36 @@ function _esc(str) {
   /* ─────────────────────────────────
      Tooltip
   ───────────────────────────────── */
+  // v_map-tooltip-prod-calc-v1: 规则书 M-18 加减法产出计算
   function _calcProd(city, ow) {
     const tier = CITY_TIER_MAP[city.name] || '郡城';
     const base = CITY_TIER_BASE[tier];
+    const floor = CITY_TIER_FLOOR[tier] || { gold: 0, food: 0 };
+    const tidx = TIER_IDX[tier] ?? 1;
     let gold = base.gold, food = base.food;
-    const mults = [];
+    const deltas = []; // { k, goldDelta, foodDelta }
+
     (city.bonusKeys || [city.bonusKey] || []).forEach(k => {
-      const m = BONUS_MULT[k]; if (!m) return;
-      if (m.gold) { gold *= m.gold; mults.push({k, type:'gold', v:m.gold}); }
-      if (m.food) { food *= m.food; mults.push({k, type:'food', v:m.food}); }
+      const d = BONUS_DELTA[k];
+      if (!d) return; // 战斗向标签不在表内，直接跳过
+      const gd = d.gold[tidx] || 0;
+      const fd = d.food[tidx] || 0;
+      if (gd !== 0) gold += gd;
+      if (fd !== 0) food += fd;
+      if (gd !== 0 || fd !== 0) deltas.push({ k, goldDelta: gd, foodDelta: fd });
     });
+
+    // 下限保护：低于基础一半取基础一半
+    if (gold < floor.gold) gold = floor.gold;
+    if (food < floor.food) food = floor.food;
+
+    // 就近凑整百（规则书 M-18 取整硬规）
+    gold = Math.round(gold / 100) * 100 || (gold > 0 ? 100 : 0);
+    food = Math.round(food / 100) * 100 || (food > 0 ? 100 : 0);
+
     const isPlayer = ow && ow.owner && ow.owner !== 'npc' && ow.owner !== '';
-    const chain = { base, tier, mults };
-    return { gold: Math.round(gold), food: Math.round(food), chain, isPlayer };
+    const chain = { base, tier, deltas };
+    return { gold, food, chain, isPlayer };
   }
 
   function _showTip(g, e) {
@@ -1208,12 +1238,15 @@ function _esc(str) {
 
     // 产出
     const prod = _calcProd(city, ow);
-    const multStr = prod.chain.mults.map(m => {
-      const icon = m.type === 'gold' ? '💰' : '🌾';
-      return `${_esc(m.k)}(${icon}×${m.v})`;
+    // v_map-tooltip-prod-calc-v1: 改为加减展示，与规则书 M-04 对应
+    const deltaStr = prod.chain.deltas.map(d => {
+      const parts = [];
+      if (d.goldDelta !== 0) parts.push(`${d.goldDelta > 0 ? '+' : ''}${d.goldDelta}💰`);
+      if (d.foodDelta !== 0) parts.push(`${d.foodDelta > 0 ? '+' : ''}${d.foodDelta}🌾`);
+      return `${_esc(d.k)}(${parts.join(' ')})`;
     }).join(' · ');
     let chainHtml = `<span class="ch-step">基础 <b>${prod.chain.base.gold}金/${prod.chain.base.food}粮</b></span>`;
-    if (multStr) chainHtml += `<span class="ch-arrow">›</span><span class="ch-step">${multStr}</span>`;
+    if (deltaStr) chainHtml += `<span class="ch-arrow">›</span><span class="ch-step">${deltaStr}</span>`;
 
     const badgeRow = '';
 
