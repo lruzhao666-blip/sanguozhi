@@ -15524,3 +15524,37 @@ html.tab-switching {
   background: rgba(180,150,90,0.3);
   cursor: not-allowed;
 }
+
+/* ════════════════════════════════════════════════════════════
+   v20261130a 工单#warboard-transit-mode-label-v1
+   战情速报调度卡新增"在途/驻屯"态标签
+   ──────────────────────────────────────────────────────────── */
+.wb-dp-line1 .wb-dp-mode {
+  font-family: var(--font-serif);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: 1px 7px;
+  border-radius: 3px;
+  border: 1px solid;
+  line-height: 1.6;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.wb-dp-line1 .wb-dp-mode--enroute {
+  color: var(--gold-dim);
+  border-color: rgba(160,120,40,.4);
+  background: rgba(160,120,40,.08);
+}
+.wb-dp-line1 .wb-dp-mode--stationed {
+  color: #8ab2d8;
+  border-color: rgba(80,120,170,.4);
+  background: rgba(80,120,170,.08);
+}
+@media (max-width: 720px) {
+  .wb-dp-line1 .wb-dp-mode {
+    font-size: .58rem;
+    padding: 1px 6px;
+  }
+}
+/* ╚══ END v20261130a ══════════════════════════════════════════ */

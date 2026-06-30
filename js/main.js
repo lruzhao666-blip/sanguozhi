@@ -4914,10 +4914,15 @@ function updateBarracksVisibility(enabled) {
 
     var troopStr = _formatTransitTroops(t);
 
+    var modeIsEnroute = (t && t.moveType === 'enroute');
+    var modeText = modeIsEnroute ? '在途' : '驻屯';
+    var modeCls = modeIsEnroute ? 'wb-dp-mode--enroute' : 'wb-dp-mode--stationed';
+
     return '<div class="wb-dp-card" style="--wb-strip-c:' + color + '">'
       + '<div class="wb-dp-line1">'
         + '<span class="wb-dp-badge" style="color:' + color + ';border-color:' + color + '">' + esc(label) + '</span>'
         + '<span class="wb-dp-general">' + esc(t.general || '') + '</span>'
+        + '<span class="wb-dp-mode ' + modeCls + '">' + modeText + '</span>'
         + '<span class="wb-dp-status ' + statusCls + '">' + esc(s) + '</span>'
       + '</div>'
       + '<div class="wb-dp-line2">'
