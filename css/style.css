@@ -15527,34 +15527,38 @@ html.tab-switching {
 
 /* ════════════════════════════════════════════════════════════
    v20261130a 工单#warboard-transit-mode-label-v1
-   战情速报调度卡新增"在途/驻屯"态标签
+   战情速报调度卡"在途/驻屯"态标签
+   v2(方案A)：靠右成组 + 复用 wb-dp-status 胶囊外形
    ──────────────────────────────────────────────────────────── */
 .wb-dp-line1 .wb-dp-mode {
   font-family: var(--font-serif);
-  font-size: .62rem;
+  font-size: .68rem;
   font-weight: 700;
   letter-spacing: .04em;
-  padding: 1px 7px;
-  border-radius: 3px;
-  border: 1px solid;
-  line-height: 1.6;
   white-space: nowrap;
   flex-shrink: 0;
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(0,0,0,.3);
+  border: 1px solid rgba(255,255,255,.06);
+}
+/* 紧跟在 mode 之后的 status，取消其原 margin-left:auto，使二者贴合成组 */
+.wb-dp-line1 .wb-dp-mode + .wb-dp-status {
+  margin-left: 4px;
 }
 .wb-dp-line1 .wb-dp-mode--enroute {
   color: var(--gold-dim);
-  border-color: rgba(160,120,40,.4);
-  background: rgba(160,120,40,.08);
+  border-color: rgba(160,120,40,.3);
 }
 .wb-dp-line1 .wb-dp-mode--stationed {
   color: #8ab2d8;
-  border-color: rgba(80,120,170,.4);
-  background: rgba(80,120,170,.08);
+  border-color: rgba(80,120,170,.3);
 }
 @media (max-width: 720px) {
   .wb-dp-line1 .wb-dp-mode {
-    font-size: .58rem;
-    padding: 1px 6px;
+    font-size: .62rem;
+    padding: 2px 7px;
   }
 }
 /* ╚══ END v20261130a ══════════════════════════════════════════ */
