@@ -1,5 +1,6 @@
 /**
  * map.js — 三国志文字版 · 势力地图 v25.7
+ * v20261111k (工单#map-tooltip-facility-emoji-warfront-B-v1): 设施彩色emoji + 标题齿轮 + 兵力焦点放大
  * v25.7 (工单#map-tooltip-prod-calc-v1): 悬浮卡产出计算改为规则书M-04/M-18加减法，删除BONUS_MULT乘法表，新增BONUS_DELTA/CITY_TIER_FLOOR/TIER_IDX，重写_calcProd与chainHtml
  * v25.6 (2026-08-XX): 工单#map-tooltip-region-bonus-v1 · 城池悬浮卡新增「州」chip + 「地利」独立成行
  * v25.5.1 (2026-05-30): 工单#map-tooltip-empty-polish · 文案"空"回滚"空缺"
@@ -250,6 +251,29 @@ let _npcFactionSlots = {};
     '水寨': '水战强化',
     '弩坊': '弓兵强化',
     '蛮营': '蛮兵强化'
+  };
+
+  // v20261111k 设施彩色 emoji 映射（工单#map-tooltip-facility-emoji-warfront-B-v1）
+  // 5 项带 \uFE0F 变体选择符强制彩色渲染：粮仓/矿场/校场/医馆/水寨
+  const FACILITY_ICON = {
+    '屯田': '\uD83C\uDF3E',            // 🌾
+    '水车': '\uD83D\uDCA7',            // 💧
+    '粮仓': '\uD83C\uDFDA\uFE0F',      // 🏚️
+    '市集': '\uD83C\uDFAA',            // 🎪
+    '矿场': '\u26CF\uFE0F',            // ⛏️
+    '商会': '\uD83D\uDCB0',            // 💰
+    '码头': '\u26F5',                  // ⛵
+    '校场': '\u2694\uFE0F',            // ⚔️
+    '城墙': '\uD83C\uDFF0',            // 🏰
+    '箭楼': '\uD83C\uDFF9',            // 🏹
+    '驿站': '\uD83D\uDC0E',            // 🐎
+    '义仓': '\uD83C\uDF5A',            // 🍚
+    '书院': '\uD83D\uDCDA',            // 📚
+    '医馆': '\u2695\uFE0F',            // ⚕️
+    '马场': '\uD83D\uDC34',            // 🐴
+    '水寨': '\u2693\uFE0F',            // ⚓️
+    '弩坊': '\uD83C\uDFAF',            // 🎯
+    '蛮营': '\uD83D\uDEE1\uFE0F',      // 🛡️
   };
 
   // 获取设施分类
@@ -1284,7 +1308,7 @@ function _esc(str) {
     // #fog-of-war-map-v1: 兵力按战争迷雾开关 + 身份过滤
     let troopHtml = '';
     const _chips = (t) => TROOP_TYPES.filter(k => (t[k]||0) > 0)
-      .map(k => `<span class="sgt-troop-chip"><b>${k}</b><span>${Number(t[k]).toLocaleString()}</span></span>`).join('');
+      .map(k => `<span class="sgt-troop-chip"><b>${k}</b><span style="font-size:1rem;font-weight:800;color:#f0c060">${Number(t[k]).toLocaleString()}</span></span>`).join('');
 
     // v6.0: 战争迷雾已移除，所有兵力公开展示
     if (isPlayer) {
@@ -1356,13 +1380,15 @@ function _esc(str) {
       ${(ow && ow.facilities && ow.facilities.length > 0) ? `
       <div class="sgt-facility-block">
         <div class="sgt-facility-block-title">
-          ⚙️ 设施
+          <span style="font-size:.85rem;line-height:1;margin-right:2px">\u2699\uFE0F</span>设施
           <span class="count">${ow.facilities.length} 项</span>
         </div>
         <div class="sgt-facility-chips">
           ${ow.facilities.map(facilityName => {
             const category = getFacilityCategory(facilityName);
+            const icon = FACILITY_ICON[facilityName] || '';
             let chipHtml = `<div class="sgt-facility-chip ${category}" title="${facilityName}">`;
+            if (icon) chipHtml += `<span style="font-size:.8rem;line-height:1">${icon}</span>`;
             chipHtml += `<span class="sgt-facility-name">${facilityName}</span>`;
             chipHtml += `</div>`;
             return chipHtml;
