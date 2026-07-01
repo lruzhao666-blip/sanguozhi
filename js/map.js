@@ -226,7 +226,7 @@ let _npcFactionSlots = {};
     },
     // 兵种类 - 蓝色调
     troop: {
-      items: ['马场', '水寨', '弩坊', '蛮营'],
+      items: ['马场', '水寨', '弩坊', '蛮营', '码头'],
       cssClass: 'cat-troop'
     }
   };
