@@ -11724,25 +11724,14 @@ body.is-viewer-mode #diag-toast {
 
 /* ═══ 双栏主体 ═══ */
 .wb-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0;
   padding: 0;
   position: relative;
 }
 .wb-body::before {
-  content: '';
-  position: absolute;
-  top: 14px; bottom: 14px; left: 50%;
-  width: 1px;
-  background: linear-gradient(180deg,
-    transparent,
-    rgba(212,168,67,.22) 20%,
-    rgba(212,168,67,.38) 50%,
-    rgba(212,168,67,.22) 80%,
-    transparent);
-  pointer-events: none;
-  z-index: 2;
+  display: none;
 }
 
 .wb-col {
@@ -11750,6 +11739,10 @@ body.is-viewer-mode #diag-toast {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.wb-col + .wb-col {
+  border-top: 1px solid rgba(212,168,67,.18);
 }
 
 /* 列标题 */
@@ -11771,9 +11764,9 @@ body.is-viewer-mode #diag-toast {
 
 /* 列表容器 */
 .wb-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
 }
 
 /* ═══ 战报卡片 .wb-br-* ═══ */
@@ -11995,8 +11988,12 @@ body.is-viewer-mode #diag-toast {
 /* ═══ 移动端响应式 ≤720px ═══ */
 @media (max-width: 720px) {
   .wb-body {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     gap: 0;
+  }
+  .wb-list {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
   .wb-body::before { display: none; }
   .wb-col + .wb-col {
