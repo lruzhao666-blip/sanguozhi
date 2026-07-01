@@ -1295,22 +1295,51 @@ function _esc(str) {
       troopHtml = `<div class="sgt-row sgt-troops"><span class="sgt-lbl">兵力</span><span class="sgt-troop-list">${_chips(troops)}</span></div>`;
     }
 
-    // 产出
-    const prod = _calcProd(city, ow);
-    // v_map-tooltip-prod-calc-v1: 改为加减展示，与规则书 M-04 对应
-    const deltaStr = prod.chain.deltas.map(d => {
-      const parts = [];
-      if (d.goldDelta !== 0) parts.push(`${d.goldDelta > 0 ? '+' : ''}${d.goldDelta}💰`);
-      if (d.foodDelta !== 0) parts.push(`${d.foodDelta > 0 ? '+' : ''}${d.foodDelta}🌾`);
-      return `${_esc(d.k)}(${parts.join(' ')})`;
-    }).join(' · ');
-    let chainHtml = `<span class="ch-step">基础 <b>${prod.chain.base.gold}金/${prod.chain.base.food}粮</b></span>`;
-    if (deltaStr) chainHtml += `<span class="ch-arrow">›</span><span class="ch-step">${deltaStr}</span>`;
+    // 产出：优先使用录入数据（ow.prodGold/ow.prodFood），否则回退到计算
+    let prod, chainHtml, prodTitle, prodTag;
+    if (ow && ow.prodGold != null && ow.prodFood != null) {
+      // 使用录入的产出数据
+      prod = { gold: ow.prodGold, food: ow.prodFood };
+      const tier = CITY_TIER_MAP[city.name] || '郡城';
+      const base = CITY_TIER_BASE[tier];
+      chainHtml = `<span class="ch-step">基础 <b>${base.gold}金/${base.food}粮</b></span>`;
+
+      // 计算地利加成展示
+      const bonusKeys = city.bonusKeys || (city.bonusKey ? [city.bonusKey] : []);
+      if (bonusKeys.length > 0) {
+        const tidx = TIER_IDX[tier] ?? 1;
+        const deltaStr = bonusKeys.map(k => {
+          const d = BONUS_DELTA[k];
+          if (!d) return null;
+          const gd = d.gold[tidx] || 0;
+          const fd = d.food[tidx] || 0;
+          if (gd === 0 && fd === 0) return null;
+          const parts = [];
+          if (gd !== 0) parts.push(`${gd > 0 ? '+' : ''}${gd}💰`);
+          if (fd !== 0) parts.push(`${fd > 0 ? '+' : ''}${fd}🌾`);
+          return `${_esc(k)}(${parts.join(' ')})`;
+        }).filter(Boolean).join(' · ');
+        if (deltaStr) chainHtml += `<span class="ch-arrow">›</span><span class="ch-step">${deltaStr}</span>`;
+      }
+
+      prodTitle = isPlayer ? '📊 预计本回合产出' : '📊 攻下后基础产出';
+      prodTag = isPlayer ? '含修正' : '仅基础+地利';
+    } else {
+      // 回退到旧的计算逻辑
+      prod = _calcProd(city, ow);
+      const deltaStr = prod.chain.deltas.map(d => {
+        const parts = [];
+        if (d.goldDelta !== 0) parts.push(`${d.goldDelta > 0 ? '+' : ''}${d.goldDelta}💰`);
+        if (d.foodDelta !== 0) parts.push(`${d.foodDelta > 0 ? '+' : ''}${d.foodDelta}🌾`);
+        return `${_esc(d.k)}(${parts.join(' ')})`;
+      }).join(' · ');
+      chainHtml = `<span class="ch-step">基础 <b>${prod.chain.base.gold}金/${prod.chain.base.food}粮</b></span>`;
+      if (deltaStr) chainHtml += `<span class="ch-arrow">›</span><span class="ch-step">${deltaStr}</span>`;
+      prodTitle = isPlayer ? '📊 预计本回合产出' : '📊 攻下后基础产出';
+      prodTag = isPlayer ? '含修正' : '仅基础+地利';
+    }
 
     const badgeRow = '';
-
-    const prodTitle = isPlayer ? '📊 预计本回合产出' : '📊 攻下后基础产出';
-    const prodTag = isPlayer ? '含修正' : '仅基础+地利';
 
     _tooltip.innerHTML = `
       <div class="sgt-header">
