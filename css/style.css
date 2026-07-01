@@ -12115,10 +12115,11 @@ body.is-viewer-mode #diag-toast {
   height: 100%;
 }
 
-/* 让 .wb-list 成为 flex 容器，空态时 wrap 撑满 */
+/* 让 .wb-list 成为 grid 容器，空态时 wrap 撑满 */
 .wb-list {
-  display: flex !important;
-  flex-direction: column;
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
   flex: 1;
 }
 
