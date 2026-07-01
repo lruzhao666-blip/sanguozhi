@@ -15667,3 +15667,119 @@ html.tab-switching {
   }
 }
 /* ╚══ END v20261130a ══════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261201a 工单#warboard-battle-vs-v1
+   战报卡 VS 精修 + 移动端强制单列修复
+   仅作用 .wb-br-*，不动 .wb-dp-*（调度卡）
+   ──────────────────────────────────────────────────────────── */
+
+/* ── 移动端强制单列：覆盖 v20260619c 无媒体查询的 repeat(2,1fr) !important ── */
+@media (max-width: 720px) {
+  .wb-list {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── 战报卡整体重做（覆盖 v20260619a 的 .wb-br-card 及子元素）── */
+.warboard .wb-br-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  padding: 9px 16px 10px !important;
+  border: 1px solid rgba(255,255,255,.05);
+  border-left: none;
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s, background .2s;
+  flex-wrap: nowrap !important;
+}
+.warboard .wb-br-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  transition: width .2s;
+}
+.warboard .wb-br-card:hover::before { width: 4px; }
+.warboard .wb-br-card:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,.5); }
+.warboard .wb-br-card.win  { background: linear-gradient(180deg, rgba(28,48,22,.32), rgba(14,8,6,.5)); border-color: rgba(61,190,108,.25); }
+.warboard .wb-br-card.win::before  { background: linear-gradient(180deg,#6dca7d,#3a9050); }
+.warboard .wb-br-card.lose { background: linear-gradient(180deg, rgba(58,14,8,.32), rgba(14,8,6,.5)); border-color: rgba(220,80,40,.25); }
+.warboard .wb-br-card.lose::before { background: linear-gradient(180deg,#e07060,#a03020); }
+.warboard .wb-br-card.draw { background: linear-gradient(180deg, rgba(54,40,6,.32), rgba(14,8,6,.5)); border-color: rgba(200,155,0,.22); }
+.warboard .wb-br-card.draw::before { background: linear-gradient(180deg,#e8c560,#a08030); }
+
+/* 左上角战果标签 */
+.warboard .wb-br-tag {
+  position: absolute; top: 0; left: 0; z-index: 2;
+  font-family: var(--font-serif); font-size: .64rem; font-weight: 700;
+  letter-spacing: .08em; padding: 2px 10px 3px; border-radius: 0 0 var(--r) 0;
+}
+.warboard .wb-br-card.win  .wb-br-tag { color:#7dd87d; background:rgba(0,60,22,.55);  border-right:1px solid rgba(61,190,108,.3); border-bottom:1px solid rgba(61,190,108,.3); }
+.warboard .wb-br-card.lose .wb-br-tag { color:#e87060; background:rgba(60,10,2,.55);  border-right:1px solid rgba(220,80,40,.3);  border-bottom:1px solid rgba(220,80,40,.3); }
+.warboard .wb-br-card.draw .wb-br-tag { color:#e8c560; background:rgba(60,42,0,.55);  border-right:1px solid rgba(200,155,0,.3);  border-bottom:1px solid rgba(200,155,0,.3); }
+
+/* 顶部战场地点（纯文字） */
+.warboard .wb-br-place {
+  text-align: center; font-family: var(--font-serif);
+  font-size: .66rem; color: var(--gold-dim); letter-spacing: .16em;
+  margin: 2px 0 9px;
+}
+
+/* 三段对抗区 */
+.warboard .wb-br-arena {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: 0 12px;
+}
+.warboard .wb-br-side { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.warboard .wb-br-side.atk { align-items: flex-end; text-align: right; }
+.warboard .wb-br-side.def { align-items: flex-start; text-align: left; }
+.warboard .wb-br-top { display: flex; align-items: center; gap: 5px 7px; flex-wrap: wrap; }
+.warboard .wb-br-side.atk .wb-br-top { flex-direction: row-reverse; justify-content: flex-start; }
+.warboard .wb-br-names { display: flex; align-items: center; gap: 2px 4px; flex-wrap: wrap; }
+.warboard .wb-br-side.atk .wb-br-names { justify-content: flex-end; }
+
+.warboard .wb-br-badge {
+  font-family: var(--font-serif); font-size: .6rem; font-weight: 700;
+  padding: 1px 6px; border-radius: 3px; border: 1px solid;
+  background: transparent; white-space: nowrap; line-height: 1.6;
+  flex-shrink: 0; letter-spacing: .04em;
+}
+.warboard .wb-br-name {
+  font-family: var(--font-serif); font-size: .94rem; font-weight: 800;
+  color: var(--text-main); letter-spacing: .02em; white-space: nowrap;
+}
+
+/* 伤亡：统一默认色（对齐调度路线 text-sub），标签超小间隔字 + 加大等宽数字 */
+.warboard .wb-br-loss { display: flex; align-items: baseline; gap: 4px; }
+.warboard .wb-br-side.atk .wb-br-loss { flex-direction: row-reverse; }
+.warboard .wb-br-loss .lbl { font-family: var(--font-sans); font-size: .56rem; color: var(--text-dim); letter-spacing: .1em; }
+.warboard .wb-br-loss .num { font-family: var(--font-sans); font-size: .78rem; font-weight: 700; color: var(--text-sub); font-variant-numeric: tabular-nums; }
+
+/* ⚔️ 彩色刀剑轴心 + 收小氛围光（无分界线，钉中轴） */
+.warboard .wb-br-clash {
+  position: relative; justify-self: center; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+}
+.warboard .wb-br-clash::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,168,67,.22), rgba(212,168,67,.03) 45%, transparent 60%);
+}
+.warboard .wb-br-card.lose .wb-br-clash::before {
+  background: radial-gradient(circle, rgba(220,90,60,.2), rgba(220,90,60,.02) 45%, transparent 60%);
+}
+.warboard .wb-br-clash .sw {
+  position: relative; font-size: .9rem; line-height: 1;
+  filter: drop-shadow(0 0 3px rgba(212,168,67,.5)) drop-shadow(0 1px 2px rgba(0,0,0,.6));
+}
+
+/* ── 移动端战报卡微调 ── */
+@media (max-width: 720px) {
+  .warboard .wb-br-arena { gap: 0 8px; }
+  .warboard .wb-br-name  { font-size: .9rem; }
+  .warboard .wb-br-place { font-size: .62rem; margin: 1px 0 7px; }
+}
+/* ══ END v20261201a ══ */
