@@ -1121,7 +1121,7 @@ window.SGParser = (function () {
         holders,
         holderEmpty,
         troops:  _parseTroops(troopsRaw),
-        facilities: _parseFacilities(troopsRaw),
+        facilities: [],
       });
     }
 
@@ -1188,7 +1188,7 @@ window.SGParser = (function () {
 
   // ─────────────────────────────────────────
   //  解析设施字符串
-  //  输入：设施:屯田,市集,城墙  或  管道符后的部分
+  //  输入：屯田,市集,城墙
   //  输出：['屯田', '市集', '城墙']
   //  17种合法设施（M-20规则书）：
   //  屯田/水车/粮仓/市集/矿场/商会/义仓/书院/医馆/
