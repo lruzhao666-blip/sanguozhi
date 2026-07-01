@@ -207,6 +207,61 @@ const FACTION_FIXED_SLOTS = {
 let _npcFactionSlots = {};
   const EMPTY_C = { fill:'rgba(10,11,16,0.55)',  film:'rgba(40, 45,55,0.12)',  stroke:'rgba(175,148,82,0.16)', glow:'#887760', text:'rgba(185,158,100,0.32)' };
 
+  // 设施分类映射表（M-20规则书）
+  const FACILITY_CATEGORIES = {
+    // 产出类（粮草+金钱）- 暖金色
+    produce: {
+      items: ['屯田', '水车', '粮仓', '市集', '矿场', '商会'],
+      cssClass: 'cat-produce'
+    },
+    // 军事类 - 红色调
+    military: {
+      items: ['校场', '城墙', '箭楼', '驿站'],
+      cssClass: 'cat-military'
+    },
+    // 民心类 - 绿色调
+    morale: {
+      items: ['义仓', '书院', '医馆'],
+      cssClass: 'cat-morale'
+    },
+    // 兵种类 - 蓝色调
+    troop: {
+      items: ['马场', '水寨', '弩坊', '蛮营'],
+      cssClass: 'cat-troop'
+    }
+  };
+
+  // 设施效果映射表（用于显示简短效果描述）
+  const FACILITY_EFFECTS = {
+    '屯田': '粮+50~100',
+    '水车': '粮+50',
+    '粮仓': '维护-50',
+    '市集': '金+50',
+    '矿场': '金+50~100',
+    '商会': '金+50',
+    '义仓': '民心+8',
+    '书院': '民心+5',
+    '医馆': '民心+5',
+    '校场': '募兵≤500',
+    '城墙': '防御+1',
+    '箭楼': '弓兵+1',
+    '驿站': '行军-1',
+    '马场': '骑兵强化',
+    '水寨': '水战强化',
+    '弩坊': '弓兵强化',
+    '蛮营': '蛮兵强化'
+  };
+
+  // 获取设施分类
+  function getFacilityCategory(facilityName) {
+    for (const [catKey, catData] of Object.entries(FACILITY_CATEGORIES)) {
+      if (catData.items.includes(facilityName)) {
+        return catData.cssClass;
+      }
+    }
+    return 'cat-produce'; // 默认归为产出类
+  }
+
   /* 奖励图标（加 \uFE0F 变体选择符，强制彩色 emoji 渲染） */
   const BONUS_ICON = {
     '防御+':'\uD83D\uDEE1\uFE0F',  // 🛡️
@@ -1269,6 +1324,26 @@ function _esc(str) {
         <div class="sgt-row sgt-holder"><span class="sgt-lbl">驻将</span>${holderHtml}</div>
         ${troopHtml}
       </div>
+      ${(city.facilities && city.facilities.length > 0) ? `
+      <div class="sgt-facility-block">
+        <div class="sgt-facility-block-title">
+          ⚙️ 设施
+          <span class="count">${city.facilities.length} 项</span>
+        </div>
+        <div class="sgt-facility-chips">
+          ${city.facilities.map(facilityName => {
+            const category = getFacilityCategory(facilityName);
+            const effect = FACILITY_EFFECTS[facilityName] || '';
+            let chipHtml = \`    <div class="sgt-facility-chip \${category}" title="\${facilityName}">\`;
+            chipHtml += \`      <span class="sgt-facility-name">\${facilityName}</span>\`;
+            if (effect) {
+              chipHtml += \`      <span class="sgt-facility-effect">\${effect}</span>\`;
+            }
+            chipHtml += \`    </div>\`;
+            return chipHtml;
+          }).join('')}
+        </div>
+      </div>` : ''}
       ${isEmpty ? '' : `
       <div class="sgt-prod-block">
         <div class="sgt-prod-block-title">${prodTitle}<span class="pt-tag">${prodTag}</span></div>
