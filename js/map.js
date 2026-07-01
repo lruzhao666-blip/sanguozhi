@@ -252,74 +252,6 @@ let _npcFactionSlots = {};
     '蛮营': '蛮兵强化'
   };
 
-  // 设施 emoji 映射表（18 种设施）
-  const FACILITY_EMOJI = {
-    // 产出类（暖金）
-    '屯田': '🌾',
-    '水车': '💧',
-    '粮仓': '🏚\uFE0F',
-    '市集': '🎪',
-    '矿场': '⛏\uFE0F',
-    '商会': '💰',
-    '码头': '⛵',
-    // 军事类（红）
-    '校场': '⚔\uFE0F',
-    '城墙': '🏰',
-    '箭楼': '🏹',
-    '驿站': '🐎',
-    // 民心类（绿）
-    '义仓': '🍚',
-    '书院': '📚',
-    '医馆': '⚕\uFE0F',
-    // 兵种类（蓝）
-    '马场': '🐴',
-    '水寨': '⚓\uFE0F',
-    '弩坊': '🎯',
-    '蛮营': '🛡️'
-    '水车': '粮+50',
-    '粮仓': '维护-50',
-    '市集': '金+50',
-    '矿场': '金+50~100',
-    '商会': '金+50',
-    '义仓': '民心+8',
-    '书院': '民心+5',
-    '医馆': '民心+5',
-    '校场': '募兵≤500',
-    '城墙': '防御+1',
-    '箭楼': '弓兵+1',
-    '驿站': '行军-1',
-    '马场': '骑兵强化',
-    '水寨': '水战强化',
-    '弩坊': '弓兵强化',
-    '蛮营': '蛮兵强化'
-  };
-
-  // 设施 emoji 映射表（18 种设施）
-  const FACILITY_EMOJI = {
-    // 产出类（暖金）
-    '屯田': '🌾',
-    '水车': '💧',
-    '粮仓': '🏚\uFE0F',
-    '市集': '🎪',
-    '矿场': '⛏\uFE0F',
-    '商会': '💰',
-    '码头': '⛵',
-    // 军事类（红）
-    '校场': '⚔\uFE0F',
-    '城墙': '🏰',
-    '箭楼': '🏹',
-    '驿站': '🐎',
-    // 民心类（绿）
-    '义仓': '🍚',
-    '书院': '📚',
-    '医馆': '⚕\uFE0F',
-    // 兵种类（蓝）
-    '马场': '🐴',
-    '水寨': '⚓\uFE0F',
-    '弩坊': '🎯',
-    '蛮营': '🛡️'
-  };
-
   // 获取设施分类
   function getFacilityCategory(facilityName) {
     for (const [catKey, catData] of Object.entries(FACILITY_CATEGORIES)) {
@@ -1430,9 +1362,7 @@ function _esc(str) {
         <div class="sgt-facility-chips">
           ${ow.facilities.map(facilityName => {
             const category = getFacilityCategory(facilityName);
-            const emoji = FACILITY_EMOJI[facilityName] || '⚙️';
             let chipHtml = `<div class="sgt-facility-chip ${category}" title="${facilityName}">`;
-            chipHtml += `<span class="sgt-facility-emoji">${emoji}</span>`;
             chipHtml += `<span class="sgt-facility-name">${facilityName}</span>`;
             chipHtml += `</div>`;
             return chipHtml;

@@ -2490,12 +2490,6 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgmap-tooltip .sgt-facility-name {
   letter-spacing: 0.02em;
 }
-.sgmap-tooltip .sgt-facility-emoji {
-  font-size: 0.95rem;
-  margin-right: 4px;
-  flex-shrink: 0;
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
-}
 .sgmap-tooltip .sgt-facility-effect {
   font-size: 0.62rem;
   opacity: 0.85;
