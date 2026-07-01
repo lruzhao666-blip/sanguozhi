@@ -1068,6 +1068,14 @@ window.SGParser = (function () {
         }
         continue;
       }
+      // 设施行 — 格式：设施:城名[工程,工程],城名[工程]
+      if (/^设施[:：]/.test(line)) {
+        const facilityRaw = line.replace(/^设施[:：]\s*/, '').trim();
+        if (facilityRaw && !p.citiesInherit) {
+          _parseFacilityLine(facilityRaw, p.cities_list);
+        }
+        continue;
+      }
     }
     return p;
   }
@@ -1113,6 +1121,7 @@ window.SGParser = (function () {
         holders,
         holderEmpty,
         troops:  _parseTroops(troopsRaw),
+        facilities: _parseFacilities(troopsRaw),
       });
     }
 
@@ -1124,6 +1133,26 @@ window.SGParser = (function () {
       });
     }
     return result;
+  }
+
+  // ─────────────────────────────────────────
+  //  解析设施行：设施:上党[屯田,市集,城墙],洛阳[水车,箭楼]
+  //  将设施写入已有的 cities_list 对象的 facilities 字段
+  // ─────────────────────────────────────────
+  function _parseFacilityLine(raw, cities_list) {
+    if (!raw || !cities_list) return;
+    // 匹配 城名[设施1,设施2,...]
+    const re = /([^\[,，\s]+)\[([^\]]+)\]/g;
+    let m;
+    while ((m = re.exec(raw)) !== null) {
+      const cityName = m[1].trim();
+      const facilitiesStr = m[2].trim();
+      // 在 cities_list 中找到对应城池
+      const city = cities_list.find(c => c.name === cityName);
+      if (city) {
+        city.facilities = _parseFacilities(facilitiesStr);
+      }
+    }
   }
 
   // ─────────────────────────────────────────
@@ -1153,6 +1182,33 @@ window.SGParser = (function () {
     raw.split(',').forEach(seg => {
       const m = seg.trim().match(/^([步弓骑水蛮])[:：](\d+)$/);
       if (m) result[m[1]] = parseInt(m[2]);
+    });
+    return result;
+  }
+
+  // ─────────────────────────────────────────
+  //  解析设施字符串
+  //  输入：设施:屯田,市集,城墙  或  管道符后的部分
+  //  输出：['屯田', '市集', '城墙']
+  //  17种合法设施（M-20规则书）：
+  //  屯田/水车/粮仓/市集/矿场/商会/义仓/书院/医馆/
+  //  校场/城墙/箭楼/驿站/马场/水寨/弩坊/蛮营
+  // ─────────────────────────────────────────
+  function _parseFacilities(raw) {
+    if (!raw || !raw.trim()) return [];
+    const VALID_FACILITIES = new Set([
+      '屯田', '水车', '粮仓', '市集', '矿场', '商会',
+      '义仓', '书院', '医馆', '校场', '城墙', '箭楼',
+      '驿站', '马场', '水寨', '弩坊', '蛮营'
+    ]);
+    const result = [];
+    // 提取中文逗号或半角逗号分隔的设施名
+    const parts = raw.split(/[,，]/);
+    parts.forEach(part => {
+      const name = part.trim();
+      if (VALID_FACILITIES.has(name)) {
+        result.push(name);
+      }
     });
     return result;
   }
