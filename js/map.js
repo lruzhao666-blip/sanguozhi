@@ -1334,12 +1334,12 @@ function _esc(str) {
           ${city.facilities.map(facilityName => {
             const category = getFacilityCategory(facilityName);
             const effect = FACILITY_EFFECTS[facilityName] || '';
-            let chipHtml = \`    <div class="sgt-facility-chip \${category}" title="\${facilityName}">\`;
-            chipHtml += \`      <span class="sgt-facility-name">\${facilityName}</span>\`;
+            let chipHtml = `<div class="sgt-facility-chip ${category}" title="${facilityName}">`;
+            chipHtml += `<span class="sgt-facility-name">${facilityName}</span>`;
             if (effect) {
-              chipHtml += \`      <span class="sgt-facility-effect">\${effect}</span>\`;
+              chipHtml += `<span class="sgt-facility-effect">${effect}</span>`;
             }
-            chipHtml += \`    </div>\`;
+            chipHtml += `</div>`;
             return chipHtml;
           }).join('')}
         </div>
