@@ -1324,14 +1324,14 @@ function _esc(str) {
         <div class="sgt-row sgt-holder"><span class="sgt-lbl">驻将</span>${holderHtml}</div>
         ${troopHtml}
       </div>
-      ${(city.facilities && city.facilities.length > 0) ? `
+      ${(ow && ow.facilities && ow.facilities.length > 0) ? `
       <div class="sgt-facility-block">
         <div class="sgt-facility-block-title">
           ⚙️ 设施
-          <span class="count">${city.facilities.length} 项</span>
+          <span class="count">${ow.facilities.length} 项</span>
         </div>
         <div class="sgt-facility-chips">
-          ${city.facilities.map(facilityName => {
+          ${ow.facilities.map(facilityName => {
             const category = getFacilityCategory(facilityName);
             const effect = FACILITY_EFFECTS[facilityName] || '';
             let chipHtml = `<div class="sgt-facility-chip ${category}" title="${facilityName}">`;

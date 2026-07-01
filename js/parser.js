@@ -2348,6 +2348,7 @@ if (/^产出△/.test(line)) {
           playerName: p.name || p.slot,
           holder:     c.holder || '无',
           troops:     c.troops || {},
+          facilities: c.facilities || [],
           isMulti:    ci > 0,
         };
       });

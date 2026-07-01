@@ -374,6 +374,7 @@ function updateBarracksVisibility(enabled) {
                 playerName: playerName,
                 holder:     c.holder || '无',
                 troops:     c.troops || {},
+                facilities: c.facilities || [],
                 isMulti:    ci > 0,
               };
               // 同步从 npcCities 中剔除被错误占用的同名条目
