@@ -1100,13 +1100,22 @@ window.SGParser = (function () {
       const inner = m[3].trim();
       if (!name) continue;
 
-      const pipeIdx = inner.indexOf('|');
+      // 先提取 产:xxx/xxx 部分
+      let prodRaw = null;
+      let innerWithoutProd = inner;
+      const prodMatch = inner.match(/\|产[:：](\d+)\/(\d+)/);
+      if (prodMatch) {
+        prodRaw = prodMatch[0]; // 保存 |产:170/300
+        innerWithoutProd = inner.replace(prodMatch[0], ''); // 移除产出部分
+      }
+
+      const pipeIdx = innerWithoutProd.indexOf('|');
       let holderRaw, troopsRaw;
       if (pipeIdx !== -1) {
-        holderRaw = inner.slice(0, pipeIdx).trim();
-        troopsRaw = inner.slice(pipeIdx + 1).trim();
+        holderRaw = innerWithoutProd.slice(0, pipeIdx).trim();
+        troopsRaw = innerWithoutProd.slice(pipeIdx + 1).trim();
       } else {
-        holderRaw = inner;
+        holderRaw = innerWithoutProd;
         troopsRaw = null;
       }
 
@@ -1114,6 +1123,16 @@ window.SGParser = (function () {
       const _trimmed = (holderRaw || '').trim();
       const holderEmpty = EMPTY_HOLDER_TOKENS.has(_trimmed);
       const holders = holderEmpty ? [] : _trimmed.split('/').map(s => s.trim()).filter(Boolean);
+      // 解析产出数据
+      let prodGold = null, prodFood = null;
+      if (prodRaw) {
+        const pm = prodRaw.match(/产[:：](\d+)\/(\d+)/);
+        if (pm) {
+          prodGold = parseInt(pm[1]);
+          prodFood = parseInt(pm[2]);
+        }
+      }
+
       result.push({
         name,
         faction,
@@ -1122,6 +1141,8 @@ window.SGParser = (function () {
         holderEmpty,
         troops:  _parseTroops(troopsRaw),
         facilities: [],
+        prodGold,
+        prodFood,
       });
     }
 
@@ -2349,6 +2370,8 @@ if (/^产出△/.test(line)) {
           holder:     c.holder || '无',
           troops:     c.troops || {},
           facilities: c.facilities || [],
+          prodGold:   c.prodGold != null ? c.prodGold : null,
+          prodFood:   c.prodFood != null ? c.prodFood : null,
           isMulti:    ci > 0,
         };
       });
@@ -2362,6 +2385,9 @@ if (/^产出△/.test(line)) {
           playerName: '',
           holder:     c.holder || '无',
           troops:     c.troops || {},
+          facilities: c.facilities || [],
+          prodGold:   c.prodGold != null ? c.prodGold : null,
+          prodFood:   c.prodFood != null ? c.prodFood : null,
           isMulti:    false,
         };
       }
