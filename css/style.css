@@ -2436,7 +2436,7 @@ header, nav, main, footer { position: relative; z-index: 1; }
 
 /* ===== 设施块样式 ===== */
 .sgmap-tooltip .sgt-facility-block {
-  margin: 8px 0 12px;
+  margin: 8px 0 8px;
   padding: 8px 10px 9px;
   background: linear-gradient(135deg, rgba(80,55,15,.16), rgba(40,28,8,.10));
   border: 1px solid rgba(180,148,68,.20);
