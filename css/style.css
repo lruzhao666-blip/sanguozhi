@@ -2433,6 +2433,113 @@ header, nav, main, footer { position: relative; z-index: 1; }
 .sgmap-tooltip .sgt-troop-chip b { font-size:.68rem; font-weight:600; color:#7a6a5a; letter-spacing:.04em; }
 .sgmap-tooltip .sgt-troop-chip span { font-size:.82rem; font-weight:700; color:#c8b89a; }
 .sgmap-tooltip .sgt-dim { font-size:.7rem; color:#5a4d3a; }
+
+/* ===== 设施块样式 ===== */
+.sgmap-tooltip .sgt-facility-block {
+  margin: 8px 14px 12px;
+  padding: 8px 10px 9px;
+  background: linear-gradient(135deg, rgba(80,55,15,.16), rgba(40,28,8,.10));
+  border: 1px solid rgba(180,148,68,.20);
+  border-radius: 5px;
+}
+.sgmap-tooltip .sgt-facility-block-title {
+  font-size: 0.60rem;
+  color: #a07830;
+  letter-spacing: 0.14em;
+  margin-bottom: 8px;
+  font-family: 'Noto Sans SC', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sgmap-tooltip .sgt-facility-block-title::before {
+  content: '';
+  width: 2px;
+  height: 9px;
+  background: rgba(212,168,67,.5);
+}
+.sgmap-tooltip .sgt-facility-block-title .count {
+  margin-left: auto;
+  font-size: 0.56rem;
+  color: #7a6a5a;
+  letter-spacing: 0.05em;
+  font-weight: 400;
+}
+.sgmap-tooltip .sgt-facility-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.sgmap-tooltip .sgt-facility-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 9px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  border: 1px solid;
+  white-space: nowrap;
+  cursor: help;
+  transition: all 0.15s ease;
+}
+.sgmap-tooltip .sgt-facility-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+.sgmap-tooltip .sgt-facility-name {
+  letter-spacing: 0.02em;
+}
+.sgmap-tooltip .sgt-facility-effect {
+  font-size: 0.62rem;
+  opacity: 0.85;
+  letter-spacing: 0.02em;
+}
+
+/* 产出类（粮草+金钱）- 暖金色 */
+.sgmap-tooltip .sgt-facility-chip.cat-produce {
+  background: rgba(212,168,67,.12);
+  border-color: rgba(212,168,67,.35);
+  color: #f0c060;
+}
+.sgmap-tooltip .sgt-facility-chip.cat-produce:hover {
+  background: rgba(212,168,67,.18);
+  border-color: rgba(212,168,67,.5);
+}
+
+/* 军事类 - 红色调 */
+.sgmap-tooltip .sgt-facility-chip.cat-military {
+  background: rgba(231,76,60,.10);
+  border-color: rgba(231,76,60,.32);
+  color: #e88070;
+}
+.sgmap-tooltip .sgt-facility-chip.cat-military:hover {
+  background: rgba(231,76,60,.16);
+  border-color: rgba(231,76,60,.45);
+}
+
+/* 民心类 - 绿色调 */
+.sgmap-tooltip .sgt-facility-chip.cat-morale {
+  background: rgba(80,140,80,.12);
+  border-color: rgba(100,170,100,.30);
+  color: #98d09a;
+}
+.sgmap-tooltip .sgt-facility-chip.cat-morale:hover {
+  background: rgba(80,140,80,.18);
+  border-color: rgba(100,170,100,.42);
+}
+
+/* 兵种类 - 蓝色调 */
+.sgmap-tooltip .sgt-facility-chip.cat-troop {
+  background: rgba(52,152,219,.10);
+  border-color: rgba(52,152,219,.32);
+  color: #60aef0;
+}
+.sgmap-tooltip .sgt-facility-chip.cat-troop:hover {
+  background: rgba(52,152,219,.16);
+  border-color: rgba(52,152,219,.45);
+}
+
 .sgmap-tooltip .sgt-prod-block {
   margin-top:8px; padding:8px 10px 9px;
   background:linear-gradient(135deg,rgba(80,55,15,.16),rgba(40,28,8,.10));
