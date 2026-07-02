@@ -15881,3 +15881,17 @@ html.tab-switching {
 .warboard .wb-br-card.lose { border-left-color: rgba(220,80,40,.25)  !important; }
 .warboard .wb-br-card.draw { border-left-color: rgba(200,155,0,.22)  !important; }
 /* ══ END v20261206a ══ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261207a 工单#warboard-battle-tag-seamless-v1
+   角标贴死卡片左上角、匹配圆角，消除 v20261205a 内缩产生的 1px 黑缝
+   后写覆盖 v20261204a/v20261205a 的 top/left/border-radius
+   仅作用战报卡角标 .wb-br-tag，不动调度卡
+   ──────────────────────────────────────────────────────────── */
+.warboard .wb-br-card .wb-br-tag {
+  top: 0 !important;
+  left: 0 !important;
+  border-left: none !important;
+  border-radius: var(--r) 0 var(--r) 0 !important;
+}
+/* ══ END v20261207a ══ */
