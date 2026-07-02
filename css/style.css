@@ -15867,3 +15867,17 @@ html.tab-switching {
   border-radius: 0 0 var(--r) 0;
 }
 /* ══ END v20261205a ══ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261206a 工单#warboard-battle-border-left-fix-v1
+   补回战报卡左边框（v20261202a 删色条后遗留缺口）
+   后写覆盖 v20261201a 的 border-left:none，按胜/负/平三色匹配
+   仅作用战报卡 .wb-br-card，不动调度卡 .wb-dp-card
+   ──────────────────────────────────────────────────────────── */
+.warboard .wb-br-card {
+  border-left: 1px solid rgba(255,255,255,.05) !important;
+}
+.warboard .wb-br-card.win  { border-left-color: rgba(61,190,108,.25) !important; }
+.warboard .wb-br-card.lose { border-left-color: rgba(220,80,40,.25)  !important; }
+.warboard .wb-br-card.draw { border-left-color: rgba(200,155,0,.22)  !important; }
+/* ══ END v20261206a ══ */
