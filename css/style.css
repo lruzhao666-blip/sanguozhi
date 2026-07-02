@@ -15799,3 +15799,19 @@ html.tab-switching {
   background: none !important;
 }
 /* ══ END v20261202a ══ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261203a 工单#warboard-battle-tag-borderleft-v1
+   给战报卡战果角标 .wb-br-tag 补 border-left，接上卡片左边框，
+   消除去色条后角标处的左边框缺口。按胜/负/平三色分别匹配。
+   ──────────────────────────────────────────────────────────── */
+.warboard .wb-br-card.win .wb-br-tag {
+  border-left: 1px solid rgba(61,190,108,.25);
+}
+.warboard .wb-br-card.lose .wb-br-tag {
+  border-left: 1px solid rgba(220,80,40,.25);
+}
+.warboard .wb-br-card.draw .wb-br-tag {
+  border-left: 1px solid rgba(200,155,0,.22);
+}
+/* ══ END v20261203a ══ */
