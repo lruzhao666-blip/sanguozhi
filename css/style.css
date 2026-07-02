@@ -4445,6 +4445,12 @@ body.fx-off-captured [data-ctype="captured"] {
   overflow: visible !important;
   transition: background .15s;
 }
+
+.junbao-body .battle-card::before { display: none !important; }
+.junbao-body .battle-card.success { border-left: 1px solid rgba(125,216,125,.7) !important; }
+.junbao-body .battle-card.draw { border-left: 1px solid rgba(232,197,96,.7) !important; }
+.junbao-body .battle-card.fail { border-left: 1px solid rgba(232,112,96,.7) !important; }
+
 .junbao-body .battle-card:last-child {
   border-bottom: none !important;
 }
