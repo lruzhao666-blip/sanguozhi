@@ -4859,7 +4859,7 @@ function updateBarracksVisibility(enabled) {
     }
   }
 
-  // ── 战情速报：单张战报卡片 ──
+  // ── 战情速报：单张战报卡片（VS 精修版 v20261201a）──
   function _buildWbBattleCard(b) {
     var WIN_SET = ['惨胜','小胜','大胜','胜'];
     var LOSE_SET = ['小负','大败','负'];
@@ -4871,25 +4871,40 @@ function updateBarracksVisibility(enabled) {
     var defColor = _junbaoGetSideColor(b.defenderSlot, b.defenderFaction);
     var atkBadge = _junbaoGetBadgeText(b.attackerSlot, b.attackerFaction);
     var defBadge = _junbaoGetBadgeText(b.defenderSlot, b.defenderFaction);
-    var atkName  = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkBadge);
-    var defName  = b.defenderGeneral || _junbaoStripPrefix(b.defender, defBadge);
+    var atkNameRaw = b.attackerGeneral || _junbaoStripPrefix(b.attacker, atkBadge);
+    var defNameRaw = b.defenderGeneral || _junbaoStripPrefix(b.defender, defBadge);
     var city     = b.defenderCity || b.city || '';
+
+    // 多武将：按 / 或 、拆分，逐个包 span，支持换行
+    function _wbNames(raw) {
+      var parts = String(raw || '').split(/[\/、]/).map(function(s){ return s.trim(); }).filter(Boolean);
+      if (!parts.length) return '<span class="wb-br-name">—</span>';
+      return parts.map(function(n){ return '<span class="wb-br-name">' + esc(n) + '</span>'; }).join('');
+    }
 
     var atkLoss = b.attacker_loss != null ? b.attacker_loss : 0;
     var defLoss = b.defender_loss != null ? b.defender_loss : 0;
-    var isZeroLoss = (atkLoss === 0 && defLoss === 0);
-    var lossText = isZeroLoss ? '零损接管' : ('攻' + atkLoss + ' 守' + defLoss);
-    var lossStyle = isZeroLoss ? ' style="color:var(--text-dim);opacity:.5"' : '';
 
     return '<div class="wb-br-card ' + cardCls + '">'
-      + '<span class="wb-br-result">' + esc(b.result || '') + '</span>'
-      + '<span class="wb-br-badge" style="color:' + atkColor.glow + ';border-color:' + atkColor.stroke + '">' + esc(atkBadge) + '</span>'
-      + '<span class="wb-br-name">' + esc(atkName) + '</span>'
-      + '<span class="wb-br-vs">vs</span>'
-      + '<span class="wb-br-badge" style="color:' + defColor.glow + ';border-color:' + defColor.stroke + '">' + esc(defBadge) + '</span>'
-      + '<span class="wb-br-name">' + esc(defName) + '</span>'
-      + (city ? '<span class="wb-br-city">' + esc(city) + '</span>' : '')
-      + '<span class="wb-br-losses"' + lossStyle + '>' + lossText + '</span>'
+      + '<span class="wb-br-tag">' + esc(b.result || '') + '</span>'
+      + (city ? '<div class="wb-br-place">' + esc(city) + '</div>' : '')
+      + '<div class="wb-br-arena">'
+        + '<div class="wb-br-side atk">'
+          + '<div class="wb-br-top">'
+            + '<span class="wb-br-badge" style="color:' + atkColor.glow + ';border-color:' + atkColor.stroke + '">' + esc(atkBadge) + '</span>'
+            + '<div class="wb-br-names">' + _wbNames(atkNameRaw) + '</div>'
+          + '</div>'
+          + '<div class="wb-br-loss"><span class="lbl">攻损</span><span class="num">' + atkLoss + '</span></div>'
+        + '</div>'
+        + '<div class="wb-br-clash"><span class="sw">⚔️</span></div>'
+        + '<div class="wb-br-side def">'
+          + '<div class="wb-br-top">'
+            + '<span class="wb-br-badge" style="color:' + defColor.glow + ';border-color:' + defColor.stroke + '">' + esc(defBadge) + '</span>'
+            + '<div class="wb-br-names">' + _wbNames(defNameRaw) + '</div>'
+          + '</div>'
+          + '<div class="wb-br-loss"><span class="lbl">守损</span><span class="num">' + defLoss + '</span></div>'
+        + '</div>'
+      + '</div>'
       + '</div>';
   }
 
