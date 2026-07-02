@@ -4452,14 +4452,17 @@ body.fx-off-captured [data-ctype="captured"] {
   background: rgba(255,255,255,.018) !important;
 }
 .junbao-body .battle-card::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important;
   width: 1px !important;
   top: 4px !important;
   bottom: 4px !important;
   opacity: .85;
 }
 .junbao-body .battle-card.success::before { background: rgba(125,216,125,.7) !important; }
-.junbao-body .battle-card.draw   ::before { background: rgba(232,197,96,.7)  !important; }
-.junbao-body .battle-card.fail   ::before { background: rgba(232,112,96,.7)  !important; }
+.junbao-body .battle-card.draw::before { background: rgba(232,197,96,.7)  !important; }
+.junbao-body .battle-card.fail::before { background: rgba(232,112,96,.7)  !important; }
 
 /* 胜/平/负:纯字色,无框无底,字号略大 */
 .junbao-body .bc-badge {
