@@ -15895,3 +15895,14 @@ html.tab-switching {
   border-radius: var(--r) 0 var(--r) 0 !important;
 }
 /* ══ END v20261207a ══ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261208a 工单#warboard-empty-hide-fulldevice-v1
+   战报/调度栏空态：全端隐藏（覆盖旧 @media(max-width:900px) 限制）
+   class 由 main.js renderWorld 全端打标，纯 CSS 提升生效范围
+   旧手机端规则(#warboard-smart-hide-v1-fix)保留不删，可回滚
+   ──────────────────────────────────────────────────────────── */
+#wb-col-battles.empty { display: none !important; }
+#wb-col-transit.empty { display: none !important; }
+#block-warboard.all-empty { display: none !important; }
+/* ══ END v20261208a ══ */
