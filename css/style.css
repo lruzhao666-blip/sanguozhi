@@ -15783,3 +15783,19 @@ html.tab-switching {
   .warboard .wb-br-place { font-size: .62rem; margin: 1px 0 7px; }
 }
 /* ══ END v20261201a ══ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261202a 工单#warboard-battle-strip-remove-v1
+   去除战报卡左侧竖色条（.wb-br-card::before），
+   消除其与左上角战果角标 .wb-br-tag 的叠压。
+   胜负改由「角标文字色 + 整卡染色 + 边框色」表达（均已存在）。
+   仅作用战报卡，不动调度卡 .wb-dp-card。
+   ──────────────────────────────────────────────────────────── */
+.warboard .wb-br-card::before,
+.warboard .wb-br-card:hover::before {
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  background: none !important;
+}
+/* ══ END v20261202a ══ */
