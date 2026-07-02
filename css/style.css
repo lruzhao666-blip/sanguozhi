@@ -15829,3 +15829,18 @@ html.tab-switching {
 .warboard .wb-br-card.lose .wb-br-tag { border-left-color: rgba(220,80,40,.25); }
 .warboard .wb-br-card.draw .wb-br-tag { border-left-color: rgba(200,155,0,.22); }
 /* ══ END v20261203a ══ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261204a 工单#warboard-battle-tag-radius-fix-v1
+   战报卡战果标签左上角改圆角，贴合卡片圆弧，补齐圆角处描边缺口。
+   保留 border-left（沿用 v20261203a），并新增左上圆角。
+   仅作用战报卡战果标签，不动调度卡。
+   ──────────────────────────────────────────────────────────── */
+.warboard .wb-br-card .wb-br-tag {
+  border-radius: var(--r) 0 var(--r) 0;
+  border-left: 1px solid rgba(255,255,255,.05);
+}
+.warboard .wb-br-card.win .wb-br-tag  { border-left-color: rgba(61,190,108,.25); }
+.warboard .wb-br-card.lose .wb-br-tag { border-left-color: rgba(220,80,40,.25); }
+.warboard .wb-br-card.draw .wb-br-tag { border-left-color: rgba(200,155,0,.22); }
+/* ══ END v20261204a ══ */
