@@ -15844,3 +15844,17 @@ html.tab-switching {
 .warboard .wb-br-card.lose .wb-br-tag { border-left-color: rgba(220,80,40,.25); }
 .warboard .wb-br-card.draw .wb-br-tag { border-left-color: rgba(200,155,0,.22); }
 /* ══ END v20261204a ══ */
+
+/* ════════════════════════════════════════════════════════════
+   v20261205a 工单#warboard-battle-tag-inset-fix-v1
+   战报卡战果标签内缩 1px，让卡片自身左/上边框透出，补齐描边缺口。
+   覆盖 v20261203a(border-left) / v20261204a(圆角) 的无效改动。
+   仅作用战报卡战果标签，不动调度卡。
+   ──────────────────────────────────────────────────────────── */
+.warboard .wb-br-card .wb-br-tag {
+  top: 1px;
+  left: 1px;
+  border-left: none;
+  border-radius: 0 0 var(--r) 0;
+}
+/* ══ END v20261205a ══ */
