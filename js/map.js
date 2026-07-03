@@ -254,8 +254,11 @@ let _npcFactionSlots = {};
 
   // 获取设施分类
   function getFacilityCategory(facilityName) {
+    // #facility-bracket-tolerance-v1: 剥掉尾部括号备注(半角/全角)后取主名查白名单，
+    // 使"水寨(扩建)"能正确归类到"水寨"所在分类。
+    const baseName = String(facilityName || '').replace(/[（(][^）)]*[）)]\s*$/, '').trim();
     for (const [catKey, catData] of Object.entries(FACILITY_CATEGORIES)) {
-      if (catData.items.includes(facilityName)) {
+      if (catData.items.includes(baseName)) {
         return catData.cssClass;
       }
     }
