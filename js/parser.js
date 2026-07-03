@@ -1226,7 +1226,7 @@ window.SGParser = (function () {
     // 提取中文逗号或半角逗号分隔的设施名
     const parts = raw.split(/[,，]/);
     parts.forEach(part => {
-      const name = part.trim();
+      const name = part.trim().replace(/[（(][^）)]*[）)]/g, '').trim();
       if (VALID_FACILITIES.has(name)) {
         result.push(name);
       }
