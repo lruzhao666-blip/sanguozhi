@@ -1226,8 +1226,12 @@ window.SGParser = (function () {
     // 提取中文逗号或半角逗号分隔的设施名
     const parts = raw.split(/[,，]/);
     parts.forEach(part => {
-      const name = part.trim().replace(/[（(][^）)]*[）)]/g, '').trim();
-      if (VALID_FACILITIES.has(name)) {
+      const name = part.trim();
+      if (!name) return;
+      // #facility-bracket-tolerance-v1: 剥掉尾部括号备注(半角/全角)后查白名单，
+      // 校验通过则保留原始带括号的名字输出。
+      const baseName = name.replace(/[（(][^）)]*[）)]\s*$/, '').trim();
+      if (VALID_FACILITIES.has(baseName)) {
         result.push(name);
       }
     });
