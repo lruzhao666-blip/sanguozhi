@@ -1,6 +1,7 @@
 /**
  * parser.js — 三国志文字版 · AI内容解析器 v13
- * v17 (#sanguo-npc-inherit-parser-v1): 支持 [NPC] 同上 简写,输出 npcCitiesInherit 标记
+ * v19 (工单#action-bracket-tolerance-v1): 行动令 A/B/C 分支支持多括号容错,
+ *                   自动识别包含"稳/中/险"的括号作为难度评级
  * v18 (2026-06-30): [调度] 段升级到七槽格式 — 起点/终点拆分为独立槽位，
  *                   废除箭头→分隔符；驻屯时终点槽为"—"；不兼容旧六槽格式。
  * v16 (2026-XX-XX): 对齐 GM 规则书 v3.40 — [调度] 段状态白名单收窄至 4 种
@@ -271,10 +272,10 @@ window.SGParser = (function () {
     const LING_NUM_RE = /^([①②③④⑤⑥])\s*(.+)/;
     // 一级分支: "  A. 强攻宛城(险·+12): 描述" 或 "  A. 名称：描述"
     // 捕获组1=字母, 2=名称(不含括号/冒号), 3=括号内容(可选), 4=冒号后描述(可选)
-    const BRANCH_RE = /^[ \t]{0,6}([A-Ca-c])\s*[.．、]\s*([^：:（(]+?)(?:[（(]([^）)]+)[）)])?\s*(?:[：:](.*))?$/;
+    const BRANCH_RE = /^[ \t]{0,6}([A-Ca-c])\s*[.．、]\s*([^：:（(]+?)((?:[（(][^）)]+[）)])+)?\s*(?:[：:](.*))?$/;
     // 二级分支: "    A1. 正面强攻(中·+4): 描述" — 更多缩进，字母+数字
     // 捕获组1=标签, 2=名称, 3=括号内容(可选), 4=冒号后描述(可选)
-    const SUB_RE    = /^[ \t]{2,8}([A-Ca-c][1-9])\s*[.．、]\s*([^：:（(]+?)(?:[（(]([^）)]+)[）)])?\s*(?:[：:](.*))?$/;
+    const SUB_RE    = /^[ \t]{2,8}([A-Ca-c][1-9])\s*[.．、]\s*([^：:（(]+?)((?:[（(][^）)]+[）)])+)?\s*(?:[：:](.*))?$/;
     // 尾部括号（备用，用于从描述末尾提取）
     const OPT_TAIL_RE = /[（(]([^）)]+)[）)]$/;
     const PLAYER_HEAD_RE = /\[([甲乙丙])\]\s*[：:]/;
@@ -371,7 +372,8 @@ window.SGParser = (function () {
           // 新 SUB_RE: 捕获组1=标签, 2=名称, 3=括号内容(可选), 4=冒号后描述(可选)
           const subLabel = subM[1].toUpperCase();
           const subName  = subM[2].trim();
-          const inlineBracketSub = subM[3] ? subM[3].trim() : '';
+          const bracketsRawSub = subM[3] ? subM[3].trim() : '';
+          const inlineBracketSub = extractRiskBracket(bracketsRawSub);
           let subDesc = subM[4] ? subM[4].trim() : '';
           let subRisk = '', subPres = '', subCond = '';
 
@@ -403,12 +405,33 @@ window.SGParser = (function () {
           continue;
         }
 
+        // #action-bracket-tolerance-v1: 辅助函数 — 从多个括号中提取包含"稳/中/险"的那个
+        const extractRiskBracket = (bracketsStr) => {
+          if (!bracketsStr) return '';
+          // 匹配所有括号 (xxx) 或 （xxx）
+          const allBrackets = bracketsStr.match(/[（(][^）)]+[）)]/g) || [];
+          // 找第一个包含 稳/中/险 的括号
+          for (const br of allBrackets) {
+            const inner = br.replace(/^[（(]/, '').replace(/[）)]$/, '');
+            if (/^(稳|中|险)/.test(inner)) {
+              return inner;
+            }
+          }
+          // 没找到就返回最后一个括号的内容（兼容旧格式）
+          if (allBrackets.length > 0) {
+            const last = allBrackets[allBrackets.length - 1];
+            return last.replace(/^[（(]/, '').replace(/[）)]$/, '');
+          }
+          return '';
+        };
+
         const branchM = t.match(BRANCH_RE);
         if (branchM && currentItem) {
           const optLabel = branchM[1].toUpperCase();
           let   optName  = branchM[2].trim();
           // 新 BRANCH_RE: 捕获组3=括号内容, 4=冒号后描述
-          const inlineBracket = branchM[3] ? branchM[3].trim() : '';
+          const bracketsRaw = branchM[3] ? branchM[3].trim() : '';
+          const inlineBracket = extractRiskBracket(bracketsRaw);
           let   optDesc  = branchM[4] ? branchM[4].trim() : '';
           let   optRisk  = '', optPres = '', optCond = '';
 
